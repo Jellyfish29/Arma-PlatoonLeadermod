@@ -2,9 +2,6 @@ pl_getIn_vehicle = {
     params ["_group"];
     private ["_vics", "_targetVic"];
 
-    _group setVariable ["onTask", false];
-    sleep 0.25;
-
     _groupLen = count (units _group);
 
     if (visibleMap) then {
@@ -15,6 +12,9 @@ pl_getIn_vehicle = {
     {
         _vics = [cursorTarget];
     };
+    _group setVariable ["onTask", false];
+    sleep 0.25;
+
     {
         _cargoCap = getNumber (configFile >> "CfgVehicles" >> typeOf _x >> "transportSoldier");
         if (_cargoCap >= _groupLen) then {

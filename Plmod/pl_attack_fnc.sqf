@@ -168,12 +168,12 @@ pl_suppressive_fire = {
             if (vehicle _x != _x) exitWith {
                 _vic = vehicle _x;
                 _gunner = crew _vic select 1;
-                _gunner commandSuppressiveFire _target;
+                _gunner doSuppressiveFire _target;
                 sleep 3;
                 // for "_i" from 0 to 6 do {
                 //     [_vic, "HE"] call BIS_fnc_fire;
                 //     sleep 0.5;
-                };
+                // };
             };
             _x doSuppressiveFire _target;
         } forEach _units;
@@ -184,15 +184,14 @@ pl_suppressive_fire = {
             if (vehicle _x != _x) exitWith {
                 _vic = vehicle _x;
                 _gunner = crew _vic select 1;
-                _gunner commandSuppressiveFire _target;
+                _gunner doSuppressiveFire _target;
                 sleep 3;
                 // for "_i" from 0 to 6 do {
                 //     [_vic, "HE"] call BIS_fnc_fire;
                 //     sleep 0.5;
-                };
-
+                // };
             };
-            _x commandSuppressiveFire _target;
+            _x doSuppressiveFire _target;
         } forEach _units;
     };
 };

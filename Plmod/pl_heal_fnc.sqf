@@ -22,7 +22,7 @@ pl_heal_around_medic = {
         {
             _medic doMove (position _x);
             doStop _x;
-            waitUntil {((_medic distance2D _x) < 2)};
+            waitUntil {(unitReady _medic)};
             _medic action ["HealSoldier", _x];
             waitUntil {(unitReady _medic)};
             _x doFollow (leader _group);
