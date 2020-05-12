@@ -16,7 +16,7 @@ pl_retreat = {
 
     _leader = leader _group;
     if (_leader == vehicle _leader) then {
-        leader _group sideChat "Roger Falling Back, Over";
+        // leader _group sideChat "Roger Falling Back, Over";
         [leader _group, "SmokeShellMuzzle"] call BIS_fnc_fire;
 
         {
@@ -62,7 +62,7 @@ pl_retreat = {
         _group setVariable ["onTask", false];
         _group setSpeedMode "NORMAL";
         _group setCombatMode "YELLOW";
-        leader _group sideChat "We reached Fall Back Position, Over";
+        // leader _group sideChat "We reached Fall Back Position, Over";
     }
     else
     {
@@ -169,7 +169,7 @@ pl_digin = {
     _unit setUnitPos "MIDDLE";
     sleep 5;
     _coverPos = [1*(sin 0), 1*(cos 0), 0] vectorAdd (getPos _unit);
-    _movePos = [3*(sin 0), 3*(cos 0), 0] vectorAdd (getPos _unit);
+    _movePos = [2*(sin 0), 2*(cos 0), 0] vectorAdd (getPos _unit);
     _sandBg = createVehicle ["Land_BagFence_Short_F", _coverPos, [], 0,"NONE"];
     _sandBg setDir _dir;
     _sandBg setVectorUp surfaceNormal position _sandBg;
@@ -308,29 +308,38 @@ pl_defend_position = {
         _x disableAI "AUTOCOMBAT";
     } forEach (units _group);
     _group setBehaviour "AWARE";
-    waitUntil {(((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 5)};
+    waitUntil {
+    if (_group isEqualTo grpNull) exitWith {};
+    (((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 5) or !(_group getVariable "onTask")};
 
     for "_i" from count waypoints _group - 1 to 0 step -1 do{
         deleteWaypoint [_group, _i];
     };
     _group setFormDir _watchDir;
-    sleep 10; // wait until none moving
-    leader _group groupRadio "SentCmdHide";
-    if (_digIn) then {
+    _time = time + 10;
+    waitUntil {
+    if (_group isEqualTo grpNull) exitWith {};
+    (time >= _time) or !(_group getVariable "onTask")};
+    if (_group getVariable "onTask") then {
+        leader _group groupRadio "SentCmdHide";
+        if (_digIn) then {
+            {
+                [_x, _watchDir, pl_cords2] spawn pl_digin;
+            } forEach (units _group);
+        }
+        else
         {
-            [_x, _watchDir, pl_cords2] spawn pl_digin;
-        } forEach (units _group);
-    }
-    else
-    {
-        pl_covers = [];
-        {
-            [_x, pl_cords2, _watchDir, 7, true] spawn pl_find_cover;
-            sleep 0.5;
-        } forEach (units _group);
+            pl_covers = [];
+            {
+                [_x, pl_cords2, _watchDir, 7, true] spawn pl_find_cover;
+                sleep 0.5;
+            } forEach (units _group);
+        };
     };
 
-    waitUntil {(count (waypoints _group) > 0) or !(_group getVariable "onTask")};
+    waitUntil {
+    if (_group isEqualTo grpNull) exitWith {};
+    (count (waypoints _group) > 0) or !(_group getVariable "onTask")};
     deleteMarker _makerName;
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];

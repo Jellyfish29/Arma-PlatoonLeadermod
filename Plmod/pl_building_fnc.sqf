@@ -8,14 +8,16 @@ pl_move_building = {
 
     while {_currentPos < _firstFloorLen} do {
         _unit doMove (_firstFloor select _currentPos);
-        waitUntil {( unitReady _unit ) || !( alive _unit ) || !((group _unit) getVariable "onTask") || ((count (waypoints (group _unit))) > 0)};
+        waitUntil {
+        ( unitReady _unit ) || !( alive _unit ) || !((group _unit) getVariable "onTask") || ((count (waypoints (group _unit))) > 0)};
         _unit enableAI "AUTOCOMBAT";
         _currentPos = _currentPos + 1;
     };
     _currentPos = 0;
     while {_currentPos < _secondFloorLen} do {
         _unit doMove (_secondFloor select _currentPos);
-        waitUntil {( unitReady _unit ) || !( alive _unit ) || !((group _unit) getVariable "onTask") || ((count (waypoints (group _unit))) > 0)};
+        waitUntil {
+        ( unitReady _unit ) || !( alive _unit ) || !((group _unit) getVariable "onTask") || ((count (waypoints (group _unit))) > 0)};
         _currentPos = _currentPos + 1;
     };
     _unit limitSpeed 5000;
@@ -27,7 +29,9 @@ pl_guard_building = {
 
     _pos = (getPos _building) findEmptyPosition [0, 70];
     _unit doMove _pos;
-    waitUntil {( unitReady _unit ) || !( alive _unit ) || !((group _unit) getVariable "onTask") || ((count (waypoints (group _unit))) > 0)};
+    waitUntil {
+    if (_group isEqualTo grpNull) exitWith {};
+    ( unitReady _unit ) || !( alive _unit ) || !((group _unit) getVariable "onTask") || ((count (waypoints (group _unit))) > 0)};
     _unit enableAI "AUTOCOMBAT";
     _unit limitSpeed 5000;
 
@@ -37,7 +41,9 @@ pl_guard_building = {
         doStop _unit;
     };
 
-    waitUntil {((count (waypoints (group _unit))) > 0) or !((group _unit) getVariable "onTask")};
+    waitUntil {
+    if (_group isEqualTo grpNull) exitWith {};
+    ((count (waypoints (group _unit))) > 0) or !((group _unit) getVariable "onTask")};
     _unit doFollow leader (group _unit);
     _unit setUnitPos "AUTO";
     (group _unit) setVariable ["setSpecial", false];
@@ -55,7 +61,7 @@ pl_clear_building = {
         deleteWaypoint [_group, _i];
     };
 
-    leader _group sideChat "Roger, clearing Building";
+    // leader _group sideChat "Roger, clearing Building";
     _allPos = [_building] call BIS_fnc_buildingPositions;
     _medianZ = 0;
     {
@@ -103,10 +109,11 @@ pl_move_to_garrison = {
     params ["_unit", "_pos"];
     _unit disableAI "AUTOCOMBAT";
     _unit doMove _pos;
-    waitUntil {(unitReady _unit) or !(alive _unit)};
+    waitUntil {(unitReady _unit) or !(alive _unit) or !((group _unit) getVariable "onTask")};
     doStop _unit;
     _unit enableAI "AUTOCOMBAT";
-    waitUntil {(count (waypoints (group _unit))) > 0 or !((group _unit) getVariable "onTask")};
+    waitUntil {
+    (count (waypoints (group _unit))) > 0 or !((group _unit) getVariable "onTask")};
     _unit doFollow leader (group _unit);
     (group _unit) setVariable ["setSpecial", false];
     (group _unit) setVariable ["onTask", false];
@@ -121,7 +128,7 @@ pl_garrison_building = {
     for "_i" from count waypoints _group - 1 to 0 step -1 do{
         deleteWaypoint [_group, _i];
     };
-    leader _group sideChat "Roger, occupying Building";
+    // leader _group sideChat "Roger, occupying Building";
     _allPos = [_building] call BIS_fnc_buildingPositions;
     _posCount = count _allPos;
     _unitCount = count (units _group);

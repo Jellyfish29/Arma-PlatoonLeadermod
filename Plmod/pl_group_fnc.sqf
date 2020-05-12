@@ -30,6 +30,9 @@ pl_join_hc_group = {
         };
     };
 
+    _group setVariable ["onTask", false];
+    sleep 0.25;
+
     (units _group) join _targetGroup;
 };
 
@@ -49,18 +52,22 @@ pl_split_hc_group = {
 // [hcSelected player select 0] spawn pl_split_hc_group;
 
 pl_merge_hc_groups = {
-    private ["_groupLen", "_largestGroup"];
+    private ["_groupLen", "_largestGroup", "_groups"];
     _groupLen = 0;
     _largestGroup = 0;
+    _groups = [];
     {
+        _x setVariable ["onTask", false];
+        _groups pushBack _x;
         _len = count (units _x);
         if (_len > _groupLen) then {
             _largestGroup = _x;   
         };
     } forEach hcSelected player;
+    sleep 0.25;
     {
         (units _x) joinSilent _largestGroup; 
-    } forEach hcSelected player;
+    } forEach _groups;
     // _leader = ["_largestGroup"] call pl_get_highest_rank;
     // _largestGroup selectLeader _leader;
 };
@@ -71,12 +78,24 @@ pl_add_to_hc = {
         while {pl_add_group_to_hc} do {
             hintSilent "SELECT GROUP TO ADD";
             sleep 1;
-        }
+        };
+        hintSilent "";
     }
     else
     {
         pl_add_group_to_hc = false;
     };
+};
+
+pl_add_to_hc_execute = {
+    params ["_group"];
+
+    _group setVariable ["onTask", false];
+    sleep 0.25;
+
+    player hcSetGroup [_group];
+    [_group] spawn pl_set_up_ai;
+    pl_add_group_to_hc = false;
 };
 
 pl_remove_from_hc = {
@@ -91,3 +110,4 @@ pl_spawn_remove_hc = {
 };
 
 // [] call pl_merge_hc_groups;
+

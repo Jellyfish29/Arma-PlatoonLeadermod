@@ -11,6 +11,7 @@ execVM "Plmod\pl_defence_fnc.sqf";
 execVM "Plmod\pl_group_fnc.sqf";
 execVM "Plmod\pl_heal_fnc.sqf";
 execVM "Plmod\pl_misc_fnc.sqf";
+execVM "Plmod\pl_special_task_fnc.sqf";
 
 
 addMissionEventHandler ["GroupIconClick", {
@@ -21,8 +22,7 @@ addMissionEventHandler ["GroupIconClick", {
 
     if (side _group == playerSide) then {
         if (pl_add_group_to_hc) then {
-            player hcSetGroup [_group];
-            pl_add_group_to_hc = false;
+            [_group ] spawn pl_add_to_hc_execute;
         };
     };
 }];
@@ -37,7 +37,13 @@ addMissionEventHandler ["EntityKilled",{
     _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "displayName");
     _unitName = name _killed;
     [_killed] spawn pl_draw_kia;
+    _group = group _killed;
+    _mags = _group getVariable "magCountAllDefault";
+    _mag = _group getVariable "magCountSoloDefault";
+    _mags = _mags - _mag;
+    _group setVariable ["magCountAllDefault", _mags];
 
     _leader sideChat format ["%1 is K.I.A, over", _unitMos];
 }];
+
 

@@ -1144,7 +1144,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_heal";
+                    expression="[hcSelected player select 0] spawn pl_ccp";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -1312,7 +1312,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[hcSelected player select 0] call pl_join_hc_group";
+                    expression="[hcSelected player select 0] spawn pl_join_hc_group";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -1326,7 +1326,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_merge_hc_groups";
+                    expression="[] spawn pl_merge_hc_groups";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -1382,7 +1382,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_remove_hc";
+                    expression="[] spawn pl_spawn_remove_hc";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";

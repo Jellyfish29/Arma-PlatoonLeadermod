@@ -1,122 +1,77 @@
-pl_heal_around_medic = {
-    params ["_group"];
-    private ["_medic"];
-    _medicClsName = "B_medic_F";
-    _medic = 0;
-
-
-    _medic = ((units _group) select {(typeOf _x) isEqualto _medicClsName}) select 0;
-    if !((str _medic) isEqualto "0") then {
-        {
-            _x disableAI "AUTOCOMBAT";
-            doStop _x;
-        } forEach (units _group);
-        _healTargets = [];
-        {
-            if ((damage _x) > 0) then {
-                _healTargets pushBack _x;
-            };
-        } forEach (units _group);
-        _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"];
-        {
-            _medic doMove (position _x);
-            doStop _x;
-            waitUntil {(unitReady _medic)};
-            _medic action ["HealSoldier", _x];
-            waitUntil {(unitReady _medic)};
-            _x doFollow (leader _group);
-        } forEach _healTargets;
-        _group setVariable ["setSpecial", false];
-        {
-            _x enableAI "AUTOCOMBAT";
-            _x doFollow (leader _group);
-        } forEach (units _group);
+pl_medic_heal = {
+    params ["_medic", "_target", "_time"];
+    _healPos = (getPos leader (group _medic)) findEmptyPosition [0, 40];
+    _moveToPos = {
+        params ["_unit", "_pos"];
+        _unit disableAI "AUTOCOMBAT";
+        _unit doMove _pos;
+        waitUntil {(_unit distance2D _pos < 2) or (unitReady _unit) or (!alive _unit) or !((group _unit) getVariable "onTask")};
+        doStop _unit;
+        _unit disableAI "PATH";
+        _unit setUnitPos "MIDDLE";
+    };
+    if (_target == player) then {
+        _h1 =[_medic, (getPos player)] spawn _moveToPos;
+        _medic sideChat "Hold Position, Help is on the Way!";
+        waitUntil {(scriptDone _h1) or !((group _medic) getVariable "onTask")};
     }
     else
     {
-        leader _group sideChat "Negativ, Our Medic is KIA";
+        _h1 = [_medic, _healPos] spawn _moveToPos;
+        _h2 = [_target, _healPos] spawn _moveToPos;
+        waitUntil {((scriptDone _h1) and (scriptDone _h2)) or !((group _medic) getVariable "onTask")};
     };
+    if !(alive _target) exitWith {
+        _medic enableAI "PATH";
+        _medic enableAI "AUTOCOMBAT";
+        _medic setUnitPos "AUTO";
+        _medic doFollow leader (group _medic);
+    };
+    if !(alive _medic) exitWith {(group _medic) setVariable ["onTask", false]};
+    _medic action["HealSoldier", _target];
+    _time = time + 6;
+    waitUntil {(time >= _time) or !((group _medic) getVariable "onTask")};
+    _target setDamage 0;
+    _medic enableAI "PATH";
+    _medic enableAI "AUTOCOMBAT";
+    _target enableAI "PATH";
+    _target enableAI "AUTOCOMBAT";
+    _medic setUnitPos "AUTO";
+    _target setUnitPos "AUTO";
+    _medic doFollow leader (group _medic);
+    _target doFollow leader (group _target);
 };
 
-pl_spawn_heal = {
-    {
-        [_x] spawn pl_heal_around_medic
-      } forEach hcSelected player;  
-};
 
-// [] call pl_spawn_heal;
 
 pl_ccp = {
     params ["_group"];
-    private ["_ccpUp", "_medic"];
-    _medicClsName = "B_medic_F";
-    _medic = ((units _group) select {(typeOf _x) isEqualto _medicClsName}) select 0;
+    private ["_ccpUp", "_medic", "_healTarget"];
+
+    _group setVariable ["onTask", false];
+    sleep 0.25;
+
+    _group setVariable ["onTask", true];
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"];
+    {
+        doStop _x;
+    } forEach (units _group);
+    _medicClsName = ["B_medic_F", "O_medic_F", "I_medic_F", "I_E_medic_F"];
+    _medic = ((units _group) select {(typeOf _x) in _medicClsName}) select 0;
     if !(isNil "_medic") then {
-        leader _group sideChat "Setting up CCP, over";
-        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-        {
-            _x disableAI "AUTOCOMBAT";
-        } forEach (units _group);
-        _group setBehaviour "AWARE";
-
-        for "_i" from count waypoints _group - 1 to 0 step -1 do
+        while {(_group getVariable "onTask")} do {
+            if (_group isEqualTo grpNull) exitWith {};
+            _targets = (getPos leader _group) nearObjects ["Man", 30];
             {
-                deleteWaypoint [_group, _i];
-        };
-        _group addWaypoint [_cords, 0];
-
-        waitUntil {(((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 2)};
-
-        for "_i" from count waypoints _group - 1 to 0 step -1 do
-            {
-                deleteWaypoint [_group, _i];
-        };
-
-        [_group, getPos (leader _group)] spawn pl_360;
-        createMarker ["ccp_marker", _cords];
-        "ccp_marker" setMarkerType "marker_CCP";
-        "ccp_marker" setMarkerColor "colorBLUFOR";
-        _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"];
-        _ccpUp = true;
-        sleep 3;
-
-        while {_ccpUp} do {
-            _targets = _cords nearObjects ["Man", 100];
-            _healTargets = [];
-            {
-                if (((damage _x) > 0) and (alive _x)) then {
-                    if (_x != _medic) then {
-                        _healTargets pushBack _x;
-                    }
-                    else
-                    {
-                        _medic action ["HealSoldierSelf", _medic];
+                if (side _x == side _medic) then {
+                    if ((damage _x > 0) and (alive _x)) then {
+                        _healTarget = _x;
+                        _h1 = [_medic, _healTarget] spawn pl_medic_heal;
+                        waitUntil {scriptDone _h1 or !(_group getVariable "onTask")}
                     };
                 };
             } forEach _targets;
-            {
-                _medic doMove (position _x);
-                _x setUnitPos "MIDDLE";
-                doStop _x;
-                waitUntil {(unitReady _medic)};
-                _medic action ["HealSoldier", _x];
-                waitUntil {(unitReady _medic)};
-                _x setUnitPos "AUTO";
-                _x doFollow (leader (group _x));
-            } forEach _healTargets;
-            if (count (waypoints _group) > 0) then {
-                deleteMarker "ccp_marker";
-                _group setVariable ["setSpecial", false];
-                {
-                    _x enableAI "PATH";
-                    _x doFollow (leader _group);
-                    _x commandFollow (leader _group);
-                    _x enableAI "AUTOCOMBAT";
-                } forEach (units _group);
-                _ccpUp = false;
-            };
             sleep 1;
         };
     }

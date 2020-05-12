@@ -33,7 +33,7 @@ pl_getIn_vehicle = {
             _x disableAI "AUTOCOMBAT";
             _x setBehaviour "AWARE";
         } forEach (crew _targetVic);
-        leader _group sideChat format ["Getting in %1, over", _targetVic];
+        // leader _group sideChat format ["Getting in %1, over", _targetVic];
         _group setVariable ["setSpecial", true];
         _group setVariable ["onTask", true];
         _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
@@ -69,11 +69,11 @@ pl_getOut_vehicle = {
         if (visibleMap) then {
             _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             (group _commander) addWaypoint [_cords, 0];
-            _leader sideChat "Moving to Drop off point, Over";
+            // _leader sideChat "Moving to Drop off point, Over";
             sleep 5;
             waitUntil {((_vic distance2D waypointPosition[(group _commander), currentWaypoint (group _commander)]) < 40) or !(_group getVariable "onTask")};
             sleep 1;
-            _leader sideChat "Reached Position, Disembarking, Over";
+            // _leader sideChat "Reached Position, Disembarking, Over";
         }
         else
         {

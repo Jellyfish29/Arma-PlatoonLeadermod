@@ -32,7 +32,9 @@ pl_advance = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\walk_ca.paa"];
 
-    waitUntil {(((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 11) or !(_group getVariable "onTask")};
+    waitUntil {
+    if (_group isEqualTo grpNull) exitWith {};
+    (((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 11) or !(_group getVariable "onTask") or (_group == grpNull)};
 
     (leader _group) limitSpeed 5000;
     {
@@ -41,7 +43,7 @@ pl_advance = {
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];
 
-    leader _group sideChat "We Advanced to assigned Position, Over";
+    // leader _group sideChat "We Advanced to assigned Position, Over";
 
 };
 
@@ -62,7 +64,7 @@ pl_attack= {
     sleep 0.25;
 
     _groupStrength = count (units _group);
-    leader _group sideChat "Roger beginning Assault, Over";
+    // leader _group sideChat "Roger beginning Assault, Over";
 
     {
         _x disableAI "AUTOCOMBAT";
@@ -82,7 +84,9 @@ pl_attack= {
     _group setVariable ["onTask", true];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"];
 
-    waitUntil {(((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 30) or ((count units _group) <= _groupStrength - 3) or !(_group getVariable "onTask")};
+    waitUntil {
+    if (_group isEqualTo grpNull) exitWith {};
+    (((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 30) or ((count units _group) <= _groupStrength - 3) or !(_group getVariable "onTask") or (_group == grpNull)};
     {
         _x enableAI "AUTOCOMBAT";
     } forEach (units _group);

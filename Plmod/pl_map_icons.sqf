@@ -47,6 +47,10 @@ pl_draw_group_info = {
 
 
                 _callsignText = format ['  %1', groupId _x];
+                if (count (units _x) == 1 and _x != (group player)) then {
+                    _unitMos = getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName');
+                    _callsignText = format ['  %1', _unitMos];
+                };
                 _display drawIcon [
                     '#(rgb,4,1,1)color(1,1,1,0)',
                     [0,0.3,0.6,1],
@@ -82,9 +86,11 @@ pl_draw_group_info = {
                 _contactIcon = '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa';
                 _contactPos = [(_pos select 0) - _mapscaleX, (_pos select 1) - _mapScaleY];
                 _contactColor = [0.4,1,0.2,1];
+                _x setVariable ['inContact', false];
                 _time = (_x getVariable 'PlContactTime') - 60;
                 if (_time > time) then {
                     _contactColor = [0.7,0,0,1];
+                    _x setVariable ['inContact', true];
                 };
                 _display drawIcon [
                     _contactIcon,
@@ -146,7 +152,7 @@ pl_draw_group_info = {
 
                 
             };
-        } forEach (allGroups select {side _x isEqualTo west});
+        } forEach (allGroups select {side _x isEqualTo playerSide});
     "]; // "
 };
 
@@ -163,27 +169,29 @@ pl_mark_targets_on_map = {
     _time = time + 60;
     {
         if !(_x in pl_marker_targets) then {
-            _pos = getPos _x;
-            _clockTime = [daytime, "HH:MM"] call BIS_fnc_timeToString;
-            _markerText = format ["<t color='#ff2020' size='0.01'>%1</t>", _clockTime];
-            _markerName = str _x;
-            _markerSize = 0.3;
-            _marker = createMarker [_markerName, _pos];
-            _markerName setMarkerType "o_unknown";
-            if (_x isKindOf "Tank") then {
-                _markerName setMarkerType "o_armor";
-                _markerSize = 0.5;
+            if (alive _x and (side _x) != civilian) then {
+                _pos = getPos _x;
+                _clockTime = [daytime, "HH:MM"] call BIS_fnc_timeToString;
+                _markerText = format ["<t color='#ff2020' size='0.01'>%1</t>", _clockTime];
+                _markerName = str _x;
+                _markerSize = 0.3;
+                _marker = createMarker [_markerName, _pos];
+                _markerName setMarkerType "o_unknown";
+                if (_x isKindOf "Tank") then {
+                    _markerName setMarkerType "o_armor";
+                    _markerSize = 0.5;
+                };
+                if (_x isKindOf "Car") then {
+                    _markerName setMarkerType "o_motor_inf";
+                    _markerSize = 0.4;
+                };
+                _markerName setMarkerColor "ColorRed";
+                _markerName setMarkerSize [_markerSize, _markerSize];
+                // _markerName setMarkerText str (parseText _markerText);
+                _markers pushBack _markerName;
+                _markerTargets pushBack _x;
+                pl_marker_targets pushBack _x;
             };
-            if (_x isKindOf "Car") then {
-                _markerName setMarkerType "o_motor_inf";
-                _markerSize = 0.4;
-            };
-            _markerName setMarkerColor "ColorRed";
-            _markerName setMarkerSize [_markerSize, _markerSize];
-            // _markerName setMarkerText str (parseText _markerText);
-            _markers pushBack _markerName;
-            _markerTargets pushBack _x;
-            pl_marker_targets pushBack _x;
         };
     } forEach _targets;
 
