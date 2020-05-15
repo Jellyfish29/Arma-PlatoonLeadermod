@@ -9,6 +9,9 @@ pl_reset = {
     };
 
     (units _group) joinSilent _group;
+    if (_group isEqualTo (group player)) then {
+        _group selectLeader player;
+    };
     _group setVariable ["onTask", false];
     _group setVariable ["setSpecial", false];
     _group addWaypoint [getPos (leader _group), 0];

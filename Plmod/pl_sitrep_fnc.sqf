@@ -6,7 +6,7 @@ pl_get_group_health_hex = {
         if ((damage _x) > 0.1) then {
             _healthState = ["Yellow", "#e5e500"];
         };
-        if (_x getVariable "pl_wia" and (alive _unit)) then {
+        if (_x getVariable "pl_wia" and (alive _x)) then {
             _healthState = ["Red", "#b20000"];
         };
     } forEach (units _group);
@@ -109,6 +109,9 @@ pl_sitrep_solo = {
         _unitDamageStr = format ["%1%2", _unitDamage, "%"];
         if (_x getVariable "pl_wia") then {
             _unitDamageStr = "W.I.A";
+        };
+        if (_unitDamage <= 0) then {
+            _unitDamageStr = "M.I.A";
         };
         _message = _message + format ["<br /><t color='#cccccc' size='0.8' align='left'>- %1 / %2</t><t color='#cccccc' size='0.8' align='right'>%3x</t>",_unitDamageStr, _unitMos, _magCount];
         if (_missileCount > 0) then{

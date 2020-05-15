@@ -6,7 +6,7 @@ pl_get_group_health = {
         if ((damage _x) > 0.1) then {
             _healthState = [0.9,0.9,0,1];
         };
-        if (_x getVariable "pl_wia") then {
+        if (_x getVariable "pl_wia" and alive _x) then {
             _healthState = [0.7,0,0,1];
         };
     } forEach (units _group);
@@ -94,7 +94,7 @@ pl_draw_group_info = {
                 _contactPos = [(_pos select 0) - _mapscaleX, (_pos select 1) - _mapScaleY];
                 _contactColor = [0.4,1,0.2,1];
                 _x setVariable ['inContact', false];
-                _time = (_x getVariable 'PlContactTime') - 60;
+                _time = (_x getVariable 'PlContactTime') - 30;
                 if (_time > time) then {
                     _contactColor = [0.7,0,0,1];
                     _x setVariable ['inContact', true];

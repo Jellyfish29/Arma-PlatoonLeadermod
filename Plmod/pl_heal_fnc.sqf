@@ -106,23 +106,27 @@ pl_wia_callout = {
     _unit setVariable ["pl_wia", true];
     if (alive _unit and (_unit getVariable "pl_wia_calledout")) then {
         _unit setVariable ["pl_wia_calledout", false];
-        _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _unit >> "displayName");
-        leader (group _unit) sideChat format ["%1 is W.I.A, requesting Medic, over", _unitMos];
+        // _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _unit >> "displayName");
+        // leader (group _unit) sideChat format ["%1 is W.I.A, requesting Medic, over", _unitMos];
+        leader (group _unit) sideChat "We have a Casualty, over"
     };
 };
 
 pl_bleedout = {
     params ["_unit"];
-    _deathTime = time + 300;
     sleep 10;
-    waitUntil {(time >= _deathTime) or !(_unit getVariable "pl_wia") or (!alive _unit)};
-    if (_unit getVariable "pl_wia") then {
-        _unit setDamage 1;
+    if (alive _unit and !(_unit getVariable "pl_bleedout_set")) then {
+        _unit setVariable ["pl_bleedout_set", true];
+        _deathTime = time + 300;
+        waitUntil {(time >= _deathTime) or !(_unit getVariable "pl_wia") or (!alive _unit)};
+        if (_unit getVariable "pl_wia") then {
+            _unit setDamage 1;
+        };
     };
 };
 
 pl_ccp_revive_action = {
-    params ["_group", "_medic", "_escort", "_healTarget"];
+    params ["_group", "_medic", "_escort", "_healTarget", "_ccpPos"];
     _medic disableAI "AUTOCOMBAT";
     _medic disableAI "AUTOTARGET";
     _medic disableAI "TARGET";
@@ -217,7 +221,7 @@ pl_ccp = {
                 _targets = _ccpPos nearObjects ["Man", 150];
                 {
                     if (lifeState _x isEqualTo "INCAPACITATED") then {
-                        _h1 = [_group, _medic, _escort, _x] spawn pl_ccp_revive_action;
+                        _h1 = [_group, _medic, _escort, _x, _ccpPos] spawn pl_ccp_revive_action;
                         waitUntil {scriptDone _h1 or !(_group getVariable "onTask")}
                     };
                 } forEach _targets;

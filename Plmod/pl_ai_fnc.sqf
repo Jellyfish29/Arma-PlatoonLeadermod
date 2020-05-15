@@ -1,6 +1,6 @@
 pl_global_spotrep_cd = 0;
 pl_At_fire_report_cd = 0;
-pl_ai_skill = 1;
+pl_ai_skill = 0.8;
 pl_radio_range = 700;
 
 pl_get_targets = {
@@ -72,19 +72,20 @@ pl_contact_report = {
         _leader addEventHandler ["FiredNear", {
             params ["_unit", "_firer", "_distance", "_weapon", "_muzzle", "_mode", "_ammo", "_gunner"];
 
-            if (((group _unit) getVariable "PlContactTime") < time) then {
-                _callsign = groupId (group _unit);
-                _unit sideChat format ["%1 is Engaging Enemies, over", _callsign];
-                [_unit] spawn pl_contact_info_share;
-                (group _unit) setVariable ['inContact', true];
-
-            };
-            (group _unit) setVariable ["PlContactTime", (time + 80)];
-            if ("launch" in (_weapon splitString "_")) then {
-                if (pl_At_fire_report_cd < time) then {
-                    pl_At_fire_report_cd = time + 5;
-                    _callsign = groupId (group _unit);
-                    _unit sideChat format ["%1 is Engaging enemy Vehicles with AT Weapons, over", _callsign];
+            if ((group _firer) isEqualTo (group _unit)) then {
+                if (((group _unit) getVariable "PlContactTime") < time) then {
+                        _callsign = groupId (group _unit);
+                        _unit sideChat format ["%1 is Engaging Enemies, over", _callsign];
+                        [_unit] spawn pl_contact_info_share;
+                        (group _unit) setVariable ['inContact', true];
+                };
+                (group _unit) setVariable ["PlContactTime", (time + 60)];
+                if ("launch" in (_weapon splitString "_")) then {
+                    if (pl_At_fire_report_cd < time) then {
+                        pl_At_fire_report_cd = time + 5;
+                        _callsign = groupId (group _unit);
+                        _unit sideChat format ["%1 is Engaging enemy Vehicles with AT Weapons, over", _callsign];
+                    };
                 };
             };
             if !(alive _unit) then {
@@ -115,6 +116,30 @@ pl_set_ai_skill_option = {
     {
         _x setSkill _skill;
     } forEach allUnits select {side _x isEqualTo playerSide};  
+};
+
+pl_enemy_destroyed_report = {
+    params ["_unit", "_killer", "_group"];
+    _typeStr = "Infantry Unit";
+    if (vehicle _unit != _unit) then {
+        _vic = vehicle _unit;
+        _typeStr = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");
+    };
+    _time = time + 10;
+    waitUntil {time >= _time};
+    _unitsAlive = false;
+    {
+        if (alive _x) then {
+            _unitsAlive = true;
+        };
+    } forEach (units _group);
+    if !(_unitsAlive) then {
+        if (isNil {_group getVariable "pl_death_reported"}) then {
+            _gridPos = mapGridPosition _unit;
+            _group setVariable ["pl_death_reported", true];
+            _killer sideChat format ["We destroyed an enemy %1 at %2, over", _typeStr, _gridPos];
+        };
+    };
 };
 
 
@@ -155,6 +180,7 @@ pl_set_up_ai = {
         // WIA Set Up
         _x setVariable ["pl_wia", false];
         _x setVariable ["pl_wia_calledout", false];
+        _x setVariable ["pl_bleedout_set", false];
         _x setVariable ["pl_damage_reduction", false];
         _x addEventHandler ['HandleDamage', {
             params['_unit', '_selName', '_damage', '_source'];
@@ -164,14 +190,16 @@ pl_set_up_ai = {
             };
             if !(_unit getVariable "pl_wia") then {
                 if (_damage > 0.99) then {
-                    // if (([0, 100] call BIS_fnc_randomInt) > 20) then {
+                    if (([0, 100] call BIS_fnc_randomInt) > 20) then {
                         _damage = 0;
                         _unit setUnconscious true;
                         if !(_unit getVariable "pl_wia_calledout") then {
                             [_unit] spawn pl_wia_callout;
+                        };
+                        if !(_unit getVariable "pl_bleedout_set") then {
                             [_unit] spawn pl_bleedout;
                         };
-                    // };
+                    };
                 };
             };
             _damage
@@ -185,6 +213,8 @@ pl_set_up_ai = {
     _unitCount = count (units _group);
     _group setVariable ["_unitCountDefault", _unitCount];
 };
+
+
 
 pl_ai_setUp_loop = {
     while {true} do {

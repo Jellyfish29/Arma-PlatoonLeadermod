@@ -1,0 +1,4 @@
+1.1 Release Candidate bugs/improvements:
+    - Detroyed call out nur wenn killer knowsAbout > 0:
+    - Unit Callout einheitlich machen / Mit callsign erwähnung
+    - WIA farbcodierung für amp unit nummer buggy 

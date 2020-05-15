@@ -4,7 +4,7 @@ pl_vics = [];
 pl_mapClicked = false;
 
 pl_getIn_vehicle = {
-    private ["_vics", "_targetVic"];
+    private ["_vics", "_targetVic", "_groupLen"];
 
     _group = hcSelected player select 0;
     _groupLen = count (units _group);
@@ -15,7 +15,7 @@ pl_getIn_vehicle = {
         onMapSingleClick {
             pl_mapClicked = true;
             _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], 7, true];
+            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], 10, true];
             onMapSingleClick "";
         };
         while {!pl_mapClicked} do {sleep 0.1};
@@ -27,9 +27,26 @@ pl_getIn_vehicle = {
         pl_vics = [cursorTarget];
     };
     {
-        _cargoCap = getNumber (configFile >> "CfgVehicles" >> typeOf _x >> "transportSoldier");
-        if (_cargoCap >= _groupLen) then {
-            _targetVic = _x;
+        if (vehicle (leader _group) == leader _group) then {
+            _cargoCap = getNumber (configFile >> "CfgVehicles" >> typeOf _x >> "transportSoldier");
+            if (_cargoCap >= _groupLen) then {
+                _targetVic = _x;
+            };
+        }
+        else
+        {
+            _vic = vehicle (leader _group);
+            _crewCap = [typeOf _vic, true] call BIS_fnc_crewCount;
+            _cargoCap = _crewCap - (count (crew _vic));
+            _groupLen = 0;
+            {
+                if (vehicle _x == _x) then {
+                    _groupLen = _groupLen + 1;
+                };
+            } forEach (units _group);
+            if (_cargoCap >= _groupLen) then {
+                _targetVic = _x;
+            };
         };
     } forEach pl_vics;
     if !(isNil "_targetVic") then {
@@ -43,25 +60,27 @@ pl_getIn_vehicle = {
         {
             deleteWaypoint [_group, _i];
         };
-        {
-            _x disableAI "AUTOCOMBAT";
-            _x setBehaviour "AWARE";
-        } forEach (crew _targetVic);
+        // {
+        //     _x disableAI "AUTOCOMBAT";
+        //     _x setBehaviour "AWARE";
+        // } forEach (crew _targetVic);
         _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
         leader _group sideChat format ["Getting in %1, over", _vicName];
         _group setVariable ["setSpecial", true];
         _group setVariable ["onTask", true];
         _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
         {
-            _x disableAI "AUTOCOMBAT";
-            _x setBehaviour "AWARE";
-            _x assignAsCargo _targetVic;
-            [_x] orderGetIn true;
+            // _x disableAI "AUTOCOMBAT";
+            // _x setBehaviour "AWARE";
+            if !(_x in (crew _targetVic)) then {
+                _x assignAsCargo _targetVic;
+                [_x] orderGetIn true;
+            };
         } forEach (units _group);
     }
     else
     {
-        leader _group sideChat "Negativ, there is no avaiable Transport, Over"
+        leader _group sideChat "Negativ, there is no avaiable Transport, Over";
     };
 };
 
@@ -75,7 +94,7 @@ pl_getOut_vehicle = {
     if (vehicle _leader != _leader) then {
         _vic = vehicle _leader;
         _cargo = fullCrew _vic;
-        _commander = 0;
+        _commander = driver _vic;
             {
                 if (_x select 1 isEqualTo "commander") then {
                     _commander = (_x select 0);
@@ -94,7 +113,7 @@ pl_getOut_vehicle = {
         {
             doStop _vic;
         };
-        waitUntil {((speed _vic) == 0);};
+        waitUntil {((speed _vic) == 0)};
         {
             _unit = _x select 0;
             _unit enableAI "AUTOCOMBAT";
@@ -103,8 +122,8 @@ pl_getOut_vehicle = {
                 doGetOut _unit;
             };
         } forEach _cargo;
-        _time = time + 20;
-        waitUntil{time >= _time};
+        _time = time + 10;
+        waitUntil {time >= _time};
         _group setVariable ["setSpecial", false];
         _group setVariable ["onTask", false];
         _vic doFollow _vic;
@@ -135,7 +154,7 @@ pl_spawn_vic_speed = {
 };
 
 pl_crew_vehicle = {
-    private ["_group", "_vics", "_targetVic", "_crew"];
+    private ["_group", "_vics", "_targetVic", "_crew", "_crewCap", "_groupLen"];
     _group = hcSelected player select 0;
     _groupLen = count (units _group);
 
@@ -146,7 +165,7 @@ pl_crew_vehicle = {
         onMapSingleClick {
             pl_mapClicked = true;
             _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], 7, true];
+            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], 10, true];
             onMapSingleClick "";
         };
         while {!pl_mapClicked} do {sleep 0.1};
@@ -158,8 +177,8 @@ pl_crew_vehicle = {
         pl_vics = [cursorTarget];
     };
     {
-        _cargoCap = [typeOf _x, true] call BIS_fnc_crewCount;
-        if (_cargoCap >= _groupLen) then {
+        _crewCap = [typeOf _x, true] call BIS_fnc_crewCount;
+        if (_crewCap >= _groupLen) then {
             _targetVic = _x;
         };
         if (vehicle (leader _group) == _x) then {
@@ -167,7 +186,10 @@ pl_crew_vehicle = {
         };
     } forEach pl_vics;
     if !(isNil "_targetVic") then {
-        if (count (crew _targetVic) == 0) then {
+
+        _targetVic setUnloadInCombat [false, false];
+
+        if (_targetVic emptyPositions "Driver" > 0) then {
             _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
             leader _group sideChat format ["Getting in %1, over", _vicName];
             _group setVariable ["onTask", false];
@@ -215,13 +237,24 @@ pl_crew_vehicle = {
         }
         else
         {
+            _cargoCap = _crewCap - (count (crew _targetVic));  
+            if (_cargoCap >= _groupLen) then {
+                {
+                    if !(_x in (crew _targetVic)) then {
+                        _x assignAsCargo _targetVic;
+                        [_x] orderGetIn true;
+                    };
+                } forEach (units _group);
+            }
+            else
             {
-                if !(_x in (crew _targetVic)) then {
-                    _x assignAsCargo _targetVic;
-                    [_x] orderGetIn true;
-                };
-            } forEach (units _group);
+                leader _group sideChat "Negativ, there aren't enough avaiable seats, Over";
+            };
         };
+    }
+    else
+    {
+        leader _group sideChat "Negativ, there is no avaiable Transport, Over";
     };
 };
 
@@ -233,7 +266,9 @@ pl_leave_vehicle = {
 
     if ((leader _group) != vehicle (leader _group)) then {
         _vic = vehicle (leader _group);
-        _group leaveVehicle _vic; 
+        _group leaveVehicle _vic;
+        _group setVariable ["setSpecial", false];
+        _group setVariable ["onTask", false];
     };
 };
 
