@@ -1,3 +1,5 @@
+pl_ammoBearer_cls_names = ["B_Soldier_A_F", "B_T_Soldier_A_F", "B_W_Soldier_A_F", "O_T_Soldier_A_F", "I_E_Soldier_A_F", "I_Soldier_A_F"];
+
 pl_ammoBearer = {
     params ["_group"];
 
@@ -7,7 +9,7 @@ pl_ammoBearer = {
             _x addEventHandler ["Reloaded", {
                 params ["_unit", "_weapon", "_muzzle", "_newMagazine", "_oldMagazine"];
 
-                _ammoBearerClsNames = ["B_Soldier_A_F", "O_Soldier_A_F", "I_E_Soldier_A_F", "I_Soldier_A_F"];
+                _ammoBearerClsNames = pl_ammoBearer_cls_names;
                 _mag = (getArray (configFile >> "CfgWeapons" >> (primaryWeapon _unit) >> "magazines")) select 0;
                 _mags = magazines _unit;
                 _magCount = 0;

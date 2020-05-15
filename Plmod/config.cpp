@@ -529,6 +529,62 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
+            class PlSeperator10
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlResupply
+            {
+                title="Resupply at Position";
+                shortcuts[]={8};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_spawn_rearm";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlHeal
+            {
+                title="Heal Group";
+                shortcuts[]={9};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_spawn_heal_group";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlCcp
+            {
+                title="Set up CCP";
+                shortcuts[]={10};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_ccp";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
             
         };
         title = "Move";
@@ -605,6 +661,48 @@ class RscHCGroupRootMenu
                 class params
                 {
                     expression="[] call pl_spawn_360";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlSeperator5
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlClearBuilding
+            {
+                title="Clear Building";
+                shortcuts[]={6};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] call pl_spawn_building_search";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlGarBuilding
+            {
+                title="Garrison Building";
+                shortcuts[]={7};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] call pl_spawn_building_garrison";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -966,13 +1064,13 @@ class RscHCGroupRootMenu
         {
             class AssignRed
             {
-                title="Get in Vehicle";
+                title="Get in Vehicle as Cargo";
                 shortcuts[]={2};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[hcSelected player select 0] spawn pl_getIn_vehicle";
+                    expression="[] spawn pl_getIn_vehicle";
                 };
                 show="0";
                 enable="HCNotEmpty";
@@ -1040,13 +1138,13 @@ class RscHCGroupRootMenu
             };
             class PlGetInVic
             {
-                title="Get in Vehicle";
+                title="Get in Vehicle as Cargo";
                 shortcuts[]={2};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[hcSelected player select 0] spawn pl_getIn_vehicle";
+                    expression="[] spawn pl_getIn_vehicle";
                 };
                 show="1";
                 enable="HCNotEmpty";
@@ -1054,19 +1152,19 @@ class RscHCGroupRootMenu
             };
             class PlGetOutVic
             {
-                title="Get Out Vehicle";
+                title="Unload Cargo";
                 shortcuts[]={3};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[hcSelected player select 0] spawn pl_getOut_vehicle";
+                    expression="[] spawn pl_spawn_getOut_vehicle";
                 };
                 show="1";
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlSeperator5
+            class PlSeperator15
             {
                 title="";
                 shortcuts[]={};
@@ -1080,71 +1178,29 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlClearBuilding
+            class PlCrewVehicle
             {
-                title="Clear Building";
+                title="Get In Vehicle as Crew";
                 shortcuts[]={4};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_building_search";
+                    expression="[] spawn pl_crew_vehicle";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlGarBuilding
+            class PlLeaveVehicle
             {
-                title="Garrison Building";
+                title="Leave Vehicle";
                 shortcuts[]={5};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_building_garrison";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlSeperator10
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
-            class PlResupply
-            {
-                title="Resupply at Position";
-                shortcuts[]={6};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_spawn_rearm";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlHeal
-            {
-                title="Heal Group";
-                shortcuts[]={7};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[hcSelected player select 0] spawn pl_ccp";
+                    expression="[] call pl_spawn_leave_vehicle";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";

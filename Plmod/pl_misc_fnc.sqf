@@ -147,6 +147,43 @@ pl_spawn_set_unit_pos = {
 };
 
 
+pl_hard_reset = {
+    params ["_unit"];
+
+    _origGroup = group _unit;
+    _pos = getPosATL _unit ;
+    _damage = damage _unit;
+    _dir = getDir _unit ;
+    _type = typeOf _unit ;
+    _name = name _unit ;
+    _nameSound = nameSound _unit ;
+    _face = face _unit ;
+    _speaker = speaker _unit ;
+    _loadout = getUnitLoadout _unit ;
+    _wpnCargo = getWeaponCargo (_pos nearestObject "weaponHolderSimulated");
+    deleteVehicle _unit;
+
+    _newUnit = _origGroup createUnit [_type,_pos,[],0,"CAN_COLLIDE"] ;
+    _newUnit setDir _dir ;
+    _newUnit setUnitLoadout _loadout ;
+    _newUnit addWeapon (_wpnCargo select 0 select 0) ;
+    _newUnit setName _name ;
+    _newUnit setNameSound _nameSound ;
+    _newUnit setFace _face ;
+    _newUnit setSpeaker _speaker ;
+    _newUnit setDamage _damage;
+    [_origGroup] call pl_set_up_ai;
+};
+
+pl_spawn_hard_reset = {
+    {
+        {
+            [_x] call pl_hard_reset;
+        } forEach (units _x);
+    } forEach hcSelected player;  
+};
+
+
 
 
 ["Platoon Leader","select_key", "Select HC Group", {_this spawn pl_select_group}, "", [DIK_T, [false, false, false]]] call CBA_fnc_addKeybind;

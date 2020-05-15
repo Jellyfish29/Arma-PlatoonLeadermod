@@ -23,6 +23,7 @@ addMissionEventHandler ["GroupIconClick", {
     if (side _group == playerSide) then {
         if (pl_add_group_to_hc) then {
             [_group ] spawn pl_add_to_hc_execute;
+            [_group] spawn pl_set_up_ai;
         };
     };
 }];
@@ -36,6 +37,7 @@ addMissionEventHandler ["EntityKilled",{
     _leader = leader (group _killed);
     _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "displayName");
     _unitName = name _killed;
+    _killed setVariable ["pl_wia", false];
     [_killed] spawn pl_draw_kia;
     _group = group _killed;
     _mags = _group getVariable "magCountAllDefault";
@@ -45,5 +47,15 @@ addMissionEventHandler ["EntityKilled",{
 
     _leader sideChat format ["%1 is K.I.A, over", _unitMos];
 }];
+
+
+
+// 
+// pl_medic_cls_names = ["B_medic_F", "O_medic_F", "I_medic_F", "I_E_medic_F"];
+// 
+
+// ["Ai Skill", "SLIDER",   ["Ai Skill slider",   "Ai Skill Level for Player Side"], "My Category", [0, 1, 1, 2], {pl_ai_skill = _this; [_this] call pl_set_ai_skill_option}] call CBA_fnc_addSetting;
+// ["Radio Range", "EDITBOX",   ["Radio Range",   "Set the maximum range for ai info sharing"], "My Category", ["700"], {pl_radio_range = _this}] call CBA_fnc_addSetting;
+
 
 

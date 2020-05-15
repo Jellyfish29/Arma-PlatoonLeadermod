@@ -3,10 +3,10 @@ pl_get_group_health_hex = {
     private ["_healthState"];
     _healthState = ["Green", "#66ff33"];
     {
-        if ((damage _x) > 0) then {
+        if ((damage _x) > 0.1) then {
             _healthState = ["Yellow", "#e5e500"];
         };
-        if ((damage _x) > 0.4) then {
+        if (_x getVariable "pl_wia" and (alive _unit)) then {
             _healthState = ["Red", "#b20000"];
         };
     } forEach (units _group);
@@ -106,7 +106,11 @@ pl_sitrep_solo = {
         _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName");
         _unitDamage = getDammage _x;
         _unitDamage = 100 - (round (_unitDamage * 100));
-        _message = _message + format ["<br /><t color='#cccccc' size='0.8' align='left'>- %1%2 / %3</t><t color='#cccccc' size='0.8' align='right'>%4x</t>",_unitDamage, "%", _unitMos, _magCount];
+        _unitDamageStr = format ["%1%2", _unitDamage, "%"];
+        if (_x getVariable "pl_wia") then {
+            _unitDamageStr = "W.I.A";
+        };
+        _message = _message + format ["<br /><t color='#cccccc' size='0.8' align='left'>- %1 / %2</t><t color='#cccccc' size='0.8' align='right'>%3x</t>",_unitDamageStr, _unitMos, _magCount];
         if (_missileCount > 0) then{
             _message = _message + format ["<t color='#cccccc' size='0.8' align='right'>/%1x</t>", _missileCount];
         };

@@ -1,3 +1,6 @@
+pl_sandbags = [];
+pl_covers = [];
+pl_mapClicked = false;
 
 pl_retreat = {
 
@@ -161,7 +164,6 @@ pl_spawn_360 = {
     } forEach hcSelected player;
 };
 
-pl_sandbags = [];
 
 pl_digin = {
     params ["_unit", "_dir", "_watchDir"];
@@ -182,7 +184,7 @@ pl_digin = {
     doStop _unit;
 };
 
-pl_covers = [];
+
 
 pl_find_cover = {
     params ["_unit", "_watchPos", "_watchDir", "_radius", "_moveBehind"];
@@ -269,6 +271,7 @@ pl_spawn_take_cover = {
     } forEach hcSelected player;  
 };
 
+
 pl_defend_position = {
     params ["_group", "_digIn"];
     private["_cords", "_watchDir"];
@@ -281,7 +284,7 @@ pl_defend_position = {
     for "_i" from count waypoints _group - 1 to 0 step -1 do{
         deleteWaypoint [_group, _i];
     };
-    pl_mapClicked = false;
+
     onMapSingleClick {
         pl_cords2 = _pos;
         pl_mapClicked = true;
@@ -296,6 +299,7 @@ pl_defend_position = {
         _makerName setMarkerDir _markerDir;
         sleep 0.1;
     };
+    pl_mapClicked = false;
     _watchDir = [_cords, pl_cords2] call BIS_fnc_dirTo;
     leader _group limitSpeed 12;
     _group setFormation "LINE";

@@ -3,10 +3,10 @@ pl_get_group_health = {
     private ["_healthState"];
     _healthState = [0.4,1,0.2,1];
     {
-        if ((damage _x) > 0) then {
+        if ((damage _x) > 0.1) then {
             _healthState = [0.9,0.9,0,1];
         };
-        if ((damage _x) > 0.4) then {
+        if (_x getVariable "pl_wia") then {
             _healthState = [0.7,0,0,1];
         };
     } forEach (units _group);
@@ -25,10 +25,17 @@ pl_draw_group_info = {
                     _unit = _x;
                     _icon = getText (configfile >> 'CfgVehicles' >> typeof _unit >> 'icon');
                     _size = 15;
-                    if (vehicle _unit == _unit) then {
+                    _unitColor = [0,0.3,0.6,0.65];
+                    if (_unit getVariable 'pl_wia') then {
+                        _unitColor = [0.7,0,0,0.65];
+                    };
+                    if (_unit getVariable 'pl_is_ccp_medic' and (alive _unit)) then {
+                        _unitColor = [0.4,1,0.2,0.65];
+                    };
+                    if (vehicle _unit == _unit and (alive _unit)) then {
                         _display drawIcon [
                             _icon,
-                            [0,0.3,0.6,0.65],
+                            _unitColor,
                             getPosVisual _unit,
                             _size,
                             _size,
@@ -158,6 +165,31 @@ pl_draw_group_info = {
 
 
 [] spawn pl_draw_group_info;
+
+pl_mark_vics = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw"," 
+        _display = _this#0;
+        if (hcShownBar and pl_show_vehicles) then {
+            {
+                if (_x distance2D pl_show_vehicles_pos < 200) then {
+                    _vic = _x;
+                    _icon = getText (configfile >> 'CfgVehicles' >> typeof _vic >> 'icon');
+                    _size = 30;
+                    _display drawIcon [
+                        _icon,
+                        [0.9,0.9,0,1],
+                        getPosVisual _vic,
+                        _size,
+                        _size,
+                        getDirVisual _vic
+                    ];
+                };
+            } forEach vehicles;
+        };
+    "]; // "
+};
+
+[] spawn pl_mark_vics;
 
 
 pl_marker_targets = [];

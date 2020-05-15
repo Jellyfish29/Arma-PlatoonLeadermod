@@ -1,3 +1,7 @@
+pl_global_spotrep_cd = 0;
+pl_At_fire_report_cd = 0;
+pl_ai_skill = 1;
+pl_radio_range = 700;
 
 pl_get_targets = {
     params ["_leader"];
@@ -18,7 +22,7 @@ pl_reveal_targets = {
     {
         _t = _x;
         {
-            if (((leader _x) distance2D _leader) < 700) then {
+            if (((leader _x) distance2D _leader) < pl_radio_range) then {
                 _x reveal _t;
             };
         } forEach (allGroups select {side _x isEqualTo playerSide});
@@ -54,8 +58,6 @@ pl_contact_info_share = {
     [_targets] spawn pl_mark_targets_on_map;
 };
 
-pl_At_fire_report_cd = 0;
-
 pl_contact_report = {
     params ["_group", "_time"];
 
@@ -72,7 +74,7 @@ pl_contact_report = {
 
             if (((group _unit) getVariable "PlContactTime") < time) then {
                 _callsign = groupId (group _unit);
-                _unit sideChat format ["%1 is Engaging Enemys, over", _callsign];
+                _unit sideChat format ["%1 is Engaging Enemies, over", _callsign];
                 [_unit] spawn pl_contact_info_share;
                 (group _unit) setVariable ['inContact', true];
 
@@ -92,7 +94,6 @@ pl_contact_report = {
     };
 };
 
-pl_global_spotrep_cd = 0;
 
 
 pl_player_report = {
@@ -109,6 +110,14 @@ pl_player_report = {
         [_targets, player] call pl_reveal_targets;
 };
 
+pl_set_ai_skill_option = {
+    params ["_skill"];
+    {
+        _x setSkill _skill;
+    } forEach allUnits select {side _x isEqualTo playerSide};  
+};
+
+
 pl_set_up_ai = {
     params ["_group"];
     private ["_magCountAll"];
@@ -119,10 +128,17 @@ pl_set_up_ai = {
     _group allowFleeing 0;
     [_group] spawn pl_ammoBearer;
     {
-        _x setSkill 1;
+        _x setSkill pl_ai_skill;
+        if ((_x != player) or !(_x in switchableUnits)) then {
+            _x unassignItem "Binocular";
+            _x removeWeapon "Binocular";
+            _x unassignItem "Rangefinder";
+            _x removeWeapon "Rangefinder";
+        };
     } forEach (units _group);
     _magCountAll = 0;
     {
+        // Ammo Count
         _mags = magazines _x;
         _mag = "";
         if ((primaryWeapon _x) != "") then {
@@ -135,6 +151,31 @@ pl_set_up_ai = {
             };
         }forEach _mags;
         _magCountAll = _magCountAll + _magCount;
+
+        // WIA Set Up
+        _x setVariable ["pl_wia", false];
+        _x setVariable ["pl_wia_calledout", false];
+        _x setVariable ["pl_damage_reduction", false];
+        _x addEventHandler ['HandleDamage', {
+            params['_unit', '_selName', '_damage', '_source'];
+            if (_unit getVariable "pl_damage_reduction") then {
+                _dmg = _damage * 0.7 ;
+                _damage = _dmg;
+            };
+            if !(_unit getVariable "pl_wia") then {
+                if (_damage > 0.99) then {
+                    // if (([0, 100] call BIS_fnc_randomInt) > 20) then {
+                        _damage = 0;
+                        _unit setUnconscious true;
+                        if !(_unit getVariable "pl_wia_calledout") then {
+                            [_unit] spawn pl_wia_callout;
+                            [_unit] spawn pl_bleedout;
+                        };
+                    // };
+                };
+            };
+            _damage
+        }];
     } forEach (units _group);
 
     _group setVariable ["magCountAllDefault", _magCountAll];
