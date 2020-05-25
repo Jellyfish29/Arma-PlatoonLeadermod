@@ -1,17 +1,20 @@
 
+execVM "Plmod\pl_settings.sqf";
 execVM "Plmod\pl_ai_fnc.sqf";
 execVM "Plmod\pl_ammoBearerReload_fnc.sqf";
 execVM "Plmod\pl_sitrep_fnc.sqf";
 execVM "Plmod\pl_attack_fnc.sqf";
 execVM "Plmod\pl_rearm_fnc.sqf";
 execVM "Plmod\pl_map_icons.sqf";
-execVM "Plmod\pl_building_fnc.sqf";
+// execVM "Plmod\pl_building_fnc.sqf";
 execVM "Plmod\pl_vehicle_fnc.sqf";
 execVM "Plmod\pl_defence_fnc.sqf";
 execVM "Plmod\pl_group_fnc.sqf";
 execVM "Plmod\pl_heal_fnc.sqf";
 execVM "Plmod\pl_misc_fnc.sqf";
-execVM "Plmod\pl_special_task_fnc.sqf";
+execVM "Plmod\pl_support_fnc.sqf";
+execVM "Plmod\pl_repair_fnc.sqf";
+execVM "Plmod\pl_menus_fnc.sqf";
 
 
 addMissionEventHandler ["GroupIconClick", {
@@ -72,8 +75,7 @@ addMissionEventHandler ["EntityKilled",{
 // pl_medic_cls_names = ["B_medic_F", "O_medic_F", "I_medic_F", "I_E_medic_F"];
 // 
 
-// ["Ai Skill", "SLIDER",   ["Ai Skill slider",   "Ai Skill Level for Player Side"], "My Category", [0, 1, 1, 2], {pl_ai_skill = _this; [_this] call pl_set_ai_skill_option}] call CBA_fnc_addSetting;
-// ["Radio Range", "EDITBOX",   ["Radio Range",   "Set the maximum range for ai info sharing"], "My Category", ["700"], {pl_radio_range = _this}] call CBA_fnc_addSetting;
+
 
 
 

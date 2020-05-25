@@ -1,7 +1,7 @@
 pl_global_spotrep_cd = 0;
 pl_At_fire_report_cd = 0;
-pl_ai_skill = 0.8;
-pl_radio_range = 700;
+// pl_ai_skill = 0.8;
+// pl_radio_range = 700;
 
 pl_get_targets = {
     params ["_leader"];
@@ -75,7 +75,15 @@ pl_contact_report = {
             if ((group _firer) isEqualTo (group _unit)) then {
                 if (((group _unit) getVariable "PlContactTime") < time) then {
                         _callsign = groupId (group _unit);
-                        _unit sideChat format ["%1 is Engaging Enemies, over", _callsign];
+                        if ((vehicle _unit) isKindOf "Air") then {
+                            playSound "beep";
+                            _unit sideChat format ["%1 is Engaging Ground Targets, over", _callsign];
+                        }
+                        else
+                        {
+                            playSound "beep";
+                            _unit sideChat format ["%1 is Engaging Enemies, over", _callsign];
+                        };
                         [_unit] spawn pl_contact_info_share;
                         (group _unit) setVariable ['inContact', true];
                 };
@@ -137,6 +145,7 @@ pl_enemy_destroyed_report = {
         if (isNil {_group getVariable "pl_death_reported"}) then {
             _gridPos = mapGridPosition _unit;
             _group setVariable ["pl_death_reported", true];
+            playSound "beep";
             _killer sideChat format ["We destroyed an enemy %1 at %2, over", _typeStr, _gridPos];
         };
     };
@@ -145,11 +154,16 @@ pl_enemy_destroyed_report = {
 
 pl_set_up_ai = {
     params ["_group"];
-    private ["_magCountAll"];
+    private ["_magCountAll", "_magCountSolo"];
+    if ((vehicle (leader _group)) != leader _group) then {
+        _vic = vehicle (leader _group);
+        _vic setVariable ["pl_rtb_pos", getPos _vic];
+    };
     _group setVariable ["aiSetUp", true];
     _group setVariable ["onTask", false];
     _group setVariable ["inContact", false];
     _group setVariable ["sitrepCd", 0];
+    _group setVariable ["pl_show_info", true];
     _group allowFleeing 0;
     [_group] spawn pl_ammoBearer;
     {
@@ -182,6 +196,7 @@ pl_set_up_ai = {
         _x setVariable ["pl_wia_calledout", false];
         _x setVariable ["pl_bleedout_set", false];
         _x setVariable ["pl_damage_reduction", false];
+        _x setVariable ["pl_unstuck_cd", 0];
         _x addEventHandler ['HandleDamage', {
             params['_unit', '_selName', '_damage', '_source'];
             if (_unit getVariable "pl_damage_reduction") then {
@@ -207,12 +222,19 @@ pl_set_up_ai = {
     } forEach (units _group);
 
     _group setVariable ["magCountAllDefault", _magCountAll];
-    _magCountSolo = round (_magCountAll / (count (units _group)));
+    if ((count (units _group)) > 1) then {
+        _magCountSolo = round (_magCountAll / (count (units _group)));
+    }
+    else
+    {
+        _magCountSolo = _magCountAll;
+    }; 
     _group setVariable ["magCountSoloDefault", _magCountSolo];
 
     _unitCount = count (units _group);
     _group setVariable ["_unitCountDefault", _unitCount];
 };
+
 
 
 
@@ -228,17 +250,113 @@ pl_ai_setUp_loop = {
             if (isNil {_x getVariable "aiSetUp"}) then {
                 [_x] call pl_set_up_ai;
             };
+            // unit Reset loop
+            {
+                if !(lifeState _x isEqualTo "INCAPACITATED") then {
+                    [_x] spawn pl_auto_unstuck;
+                    if (_x getVariable "pl_wia") then {
+                        _x setVariable ["pl_wia", false];
+                    };
+                };
+            } forEach (units _x);
             
         } forEach (allGroups select {side _x isEqualTo playerSide});
-        sleep 10;
         {
             if(_x != (group player)) then {
                 _x enableAttack false;
                 _x setCombatMode "YELLOW";
             };
         } forEach allGroups;
-        sleep 10;
+        sleep 30;
     };
 };
 
 [] spawn pl_ai_setUp_loop;
+
+pl_auto_unstuck = {
+    params ["_unit"];
+    if (group _unit != group player and (time >= _unit getVariable "pl_unstuck_cd")) then {
+        _distance = _unit distance2D leader (group _unit);
+        if (_distance > 150) then {
+            [_unit] spawn pl_hard_reset;
+            _unit setVariable ["pl_unstuck_cd", time + 90];
+            _pos = (getPos _unit) findEmptyPosition [0, 30];
+            _unit setPos _pos;
+            _unit doFollow leader (group _unit);
+        };
+    };
+};
+
+
+pl_hard_reset = {
+    params ["_unit"];
+
+    _origGroup = group _unit;
+    _pos = getPosATL _unit ;
+    _damage = damage _unit;
+    _dir = getDir _unit ;
+    _type = typeOf _unit ;
+    _name = name _unit ;
+    _nameSound = nameSound _unit ;
+    _face = face _unit ;
+    _speaker = speaker _unit ;
+    _loadout = getUnitLoadout _unit ;
+    _unitWia = _unit getVariable "pl_wia";
+    // _wpnCargo = getWeaponCargo (_pos nearestObject "weaponHolderSimulated");
+    deleteVehicle _unit;
+
+    _newUnit = _origGroup createUnit [_type,_pos,[],0,"CAN_COLLIDE"] ;
+    _newUnit setDir _dir ;
+    _newUnit setUnitLoadout _loadout ;
+    // _newUnit addWeapon (_wpnCargo select 0 select 0) ;
+    _newUnit setName _name ;
+    _newUnit setNameSound _nameSound ;
+    _newUnit setFace _face ;
+    _newUnit setSpeaker _speaker ;
+    _newUnit setDamage _damage;
+    _newUnit setSkill pl_ai_skill;
+    _newUnit setVariable ["pl_wia", false];
+    _newUnit setVariable ["pl_wia_calledout", false];
+    _newUnit setVariable ["pl_bleedout_set", false];
+    _newUnit setVariable ["pl_damage_reduction", false];
+    _newUnit addEventHandler ['HandleDamage', {
+        params['_unit', '_selName', '_damage', '_source'];
+        if (_unit getVariable "pl_damage_reduction") then {
+            _dmg = _damage * 0.7 ;
+            _damage = _dmg;
+        };
+        if (_unit != player) then {
+            if !(_unit getVariable "pl_wia") then {
+                if (_damage > 0.99) then {
+                    // if (([0, 100] call BIS_fnc_randomInt) > 20) then {
+                        _damage = 0;
+                        _unit setUnconscious true;
+                        if !(_unit getVariable "pl_wia_calledout") then {
+                            [_unit] spawn pl_wia_callout;
+                        };
+                        if !(_unit getVariable "pl_bleedout_set") then {
+                            [_unit] spawn pl_bleedout;
+                        };
+                    // };
+                };
+            };
+        };
+        _damage
+    }];
+    sleep 1;
+    if (_unitWia) then {
+        _newUnit setDamage 1;
+    };
+};
+
+pl_spawn_hard_reset = {
+    {
+        {
+            [_x] spawn pl_hard_reset;
+        } forEach (units _x);
+    } forEach hcSelected player;  
+};
+
+sleep 1;
+
+[group player] call pl_set_up_ai;

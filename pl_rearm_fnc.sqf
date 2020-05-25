@@ -4,6 +4,7 @@ pl_rearm = {
     params ["_unit", "_target"];
 
     if !(isNull _target) then {
+        if (_unit getVariable "pl_wia") exitWith {};
         createMarker ["sup_zone_marker", (getPos _target)];
         "sup_zone_marker" setMarkerType "b_support";
         "sup_zone_marker" setMarkerText "Supply Point";
@@ -57,6 +58,7 @@ pl_spawn_rearm = {
                 _x setVariable ["onTask", true];
                 _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];    
             
+                playSound "beep";
                 (leader _x) sideChat format ["Understood Resupplying at %1, Over", _box];
 
                 {
@@ -65,6 +67,7 @@ pl_spawn_rearm = {
             }
             else
             {
+                playSound "beep";
                 leader _x sideChat "Negativ, There are no avaiable Supplies, Over";
             };
         }
@@ -81,6 +84,7 @@ pl_spawn_rearm = {
                     _x setVariable ["setSpecial", true];
                     _x setVariable ["onTask", true];
                     _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];
+                    playSound "beep";
                     (leader _x) sideChat format ["Understood Resupplying at %1, Over", _box];
                     {
                         [_x, _box] spawn pl_rearm; 
@@ -88,11 +92,13 @@ pl_spawn_rearm = {
                 }
                 else
                 {
+                    playSound "beep";
                     leader _x sideChat "Negativ, There are no avaiable Supplies, Over";
                 };
             }
             else
             {
+                playSound "beep";
                 leader _x sideChat "Negativ, There are no avaiable Supplies, Over";
             };
         };

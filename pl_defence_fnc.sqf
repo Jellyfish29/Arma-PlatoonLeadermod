@@ -107,19 +107,19 @@ pl_move_to_360 = {
     sleep 0.2;
     _unit moveTo _pos;
     _time = time + 100;
-    waitUntil {sleep 1; (time > _time || !alive _unit || moveToCompleted _unit || currentCommand _unit != "STOP")};
+    waitUntil {sleep 1; (time > _time || !alive _unit || moveToCompleted _unit || currentCommand _unit != "STOP") or !((group _unit) getVariable "onTask")};
     _unit doWatch _watchPos;
     _time = time + 600;
-    waitUntil {sleep 2; (time > _time || !alive _unit || currentCommand _unit != "STOP")};
+    waitUntil {sleep 2; (time > _time || !alive _unit || currentCommand _unit != "STOP") or !((group _unit) getVariable "onTask")};
     _unit doWatch objNull;
     _unit setUnitPos "AUTO";
 };
 
 pl_360 = {
-    params ["_group", "_pos"];
-    private ["_radius"];
+    params ["_group", "_pos", "_radius"];
+    // private ["_radius"];
     _count = count (units _group);
-    _radius = 10;
+    // _radius = 10;
     _diff = 360/_count;
     _movePos = [];
     for "_i" from 0 to (_count - 1) do {
@@ -135,7 +135,7 @@ pl_360 = {
 };
 
 pl_360_at_mappos = {
-    params ["_group"];
+    params ["_group", "_radius"];
 
     _group setVariable ["onTask", false];
     sleep 0.25;
@@ -146,7 +146,7 @@ pl_360_at_mappos = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"];
-    [_group, getPos (leader _group)] spawn pl_360;
+    [_group, getPos (leader _group), _radius] spawn pl_360;
     waitUntil {(count (waypoints _group) > 0) or !(_group getVariable "onTask")};
     {
         _x enableAI "PATH";
@@ -160,7 +160,7 @@ pl_360_at_mappos = {
 
 pl_spawn_360 = {
     {
-        [_x] spawn pl_360_at_mappos;
+        [_x, 13] spawn pl_360_at_mappos;
     } forEach hcSelected player;
 };
 
@@ -250,8 +250,12 @@ pl_take_cover = {
     };
 
     {
-        [_x, _watchPos, _dir, 15, false] spawn pl_find_cover;
+        [_x, _watchPos, _dir, 20, false] spawn pl_find_cover;
     } forEach (units _group);
+    // if (vehicle (leader _group) != leader _group) then {
+    //     _vic = vehicle (leader _group);
+    //     _vic setUnloadInCombat [true, false];
+    // };
 
     waitUntil {(count (waypoints _group) > 0) or !(_group getVariable "onTask")};
     _group setVariable ["setSpecial", false];
@@ -297,7 +301,7 @@ pl_defend_position = {
     while {!pl_mapClicked} do {
         _markerDir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
         _makerName setMarkerDir _markerDir;
-        sleep 0.1;
+        sleep 0.05;
     };
     pl_mapClicked = false;
     _watchDir = [_cords, pl_cords2] call BIS_fnc_dirTo;

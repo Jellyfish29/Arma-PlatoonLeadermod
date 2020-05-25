@@ -8,13 +8,22 @@ pl_reset = {
         deleteWaypoint [_group, _i];
     };
 
+    _leader = leader _group;
     (units _group) joinSilent _group;
+    _group selectLeader _leader;
+
     if (_group isEqualTo (group player)) then {
         _group selectLeader player;
     };
+    if (vehicle (leader _group) != leader _group) then {
+        _vic = vehicle (leader _group);
+        _vic setVariable ["pl_on_transport", nil];
+    };
     _group setVariable ["onTask", false];
     _group setVariable ["setSpecial", false];
+    _group setVariable ["pl_show_info", true];
     _group addWaypoint [getPos (leader _group), 0];
+    _group setVariable ["pl_draw_convoy", false];
     sleep 0.1;
     {
         _x enableAI "AUTOCOMBAT";
@@ -124,6 +133,7 @@ pl_watch_dir = {
         _x doWatch _watchPos;
     } forEach (units _group);
 
+    playSound "beep";
     leader _group sideChat "Roger Watching Direction, Over";
 };
 
@@ -149,42 +159,6 @@ pl_spawn_set_unit_pos = {
     } forEach hcSelected player;  
 };
 
-
-pl_hard_reset = {
-    params ["_unit"];
-
-    _origGroup = group _unit;
-    _pos = getPosATL _unit ;
-    _damage = damage _unit;
-    _dir = getDir _unit ;
-    _type = typeOf _unit ;
-    _name = name _unit ;
-    _nameSound = nameSound _unit ;
-    _face = face _unit ;
-    _speaker = speaker _unit ;
-    _loadout = getUnitLoadout _unit ;
-    _wpnCargo = getWeaponCargo (_pos nearestObject "weaponHolderSimulated");
-    deleteVehicle _unit;
-
-    _newUnit = _origGroup createUnit [_type,_pos,[],0,"CAN_COLLIDE"] ;
-    _newUnit setDir _dir ;
-    _newUnit setUnitLoadout _loadout ;
-    _newUnit addWeapon (_wpnCargo select 0 select 0) ;
-    _newUnit setName _name ;
-    _newUnit setNameSound _nameSound ;
-    _newUnit setFace _face ;
-    _newUnit setSpeaker _speaker ;
-    _newUnit setDamage _damage;
-    [_origGroup] call pl_set_up_ai;
-};
-
-pl_spawn_hard_reset = {
-    {
-        {
-            [_x] call pl_hard_reset;
-        } forEach (units _x);
-    } forEach hcSelected player;  
-};
 
 
 

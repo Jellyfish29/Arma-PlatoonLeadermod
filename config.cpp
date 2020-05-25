@@ -36,6 +36,12 @@ class CfgSurfaces {
     };
 };
 
+// class Extended_PreInit_EventHandlers {
+//     class pl_settings {
+//         init = "call compile preprocessFileLineNumbers '\Plmod\XEH_preInit.sqf'";
+//     };
+// };
+
 class RscHCGroupRootMenu
 {
     access=0;
@@ -688,7 +694,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_building_search";
+                    expression="[] spawn pl_clear_building";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -702,7 +708,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_building_garrison";
+                    expression="[] spawn pl_garrison_building";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -822,13 +828,13 @@ class RscHCGroupRootMenu
         {
             class Limited
             {
-                shortcuts[] = {3};
+                shortcuts[] = {2};
                 class Params
                 {
                     expression = "'SPEED_LIMITED' call BIS_HC_path_menu";
                 };
                 title = "Limited";
-                shortcutsAction = "CommandingMenu2";
+                shortcutsAction = "CommandingMenu1";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -841,7 +847,7 @@ class RscHCGroupRootMenu
                     expression = "'SPEED_NORMAL' call BIS_HC_path_menu";
                 };
                 title = "Normal";
-                shortcutsAction = "CommandingMenu3";
+                shortcutsAction = "CommandingMenu2";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -854,7 +860,7 @@ class RscHCGroupRootMenu
                     expression = "'SPEED_FULL' call BIS_HC_path_menu";
                 };
                 title = "Full";
-                shortcutsAction = "CommandingMenu4";
+                shortcutsAction = "CommandingMenu3";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -881,7 +887,7 @@ class RscHCGroupRootMenu
                     expression = "[15] call pl_spawn_vic_speed";
                 };
                 title = "15 km/h";
-                shortcutsAction = "CommandingMenu5";
+                shortcutsAction = "CommandingMenu4";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -894,7 +900,7 @@ class RscHCGroupRootMenu
                     expression = "[30] call pl_spawn_vic_speed";
                 };
                 title = "30 km/h";
-                shortcutsAction = "CommandingMenu6";
+                shortcutsAction = "CommandingMenu5";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -907,7 +913,7 @@ class RscHCGroupRootMenu
                     expression = "[50] call pl_spawn_vic_speed";
                 };
                 title = "50 km/h";
-                shortcutsAction = "CommandingMenu7";
+                shortcutsAction = "CommandingMenu6";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -920,7 +926,7 @@ class RscHCGroupRootMenu
                     expression = "[5000] call pl_spawn_vic_speed";
                 };
                 title = "Max";
-                shortcutsAction = "CommandingMenu8";
+                shortcutsAction = "CommandingMenu7";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -1138,7 +1144,7 @@ class RscHCGroupRootMenu
             };
             class PlGetInVic
             {
-                title="Get in Vehicle as Cargo";
+                title="Load / Extraction";
                 shortcuts[]={2};
                 submenu="";
                 command=-5;
@@ -1152,7 +1158,7 @@ class RscHCGroupRootMenu
             };
             class PlGetOutVic
             {
-                title="Unload Cargo";
+                title="Unload / Insertion";
                 shortcuts[]={3};
                 submenu="";
                 command=-5;
@@ -1302,6 +1308,7 @@ class RscHCGroupRootMenu
                 shortcutsAction = "CommandingMenu2";
                 menu = "#User:BIS_MENU_GroupCommunication";
             };
+            // PL Support
             class UserRadio
             {
                 shortcuts[]={4};
@@ -1360,24 +1367,24 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlJoinGroup
-            {
-                title="Join Group";
-                shortcuts[]={6};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[hcSelected player select 0] spawn pl_join_hc_group";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
+            // class PlJoinGroup
+            // {
+            //     title="Join Group";
+            //     shortcuts[]={6};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[hcSelected player select 0] spawn pl_join_hc_group";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
             class PlMergeGroups
             {
                 title="Merge Groups";
-                shortcuts[]={7};
+                shortcuts[]={6};
                 submenu="";
                 command=-5;
                 class params
@@ -1391,7 +1398,7 @@ class RscHCGroupRootMenu
             class PlSplitGroups
             {
                 title="Split Group";
-                shortcuts[]={8};
+                shortcuts[]={7};
                 submenu="";
                 command=-5;
                 class params
@@ -1419,7 +1426,7 @@ class RscHCGroupRootMenu
             class PlAddGroup
             {
                 title="Add Group";
-                shortcuts[]={9};
+                shortcuts[]={8};
                 submenu="";
                 command=-5;
                 class params
@@ -1433,12 +1440,40 @@ class RscHCGroupRootMenu
             class PlRemoveGroup
             {
                 title="Remove Group";
-                shortcuts[]={10};
+                shortcuts[]={9};
                 submenu="";
                 command=-5;
                 class params
                 {
                     expression="[] spawn pl_spawn_remove_hc";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlSeperator18
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlResetGroup
+            {
+                title="Reset Group";
+                shortcuts[]={10};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_spawn_hard_reset";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";

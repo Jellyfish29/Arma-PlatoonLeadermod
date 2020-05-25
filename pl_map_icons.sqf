@@ -6,7 +6,7 @@ pl_get_group_health = {
         if ((damage _x) > 0.1) then {
             _healthState = [0.9,0.9,0,1];
         };
-        if (_x getVariable "pl_wia" and alive _x) then {
+        if ((_x getVariable "pl_wia") and (alive _x)) then {
             _healthState = [0.7,0,0,1];
         };
     } forEach (units _group);
@@ -16,21 +16,21 @@ pl_get_group_health = {
 
 pl_draw_group_info = {
 
-    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw"," 
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
         {
-            if (hcShownBar) then {
-
+            if (hcShownBar and (_x getVariable 'pl_show_info')) then {
+                if ((getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName')) isEqualTo 'Game Logic') exitWith {};
                 {
                     _unit = _x;
                     _icon = getText (configfile >> 'CfgVehicles' >> typeof _unit >> 'icon');
                     _size = 15;
                     _unitColor = [0,0.3,0.6,0.65];
-                    if (_unit getVariable 'pl_wia') then {
-                        _unitColor = [0.7,0,0,0.65];
-                    };
                     if (_unit getVariable 'pl_is_ccp_medic' and (alive _unit)) then {
                         _unitColor = [0.4,1,0.2,0.65];
+                    };
+                    if (_unit getVariable 'pl_wia') then {
+                        _unitColor = [0.7,0,0,0.65];
                     };
                     if (vehicle _unit == _unit and (alive _unit)) then {
                         _display drawIcon [
@@ -56,6 +56,9 @@ pl_draw_group_info = {
                 _callsignText = format ['  %1', groupId _x];
                 if (count (units _x) == 1 and _x != (group player)) then {
                     _unitMos = getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName');
+                    if ((vehicle (units _x select 0)) != (units _x select 0)) then {
+                        _unitMos = getText (configFile >> 'CfgVehicles' >> typeOf (vehicle (units _x select 0))>> 'displayName');
+                    };
                     _callsignText = format ['  %1', _unitMos];
                 };
                 _display drawIcon [
@@ -167,22 +170,24 @@ pl_draw_group_info = {
 [] spawn pl_draw_group_info;
 
 pl_mark_vics = {
-    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw"," 
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
         if (hcShownBar and pl_show_vehicles) then {
             {
-                if (_x distance2D pl_show_vehicles_pos < 200) then {
-                    _vic = _x;
-                    _icon = getText (configfile >> 'CfgVehicles' >> typeof _vic >> 'icon');
-                    _size = 30;
-                    _display drawIcon [
-                        _icon,
-                        [0.9,0.9,0,1],
-                        getPosVisual _vic,
-                        _size,
-                        _size,
-                        getDirVisual _vic
-                    ];
+                if ((_x distance2D pl_show_vehicles_pos < 150) or (_x isKindOf 'Air')) then {
+                    if (((side _x) isEqualTo playerSide) or ((side _x) isEqualTo civilian)) then {
+                        _vic = _x;
+                        _icon = getText (configfile >> 'CfgVehicles' >> typeof _vic >> 'icon');
+                        _size = 30;
+                        _display drawIcon [
+                            _icon,
+                            [0.9,0.9,0,1],
+                            getPosVisual _vic,
+                            _size,
+                            _size,
+                            getDirVisual _vic
+                        ]
+                    };
                 };
             } forEach vehicles;
         };
@@ -191,6 +196,79 @@ pl_mark_vics = {
 
 [] spawn pl_mark_vics;
 
+pl_convoy_marker = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                _convoy = _x;
+                {
+                    if (_x != (_convoy select 0) and _x getVariable 'pl_draw_convoy') then {
+                        _convoyPos = _convoy find _x;
+                        _pos1 = getPos (leader _x);
+                        _pos2 = getPos (leader (_convoy select (_convoyPos -1)));
+                        _display drawLine [
+                            _pos1,
+                            _pos2,
+                            [0.9,0.9,0,1]
+                        ];
+                    };
+                } forEach _convoy;
+            } forEach pl_draw_convoy_array;
+        };
+    "]; // "
+};
+
+[] spawn pl_convoy_marker;
+
+pl_dead_vics = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar and pl_show_dead_vehicles) then {
+            {
+                if ((_x distance2D pl_show_dead_vehicles_pos < 800)) then {
+                    if (_x isKindOf 'Truck' or _x isKindOf 'Tank' or _x isKindOf 'Car') then {
+                        _vic = _x;
+                        _icon = getText (configfile >> 'CfgVehicles' >> typeof _vic >> 'icon');
+                        _size = 30;
+                        _display drawIcon [
+                            _icon,
+                            [0.9,0.9,0,1],
+                            getPosVisual _vic,
+                            _size,
+                            _size,
+                            getDirVisual _vic
+                        ]
+                    };
+                };
+            } forEach allDead;
+        };
+    "]; // "
+};
+
+pl_building_search_marker = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                _group = _x select 0;
+                _building = _x select 1;
+                _pos1 = getPos (leader _group);
+                _pos2 = getPos _building;
+                _display drawLine [
+                    _pos1,
+                    _pos2,
+                    [0.9,0.9,0,1]
+                    ];
+            } forEach pl_draw_building_array;
+        };
+    "]; // "
+};
+
+[] call pl_building_search_marker;
+
+
+[] spawn pl_dead_vics;
 
 pl_marker_targets = [];
 

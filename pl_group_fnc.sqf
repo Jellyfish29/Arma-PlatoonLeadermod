@@ -12,29 +12,29 @@
 
 pl_add_group_to_hc = false;
 
-pl_join_hc_group = {
-    params ["_group"];
-    private ["_targetGroup"];
+// pl_join_hc_group = {
+//     params ["_group"];
+//     private ["_targetGroup"];
 
-    if (visibleMap) then {
-        _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-        _targetGroup = group (nearestObject[_pos, "Man"]);
-    }
-    else
-    {
-        _target = cursorTarget;
-        if (_target isKindOf "Man") then {
-            if (side _target == playerSide) then {
-                _targetGroup = group (_target);
-            };
-        };
-    };
+//     if (visibleMap) then {
+//         _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+//         _targetGroup = group (nearestObject[_pos, "Man"]);
+//     }
+//     else
+//     {
+//         _target = cursorTarget;
+//         if (_target isKindOf "Man") then {
+//             if (side _target == playerSide) then {
+//                 _targetGroup = group (_target);
+//             };
+//         };
+//     };
 
-    _group setVariable ["onTask", false];
-    sleep 0.25;
+//     _group setVariable ["onTask", false];
+//     sleep 0.25;
 
-    (units _group) join _targetGroup;
-};
+//     (units _group) join _targetGroup;
+// };
 
 // [hcSelected player select 0] spawn pl_join_hc_group;
 
