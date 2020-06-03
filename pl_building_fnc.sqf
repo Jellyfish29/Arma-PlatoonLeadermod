@@ -8,7 +8,7 @@ pl_move_building = {
     while {(_currentPos < (count _buildPosArray) - 1)} do {
         _unit doMove (_buildPosArray select _currentPos);
         sleep 2.5;
-        waitUntil {(!alive _unit) or (_unit getVariable "pl_wia") or (unitReady _unit)};
+        waitUntil {sleep 0.1; (!alive _unit) or (_unit getVariable ["pl_wia", false]) or (unitReady _unit)};
         // waitUntil {(count ((_buildPosArray select (_currentPos + 1)) nearObjects ["Man", 2])) < 1};
         // _unit enableAI "AUTOCOMBAT";
         if ((!alive _unit) or (_unit getVariable "pl_wia") or !((group _unit) getVariable "onTask")) exitWith {};
@@ -87,7 +87,7 @@ pl_clear_building = {
             [_unit, _allPos, _building, _i] spawn pl_move_building;
             sleep 0.5;
         };
-        waitUntil {({ alive _x } count units _group == 0) or !(_group getVariable "onTask")};
+        waitUntil {sleep 0.1; ({ alive _x } count units _group == 0) or !(_group getVariable ["onTask", true])};
         pl_draw_building_array = pl_draw_building_array - [[_group, _building]];
     };
 };
@@ -95,21 +95,22 @@ pl_clear_building = {
 pl_guard_building = {
     params ["_unit", "_building"];
 
-    _pos = [[[(getPos _building), 15]],[]] call BIS_fnc_randomPos;
-    _pos = _pos findEmptyPosition [0, 20];
+    _pos = [[[(getPos _building), 10]],[]] call BIS_fnc_randomPos;
+    _pos = _pos findEmptyPosition [0, 10];
     _unit doMove _pos;
-    waitUntil {
-    ( unitReady _unit ) or ( !alive _unit ) or (_unit getVariable "pl_wia") or !((group _unit) getVariable "onTask") or ((count (waypoints (group _unit))) > 0)};
+    sleep 1;
+    waitUntil { sleep 0.1;
+    ( unitReady _unit ) or ( !alive _unit ) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true]) or ((count (waypoints (group _unit))) > 0)};
     _unit enableAI "AUTOCOMBAT";
     _unit limitSpeed 5000;
 
-    waitUntil {sleep 5; true};
+    sleep 5;
     if !(_unit == leader (group _unit)) then {
         _unit setUnitPos "MIDDLE";
         doStop _unit;
     };
 
-    waitUntil {(!alive _unit) or ((count (waypoints (group _unit))) > 0) or !((group _unit) getVariable "onTask")};
+    waitUntil {sleep 0.1; (!alive _unit) or ((count (waypoints (group _unit))) > 0) or !((group _unit) getVariable ["onTask", true])};
     if (alive _unit) then {
         _unit setVariable ["pl_damage_reduction", false];
         _unit doFollow leader (group _unit);
@@ -124,11 +125,10 @@ pl_move_to_garrison = {
     params ["_unit", "_pos"];
     _unit disableAI "AUTOCOMBAT";
     _unit doMove _pos;
-    waitUntil {(unitReady _unit) or !(alive _unit) or (_unit getVariable "pl_wia") or !((group _unit) getVariable "onTask")};
+    waitUntil {sleep 0.1; (unitReady _unit) or !(alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])};
     doStop _unit;
     _unit enableAI "AUTOCOMBAT";
-    waitUntil {
-    (count (waypoints (group _unit))) > 0 or !((group _unit) getVariable "onTask")};
+    waitUntil {sleep 0.1; (count (waypoints (group _unit))) > 0 or !((group _unit) getVariable ["onTask", true])};
     _unit doFollow leader (group _unit);
     (group _unit) setVariable ["setSpecial", false];
     (group _unit) setVariable ["onTask", false];
@@ -180,7 +180,7 @@ pl_garrison_building = {
                 [(units _group) select _i, _building] spawn pl_guard_building;
             }
         };
-        waitUntil {({ alive _x } count units _group == 0) or !(_group getVariable "onTask")};
+        waitUntil {sleep 0.1; ({ alive _x } count units _group == 0) or !(_group getVariable ["onTask", true])};
         pl_draw_building_array = pl_draw_building_array - [[_group, _building]];
     };
 };

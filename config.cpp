@@ -549,48 +549,62 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlResupply
+            class PlFollow
             {
-                title="Resupply at Position";
+                title="Form on Commander";
                 shortcuts[]={8};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] spawn pl_spawn_rearm";
+                    expression="[] spawn pl_follow ";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlHeal
-            {
-                title="Heal Group";
-                shortcuts[]={9};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_spawn_heal_group";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlCcp
-            {
-                title="Set up CCP";
-                shortcuts[]={10};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_ccp";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
+            // class PlResupply
+            // {
+            //     title="Resupply at Position";
+            //     shortcuts[]={8};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_spawn_rearm";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
+            // class PlHeal
+            // {
+            //     title="Heal Group";
+            //     shortcuts[]={9};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_spawn_heal_group";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
+            // class PlCcp
+            // {
+            //     title="Set up CCP";
+            //     shortcuts[]={10};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_ccp";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
             
         };
         title = "Move";
@@ -714,8 +728,50 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
+            class PlSeperator21
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlBoundingSquad
+            {
+                title="Bounding OW Sqaud";
+                shortcuts[]={8};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_bounding_squad";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            // class PlBoundingPlatoon
+            // {
+            //     title="Bounding OW Platoon";
+            //     shortcuts[]={9};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_bounding_platoon";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
         };
-        title = "Engage";
+        title = "Combat Tasks";
         access = 0;
         atomic = 0;
         vocabulary = "";
@@ -729,7 +785,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {2};
                 class Params
                 {
-                    expression = "'COMBAT_STEALTH' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_STEALTH' call BIS_HC_path_menu";
                 };
                 title = "Stealth";
                 shortcutsAction = "CommandingMenu1";
@@ -742,7 +798,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {3};
                 class Params
                 {
-                    expression = "'COMBAT_DANGER' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_DANGER' call BIS_HC_path_menu";
                 };
                 title = "Combat";
                 shortcutsAction = "CommandingMenu2";
@@ -755,7 +811,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {4};
                 class Params
                 {
-                    expression = "'COMBAT_AWARE' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_AWARE' call BIS_HC_path_menu";
                 };
                 title = "Aware";
                 shortcutsAction = "CommandingMenu3";
@@ -768,7 +824,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {5};
                 class Params
                 {
-                    expression = "'COMBAT_SAFE' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_SAFE' call BIS_HC_path_menu";
                 };
                 title = "Safe";
                 shortcutsAction = "CommandingMenu4";
@@ -1227,7 +1283,7 @@ class RscHCGroupRootMenu
             //     speechId=0;
             // };
         };
-        title = "Assign";
+        title = "Transport";
         vocabulary = "";
     };
     class RscHCSelectTeam
@@ -1511,6 +1567,12 @@ class CfgMarkers
         name="CCP";
         icon="\Plmod\gfx\CCP.paa";
         texture="\Plmod\gfx\CCP.paa";
+    };
+    class marker_afp: marker_nato
+    {
+        name="Attack by Fire Position";
+        icon="\Plmod\gfx\AFP.paa";
+        texture="\Plmod\gfx\AFP.paa";
     };
     class marker_sfp: marker_nato
     {

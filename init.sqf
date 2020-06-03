@@ -6,7 +6,7 @@ execVM "Plmod\pl_sitrep_fnc.sqf";
 execVM "Plmod\pl_attack_fnc.sqf";
 execVM "Plmod\pl_rearm_fnc.sqf";
 execVM "Plmod\pl_map_icons.sqf";
-// execVM "Plmod\pl_building_fnc.sqf";
+execVM "Plmod\pl_building_fnc.sqf";
 execVM "Plmod\pl_vehicle_fnc.sqf";
 execVM "Plmod\pl_defence_fnc.sqf";
 execVM "Plmod\pl_group_fnc.sqf";
@@ -14,6 +14,7 @@ execVM "Plmod\pl_heal_fnc.sqf";
 execVM "Plmod\pl_misc_fnc.sqf";
 execVM "Plmod\pl_support_fnc.sqf";
 execVM "Plmod\pl_repair_fnc.sqf";
+execVM "Plmod\pl_static_fnc.sqf";
 execVM "Plmod\pl_menus_fnc.sqf";
 
 

@@ -1,3 +1,5 @@
+sleep 1;
+
 pl_global_spotrep_cd = 0;
 pl_At_fire_report_cd = 0;
 // pl_ai_skill = 0.8;
@@ -59,15 +61,16 @@ pl_contact_info_share = {
 };
 
 pl_contact_report = {
-    params ["_group", "_time"];
+    params ["_group", "_inTransport"];
 
     _leader = leader _group;
     _leader setVariable ["PlContactRepEnabled", true];
     _group setVariable ["PlContactTime", 0];
-    if (vehicle _leader != _leader) then {
-        _leader = vehicle _leader;
+    if !(_inTransport) then {
+        if (vehicle _leader != _leader) then {
+            _leader = vehicle _leader;
+        };
     };
-
     if (_leader != player) then {
         _leader addEventHandler ["FiredNear", {
             params ["_unit", "_firer", "_distance", "_weapon", "_muzzle", "_mode", "_ammo", "_gunner"];
@@ -190,35 +193,38 @@ pl_set_up_ai = {
             };
         }forEach _mags;
         _magCountAll = _magCountAll + _magCount;
-
-        // WIA Set Up
         _x setVariable ["pl_wia", false];
-        _x setVariable ["pl_wia_calledout", false];
-        _x setVariable ["pl_bleedout_set", false];
-        _x setVariable ["pl_damage_reduction", false];
         _x setVariable ["pl_unstuck_cd", 0];
-        _x addEventHandler ['HandleDamage', {
-            params['_unit', '_selName', '_damage', '_source'];
-            if (_unit getVariable "pl_damage_reduction") then {
-                _dmg = _damage * 0.7 ;
-                _damage = _dmg;
-            };
-            if !(_unit getVariable "pl_wia") then {
-                if (_damage > 0.99) then {
-                    if (([0, 100] call BIS_fnc_randomInt) > 20) then {
-                        _damage = 0;
-                        _unit setUnconscious true;
-                        if !(_unit getVariable "pl_wia_calledout") then {
-                            [_unit] spawn pl_wia_callout;
-                        };
-                        if !(_unit getVariable "pl_bleedout_set") then {
-                            [_unit] spawn pl_bleedout;
+        if (pl_enabled_medical) then {
+            // WIA Set Up
+            _x setVariable ["pl_beeing_treatet", false];
+            _x setVariable ["pl_wia_calledout", false];
+            _x setVariable ["pl_bleedout_time", 300];
+            _x setVariable ["pl_bleedout_set", false];
+            _x setVariable ["pl_damage_reduction", false];
+            _x addEventHandler ['HandleDamage', {
+                params['_unit', '_selName', '_damage', '_source'];
+                if (_unit getVariable "pl_damage_reduction") then {
+                    _dmg = _damage * 0.7 ;
+                    _damage = _dmg;
+                };
+                if !(_unit getVariable "pl_wia") then {
+                    if (_damage > 0.99) then {
+                        if (([0, 100] call BIS_fnc_randomInt) > 20) then {
+                            _damage = 0;
+                            _unit setUnconscious true;
+                            if !(_unit getVariable "pl_wia_calledout") then {
+                                [_unit] spawn pl_wia_callout;
+                            };
+                            if !(_unit getVariable "pl_bleedout_set") then {
+                                [_unit] spawn pl_bleedout;
+                            };
                         };
                     };
                 };
-            };
-            _damage
-        }];
+                _damage
+            }];
+        };
     } forEach (units _group);
 
     _group setVariable ["magCountAllDefault", _magCountAll];
@@ -245,7 +251,7 @@ pl_ai_setUp_loop = {
                 [_x] spawn pl_share_info;
             };
             if (isNil {(leader _x) getVariable "PlContactRepEnabled"}) then {
-                [_x] spawn pl_contact_report;
+                [_x, false] spawn pl_contact_report;
             };
             if (isNil {_x getVariable "aiSetUp"}) then {
                 [_x] call pl_set_up_ai;
@@ -267,7 +273,7 @@ pl_ai_setUp_loop = {
                 _x setCombatMode "YELLOW";
             };
         } forEach allGroups;
-        sleep 30;
+        sleep 15;
     };
 };
 
@@ -316,36 +322,40 @@ pl_hard_reset = {
     _newUnit setDamage _damage;
     _newUnit setSkill pl_ai_skill;
     _newUnit setVariable ["pl_wia", false];
-    _newUnit setVariable ["pl_wia_calledout", false];
-    _newUnit setVariable ["pl_bleedout_set", false];
-    _newUnit setVariable ["pl_damage_reduction", false];
-    _newUnit addEventHandler ['HandleDamage', {
-        params['_unit', '_selName', '_damage', '_source'];
-        if (_unit getVariable "pl_damage_reduction") then {
-            _dmg = _damage * 0.7 ;
-            _damage = _dmg;
-        };
-        if (_unit != player) then {
-            if !(_unit getVariable "pl_wia") then {
-                if (_damage > 0.99) then {
-                    // if (([0, 100] call BIS_fnc_randomInt) > 20) then {
-                        _damage = 0;
-                        _unit setUnconscious true;
-                        if !(_unit getVariable "pl_wia_calledout") then {
-                            [_unit] spawn pl_wia_callout;
-                        };
-                        if !(_unit getVariable "pl_bleedout_set") then {
-                            [_unit] spawn pl_bleedout;
-                        };
-                    // };
+    _newUnit setVariable ["pl_unstuck_cd", 0];
+    if (pl_enabled_medical) then {
+        _newUnit setVariable ["pl_wia_calledout", false];
+        _newUnit setVariable ["pl_bleedout_set", false];
+        _newUnit setVariable ["pl_bleedout_time", 300];
+        _newUnit setVariable ["pl_damage_reduction", false];
+        _newUnit addEventHandler ['HandleDamage', {
+            params['_unit', '_selName', '_damage', '_source'];
+            if (_unit getVariable "pl_damage_reduction") then {
+                _dmg = _damage * 0.7 ;
+                _damage = _dmg;
+            };
+            if (_unit != player) then {
+                if !(_unit getVariable "pl_wia") then {
+                    if (_damage > 0.99) then {
+                        // if (([0, 100] call BIS_fnc_randomInt) > 20) then {
+                            _damage = 0;
+                            _unit setUnconscious true;
+                            if !(_unit getVariable "pl_wia_calledout") then {
+                                [_unit] spawn pl_wia_callout;
+                            };
+                            if !(_unit getVariable "pl_bleedout_set") then {
+                                [_unit] spawn pl_bleedout;
+                            };
+                        // };
+                    };
                 };
             };
+            _damage
+        }];
+        sleep 1;
+        if (_unitWia) then {
+            _newUnit setDamage 1;
         };
-        _damage
-    }];
-    sleep 1;
-    if (_unitWia) then {
-        _newUnit setDamage 1;
     };
 };
 

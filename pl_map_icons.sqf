@@ -246,7 +246,9 @@ pl_dead_vics = {
     "]; // "
 };
 
-pl_building_search_marker = {
+[] spawn pl_dead_vics;
+
+pl_draw_building_search_marker = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
         if (hcShownBar) then {
@@ -265,10 +267,66 @@ pl_building_search_marker = {
     "]; // "
 };
 
-[] call pl_building_search_marker;
+[] call pl_draw_building_search_marker;
 
+pl_draw_follow_marker = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar and pl_follow_active) then {
+            {
+                _group = _x;
+                _pos1 = getPos (leader _group);
+                _pos2 = getPos player;
+                _display drawLine [
+                    _pos1,
+                    _pos2,
+                    [0.9,0.9,0,1]
+                    ];
+            } forEach pl_follow_array;
+        };
+    "]; // "
+};
 
-[] spawn pl_dead_vics;
+[] spawn pl_draw_follow_marker;
+
+pl_draw_defence_line = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                _pos1 = getMarkerPos (_x select 0);
+                _pos2 = getPos (_x select 1);
+                _display drawLine [
+                    _pos1,
+                    _pos2,
+                    [0.9,0.9,0,1]
+                    ];
+            } forEach pl_denfence_draw_array;
+        };
+    "]; // "
+};
+
+[] spawn pl_draw_defence_line;
+
+pl_draw_bounding_line = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                _pos1 = getPos (leader (_x select 0));
+                _pos2 =_x select 1;
+                _display drawLine [
+                    _pos1,
+                    _pos2,
+                    [0.9,0.9,0,1]
+                    ];
+            } forEach pl_bounding_draw_array;
+        };
+    "]; // "
+};
+
+[] spawn pl_draw_bounding_line;
+
 
 pl_marker_targets = [];
 

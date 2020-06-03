@@ -1,4 +1,6 @@
 #include "\a3\editor_f\Data\Scripts\dikCodes.h"
+pl_follow_active = false;
+pl_follow_array = [];
 
 
 pl_reset = {
@@ -22,18 +24,28 @@ pl_reset = {
     _group setVariable ["onTask", false];
     _group setVariable ["setSpecial", false];
     _group setVariable ["pl_show_info", true];
-    _group addWaypoint [getPos (leader _group), 0];
     _group setVariable ["pl_draw_convoy", false];
+    // _group addWaypoint [getPos (leader _group), 0];
     sleep 0.1;
     {
-        _x enableAI "AUTOCOMBAT";
-        _x enableAI "AUTOTARGET";
-        _x enableAI "TARGET";
-        _x enableAI "PATH";
-        _x setUnitPos "AUTO";
-        _x doMove (getPos _x);
-        _x doFollow (leader _group);
-        _x limitSpeed 5000;
+        [_x, _group] spawn {
+            params ["_unit", "_group"];
+            if ((assignedVehicleRole (leader _group) select 0) isEqualTo "cargo") then {
+                unassignVehicle _unit;
+            };
+            _unit enableAI "AUTOCOMBAT";
+            _unit enableAI "AUTOTARGET";
+            _unit enableAI "TARGET";
+            _unit enableAI "PATH";
+            _unit enableAI "SUPPRESSION";
+            _unit enableAI "COVER";
+            _unit enableAI "ANIM";
+            _unit setUnitPos "AUTO";
+            _unit doMove (getPos (leader _group));
+            // sleep 0.5;
+            _unit doFollow (leader _group);
+            _unit limitSpeed 5000;
+        };
     } forEach (units _group);
 
     _group setSpeedMode "NORMAL";
@@ -157,6 +169,104 @@ pl_spawn_set_unit_pos = {
     {
         [_x, _stance] spawn pl_spawn_set_unit_pos;
     } forEach hcSelected player;  
+};
+
+pl_follow = {
+    private ["_formDir", "_posOffset", "_pGroup", "_pSpeed", "_pBehaviour"];
+    pl_follow_array append hcSelected player;
+    pl_follow_active = true;
+    _formDir = getDir player;
+    {
+        if (_x != (group player)) then {
+            for "_i" from count waypoints _x - 1 to 0 step -1 do {
+                deleteWaypoint [_x, _i];
+            };
+            _x setVariable ["onTask", true];
+            _x setVariable ["setSpecial", true];
+            _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"];
+            playSound "beep";
+            leader _x sideChat format ["Roger, %1 is forming up on %2, over",(groupId _x), (groupId (group player))];
+            _pos1 = getPos (leader _x);
+            _pos2 = getPos player;
+            _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
+            _x setVariable ["pl_rel_pos", _relPos];
+            {
+                _x disableAI "AUTOCOMBAT";
+            } forEach (units _x);
+            _x setFormDir _formDir;
+        };
+    } forEach pl_follow_array;
+    _pGroup = (group player);
+    _pGroup setVariable ["onTask", true];
+    _pGroup setVariable ["setSpecial", true];
+    _pGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"];
+    {
+        _x disableAI "AUTOCOMBAT";
+    } forEach (units _pGroup);
+    pl_follow_array = pl_follow_array - [_pGroup];
+
+    if (pl_follow_active) then {
+        while {pl_follow_active} do {
+            _pos1 = getPos player;
+            sleep 2;
+            _pos2 = getPos player;
+            _posOffset = [(_pos2 select 0) - (_pos1 select 0), (_pos2 select 1) - (_pos1 select 1)];
+            _pBehaviour = behaviour player;
+            // _pSpeed = speed player + 1;
+            // if (_pSpeed < 12) then {
+            //     _pSpeed = 12;
+            // };
+            {
+                _x setBehaviour _pBehaviour;
+                if (!(_x getVariable "onTask") or ((count (waypoints _x) > 0))) then {
+                    pl_follow_array = pl_follow_array - [_x];
+                    _x setVariable ["onTask", false];
+                    _x setVariable ["setSpecial", false];
+                    {
+                        _x enableAI "AUTOCOMBAT";
+                    } forEach (units _x);
+                }
+                else
+                {
+                    _leader = leader _x;
+                    _relPos = _x getVariable "pl_rel_pos";
+                    if (vehicle _leader != _leader) then {
+                        (vehicle _leader) limitSpeed 18;
+                        if ((speed (vehicle _leader)) < 1) then {
+                            _newPos = [((getPos _leader) select 0) + ((_posOffset select 0) * 15), ((getPos _leader) select 1) + ((_posOffset select 1) * 15)];
+                            driver (vehicle _leader) doMove _newPos;
+                        };
+                        if ((speed player) < 1) then {
+                            _newPos = [((getPos player) select 0) + (_relPos select 0), ((getPos player) select 1) + (_relPos select 1)];
+                            driver (vehicle _leader) doMove _newPos;
+                        };
+                    }
+                    else
+                    {
+                        _newPos = [((getPos player) select 0) + (_relPos select 0), ((getPos player) select 1) + (_relPos select 1)];
+                        _leader limitSpeed 15;
+                        _leader doMove _newPos;
+                        {
+                            if (_x != _leader) then {
+                                _x doFollow _leader;
+                            };
+                        } forEach (units _x);
+                    };
+                };
+            } forEach pl_follow_array;
+            if ((count pl_follow_array) == 0) exitWith {pl_follow_active = false};
+            if !((group player) getVariable "onTask") exitWith {pl_follow_active = false};
+        };
+        {
+            _x setVariable ["onTask", false];
+            _x setVariable ["setSpecial", false];
+            {
+                _x enableAI "AUTOCOMBAT";
+            } forEach (units _x);
+        } forEach pl_follow_array;
+        _pGroup setVariable ["onTask", false];
+        _pGroup setVariable ["setSpecial", false];
+    };
 };
 
 
