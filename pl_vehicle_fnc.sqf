@@ -151,6 +151,7 @@ pl_getIn_vehicle = {
             }
             else
             {
+                player hcRemoveGroup _group;
                 _group setVariable ["onTask", false];
                 _group setVariable ["setSpecial", false];
                 _group setVariable ["pl_show_info", false];
@@ -423,7 +424,7 @@ pl_getOut_vehicle = {
                         // Land Convoy Arriving
                         {
                             {
-                                if ((assignedVehicleRole _x) select 0 isEqualTo "Cargo") then {
+                                if ((assignedVehicleRole (leader (group _x))) select 0 isEqualTo "Cargo") then {
                                     unassignVehicle _x;
                                     doGetOut _x;
                                 };
@@ -560,6 +561,7 @@ pl_getOut_vehicle = {
             {
                 // _x leaveVehicle _vic;
                 _x setVariable ["pl_show_info", true];
+                player hcSetGroup [_x];
                 // _x addWaypoint [getPos _vic, 10];
             } forEach _cargoGroups;
 
