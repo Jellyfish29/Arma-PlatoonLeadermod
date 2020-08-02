@@ -66,7 +66,9 @@ pl_merge_hc_groups = {
     } forEach hcSelected player;
     sleep 0.25;
     {
-        (units _x) joinSilent _largestGroup; 
+        if !(_x getVariable ["pl_not_addalbe", false]) then {
+            (units _x) joinSilent _largestGroup;
+        };
     } forEach _groups;
     // _leader = ["_largestGroup"] call pl_get_highest_rank;
     // _largestGroup selectLeader _leader;

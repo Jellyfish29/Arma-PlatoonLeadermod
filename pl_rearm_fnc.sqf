@@ -11,8 +11,9 @@ pl_rearm = {
 
         _unit disableAI "AUTOCOMBAT";
         _unit doMove (position _target);
+        _unit moveTo (position _target);
 
-        waitUntil {((_unit distance2D  _target) < 8) or !((group _unit) getVariable "onTask")};
+        waitUntil {sleep 0.1; ((_unit distance2D  _target) < 8) or !((group _unit) getVariable ["onTask", true])};
         _unit action ["rearm",_target];
         0 = [_unit, "Rearming..."] remoteExecCall ["groupChat",[0,-2] select isDedicated,false];
         sleep 1;
@@ -25,7 +26,7 @@ pl_rearm = {
         _unit enableAI "AUTOCOMBAT";
 
         _time = time + 20;
-        waitUntil {(time >= _time) or !((group _unit) getVariable "onTask")};
+        waitUntil {sleep 0.1; (time > _time) or !((group _unit) getVariable ["onTask", true])};
         deleteMarker "sup_zone_marker";
         (group _unit) setVariable ["setSpecial", false];
         (group _unit) setVariable ["onTask", true];
@@ -51,8 +52,8 @@ pl_spawn_rearm = {
                     };
                 } forEach _supplies;
 
-                _x setVariable ["onTask", false];
-                sleep 0.25;
+                [_x] call pl_reset;
+                sleep 0.2;
 
                 _x setVariable ["setSpecial", true];
                 _x setVariable ["onTask", true];
@@ -79,7 +80,7 @@ pl_spawn_rearm = {
                 if !(_box isKindOf "Man") then {
 
                     _x setVariable ["onTask", false];
-                    sleep 0.25;
+                    sleep 0.2;
 
                     _x setVariable ["setSpecial", true];
                     _x setVariable ["onTask", true];

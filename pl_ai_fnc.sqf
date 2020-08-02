@@ -1,3 +1,5 @@
+sleep 1;
+
 pl_global_spotrep_cd = 0;
 pl_At_fire_report_cd = 0;
 // pl_ai_skill = 0.8;
@@ -59,15 +61,16 @@ pl_contact_info_share = {
 };
 
 pl_contact_report = {
-    params ["_group", "_time"];
+    params ["_group", "_inTransport"];
 
     _leader = leader _group;
     _leader setVariable ["PlContactRepEnabled", true];
     _group setVariable ["PlContactTime", 0];
-    if (vehicle _leader != _leader) then {
-        _leader = vehicle _leader;
+    if !(_inTransport) then {
+        if (vehicle _leader != _leader) then {
+            _leader = vehicle _leader;
+        };
     };
-
     if (_leader != player) then {
         _leader addEventHandler ["FiredNear", {
             params ["_unit", "_firer", "_distance", "_weapon", "_muzzle", "_mode", "_ammo", "_gunner"];
@@ -119,13 +122,6 @@ pl_player_report = {
         [_targets, player] call pl_reveal_targets;
 };
 
-pl_set_ai_skill_option = {
-    params ["_skill"];
-    {
-        _x setSkill _skill;
-    } forEach allUnits select {side _x isEqualTo playerSide};  
-};
-
 pl_enemy_destroyed_report = {
     params ["_unit", "_killer", "_group"];
     _typeStr = "Infantry Unit";
@@ -151,6 +147,71 @@ pl_enemy_destroyed_report = {
     };
 };
 
+pl_auto_crouch = {
+    params ["_unit"];
+    while {alive _unit} do {
+        if ((behaviour _unit) isEqualTo "AWARE") then {
+            if !((group _unit) getVariable ["onTask", false]) then {
+                if ((speed _unit) == 0) then {
+                    _unit setUnitPos "MIDDLE";
+                    waitUntil {sleep 2; (speed _unit) > 0 or !(alive _unit)};
+                    _unit setUnitPos "AUTO";
+                };
+            };
+        };
+        sleep 3;
+    };  
+};
+
+pl_medical_setup = {
+    params ["_unit"];
+    _unit setVariable ["pl_beeing_treatet", false];
+    _unit setVariable ["pl_wia_calledout", false];
+    _unit setVariable ["pl_injured", false];
+    _unit setVariable ["pl_bleedout_time", 300];
+    _unit setVariable ["pl_bleedout_set", false];
+    _unit setVariable ["pl_damage_reduction", false];
+    _unit addEventHandler ['HandleDamage', {
+        params['_unit', '_selName', '_damage', '_source'];
+        if ((_unit getVariable "pl_damage_reduction") or (_unit getVariable ["pl_special_force", false])) then {
+            _dmg = _damage * 0.7 ;
+            _damage = _dmg;
+        };
+        if !(_unit getVariable "pl_wia") then {
+            if (_damage > 0.99) then {
+                if (([0, 100] call BIS_fnc_randomInt) > 10) then {
+                    _damage = 0;
+                    _unit setUnconscious true;
+                    if !(_unit getVariable "pl_wia_calledout") then {
+                        [_unit] spawn pl_wia_callout;
+                    };
+                    if !(_unit getVariable "pl_bleedout_set") then {
+                        [_unit] spawn pl_bleedout;
+                    };
+                };
+            }
+            else
+            {
+                _unit setVariable ["pl_injured", true];
+            };
+        };
+        _damage
+    }];
+};
+
+pl_special_forces_skills = {
+    params ["_unit"];
+    private ["_targets"];
+
+    _unit setSkill 1;
+    while {alive _unit} do {
+        sleep 10;
+        _targets = (getPos _unit) nearEntities [["Man", "Tank", "Car", "Truck"], 100];
+        {
+            _unit reveal [_x, 3];
+        } forEach _targets select {!(side _x isEqualTo playerSide)};
+    };
+};
 
 pl_set_up_ai = {
     params ["_group"];
@@ -164,6 +225,7 @@ pl_set_up_ai = {
     _group setVariable ["inContact", false];
     _group setVariable ["sitrepCd", 0];
     _group setVariable ["pl_show_info", true];
+    _group setVariable ["pl_hold_fire", false];
     _group allowFleeing 0;
     [_group] spawn pl_ammoBearer;
     {
@@ -173,6 +235,9 @@ pl_set_up_ai = {
             _x removeWeapon "Binocular";
             _x unassignItem "Rangefinder";
             _x removeWeapon "Rangefinder";
+        };
+        if (_x getVariable ["pl_special_force", false]) then {
+            [_x] spawn pl_special_forces_skills;
         };
     } forEach (units _group);
     _magCountAll = 0;
@@ -190,35 +255,14 @@ pl_set_up_ai = {
             };
         }forEach _mags;
         _magCountAll = _magCountAll + _magCount;
-
-        // WIA Set Up
         _x setVariable ["pl_wia", false];
-        _x setVariable ["pl_wia_calledout", false];
-        _x setVariable ["pl_bleedout_set", false];
-        _x setVariable ["pl_damage_reduction", false];
         _x setVariable ["pl_unstuck_cd", 0];
-        _x addEventHandler ['HandleDamage', {
-            params['_unit', '_selName', '_damage', '_source'];
-            if (_unit getVariable "pl_damage_reduction") then {
-                _dmg = _damage * 0.7 ;
-                _damage = _dmg;
-            };
-            if !(_unit getVariable "pl_wia") then {
-                if (_damage > 0.99) then {
-                    if (([0, 100] call BIS_fnc_randomInt) > 20) then {
-                        _damage = 0;
-                        _unit setUnconscious true;
-                        if !(_unit getVariable "pl_wia_calledout") then {
-                            [_unit] spawn pl_wia_callout;
-                        };
-                        if !(_unit getVariable "pl_bleedout_set") then {
-                            [_unit] spawn pl_bleedout;
-                        };
-                    };
-                };
-            };
-            _damage
-        }];
+
+        [_x] spawn pl_auto_crouch;
+
+        if (pl_enabled_medical) then {
+            [_x] call pl_medical_setup; 
+        };
     } forEach (units _group);
 
     _group setVariable ["magCountAllDefault", _magCountAll];
@@ -235,8 +279,65 @@ pl_set_up_ai = {
     _group setVariable ["_unitCountDefault", _unitCount];
 };
 
+pl_vehicle_setup = {
+    params ["_vic"];
 
+    if (_vic isKindOf "Air") exitWith {};
 
+    _vic setUnloadInCombat [false, false];
+
+    if (isNil {_vic getVariable "pl_vehicle_setup_complete"}) then {
+        if (isNil {_vic getVariable "pl_repair_lifes"}) then {
+            if (_vic isKindOf "Tank") then {
+                _vic setVariable ["pl_repair_lifes", 3];
+            }
+            else
+            {
+                _vic setVariable ["pl_repair_lifes", 1];
+            };
+        };
+
+        if (isNil {_vic getVariable "pl_appereance"}) then {
+            _animations = "true" configClasses (configFile >> "CfgVehicles" >> typeOf _vic >> "AnimationSources");
+            _animationPhases = [];
+
+            {
+                _s = (str _x) splitString "/";
+                _a =  _s select ((count _s) - 1);
+                _animationPhases pushBack [_a, (_vic animationSourcePhase _a)];
+            } forEach _animations;
+
+            _vic setVariable ["pl_appereance", _animationPhases];
+        };
+        _vic addEventHandler ["IncomingMissile", {
+            params ["_target", "_ammo", "_vehicle", "_instigator"];
+
+            _pos = getPos _vehicle;
+            _markerPos = [[[_pos, 50]],[]] call BIS_fnc_randomPos;
+            _markerDir =  (_target getDir _markerPos) + 90;
+            _markerName = format ["%1at", _vehicle];
+            [_markerPos, _markerDir, _markerName] spawn {
+                params ["_markerPos", "_markerDir", "_markerName"];
+                createMarker [_markerName, _markerPos];
+                _markerName setMarkerType "mil_ambush";
+                _markerName setMarkerSize [0.5, 0.5];
+                _markerName setMarkerDir _markerDir;
+                _markerName setMarkerColor "ColorRed";
+                _markerName setMarkerText "AT";
+                sleep 30;
+                deleteMarker _markerName;
+            };
+        }];
+        _vic setVariable ["pl_vehicle_setup_complete", true];
+    };
+    _w = getWeaponCargo _vic;
+    _t = getItemCargo _vic;
+    _m = getMagazineCargo _vic;
+    _b = getBackpackCargo _vic;
+    _vicInv = [_w, _t, _m ,_b];
+
+    _vic setVariable ["pl_vic_inv", _vicInv];
+};
 
 pl_ai_setUp_loop = {
     while {true} do {
@@ -245,7 +346,7 @@ pl_ai_setUp_loop = {
                 [_x] spawn pl_share_info;
             };
             if (isNil {(leader _x) getVariable "PlContactRepEnabled"}) then {
-                [_x] spawn pl_contact_report;
+                [_x, false] spawn pl_contact_report;
             };
             if (isNil {_x getVariable "aiSetUp"}) then {
                 [_x] call pl_set_up_ai;
@@ -261,13 +362,20 @@ pl_ai_setUp_loop = {
             } forEach (units _x);
             
         } forEach (allGroups select {side _x isEqualTo playerSide});
+
+        {
+            [_x]spawn pl_vehicle_setup;
+        } forEach (vehicles select {side _x isEqualTo playerSide});
+
         {
             if(_x != (group player)) then {
-                _x enableAttack false;
-                _x setCombatMode "YELLOW";
+                if !(_x getVariable ["pl_combat_mode", false]) then {
+                    _x enableAttack false;
+                    _x setCombatMode "YELLOW";
+                };
             };
         } forEach allGroups;
-        sleep 30;
+        sleep 20;
     };
 };
 
@@ -285,6 +393,31 @@ pl_auto_unstuck = {
             _unit doFollow leader (group _unit);
         };
     };
+};
+
+pl_reset_group = {
+    params ["_group"];
+
+    {
+        if !(_x isEqualTo player) then{
+            _x spawn pl_hard_reset;
+        };
+    } forEach (units _group);
+
+    _groupId = groupId _group;
+
+    sleep 1.5;
+
+    _newGroup = createGroup playerside;
+    { 
+        [_x] joinSilent _newGroup;
+    } forEach (units _group);
+
+    [_newGroup] spawn pl_set_up_ai;
+    deleteGroup _group;
+
+    _newGroup setGroupId [_groupId];
+    player hcSetGroup [_newGroup]
 };
 
 
@@ -314,40 +447,27 @@ pl_hard_reset = {
     _newUnit setFace _face ;
     _newUnit setSpeaker _speaker ;
     _newUnit setDamage _damage;
+    _newUnit setHit ["legs", 0];
     _newUnit setSkill pl_ai_skill;
     _newUnit setVariable ["pl_wia", false];
-    _newUnit setVariable ["pl_wia_calledout", false];
-    _newUnit setVariable ["pl_bleedout_set", false];
-    _newUnit setVariable ["pl_damage_reduction", false];
-    _newUnit addEventHandler ['HandleDamage', {
-        params['_unit', '_selName', '_damage', '_source'];
-        if (_unit getVariable "pl_damage_reduction") then {
-            _dmg = _damage * 0.7 ;
-            _damage = _dmg;
+    _newUnit setVariable ["pl_unstuck_cd", 0];
+
+    [_newUnit] spawn pl_auto_crouch;
+
+    if (pl_enabled_medical) then {
+        [_newUnit] call pl_medical_setup; 
+        sleep 0.1;
+        if (_unitWia) then {
+            _newUnit setUnconscious true;
+            _newUnit setVariable ["pl_bleedout_time", 150];
+            sleep 2;
+            _newUnit setVariable ["pl_wia", true];
+            sleep 1;
+            [_newUnit] spawn pl_bleedout;
         };
-        if (_unit != player) then {
-            if !(_unit getVariable "pl_wia") then {
-                if (_damage > 0.99) then {
-                    // if (([0, 100] call BIS_fnc_randomInt) > 20) then {
-                        _damage = 0;
-                        _unit setUnconscious true;
-                        if !(_unit getVariable "pl_wia_calledout") then {
-                            [_unit] spawn pl_wia_callout;
-                        };
-                        if !(_unit getVariable "pl_bleedout_set") then {
-                            [_unit] spawn pl_bleedout;
-                        };
-                    // };
-                };
-            };
-        };
-        _damage
-    }];
-    sleep 1;
-    if (_unitWia) then {
-        _newUnit setDamage 1;
     };
 };
+
 
 pl_spawn_hard_reset = {
     {
@@ -360,3 +480,5 @@ pl_spawn_hard_reset = {
 sleep 1;
 
 [group player] call pl_set_up_ai;
+
+// [spec1] spawn pl_special_forces_skills;

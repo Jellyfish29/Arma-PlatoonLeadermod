@@ -6,7 +6,7 @@ execVM "Plmod\pl_sitrep_fnc.sqf";
 execVM "Plmod\pl_attack_fnc.sqf";
 execVM "Plmod\pl_rearm_fnc.sqf";
 execVM "Plmod\pl_map_icons.sqf";
-// execVM "Plmod\pl_building_fnc.sqf";
+execVM "Plmod\pl_building_fnc.sqf";
 execVM "Plmod\pl_vehicle_fnc.sqf";
 execVM "Plmod\pl_defence_fnc.sqf";
 execVM "Plmod\pl_group_fnc.sqf";
@@ -14,7 +14,9 @@ execVM "Plmod\pl_heal_fnc.sqf";
 execVM "Plmod\pl_misc_fnc.sqf";
 execVM "Plmod\pl_support_fnc.sqf";
 execVM "Plmod\pl_repair_fnc.sqf";
+execVM "Plmod\pl_static_fnc.sqf";
 execVM "Plmod\pl_menus_fnc.sqf";
+execVM "Plmod\pl_3d_icon_fnc.sqf";
 
 
 addMissionEventHandler ["GroupIconClick", {
@@ -22,9 +24,23 @@ addMissionEventHandler ["GroupIconClick", {
         "_is3D", "_group", "_waypointId",
         "_mouseButton", "_posX", "_posY",
         "_shift", "_control", "_alt"];
+    private ["_vic", "_vicGroup"];
 
     if (side _group == playerSide) then {
+        playsound "beep";
+        if ((vehicle (leader _group)) != (leader _group)) then {
+            _vic = vehicle (leader _group);
+            // player sideChat str _vic;
+            _vicGroup = group (driver _vic);
+            // player sideChat str _vicGroup;
+            [_vicGroup] spawn {
+                params ["_vicGroup"];
+                sleep 0.35;
+                player hcSelectGroup [_vicGroup];
+            };
+        };
         if (pl_add_group_to_hc) then {
+            if (_group getVariable ["pl_not_addalbe", false]) exitWith {pl_add_group_to_hc = false; hint "Group cant be added!"};
             [_group ] spawn pl_add_to_hc_execute;
             [_group] spawn pl_set_up_ai;
         };
@@ -50,16 +66,16 @@ addMissionEventHandler ["EntityKilled",{
             _group setVariable ["magCountAllDefault", _mags];
 
             _leader sideChat format ["%1 is K.I.A, over", _unitMos];
-        }
-        else
-        {
-            if (time >= pl_vehicle_destroyed_report_cd) then {
-                _vic = vehicle _killed;
-                _vicName = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");
-                player sideChat format ["%1 was destroyed", _vicName];
-                pl_vehicle_destroyed_report_cd = time + 3;
-            };
         };
+        // else
+        // {
+        //     if (time >= pl_vehicle_destroyed_report_cd) then {
+        //         _vic = vehicle _killed;
+        //         _vicName = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");
+        //         player sideChat format ["%1 was destroyed", _vicName];
+        //         pl_vehicle_destroyed_report_cd = time + 3;
+        //     };
+        // };
     }
     else
     {

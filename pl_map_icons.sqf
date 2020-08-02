@@ -1,3 +1,5 @@
+sleep 2;
+
 pl_get_group_health = {
     params ["_group"];
     private ["_healthState"];
@@ -58,6 +60,9 @@ pl_draw_group_info = {
                     _unitMos = getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName');
                     if ((vehicle (units _x select 0)) != (units _x select 0)) then {
                         _unitMos = getText (configFile >> 'CfgVehicles' >> typeOf (vehicle (units _x select 0))>> 'displayName');
+                        if ((vehicle (units _x select 0)) isKindOf 'Air') then {
+                            _unitMos = groupId _x;
+                        };
                     };
                     _callsignText = format ['  %1', _unitMos];
                 };
@@ -98,6 +103,9 @@ pl_draw_group_info = {
                 _contactColor = [0.4,1,0.2,1];
                 _x setVariable ['inContact', false];
                 _time = (_x getVariable 'PlContactTime') - 30;
+                if (_x getVariable ['pl_hold_fire', false]) then {
+                    _contactColor = [0.1,0.1,0.6,1];
+                };
                 if (_time > time) then {
                     _contactColor = [0.7,0,0,1];
                     _x setVariable ['inContact', true];
@@ -226,27 +234,25 @@ pl_dead_vics = {
         _display = _this#0;
         if (hcShownBar and pl_show_dead_vehicles) then {
             {
-                if ((_x distance2D pl_show_dead_vehicles_pos < 800)) then {
-                    if (_x isKindOf 'Truck' or _x isKindOf 'Tank' or _x isKindOf 'Car') then {
-                        _vic = _x;
-                        _icon = getText (configfile >> 'CfgVehicles' >> typeof _vic >> 'icon');
-                        _size = 30;
-                        _display drawIcon [
-                            _icon,
-                            [0.9,0.9,0,1],
-                            getPosVisual _vic,
-                            _size,
-                            _size,
-                            getDirVisual _vic
-                        ]
-                    };
-                };
-            } forEach allDead;
+                _vic = _x #1;
+                _icon = getText (configfile >> 'CfgVehicles' >> typeof _vic >> 'icon');
+                _size = 30;
+                _display drawIcon [
+                    _icon,
+                    [0.7,0,0,1],
+                    getPosVisual _vic,
+                    _size,
+                    _size,
+                    getDirVisual _vic
+                ]
+            } forEach pl_destroyed_vics_data;
         };
     "]; // "
 };
 
-pl_building_search_marker = {
+[] spawn pl_dead_vics;
+
+pl_draw_building_search_marker = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
         if (hcShownBar) then {
@@ -265,10 +271,66 @@ pl_building_search_marker = {
     "]; // "
 };
 
-[] call pl_building_search_marker;
+[] call pl_draw_building_search_marker;
 
+pl_draw_follow_marker = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar and pl_follow_active) then {
+            {
+                _group = _x;
+                _pos1 = getPos (leader _group);
+                _pos2 = getPos player;
+                _display drawLine [
+                    _pos1,
+                    _pos2,
+                    [0.9,0.9,0,1]
+                    ];
+            } forEach pl_follow_array;
+        };
+    "]; // "
+};
 
-[] spawn pl_dead_vics;
+[] spawn pl_draw_follow_marker;
+
+pl_draw_defence_line = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                _pos1 = getMarkerPos (_x select 0);
+                _pos2 = getPos (_x select 1);
+                _display drawLine [
+                    _pos1,
+                    _pos2,
+                    [0.9,0.9,0,1]
+                    ];
+            } forEach pl_denfence_draw_array;
+        };
+    "]; // "
+};
+
+[] spawn pl_draw_defence_line;
+
+pl_draw_bounding_line = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                _pos1 = getPos (leader (_x select 0));
+                _pos2 =_x select 1;
+                _display drawArrow [
+                    _pos1,
+                    _pos2,
+                    [0.9,0.9,0,1]
+                    ];
+            } forEach pl_bounding_draw_array;
+        };
+    "]; // "
+};
+
+[] spawn pl_draw_bounding_line;
+
 
 pl_marker_targets = [];
 
@@ -280,27 +342,27 @@ pl_mark_targets_on_map = {
     {
         if !(_x in pl_marker_targets) then {
             if (alive _x and (side _x) != civilian) then {
-                _pos = getPos _x;
-                _clockTime = [daytime, "HH:MM"] call BIS_fnc_timeToString;
-                _markerText = format ["<t color='#ff2020' size='0.01'>%1</t>", _clockTime];
-                _markerName = str _x;
-                _markerSize = 0.3;
-                _marker = createMarker [_markerName, _pos];
-                _markerName setMarkerType "o_unknown";
-                if (_x isKindOf "Tank") then {
-                    _markerName setMarkerType "o_armor";
-                    _markerSize = 0.5;
+                if (_x isKindOf "Man" or _x isKindOf "Tank" or _x isKindOf "Car" or _x isKindOf "Truck") then {
+                    _pos = getPos _x;
+                    _markerName = str _x;
+                    _markerSize = 0.3;
+                    _marker = createMarker [_markerName, _pos];
+                    _markerName setMarkerType "o_unknown";
+                    if (_x isKindOf "Tank") then {
+                        _markerName setMarkerType "o_armor";
+                        _markerSize = 0.8;
+                    };
+                    if (_x isKindOf "Car") then {
+                        _markerName setMarkerType "o_motor_inf";
+                        _markerSize = 0.5;
+                    };
+                    _markerName setMarkerColor "ColorRed";
+                    _markerName setMarkerSize [_markerSize, _markerSize];
+                    // _markerName setMarkerText str (parseText _markerText);
+                    _markers pushBack _markerName;
+                    _markerTargets pushBack _x;
+                    pl_marker_targets pushBack _x;
                 };
-                if (_x isKindOf "Car") then {
-                    _markerName setMarkerType "o_motor_inf";
-                    _markerSize = 0.4;
-                };
-                _markerName setMarkerColor "ColorRed";
-                _markerName setMarkerSize [_markerSize, _markerSize];
-                // _markerName setMarkerText str (parseText _markerText);
-                _markers pushBack _markerName;
-                _markerTargets pushBack _x;
-                pl_marker_targets pushBack _x;
             };
         };
     } forEach _targets;

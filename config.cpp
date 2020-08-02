@@ -15,7 +15,7 @@ class cfgFunctions
 
 class CfgPatches
 {
-    class PlMod
+    class Pl_Mod
     {
         projectName="Platoon Leader: High Command Mod";
         version="A3.1.5.4.3";
@@ -75,7 +75,7 @@ class RscHCGroupRootMenu
             {
                 expression="[] call pl_spawn_suppression";
             };
-            show="HCIsLeader * IsWatchCommanded";
+            show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
@@ -94,7 +94,7 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="['MOVE',_pos,_is3D,hcselected player,false] call BIS_HC_path_menu";
+                expression="{[_x, false] call pl_reset;} forEach (hcSelected player); ['MOVE',_pos,_is3D,hcselected player,false] call BIS_HC_path_menu";
             };
             show="HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -109,7 +109,7 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="['MOVE',_pos,_is3D,hcselected player,true] call BIS_HC_path_menu";
+                expression="{if ((count (waypoints _x)) == 0) then {[_x, false] call pl_reset}} forEach (hcSelected player); ['MOVE',_pos,_is3D,hcselected player,true] call BIS_HC_path_menu";
             };
             show="HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * IsSelectedToAdd";
             enable="HCNotEmpty";
@@ -126,7 +126,7 @@ class RscHCGroupRootMenu
             {
                 expression="[] call pl_spawn_watch_dir";
             };
-            show="HCIsLeader * CursorOnGround * IsWatchCommanded";
+            show="HCIsLeader * CursorOnGround * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\watch_ca.paa";
@@ -134,14 +134,14 @@ class RscHCGroupRootMenu
         };
         class Empty3
         {
-            title="Fallback";
+            title="Rush/Fallback";
             shortcuts[]={};
             command=-5;
             class Params
             {
-                expression="[] call pl_spawn_retreat";
+                expression="{[_x] spawn pl_rush} forEach hcSelected player";
             };
-            show="HCIsLeader * IsWatchCommanded";
+            show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
@@ -168,15 +168,34 @@ class RscHCGroupRootMenu
             shortcuts[]={0};
             command=-1;
         };
-        class Empty5: Empty1
+        class Empty5
         {
-            title="";
-            show="(HCIsLeader)";
+            title="March";
+            shortcuts[]={0};
+            command=-5;
+            class Params
+            {
+                expression="{[_x] spawn pl_march}forEach (hcSelected player)";
+            };
+            show="HCIsLeader * CursorOnGround * (1 - HCCursorOnIconSelectable) * IsSelectedToAdd * IsWatchCommanded";
+            enable="1";
+            speechId=0;
+            cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
+            priority=4;
         };
-        class Empty6: Empty1
+        class Empty6
         {
-            title="";
-            show="(HCIsLeader)";
+            title="Creep";
+            shortcuts[]={};
+            command=-5;
+            class Params
+            {
+                expression="{[_x] spawn pl_creep} forEach hcSelected player";
+            };
+            show="0";
+            enable="HCNotEmpty";
+            speechId=0;
+            cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
         };
         class Empty7: Empty1
         {
@@ -549,48 +568,62 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlResupply
+            class PlFollow
             {
-                title="Resupply at Position";
+                title="Form on Commander";
                 shortcuts[]={8};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] spawn pl_spawn_rearm";
+                    expression="[] spawn pl_follow ";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlHeal
-            {
-                title="Heal Group";
-                shortcuts[]={9};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_spawn_heal_group";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlCcp
-            {
-                title="Set up CCP";
-                shortcuts[]={10};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_ccp";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
+            // class PlResupply
+            // {
+            //     title="Resupply at Position";
+            //     shortcuts[]={8};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_spawn_rearm";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
+            // class PlHeal
+            // {
+            //     title="Heal Group";
+            //     shortcuts[]={9};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_spawn_heal_group";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
+            // class PlCcp
+            // {
+            //     title="Set up CCP";
+            //     shortcuts[]={10};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_ccp";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
             
         };
         title = "Move";
@@ -688,13 +721,13 @@ class RscHCGroupRootMenu
             };
             class PlClearBuilding
             {
-                title="Clear Building";
+                title="Clear Area/Buildings";
                 shortcuts[]={6};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] spawn pl_clear_building";
+                    expression="{[_x] spawn pl_sweep_area} forEach (hcSelected player)";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -714,8 +747,50 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
+            class PlSeperator21
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlBoundingSquad
+            {
+                title="Bounding Overwatch";
+                shortcuts[]={8};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_bounding_squad";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            // class PlBoundingPlatoon
+            // {
+            //     title="Bounding OW Platoon";
+            //     shortcuts[]={9};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_bounding_platoon";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
         };
-        title = "Engage";
+        title = "Combat Tasks";
         access = 0;
         atomic = 0;
         vocabulary = "";
@@ -729,7 +804,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {2};
                 class Params
                 {
-                    expression = "'COMBAT_STEALTH' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_STEALTH' call BIS_HC_path_menu";
                 };
                 title = "Stealth";
                 shortcutsAction = "CommandingMenu1";
@@ -742,7 +817,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {3};
                 class Params
                 {
-                    expression = "'COMBAT_DANGER' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_DANGER' call BIS_HC_path_menu";
                 };
                 title = "Combat";
                 shortcutsAction = "CommandingMenu2";
@@ -755,7 +830,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {4};
                 class Params
                 {
-                    expression = "'COMBAT_AWARE' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_AWARE' call BIS_HC_path_menu";
                 };
                 title = "Aware";
                 shortcutsAction = "CommandingMenu3";
@@ -768,7 +843,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {5};
                 class Params
                 {
-                    expression = "'COMBAT_SAFE' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_SAFE' call BIS_HC_path_menu";
                 };
                 title = "Safe";
                 shortcutsAction = "CommandingMenu4";
@@ -795,7 +870,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {6};
                 class Params
                 {
-                    expression = "'OPENFIRE' call BIS_HC_path_menu";
+                    expression = "{[_x] call pl_open_fire} forEach (hcSelected player)";
                 };
                 title = "Open fire";
                 shortcutsAction = "CommandingMenu5";
@@ -808,7 +883,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {7};
                 class Params
                 {
-                    expression = "'HOLDFIRE' call BIS_HC_path_menu";
+                    expression = "{[_x] call pl_hold_fire} forEach (hcSelected player)";
                 };
                 title = "Hold fire";
                 shortcutsAction = "CommandingMenu6";
@@ -1098,13 +1173,13 @@ class RscHCGroupRootMenu
             };
             class AssignBlue
             {
-                title="Clear Building";
+                title="Clear Area/Buildings";
                 shortcuts[]={4};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_building_search";
+                    expression="{[_x] spawn pl_sweep_area} forEach (hcSelected player)";
                 };
                 show="0";
                 enable="0";
@@ -1186,7 +1261,7 @@ class RscHCGroupRootMenu
             };
             class PlCrewVehicle
             {
-                title="Get In Vehicle as Crew";
+                title="Crew Vehicle";
                 shortcuts[]={4};
                 submenu="";
                 command=-5;
@@ -1212,22 +1287,36 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            // class PlCcp
-            // {
-            //     title="Setup CCP at Position";
-            //     shortcuts[]={8};
-            //     submenu="";
-            //     command=-5;
-            //     class params
-            //     {
-            //         expression="[hcSelected player select 0] spawn pl_ccp";
-            //     };
-            //     show="HCIsLeader";
-            //     enable="HCNotEmpty";
-            //     speechId=0;
-            // };
+            class PlSeperator46
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlmoveInConvoy
+            {
+                title="Move as Convoy";
+                shortcuts[]={6};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[true] call pl_spawn_getOut_vehicle";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
         };
-        title = "Assign";
+        title = "Transport";
         vocabulary = "";
     };
     class RscHCSelectTeam
@@ -1473,7 +1562,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[] spawn pl_spawn_hard_reset";
+                    expression="[(hcSelected player) select 0] spawn pl_reset_group";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -1512,6 +1601,12 @@ class CfgMarkers
         icon="\Plmod\gfx\CCP.paa";
         texture="\Plmod\gfx\CCP.paa";
     };
+    class marker_afp: marker_nato
+    {
+        name="Attack by Fire Position";
+        icon="\Plmod\gfx\AFP.paa";
+        texture="\Plmod\gfx\AFP.paa";
+    };
     class marker_sfp: marker_nato
     {
         name="Support by Fire Position";
@@ -1519,3 +1614,54 @@ class CfgMarkers
         texture="\Plmod\gfx\SFP.paa";
     };
 };
+
+// class CfgFactionClasses
+// {
+//     class NO_CATEGORY;
+//     class pl_faction: NO_CATEGORY
+//     {
+//         displayName = "Platoon Leader";
+//     };
+// };
+
+// class CfgVehicles
+// {
+//     class Logic;
+//     class Module_F: Logic
+//     {
+//         class ArgumentsBaseUnits
+//         {
+//             class Units;
+//         };
+//         class ModuleDescription;
+//     };
+//     class Pl_Support_module: Module_F
+//     {
+//         author = "Jellyfish";
+//         scope = 2;
+//         displayName = "Support Options";
+//         category = "pl_faction";
+//         function = "Plmod_fnc_supportModule";
+//         functionPriority = 1;
+//         isGlobal = 1;
+//         isTriggerActivated = 0;
+//         isDisposable = 0;
+//         class Arguments
+//         {
+//             class pl_arty_rounds
+//             {
+//                 displayName = "Artillery Ammo";
+//                 description = "155mm Artillery Ammo";
+//                 typeName = "NUMBER";
+//                 defaultValue = "30";
+//             };
+//             class pl_sorties
+//             {
+//                 displayName = "Sortie Ammount";
+//                 description = "Amount of avaiable CAS Sorties";
+//                 typeName = "NUMBER";
+//                 defaultValue = "20";
+//             };
+//         }
+//     }
+// }
