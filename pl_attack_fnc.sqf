@@ -15,9 +15,12 @@ pl_advance = {
         _cords = screenToWorld [0.5,0.5];
     };
 
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+
     [_group] call pl_reset;
 
     sleep 0.2;
+    playsound "beep";
 
     (leader _group) limitSpeed 15;
 
@@ -56,9 +59,17 @@ pl_attack= {
     params ["_group", ["_cords", [0,0,0]]];
     private ["_atkwp", "_posArray", "_fastAtk"];
 
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+
     if (_cords isEqualTo [0,0,0]) then {
         if (visibleMap) then {
-            hint "Select location on MAP (LMB = Tactical, SHIFT + LMB = SLOW, ALT + LMB = FAST)";
+            // hint "Select location on MAP (LMB = Tactical, SHIFT + LMB = SLOW, ALT + LMB = FAST)";
+            _message = "Select Assault Location <br /><br />
+            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>TACTICAL</t> <br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>SLOW</t> <br />
+            <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>FAST</t>";
+            hint parseText _message;
+
             onMapSingleClick {
                 pl_bounding_cords = _pos;
                 pl_mapClicked = true;
@@ -84,6 +95,7 @@ pl_attack= {
     sleep 0.2;
 
     _groupStrength = count (units _group);
+    playsound "beep";
     // leader _group sideChat "Roger beginning Assault, Over";
 
     {
@@ -259,6 +271,7 @@ pl_suppressive_fire = {
 };
 
 pl_spawn_proximity_supression = {
+    player sideRadio "SentCmdSuppress";
     _allMen = (getPos player) nearObjects ["Man", 25];
     {
         [[_x]] spawn pl_suppressive_fire;
@@ -268,6 +281,7 @@ pl_spawn_proximity_supression = {
 
 
 pl_spawn_suppression = {
+    playsound "beep";
     {  
         [units _x] spawn pl_suppressive_fire;
     } forEach hcSelected player;
@@ -281,22 +295,34 @@ pl_bounding_squad = {
     if !(visibleMap) exitWith {hint "Open Map for bounding OW"};
 
     _group = hcSelected player select 0;
-    hint "Select location on MAP (LMB = MOVE, SHIFT + LMB = ATTACK)";
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    // hint "Select location on MAP (LMB = MOVE, SHIFT + LMB = ATTACK)";
+    _message = "Select location <br /><br />
+    <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>MOVE</t> <br />
+    <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>ATTACK</t> <br />
+    <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
+    hint parseText _message;
     onMapSingleClick {
         pl_bounding_cords = _pos;
         pl_mapClicked = true;
         pl_bounding_mode = "move";
-        if (_shift) then {pl_bounding_mode = "attack"};
+        if (_alt) then {pl_bounding_mode = "attack"};
+        if (_shift) then {pl_cancel_strike = true};
         hintSilent "";
         onMapSingleClick "";
     };
     while {!pl_mapClicked} do {sleep 0.2;};
     pl_mapClicked = false;
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+        
     _cords = pl_bounding_cords;
     _moveDir = (leader _group) getDir _cords;
 
     [_group] call pl_reset;
     sleep 0.2;
+
+    playsound "beep";
     
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
@@ -384,14 +410,13 @@ pl_bounding_squad = {
         _offSet = 0;
         (_team1#0) groupRadio "SentConfirmMove";
         {
-            // if ((_x distance2D _cords) < 20) exitWith {_group setVariable ["onTask", false]};
+            if (_x getVariable ["pl_wia", false] or !alive _x) then {_team1 = _team1 - [_x]};
             _x setUnitPos "UP";
             _x enableAI "PATH";
             _pos = [_offSet*(sin (_moveDir - 90)), _offSet*(cos (_moveDir - 90)), 0] vectorAdd _movePos;
             _offSet = _offSet + 6;
             [_x, _pos, _cords, _moveDir] spawn pl_bounding_move;
         } forEach _team1;
-        // waitUntil {sleep 0.1; !(_group getVariable ["onTask", true]) or (({(!(_x getVariable ["pl_bounding_set", false]) and !(_x getVariable ["pl_wia", false]))} count _team1) < 1)};
         waitUntil {sleep 0.1; !(_group getVariable ["onTask", true]) or (({!(_x getVariable ["pl_bounding_set", false])} count _team1) < 1)};
 
         if !(_group getVariable ["onTask", true]) exitWith {};
@@ -402,14 +427,13 @@ pl_bounding_squad = {
         _offSet = 0;
         (_team2#0) groupRadio "SentConfirmMove";
         {
-            // if ((_x distance2D _cords) < 20) exitWith {_group setVariable ["onTask", false]};
+            if (_x getVariable ["pl_wia", false] or !alive _x) then {_team2 = _team2 - [_x]};
             _x setUnitPos "UP";
             _x enableAI "PATH";
             _pos = [_offSet*(sin (_moveDir + 90)), _offSet*(cos (_moveDir + 90)), 0] vectorAdd _movePos;
             _offSet = _offSet + 6;
             [_x, _pos, _cords, _moveDir] spawn pl_bounding_move;
         } forEach _team2;
-        // waitUntil {sleep 0.1; !(_group getVariable ["onTask", true]) or (({(!(_x getVariable ["pl_bounding_set", false]) and !(_x getVariable ["pl_wia", false]))} count _team2) < 1)};
         waitUntil {sleep 0.1; !(_group getVariable ["onTask", true]) or (({!(_x getVariable ["pl_bounding_set", false])} count _team2) < 1)};
 
         if (!(_group getVariable ["onTask", true]) or _moveRange == 30) exitWith {};
@@ -464,11 +488,13 @@ pl_bounding_move = {
 
 
 pl_sweep_cords = [0,0,0];
-pl_sweep_area_size = 50;
+pl_sweep_area_size = 35;
 
 pl_sweep_area = {
     params ["_group"];
     private ["_cords", "_limiter", "_targets", "_markerName", "_wp"];
+
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
     _markerName = format ["%1sweeper", _group];
     createMarker [_markerName, [0,0,0]];
@@ -478,9 +504,12 @@ pl_sweep_area = {
     _markerName setMarkerAlpha 0.5;
     _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
     if (visibleMap) then {
-        hint "Select Search Area on MAP";
+        _message = "Select Search Area <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
         onMapSingleClick {
             pl_sweep_cords = _pos;
+            if (_shift) then {pl_cancel_strike = true};
             pl_mapClicked = true;
             hintSilent "";
             onMapSingleClick "";
@@ -501,9 +530,13 @@ pl_sweep_area = {
         };
     };
 
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+
     [_group] call pl_reset;
     sleep 0.2;
     
+    playsound "beep";
+
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"];
@@ -514,6 +547,7 @@ pl_sweep_area = {
 
     {
         _x disableAI "AUTOCOMBAT";
+        _x setVariable ["pl_damage_reduction", true];
     } forEach (units _group);
 
     _wp = _group addWaypoint [_cords, 0];
@@ -593,7 +627,7 @@ pl_sweep_area = {
                         _unit moveTo _pos;
                         sleep 0.2;
                         while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true])} do {
-                            if (lineIntersects [aimPos _unit, aimPos _target]) then {
+                            if (lineIntersects [aimPos _unit, aimPos _target, _unit, _target]) then {
                                 _unit doTarget _target;
                                 _unit doFire _target;
                             }
@@ -625,9 +659,13 @@ pl_sweep_area = {
     deleteMarker _markerName;
     // _group setVariable ["pl_combat_mode", false];
     // _group setCombatMode "YELLOW";
+    {
+        _x setVariable ["pl_damage_reduction", false];
+    } forEach (units _group);
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
-        (leader _group) sideChat format ["%1 has finished Area Sweep, Over", (groupId _group)];
+        playsound "beep";
+        (leader _group) sideChat format ["%1 Area sweep complete", (groupId _group)];
     };
 };
 

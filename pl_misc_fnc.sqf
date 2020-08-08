@@ -7,7 +7,7 @@ pl_reset = {
     params ["_group", ["_isNotWp", true]];
 
     // _group setVariable ['pl_hold_fire', false];
-    _group setVariable ["onTask", false];
+    
     {
         _unit = _x;
         if ((currentCommand _unit) isEqualTo "SUPPORT") then {
@@ -23,10 +23,12 @@ pl_reset = {
         _unit enableAI "FSM";
         _unit setUnitPos "AUTO";
         // sleep 0.5;
-        _unit doFollow (leader _group);
         _unit limitSpeed 5000;
         _unit forceSpeed -1;
-        // };
+        _unit doWatch objNull;
+        if (vehicle _unit == _unit) then {
+            _unit doFollow (leader _group);
+        };
     } forEach (units _group);
     
     _leader = leader _group;
@@ -34,17 +36,22 @@ pl_reset = {
     _group selectLeader _leader;
     if (_group isEqualTo (group player)) then {
         _group selectLeader player;
+        // {
+        //     _x commandFollow player;
+        // } forEach (units _group);
     };
 
     if (vehicle (leader _group) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic forceSpeed -1;
-        _vic setVariable ["pl_on_transport", nil];
+        // _vic setVariable ["pl_on_transport", nil];
     };
 
-    _group setVariable ["onTask", false];
-    if !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa") then {
-        _group setVariable ["setSpecial", false];
+    if !(!(_isNotWp) and (_group getVariable ["pl_formation_leader", false])) then {
+        _group setVariable ["onTask", false];
+        if !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa") then {
+            _group setVariable ["setSpecial", false];
+        };
     };
     _group setVariable ["pl_show_info", true];
     _group setVariable ["pl_draw_convoy", false];
@@ -64,13 +71,14 @@ pl_reset = {
 
 pl_execute = {
     params ["_group"];
+    playSound "beep";
 
     {
         _x enableAI "PATH";
-        _x doFollow (leader _group);
+        // _x doFollow (leader _group);
     } forEach (units _group);
 
-    (units _group) joinSilent _group;
+    // (units _group) joinSilent _group;
 };
 
 pl_spawn_reset = {
@@ -81,8 +89,9 @@ pl_spawn_reset = {
 
 pl_hold = {
     params ["_group"];
+    playSound "beep";
     {
-        doStop _x;
+        // doStop _x;
         _x disableAI "PATH";   
     } forEach (units _group);  
 };
@@ -151,7 +160,7 @@ pl_watch_dir = {
     } forEach (units _group);
 
     playSound "beep";
-    leader _group sideChat "Roger Watching Direction, Over";
+    // leader _group sideChat "Roger Watching Direction, Over";
 };
 
 pl_spawn_watch_dir = {
@@ -179,6 +188,8 @@ pl_spawn_set_unit_pos = {
 pl_hold_fire = {
     params ["_group"];
 
+    playSound "beep";
+
     _group setCombatMode "GREEN";
     _group setVariable ["pl_hold_fire", true];
     _group setVariable ["pl_combat_mode", true];
@@ -187,26 +198,30 @@ pl_hold_fire = {
 pl_open_fire = {
     params ["_group"];
 
+    playSound "beep";
+
     _group setCombatMode "YELLOW";
     _group setVariable ["pl_hold_fire", false];
     _group setVariable ["pl_combat_mode", false];
 };
 
 pl_follow = {
+    params ["_arrayId"];
     private ["_formDir", "_posOffset", "_pGroup", "_pSpeed", "_pBehaviour"];
     pl_follow_array append hcSelected player;
     pl_follow_active = true;
     _formDir = getDir player;
     {
         if (_x != (group player)) then {
-            for "_i" from count waypoints _x - 1 to 0 step -1 do {
-                deleteWaypoint [_x, _i];
-            };
+            [_x] call pl_reset;
+
+            sleep 0.2;
+
             _x setVariable ["onTask", true];
             _x setVariable ["setSpecial", true];
             _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"];
             playSound "beep";
-            leader _x sideChat format ["Roger, %1 is forming up on %2, over",(groupId _x), (groupId (group player))];
+            // leader _x sideChat format ["%1 is forming up on %2, over",(groupId _x), (groupId (group player))];
             _pos1 = getPos (leader _x);
             _pos2 = getPos player;
             _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
@@ -220,7 +235,7 @@ pl_follow = {
     _pGroup = (group player);
     _pGroup setVariable ["onTask", true];
     _pGroup setVariable ["setSpecial", true];
-    _pGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"];
+    _pGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\whiteboard_ca.paa"];
     {
         _x disableAI "AUTOCOMBAT";
     } forEach (units _pGroup);
@@ -290,6 +305,120 @@ pl_follow = {
     };
 };
 
+
+
+pl_follow_array_other = [];
+pl_follow_array_other_setup = [];
+
+pl_follow_other = {
+    params ["_group"];
+    private ["_leadGroup", "_formDir", "_posOffset", "_pGroup", "_pSpeed", "_pBehaviour"];
+
+    if !(visibleMap) exitWith {hint "Opne Map"};
+    if (_group getVariable ["pl_formation_leader", false]) exitWith {hint format ["%1 is already leading a Formation", groupId _group]};
+
+    _message = "Select Group to follow <br /><br />
+    <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
+    hint parseText _message;
+
+    pl_follow_array_other_setup = pl_follow_array_other_setup + [_group];
+
+    missionNamespace setVariable ["pl_select_formation_leader", true];
+    waitUntil {!(missionNamespace getVariable ["pl_select_formation_leader", true])};
+
+    pl_follow_array_other_setup = pl_follow_array_other_setup - [_group];
+
+    hintSilent "";
+    _leadGroup =  missionNamespace getVariable "pl_formation_leader";
+    if (_leadGroup isEqualTo (group player)) exitWith {hint "Select 'Form on Commander' instead"};
+    if (_leadGroup getVariable ["pl_following_formation", false]) exitWith {hint format ["%1 is already following a Formation", groupId _leadGroup]};
+    if (missionNamespace getVariable ["pl_formation_cancel", false]) exitWith {};
+    if (_group isEqualTo _leadGroup) exitWith {};
+
+
+    [_group] call pl_reset;
+
+    sleep 0.2;
+
+    _formDir = getDir (leader _leadGroup);
+    _group setVariable ["onTask", true];
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"];
+    _group setVariable ["pl_following_formation", true];
+    playSound "beep";
+
+    _pos1 = getPos (leader _group);
+    _pos2 = getPos (leader _leadGroup);
+    _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
+    _group setVariable ["pl_rel_pos", _relPos];
+    {
+        _x disableAI "AUTOCOMBAT";
+    } forEach (units _group);
+     _group setFormDir _formDir;
+    
+    if !(_leadGroup getVariable ["pl_formation_leader", false]) then {
+        [_leadGroup] call pl_reset;
+
+        sleep 0.2;
+
+        _leadGroup setVariable ["onTask", true];
+        _leadGroup setVariable ["setSpecial", true];
+        _leadGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\whiteboard_ca.paa"];
+        _leadGroup setVariable ["pl_formation_leader", true];
+    };
+
+    {
+        _x disableAI "AUTOCOMBAT";
+    } forEach (units _leadGroup);
+
+    pl_follow_array_other = pl_follow_array_other + [[_leadGroup, _group]];
+
+    while {(_leadGroup getVariable ["onTask", true]) and (_group getVariable ["onTask", true])} do {
+        _pos1 = getPos (leader _leadGroup);
+        sleep 2;
+        _pos2 = getPos (leader _leadGroup);
+        _posOffset = [(_pos2 select 0) - (_pos1 select 0), (_pos2 select 1) - (_pos1 select 1)];
+
+        _pBehaviour = behaviour (leader _leadGroup);
+        _group setBehaviour _pBehaviour;
+
+        _pSpeed = speedMode _leadGroup;
+        _group setSpeedMode _pSpeed;
+
+        private _leader = leader _group;
+        _relPos = _group getVariable "pl_rel_pos";
+        if (vehicle _leader != _leader) then {
+            (vehicle _leader) limitSpeed 18;
+            if ((speed (vehicle _leader)) < 1) then {
+                _newPos = [((getPos _leader) select 0) + ((_posOffset select 0) * 15), ((getPos _leader) select 1) + ((_posOffset select 1) * 15)];
+                driver (vehicle _leader) doMove _newPos;
+            };
+            if ((speed (leader _leadGroup)) < 1) then {
+                _newPos = [((getPos (leader _leadGroup)) select 0) + (_relPos select 0), ((getPos (leader _leadGroup)) select 1) + (_relPos select 1)];
+                driver (vehicle _leader) doMove _newPos;
+            };
+        }
+        else
+        {
+            _newPos = [((getPos (leader _leadGroup)) select 0) + (_relPos select 0), ((getPos (leader _leadGroup)) select 1) + (_relPos select 1)];
+            _leader limitSpeed 15;
+            _leader doMove _newPos;
+            {
+                if (_x != _leader) then {
+                    _x doFollow _leader;
+                };
+            } forEach (units _group);
+        };
+    };
+    pl_follow_array_other = pl_follow_array_other - [[_leadGroup, _group]];
+    _group setVariable ["pl_following_formation", false];
+    [_group] call pl_reset;
+    sleep 0.2;
+    if !(_leadGroup getVariable ["onTask", true]) then {
+        _leadGroup setVariable ["pl_formation_leader", false];
+    };
+};
+
 pl_march = {
     params ["_group"];
     private ["_cords", "_f"], "_mwp";
@@ -306,6 +435,8 @@ pl_march = {
     if (isNil {_group getVariable "pl_on_march"}) then {
         [_group] call pl_reset;
         sleep 0.2;
+
+        playSound "beep";
 
         _group setVariable ["onTask", true];
         _group setVariable ["setSpecial", true];
@@ -343,13 +474,12 @@ pl_march = {
         _group setVariable ["pl_mwp", _mwp];
     };
 };
-
 // {[_x] spawn pl_march}forEach (hcSelected player)
 
 
 
 
 
-["Platoon Leader","suppression_key", "Order Suppression Fire", {_this spawn pl_spawn_proximity_supression}, "", [DIK_T, [false, false, false]]] call CBA_fnc_addKeybind;
+["Platoon Leader","Select HC Group", "Selects the HCGroup of the Unit the player aims at", {_this spawn pl_select_group}, "", [DIK_T, [false, false, false]]] call CBA_fnc_addKeybind;
 ["Platoon Leader","hcSquadIn_key", "Remote View Leader of HC Group", {_this spawn pl_spawn_cam }, "", [DIK_HOME, [false, false, false]]] call CBA_fnc_addKeybind;
 ["Platoon Leader","hcSquadOut_key", "Release Remote View", {_this spawn pl_remote_camera_out}, "", [DIK_END, [false, false, false]]] call CBA_fnc_addKeybind;

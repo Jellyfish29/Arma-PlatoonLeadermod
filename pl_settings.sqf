@@ -22,6 +22,17 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "pl_opfor_info_share_enabled",
+    "CHECKBOX",
+    ["Enable Enemy Info sharing","Enable the sharing of information among enemy groups"],
+    "Platoon Leader",
+    true,
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
     "pl_additional_ammoBearer",
     "EDITBOX",
     ["Additional Ammobearer classnames","Define unit classes that can be used as ammobearers: Format ['example_class_1', 'example_class_2']"],

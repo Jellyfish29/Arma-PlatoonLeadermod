@@ -17,7 +17,9 @@ execVM "Plmod\pl_repair_fnc.sqf";
 execVM "Plmod\pl_static_fnc.sqf";
 execVM "Plmod\pl_menus_fnc.sqf";
 execVM "Plmod\pl_3d_icon_fnc.sqf";
+execVM "Plmod\pl_disable_hc_elements.sqf";
 
+// setGroupIconsVisible [true,true]; 
 
 addMissionEventHandler ["GroupIconClick", {
     params [
@@ -44,6 +46,21 @@ addMissionEventHandler ["GroupIconClick", {
             [_group ] spawn pl_add_to_hc_execute;
             [_group] spawn pl_set_up_ai;
         };
+        if (missionNamespace getVariable ["pl_select_formation_leader", false]) then {
+            missionNamespace setVariable ["pl_formation_leader", _group];
+            missionNamespace setVariable ["pl_select_formation_leader", false];
+            if (_shift) then {
+                missionNamespace setVariable ["pl_formation_cancel", true];
+            }
+            else 
+            {
+                missionNamespace setVariable ["pl_formation_cancel", false]
+            };
+        };
+        if (missionNamespace getVariable ["pl_transfer_medic_enabled", false]) then {
+            missionNamespace setVariable ["pl_transfer_medic_enabled", false];
+            missionNamespace setVariable ["pl_transfer_medic_group", _group];
+        };
     };
 }];
 
@@ -65,7 +82,8 @@ addMissionEventHandler ["EntityKilled",{
             _mags = _mags - _mag;
             _group setVariable ["magCountAllDefault", _mags];
 
-            _leader sideChat format ["%1 is K.I.A, over", _unitMos];
+            playSound "beep";
+            _leader sideChat format ["%1: %2 K.I.A", groupId (group _killed), _unitMos];
         };
         // else
         // {
@@ -92,6 +110,11 @@ addMissionEventHandler ["EntityKilled",{
 // 
 
 
+ 
+// clearGroupIcons g1;
+// _n = g1 addGroupIcon ["b_mech_inf", [0, 0]];
+
+// g1 setVariable ["bis_marta_icon_type", 1];
 
 
 

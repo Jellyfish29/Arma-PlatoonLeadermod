@@ -1,9 +1,28 @@
-sleep 1;
+sleep 1.5;
 
 pl_global_spotrep_cd = 0;
 pl_At_fire_report_cd = 0;
 // pl_ai_skill = 0.8;
 // pl_radio_range = 700;
+
+pl_share_info = {
+
+    params ["_group"];
+    _group setVariable ["spotRepEnabled", true];
+
+    while {true} do {
+        waitUntil {(behaviour (leader _group)) isEqualto "COMBAT"};
+
+        _targets = [];
+
+        // [_targets] spawn pl_mark_targets_on_map;
+
+        _targets = [(leader _group)] call pl_get_targets;
+        [_targets, (leader _group)] call pl_reveal_targets;
+
+        sleep 20;
+    };
+};
 
 pl_get_targets = {
     params ["_leader"];
@@ -31,7 +50,9 @@ pl_reveal_targets = {
     } forEach _targets;
 };
 
-pl_share_info = {
+
+
+pl_share_info_opfor = {
 
     params ["_group"];
     _group setVariable ["spotRepEnabled", true];
@@ -43,12 +64,40 @@ pl_share_info = {
 
         // [_targets] spawn pl_mark_targets_on_map;
 
-        _targets = [(leader _group)] call pl_get_targets;
-        [_targets, (leader _group)] call pl_reveal_targets;
+        _targets = [(leader _group)] call pl_get_targets_opfor;
+        [_targets, (leader _group)] call pl_reveal_targets_opfor;
 
         sleep 20;
     };
 };
+
+pl_get_targets_opfor = {
+    params ["_leader"];
+    private ["_targets"];
+    _targets = [];
+    {
+        if (alive _x and (side _x) != civilian) then {
+            if (_leader knowsAbout _x > 2) then {
+            _targets append [_x];
+            };
+        };
+    } forEach (allUnits+vehicles select {side _x isEqualTo playerSide});
+    _targets
+};
+
+pl_reveal_targets_opfor = {
+    params ["_targets", "_leader"];
+    {
+        _t = _x;
+        {
+            if (((leader _x) distance2D _leader) < (pl_radio_range / 2) and ((_leader distance2D _t) < 300)) then {
+                _x reveal _t;
+            };
+        } forEach (allGroups select {side _x != playerSide});
+    } forEach _targets;
+};
+
+
 
 pl_contact_info_share = {
     params ["_unit"];
@@ -80,12 +129,12 @@ pl_contact_report = {
                         _callsign = groupId (group _unit);
                         if ((vehicle _unit) isKindOf "Air") then {
                             playSound "beep";
-                            _unit sideChat format ["%1 is Engaging Ground Targets, over", _callsign];
+                            _unit sideChat format ["%1: Engaging Ground Targets", _callsign];
                         }
                         else
                         {
                             playSound "beep";
-                            _unit sideChat format ["%1 is Engaging Enemies, over", _callsign];
+                            _unit sideChat format ["%1: Engaging Enemies", _callsign];
                         };
                         [_unit] spawn pl_contact_info_share;
                         (group _unit) setVariable ['inContact', true];
@@ -95,7 +144,7 @@ pl_contact_report = {
                     if (pl_At_fire_report_cd < time) then {
                         pl_At_fire_report_cd = time + 5;
                         _callsign = groupId (group _unit);
-                        _unit sideChat format ["%1 is Engaging enemy Vehicles with AT Weapons, over", _callsign];
+                        _unit sideChat format ["%1: Engaging Vehicles with AT", _callsign];
                     };
                 };
             };
@@ -109,17 +158,18 @@ pl_contact_report = {
 
 
 pl_player_report = {
-        player sideChat "to all Elements, stand by for SPOTREP, over";
-        _targets = [];
-        {
-            if (player knowsAbout _x > 0) then {
-              _targets pushBack _x;
-            };
-        } forEach (allUnits+vehicles select {side _x != playerSide});
+    playSound "beep";
+    // player sideChat "to all Elements, stand by for SPOTREP, over";
+    _targets = [];
+    {
+        if (player knowsAbout _x > 0) then {
+          _targets pushBack _x;
+        };
+    } forEach (allUnits+vehicles select {side _x != playerSide});
 
-        [_targets] spawn pl_mark_targets_on_map;
+    [_targets] spawn pl_mark_targets_on_map;
 
-        [_targets, player] call pl_reveal_targets;
+    [_targets, player] call pl_reveal_targets;
 };
 
 pl_enemy_destroyed_report = {
@@ -142,7 +192,7 @@ pl_enemy_destroyed_report = {
             _gridPos = mapGridPosition _unit;
             _group setVariable ["pl_death_reported", true];
             playSound "beep";
-            _killer sideChat format ["We destroyed an enemy %1 at %2, over", _typeStr, _gridPos];
+            _killer sideChat format ["%1 destroyed enemy %2", groupId (group _killer), _typeStr];
         };
     };
 };
@@ -168,7 +218,7 @@ pl_medical_setup = {
     _unit setVariable ["pl_beeing_treatet", false];
     _unit setVariable ["pl_wia_calledout", false];
     _unit setVariable ["pl_injured", false];
-    _unit setVariable ["pl_bleedout_time", 300];
+    _unit setVariable ["pl_bleedout_time", 400];
     _unit setVariable ["pl_bleedout_set", false];
     _unit setVariable ["pl_damage_reduction", false];
     _unit addEventHandler ['HandleDamage', {
@@ -227,6 +277,7 @@ pl_set_up_ai = {
     _group setVariable ["pl_show_info", true];
     _group setVariable ["pl_hold_fire", false];
     _group allowFleeing 0;
+
     [_group] spawn pl_ammoBearer;
     {
         _x setSkill pl_ai_skill;
@@ -285,8 +336,9 @@ pl_vehicle_setup = {
     if (_vic isKindOf "Air") exitWith {};
 
     _vic setUnloadInCombat [false, false];
-
+    
     if (isNil {_vic getVariable "pl_vehicle_setup_complete"}) then {
+        _vic limitSpeed 50;
         if (isNil {_vic getVariable "pl_repair_lifes"}) then {
             if (_vic isKindOf "Tank") then {
                 _vic setVariable ["pl_repair_lifes", 3];
@@ -342,32 +394,46 @@ pl_vehicle_setup = {
 pl_ai_setUp_loop = {
     while {true} do {
         {
-            if (isNil {_x getVariable "spotRepEnabled"}) then {
-                [_x] spawn pl_share_info;
-            };
-            if (isNil {(leader _x) getVariable "PlContactRepEnabled"}) then {
-                [_x, false] spawn pl_contact_report;
-            };
-            if (isNil {_x getVariable "aiSetUp"}) then {
-                [_x] call pl_set_up_ai;
-            };
-            // unit Reset loop
+            if (side _x isEqualTo playerSide) then {
+                [_x]spawn pl_vehicle_setup;
+            }
+            else
             {
-                if !(lifeState _x isEqualTo "INCAPACITATED") then {
-                    [_x] spawn pl_auto_unstuck;
-                    if (_x getVariable "pl_wia") then {
-                        _x setVariable ["pl_wia", false];
+                _x limitSpeed 45;
+                _x setUnloadInCombat [true, true];
+            };
+        } forEach vehicles;
+
+        {
+            if (side _x isEqualTo playerSide) then {
+                if (isNil {_x getVariable "spotRepEnabled"}) then {
+                    [_x] spawn pl_share_info;
+                };
+                if (isNil {(leader _x) getVariable "PlContactRepEnabled"}) then {
+                    [_x, false] spawn pl_contact_report;
+                };
+                if (isNil {_x getVariable "aiSetUp"}) then {
+                    [_x] call pl_set_up_ai;
+                };
+                // unit Reset loop
+                {
+                    if !(lifeState _x isEqualTo "INCAPACITATED") then {
+                        [_x] call pl_auto_unstuck;
+                        if (_x getVariable "pl_wia") then {
+                            _x setVariable ["pl_wia", false];
+                        };
+                    };
+                } forEach (units _x);
+            }
+            else
+            {
+                if (pl_opfor_info_share_enabled) then {
+                    if (isNil {_x getVariable "spotRepEnabled"}) then {
+                        [_x] spawn pl_share_info_opfor;
                     };
                 };
-            } forEach (units _x);
-            
-        } forEach (allGroups select {side _x isEqualTo playerSide});
+            };
 
-        {
-            [_x]spawn pl_vehicle_setup;
-        } forEach (vehicles select {side _x isEqualTo playerSide});
-
-        {
             if(_x != (group player)) then {
                 if !(_x getVariable ["pl_combat_mode", false]) then {
                     _x enableAttack false;
@@ -477,8 +543,32 @@ pl_spawn_hard_reset = {
     } forEach hcSelected player;  
 };
 
+pl_ch_vehicle_dir = {
+    params ["_group"];
+    private ["_vic"];
+
+    if ((vehicle (leader _group)) == (leader _group)) exitWith {};
+
+    _vic = vehicle (leader _group);
+    _dir = getDir _vic;
+    _vic setDir (_dir - 180);
+};
+
+// {[_x] call pl_ch_vehicle_dir} forEach (hcSelected player);
+
+pl_reset_vehicle = {
+    params ["_group"];
+    private ["_vic"];
+
+    if ((vehicle (leader _group)) == (leader _group)) exitWith {};
+
+    _vic = vehicle (leader _group);
+};
+
 sleep 1;
 
 [group player] call pl_set_up_ai;
+
+
 
 // [spec1] spawn pl_special_forces_skills;

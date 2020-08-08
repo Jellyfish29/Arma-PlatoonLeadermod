@@ -15,7 +15,7 @@ addMissionEventHandler ["Draw3D", {
             _offset = 0.03 * _distance;
             _dir = (getPosATLVisual player) getDir _pos;
 
-            _callsignText = format ["%1(%2m)", (groupId _x), _distance];
+            _callsignText = format ["%1 (%2m)", (groupId _x), _distance];
             drawIcon3D [
                 '',
                 [0,0.3,0.6,0.7],

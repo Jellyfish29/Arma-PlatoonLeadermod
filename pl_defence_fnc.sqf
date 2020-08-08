@@ -21,6 +21,8 @@ pl_rush = {
 
     sleep 0.2;
 
+    playSound "beep";
+
     _leader = leader _group;
     if (_leader == vehicle _leader) then {
         // leader _group sideChat "Roger Falling Back, Over";
@@ -138,13 +140,17 @@ pl_360 = {
 pl_360_at_mappos = {
     params ["_group", "_radius"];
 
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+
     [_group] call pl_reset;
 
     sleep 0.2;
+
+    playSound "beep";
     
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
-    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\map\markers\military\circle_CA.paa"];
     [_group, getPos (leader _group), _radius] spawn pl_360;
     waitUntil {sleep 0.1; (count (waypoints _group) > 0) or !(_group getVariable ["onTask", true])};
     sleep 1;
@@ -198,13 +204,21 @@ pl_find_cover = {
         } forEach _covers;
         if (unitPos _unit == "AUTO") then {
             _unit setUnitPos "DOWN";
-            // sleep 2;
-            // _checkPos = [5*(sin _watchDir), 5*(cos _watchDir), ((getPosASL _unit)#2 + 1)] vectorAdd (getPosASL _unit);
-            // _cansee = [objNull, "FIRE"] checkVisibility [(eyePos _unit), _checkPos];
-            // _unit sideChat str _cansee;
-            // if (_cansee < 0.5) then {
-            //     _unit setUnitPos "MIDDLE";
-            // };
+            if (_moveBehind) then {
+                sleep 2;
+                _checkPos = [15*(sin _watchDir), 15*(cos _watchDir), 0.1] vectorAdd (getPosASL _unit);
+
+                // _helper = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
+                // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
+                // _helper setposASL _checkPos;
+                // _cansee = [_helper, "VIEW"] checkVisibility [(eyePos _unit), _checkPos];
+
+                _cansee = [objNull, "VIEW"] checkVisibility [(eyePos _unit), _checkPos];
+                // _unit sideChat str _cansee;
+                if (_cansee < 0.7) then {
+                    _unit setUnitPos "MIDDLE";
+                };
+            };
             doStop _unit;
             _unit doWatch _watchPos;
             _unit disableAI "PATH";
@@ -213,55 +227,47 @@ pl_find_cover = {
     else
     {
         _unit setUnitPos "DOWN";
-        // sleep 2;
-        // _checkPos = [5*(sin _watchDir), 5*(cos _watchDir), ((getPosASL _unit)#2 + 1)] vectorAdd (getPosASL _unit);
-        // _cansee = [objNull, "FIRE"] checkVisibility [(eyePos _unit), _checkPos];
-        // _unit sideChat str _cansee;
-        // if (_cansee < 0.5) then {
-        //     _unit setUnitPos "MIDDLE";
-        // };
+       if (_moveBehind) then {
+            sleep 2;
+            _checkPos = [15*(sin _watchDir), 15*(cos _watchDir), 0.1] vectorAdd (getPosASL _unit);
+
+            // _helper = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
+            // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
+            // _helper setposASL _checkPos;
+            // _cansee = [_helper, "VIEW"] checkVisibility [(eyePos _unit), _checkPos];
+
+            _cansee = [objNull, "VIEW"] checkVisibility [(eyePos _unit), _checkPos];
+            // _unit sideChat str _cansee;
+            if (_cansee < 0.7) then {
+                _unit setUnitPos "MIDDLE";
+            };
+        };
         doStop _unit;
         _unit doWatch _watchPos;
         _unit disableAI "PATH";
     };
-
 };
 
 pl_take_cover = {
     params ["_group"];
 
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+
     [_group] call pl_reset;
 
     sleep 0.2;
+
+    playSound "beep";
 
     _dir = getDir leader _group;
     _watchPos = getPos leader _group;
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"];
-    for "_i" from count waypoints _group - 1 to 0 step -1 do{
-        deleteWaypoint [_group, _i];
-    };
 
     {
         [_x, _watchPos, _dir, 20, false] spawn pl_find_cover;
     } forEach (units _group);
-    // if (vehicle (leader _group) != leader _group) then {
-    //     _vic = vehicle (leader _group);
-    //     _vic setUnloadInCombat [true, false];
-    // };
-
-    // waitUntil {sleep 0.1; (count (waypoints _group) > 0) or !(_group getVariable ["onTask", true])};
-    // sleep 1;
-    // _group setVariable ["setSpecial", false];
-    // _group setVariable ["onTask", false];
-    // {
-    //     _x enableAI "PATH";
-    //     _x doFollow (leader _group);
-    //     _x setUnitPos "AUTO";
-    //     _x doWatch objNull;
-
-    // } forEach (units _group);
 };
 
 pl_spawn_take_cover = {
@@ -275,9 +281,13 @@ pl_deploy_static = false;
 pl_defend_position = {
     private ["_group", "_markerName", "_isStatic", "_staticMarkerName", "_cords", "_watchDir", "_watchPos", "_offSet", "_moveDir", "_medic", "_medicPos"];
     _group = hcSelected player select 0;
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
     if (visibleMap) then {
         hintSilent "";
-        hint "Select DEFENCE position on MAP (SHIFT + LMB to cancel)";
+
+        _message = "Select DEFENCE position on MAP <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
+        hint parseText _message;
 
         onMapSingleClick {
             pl_defence_cords = _pos;
@@ -291,7 +301,10 @@ pl_defend_position = {
         while {!pl_mapClicked} do {sleep 0.1;};
         pl_mapClicked = false;
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
-        hint "Select Weapon DIRECTION (SHIFT + LMB to cancel, ALT + LMB to deploy Static Weapon)";
+        _message = "Select Position FACING <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />
+        <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>DEPLOY Static Weapon</t>";
+        hint parseText _message;
 
         sleep 0.1;
         _cords = pl_defence_cords;
@@ -304,6 +317,7 @@ pl_defend_position = {
             pl_mortar_cords = _pos;
             pl_mapClicked = true;
             if (_shift) then {pl_cancel_strike = true};
+            if (_alt) then {pl_deploy_static = true};
             hintSilent "";
             onMapSingleClick "";
         };
@@ -334,7 +348,7 @@ pl_defend_position = {
             _isStatic = [_group, _markerName, _watchPos, _leaderPos] call pl_reworked_bis_unpack;
             pl_deploy_static = false;
             if !(_isStatic#0) then {
-                (leader _group) sideChat "Negativ, we dont have a Static Weapon, over";
+                hint "No Static Weapon!";
             };
         }
         else
@@ -359,13 +373,13 @@ pl_defend_position = {
             _staticMarkerName setMarkerDir _watchDir;
             (leader _group) addWeapon "Binocular";
             playSound "beep";
-            leader _group sideChat format ["Roger, %1 will deploy static Weapon at designated coordinates, over",(groupId _group)];
+            // leader _group sideChat format ["Roger, %1 will deploy static Weapon at designated coordinates, over",(groupId _group)];
             _offSet = 9;
         }
         else
         {
             playSound "beep";
-            leader _group sideChat format ["Roger, %1 will defend the Position, over",(groupId _group)];
+            // leader _group sideChat format ["Roger, %1 will defend the Position, over",(groupId _group)];
             _offSet = 0;
         };
         for "_i" from 0 to ((count (units _group))- 1) do {
@@ -452,4 +466,3 @@ pl_defend_position = {
 
 
 // [hcSelected player select 0, false] spawn pl_defend_position;
-

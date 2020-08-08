@@ -10,6 +10,7 @@ pl_cas_jdam_cd = 0;
 pl_plane_sad_cd = 0;
 pl_helo_sad_cd = 0;
 pl_uav_sad_cd = 0;
+pl_medevac_sad_cd = 0;
 pl_gun_enabled = 1;
 pl_gun_rocket_enabled = 1;
 pl_cluster_enabled = 1;
@@ -17,6 +18,7 @@ pl_jdam_enabled = 1;
 pl_plane_sad_enabled = 1;
 pl_helo_sad_enabled = 1;
 pl_uav_sad_enabled = 1;
+pl_medevac_sad_enabled = 1;
 pl_sorties = parseNumber pl_sorties;
 pl_arty_ammo = parseNumber pl_arty_ammo;
 pl_cancel_strike = false;
@@ -46,6 +48,8 @@ pl_support_status = {
     _sadHeloColor = "#66ff33";
     _sadUavCd = "ON STATION";
     _sadUavColor = "#66ff33";
+    _sadMedevacCd = "ON STATION";
+    _sadMedevacColor = "#66ff33";
     _time = time + 8;
     while {time < _time} do {
         if (time < pl_cas_gun_cd) then {
@@ -76,6 +80,10 @@ pl_support_status = {
             _sadUavCd = format ["%1s", round (pl_uav_sad_cd - time)];
             _sadUavColor = '#b20000';
         };
+        if (time < pl_medevac_sad_cd) then {
+            _sadMedevacCd = format ["%1s", round (pl_medevac_sad_cd - time)];
+            _sadMedevacColor = '#b20000';
+        };
          _message = format ["
             <t color='#004c99' size='1.3' align='center' underline='1'>CAS</t>
             <br /><br />
@@ -95,10 +103,12 @@ pl_support_status = {
             <br /><br />
             <t color='#ffffff' size='0.8' align='left'>Sentry 3 (UAV Recon)</t><t color='%15' size='0.8' align='right'>%16</t>
             <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Angel 6 (MEDEVAC)</t><t color='%17' size='0.8' align='right'>%18</t>
+            <br /><br />
             <t color='#004c99' size='1.3' align='center' underline='1'>Artillery</t>
             <br /><br />
             <t color='#ffffff' size='0.8' align='left'>155m Battery</t><t color='#ffffff' size='0.8' align='right'>%9x</t>
-        ", _gunColor, _gunCd, _gunRocketColor, _gunRocketCd, _clusterColor, _clusterCd, _jdamColor, _jdamCd,  pl_arty_ammo, pl_sorties, _sadPlaneColor, _sadPlaneCd, _sadHeloColor, _sadHeloCd, _sadUavColor, _sadUavCd];
+        ", _gunColor, _gunCd, _gunRocketColor, _gunRocketCd, _clusterColor, _clusterCd, _jdamColor, _jdamCd,  pl_arty_ammo, pl_sorties, _sadPlaneColor, _sadPlaneCd, _sadHeloColor, _sadHeloCd, _sadUavColor, _sadUavCd, _sadMedevacColor, _sadMedevacCd];
 
         hintSilent parseText _message;
         sleep 1;
@@ -123,7 +133,10 @@ pl_cas = {
         if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
 
         hintSilent "";
-        hint "Select STRIKE location on MAP (SHIFT + LMB to cancel)";
+        // hint "Select STRIKE location on MAP (SHIFT + LMB to cancel)";
+        _message = "Select STRIKE Location <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
 
         _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
 
@@ -138,7 +151,10 @@ pl_cas = {
         while {!pl_mapClicked} do {sleep 0.1;};
         pl_mapClicked = false;
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
-        hint "Select APPROACH Vector for Strike (SHIFT + LMB to cancel)";
+        // hint "Select APPROACH Vector for Strike (SHIFT + LMB to cancel)";
+        _message = "Select APPROACH Vector <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
 
         sleep 0.1;
         _cords = pl_cas_cords;
@@ -190,7 +206,7 @@ pl_cas = {
     _support setVariable ["type", _type];
 
     playSound "beep";
-    [playerSide, "HQ"] sideChat "Copy that, Strike Aircraft on the Way, out";
+    [playerSide, "HQ"] sideChat "Strike Aircraft on the Way!";
     sleep 1;
     _support setDir _dir;
     sleep 5;
@@ -203,47 +219,51 @@ pl_cas = {
     switch (_key) do {
         case 1 : {
         pl_cas_gun_cd = time + 120;
-        playSound "beep";
-        [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 2 MINUTES, over", _cs];
+        // playSound "beep";
+        // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 2 MINUTES, over", _cs];
         waitUntil {sleep 1; time > pl_cas_gun_cd};
         pl_gun_enabled = 1;
      }; 
         case 2 : {
         pl_cas_gun_rocket_cd = time + 240;
-        playSound "beep";
-        [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 4 MINUTES, over", _cs];
+        // playSound "beep";
+        // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 4 MINUTES, over", _cs];
         waitUntil {sleep 1; time > pl_cas_gun_rocket_cd};
         pl_gun_rocket_enabled = 1;
      }; 
         case 3 : {
         pl_cas_cluster_cd = time + 480;
-        playSound "beep";
-        [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 8 MINUTES, over", _cs];
+        // playSound "beep";
+        // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 8 MINUTES, over", _cs];
         waitUntil {sleep 1; time > pl_cas_cluster_cd};
         pl_cluster_enabled = 1;
     };
         case 4 : {
         pl_cas_jdam_cd = time + 720;
-        playSound "beep";
-        [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 12 MINUTES, over", _cs];
+        // playSound "beep";
+        // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 12 MINUTES, over", _cs];
         waitUntil {sleep 1; time > pl_cas_jdam_cd};
         pl_jdam_enabled = 1;
     };
         default {pl_cas_cd = time + 240;}; 
     };
     playSound "beep";
-    [playerSide, "HQ"] sideChat format ["%1, is back on Station, ready for tasking, over", _cs];
+    [playerSide, "HQ"] sideChat format ["%1, is back on Station", _cs];
 };
 
 pl_arty = {
     private ["_salvos", "_markerName"];
 
     if (pl_arty_ammo < pl_arty_rounds) exitWith {
-        playSound "beep";
-        [playerSide, "HQ"] sideChat format ["Negativ, there isn´t enough ammunition left for requested Fire Mission"];
+        // playSound "beep";
+        hint "Not enough ammunition left!";
     };
     if (visibleMap) then {
-        hint "Select STRIKE location on MAP (LMB + Shift to cancel)";
+
+        _message = "Select STRIKE Location <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
+
         _markerName = createMarker ["pl_arty_marker", pl_arty_cords];
         _markerName setMarkerColor "colorRed";
         _markerName setMarkerShape "ELLIPSE";
@@ -277,7 +297,7 @@ pl_arty = {
 
     pl_arty_ammo = pl_arty_ammo - pl_arty_rounds;
     playSound "beep";
-    [playerSide, "HQ"] sideChat format ["Fire Mission Confirmend, ETA 40 Seconds"];
+    [playerSide, "HQ"] sideChat format ["Fire Mission Confirmend // ETA 40 Seconds"];
     sleep 40;
     playSound "beep";
     [playerSide, "HQ"] sideChat format ["Splash"];
@@ -306,34 +326,41 @@ pl_arty = {
     sleep 30;
     pl_arty_enabled = 1;
     [] call pl_show_fire_support_menu;
-    [playerSide, "HQ"] sideChat format ["Battery is ready for Fire Mission, over"];
+    // [playerSide, "HQ"] sideChat format ["Battery is ready for Fire Mission, over"];
 };
 
 pl_fire_mortar = {
     private ["_cords"];
 
     if (visibleMap) then {
-        hint "Select STRIKE location on MAP";
+        _message = "Select STRIKE Location <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
         onMapSingleClick {
             pl_arty_cords = _pos;
             pl_mapClicked = true;
             hintSilent "";
             onMapSingleClick "";
+            if (_shift) then {pl_cancel_strike = true};
         };
         while {!pl_mapClicked} do {sleep 0.5;};
         pl_mapClicked = false;
+        if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
     }
     else
     {
         pl_arty_cords = screenToWorld [0.5,0.5];
     };
+
     _cords = pl_arty_cords;
     _markerName = str random 1;
     createMarker [_markerName, _cords];
     _markerName setMarkerType "mil_destroy";
     _markerName setMarkerText format ["%1 R", pl_mortar_rounds];
+
     playSound "beep";
     (gunner (pl_mortars#0)) sideChat "Fire Mission Confirmed, over";
+
     sleep 3,
     {
         _x commandArtilleryFire [_cords, "8Rnd_82mm_Mo_shells", pl_mortar_rounds];
@@ -347,7 +374,7 @@ pl_fire_mortar = {
 
 pl_interdiction_cas = {
     params ["_type"];
-    private ["_height", "_cd", "_dir", "_spawnDistance", "_markerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight"];
+    private ["_height", "_cd", "_dir", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
 
     switch (_type) do { 
         case 1 : {
@@ -362,7 +389,7 @@ pl_interdiction_cas = {
             _cd = 300;
             _onStationTime = 110;
             _sadAreaSize = 600;
-            _wpType = "SAD"
+            _wpType = "SAD";
         }; 
         case 2 : {
             _height = 100;
@@ -374,7 +401,7 @@ pl_interdiction_cas = {
             _evacHeight = 200;
             _onStationTime = 90;
             _sadAreaSize = 500;
-            _wpType = "SAD"
+            _wpType = "SAD";
         };
         case 3 : {
             _height = 1700;
@@ -386,7 +413,19 @@ pl_interdiction_cas = {
             _evacHeight = 1700;
             _onStationTime = 240;
             _sadAreaSize = 700;
-            _wpType = "LOITER"
+            _wpType = "LOITER";
+        };
+        case 4 : {
+            _height = 100;
+            _flyHeight = 80;
+            _spawnDistance = 3000;
+            _planeType = 'B_Heli_Transport_01_F';
+            _sortiesCost = 4;
+            _groupId = "Angel 6";
+            _evacHeight = 150;
+            _onStationTime = 180;
+            _sadAreaSize = 200;
+            _wpType = "TR UNLOAD";
         };
         default {}; 
     };
@@ -396,7 +435,9 @@ pl_interdiction_cas = {
         if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
 
         hintSilent "";
-        hint "Select STRIKE location on MAP (SHIFT + LMB to cancel)";
+        _message = "Select STRIKE Location <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
         _areaMarkerName = format ["%1casarea", _type];
         createMarker [_areaMarkerName, [0,0,0]];
         _areaMarkerName setMarkerShape "ELLIPSE";
@@ -420,7 +461,9 @@ pl_interdiction_cas = {
         pl_mapClicked = false;
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
         _areaMarkerName setMarkerAlpha 0.28;
-        hint "Select APPROACH Vector for Strike (SHIFT + LMB to cancel)";
+        _message = "Select APPROACH Vector <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
 
         sleep 0.1;
         _cords = pl_cas_cords;
@@ -457,12 +500,16 @@ pl_interdiction_cas = {
         _markerName setMarkerDir _dir;
     };
 
+    playSound "beep";
+    [playerSide, "HQ"] sideChat "Strike Aircraft on the Way!";
+
     pl_sorties = pl_sorties - _sortiesCost;
 
     switch (_type) do { 
         case 1 : {pl_plane_sad_enabled = 0;}; 
         case 2 : {pl_helo_sad_enabled = 0;};
-        case 3 : {pl_uav_sad_enabled = 0;}; 
+        case 3 : {pl_uav_sad_enabled = 0;};
+        case 4 : {pl_medevac_sad_enabled = 0;}; 
         default {}; 
     };
 
@@ -506,8 +553,6 @@ pl_interdiction_cas = {
     sleep 3;
     _casGroup setBehaviour "COMBAT";
 
-
-
     [_plane, _cords, _casGroup, _sadAreaSize] spawn {
         params ["_plane", "_cords", "_casGroup", "_sadAreaSize"];
 
@@ -525,7 +570,34 @@ pl_interdiction_cas = {
         };
     };
 
-    waitUntil {(_plane distance2D _cords) < 3000};
+    if (_type != 4) then {
+        waitUntil {(_plane distance2D _cords) < 3000};
+    }
+    else
+    {
+        "Land_HelipadEmpty_F" createVehicle _cords;
+        sleep 3;
+        waitUntil {(isTouchingGround _plane) or !alive _plane };
+        if (alive _plane) then {
+            private _medic = _casGroup createUnit ["B_medic_F", [0,0,0], [], 0, "CAN_COLLIDE"];
+            _medic moveInCargo _plane;
+            sleep 3;
+            private _gunner = gunner _plane;
+            _ccpGroup = createGroup playerSide;
+            _ccpGroup setGroupId ["Angel 6 Medic"];
+            _ccpGroup setVariable ["MARTA_customIcon", ["b_med"]];
+            _ccpGoup setVariable ["pl_not_addalbe", true];
+            {
+                [_x] joinSilent _ccpGroup;
+                unassignVehicle _x;
+                doGetOut _x;
+            } forEach [_medic, _gunner];
+            _ccpGroup selectLeader _gunner;
+            [_ccpGroup] call pl_set_up_ai;
+            sleep 5;
+            [_ccpGroup, true, _gunner] spawn pl_ccp;
+        };
+    };
 
     {
         if ((side (driver _x)) != playerSide) then {
@@ -542,6 +614,8 @@ pl_interdiction_cas = {
     _time = time + _onStationTime;
     waitUntil { time > _time };
 
+    deleteMarker _areaMarkerName;
+
     switch (_type) do { 
         case 1 : {
             pl_plane_sad_cd = time + 300;
@@ -554,6 +628,10 @@ pl_interdiction_cas = {
         case 3 : {
             pl_uav_sad_cd = time + 360;
             _cd = pl_uav_sad_cd;
+        };
+        case 4 : {
+            pl_medevac_sad_cd = time + 400;
+            _cd = pl_medevac_sad_cd;
         }; 
         default {}; 
     };
@@ -563,12 +641,34 @@ pl_interdiction_cas = {
         [_casGroup] call pl_reset;
         sleep 0.2;
         playsound "beep";
-        (driver _plane) sideChat format ["%1 is RTB, out", _groupId];
+        (driver _plane) sideChat format ["%1: RTB", _groupId];
         {
             _x disableAI "AUTOCOMBAT";
             _x disableAI "TARGET";
             _x disableAI "AUTOTARGET";
         } forEach (units _casGroup);
+
+        if (_type == 4) then {
+            [_ccpGroup] call pl_reset;
+
+            sleep 0.2;
+
+            _ccpGroup setVariable ["MARTA_customIcon", nil];
+            {
+                _x assignAsCargo _plane;
+                [_x] allowGetIn true;
+                [_x] orderGetIn true;
+                [_x] joinSilent _casGroup;
+            } forEach (units _ccpGroup);
+
+            _casGroup setGroupId [_groupId];
+
+            sleep 2;
+            waitUntil {({_x in _plane} count (units _casGroup)) == (count (units _casGroup))};
+            sleep 1;
+        };
+
+
         _plane flyInHeight _evacHeight;
         _plane forceSpeed 300;
         _evacWp = _casGroup addWaypoint [_spawnPos, 0];
@@ -585,14 +685,13 @@ pl_interdiction_cas = {
         } forEach (crew _plane);
         deleteVehicle _plane;
         deleteGroup _casGroup;
-
-        waitUntil {time > _cd};
-
-        switch (_type) do { 
-            case 1 : {pl_plane_sad_enabled = 1;}; 
-            case 2 : {pl_helo_sad_enabled = 1;};
-            case 3 : {pl_uav_sad_enabled = 1;}; 
-            default {}; 
-        };
+    };
+    waitUntil {time > _cd};
+    switch (_type) do { 
+        case 1 : {pl_plane_sad_enabled = 1;}; 
+        case 2 : {pl_helo_sad_enabled = 1;};
+        case 3 : {pl_uav_sad_enabled = 1;};
+        case 4 : {pl_medevac_sad_enabled = 1;}; 
+        default {}; 
     };
 };

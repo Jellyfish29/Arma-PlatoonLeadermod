@@ -1,6 +1,6 @@
-sleep 1;
+// sleep 1;
 
-pl_ammoBearer_cls_names = ["B_Soldier_A_F", "B_T_Soldier_A_F", "B_W_Soldier_A_F", "O_T_Soldier_A_F", "I_E_Soldier_A_F", "I_Soldier_A_F"];
+pl_ammoBearer_cls_names = ["B_Soldier_A_F", "B_T_Soldier_A_F", "B_W_Soldier_A_F", "O_T_Soldier_A_F", "I_E_Soldier_A_F", "I_Soldier_A_F", "B_soldier_AAR_F"];
 pl_additional_ammoBearer = parseSimpleArray pl_additional_ammoBearer;
 
 pl_ammoBearer_cls_names = pl_ammoBearer_cls_names + pl_additional_ammoBearer;

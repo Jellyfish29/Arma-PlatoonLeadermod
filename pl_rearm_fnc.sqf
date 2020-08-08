@@ -36,6 +36,7 @@ pl_rearm = {
 pl_spawn_rearm = {
     private ["_box", "_magAmount"];
     {
+        if (vehicle (leader _x) != leader _x) exitWith {hint "Infantry ONLY Task!"};
         if (visibleMap) then {
             _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             _supplies = _cords nearSupplies 100;
@@ -55,12 +56,15 @@ pl_spawn_rearm = {
                 [_x] call pl_reset;
                 sleep 0.2;
 
+                playSound "beep";
+
                 _x setVariable ["setSpecial", true];
                 _x setVariable ["onTask", true];
                 _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];    
             
+                _boxName = getText (configFile >> "CfgVehicles" >> typeOf _box >> "displayName");
                 playSound "beep";
-                (leader _x) sideChat format ["Understood Resupplying at %1, Over", _box];
+                (leader _x) sideChat format ["%1: Resupplying at %2", (groupId _x), _boxName];
 
                 {
                     [_x, _box] spawn pl_rearm; 
@@ -79,28 +83,29 @@ pl_spawn_rearm = {
                 _box = cursorTarget;
                 if !(_box isKindOf "Man") then {
 
-                    _x setVariable ["onTask", false];
+                    [_x] call pl_reset;
                     sleep 0.2;
 
                     _x setVariable ["setSpecial", true];
                     _x setVariable ["onTask", true];
                     _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];
+                    _boxName = getText (configFile >> "CfgVehicles" >> typeOf _box >> "displayName");
                     playSound "beep";
-                    (leader _x) sideChat format ["Understood Resupplying at %1, Over", _box];
+                    (leader _x) sideChat format ["%1: Resupplying at %2", (groupId _x), _boxName];
                     {
                         [_x, _box] spawn pl_rearm; 
                     } forEach units _x;
                 }
                 else
                 {
-                    playSound "beep";
-                    leader _x sideChat "Negativ, There are no avaiable Supplies, Over";
+                    // playSound "beep";
+                    hint "No avaiable Supplies!";
                 };
             }
             else
             {
-                playSound "beep";
-                leader _x sideChat "Negativ, There are no avaiable Supplies, Over";
+                // playSound "beep";
+                hint "No avaiable Supplies!";
             };
         };
 

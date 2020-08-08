@@ -39,7 +39,7 @@ pl_getIn_vehicle = {
     };
     {
         if (vehicle (leader _group) == leader _group) then {
-            _cargoCap = getNumber (configFile >> "CfgVehicles" >> typeOf _x >> "transportSoldier");
+            _cargoCap = _x emptyPositions "cargo"; 
             if (_cargoCap >= _groupLen) then {
                 _targetVic = _x;
             };
@@ -73,11 +73,11 @@ pl_getIn_vehicle = {
             (group (driver _targetVic)) setVariable ["setSpecial", true];
             (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\takeoff_ca.paa"];
             playSound "beep";
-            driver _targetVic sideChat format ["Roger, %1 is Oscar Mike to rendez-vous location, over", groupId (group (driver _targetVic))];
+            driver _targetVic sideChat format ["%1: Moving to to rendez-vous location", groupId (group (driver _targetVic))];
             sleep 20;
             waitUntil {sleep 0.1; unitReady _targetVic or !alive _targetVic};
             playSound "beep";
-            driver _targetVic sideChat format ["%1 is beginning landing procedure clear LZ, over", groupId (group (driver _targetVic))];
+            driver _targetVic sideChat format ["%1: Beginning landing", groupId (group (driver _targetVic))];
             _targetVic land "GET IN";
             sleep 10;
             waitUntil {sleep 0.1; (isTouchingGround _targetVic) or !alive _targetVic};
@@ -94,7 +94,7 @@ pl_getIn_vehicle = {
                 _targetVic animateDoor ["Door_1_source", 1];
                 _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
                 playSound "beep";
-                leader _group sideChat format ["Getting in %1, over", _vicName];
+                leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName];
                 _group setVariable ["pl_show_info", false];
                 (group (driver _targetVic)) setVariable ["setSpecial", true];
                 (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
@@ -110,7 +110,7 @@ pl_getIn_vehicle = {
             else
             {
                 playSound "beep";
-                leader _group sideChat "Negativ, there is no avaiable Transport, Over";
+                hint "No avaiable Transport";
             };
         }
         // Infantry Tranport
@@ -126,7 +126,7 @@ pl_getIn_vehicle = {
                 deleteWaypoint [_group, _i];
             };
             _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
-            leader _group sideChat format ["Getting in %1, over", _vicName];
+            leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName];
             (group (driver _targetVic)) setVariable ["setSpecial", true];
             (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
             _group setVariable ["setSpecial", true];
@@ -164,8 +164,8 @@ pl_getIn_vehicle = {
     }
     else
     {
-        playSound "beep";
-        leader _group sideChat "Negativ, there is no avaiable Transport, Over";
+        // playSound "beep";
+        hint "No avaiable Transport";
     };
 };
 
@@ -189,9 +189,9 @@ pl_getOut_vehicle = {
             if ((count (missionNamespace getVariable _convoyId)) > 1) then {
                 player hcRemoveGroup _group;
             };
-            if (pl_getOut_cd > time) then {
+            if ((missionNamespace getVariable (_convoyId + "time")) > time) then {
                 playSound "beep";
-                driver _vic sideChat "Negativ, %1 is already on a mission, over";
+                hint format ["%1 is already on a mission!", groupId (group (driver _vic))];
             };
         };
 
@@ -233,12 +233,12 @@ pl_getOut_vehicle = {
             _cords = pl_lz_cords;
 
             if ((_cords distance2D (_vic getVariable "pl_rtb_pos")) > 200) then {
-                playSound "beep";
+                // playSound "beep";
                 // _commander sideChat "Roger, Moving to Insertion Point, over";
             }
             else
             {
-                _commander sideChat format ["%1 is RTB, over", groupId (group _commander)];
+                _commander sideChat format ["%1: RTB", groupId (group _commander)];
             };
 
             _convoyArray = [];
@@ -267,7 +267,8 @@ pl_getOut_vehicle = {
                         _x setVariable ["pl_path_cost", _pathCost];
                         _x setVariable ["r1", _r1];
                     } forEach (missionNamespace getVariable _convoyId);
-                    hint "Setting up Convoy";
+                    hint "Setting up Convoy...";
+                    playSound "beep";
                 };
                 sleep 5;
                 hintSilent "";
@@ -281,7 +282,7 @@ pl_getOut_vehicle = {
                 _convoyArray = (missionNamespace getVariable _convoyId);
                 _convoyLeader setVariable ["onTask", true];
                 _convoyLeader setVariable ["setSpecial", true];
-                _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa"];
+                _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"];
                 group (_commander) setVariable ["pl_draw_convoy", true];
 
                 if (_group != _convoyLeader and _group != (group player)) then {
@@ -469,6 +470,12 @@ pl_getOut_vehicle = {
                         //     _wp setWaypointType "TR UNLOAD";
                         // };
                         _convoyLeader setVariable ["onTask", false];
+                        _convoyLeader setVariable ["setSpecial", false];
+                        _cVic = vehicle (leader _convoyLeader);
+                        // if (_cVic getVariable ["pl_on_transport", false]) then {
+                        //     _convoyLeader setVariable ["setSpecial", true];
+                        //     _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"]
+                        // };
                         group (_commander) setVariable ["pl_draw_convoy", false];
                         group (_commander) setBehaviour "AWARE";
                         {
@@ -532,8 +539,8 @@ pl_getOut_vehicle = {
 
             if !(_moveInConvoy) then {
                 waitUntil {sleep 0.1; ((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
-                playSound "beep";
-                _commander sideChat format ["%1 finished unloading, over", groupId _group];
+                // playSound "beep";
+                // _commander sideChat format ["%1 finished unloading, over", groupId _group];
                 player hcSetGroup [_group];
                 sleep 2;
                 (group _commander) setVariable ["setSpecial", false];
@@ -552,7 +559,8 @@ pl_getOut_vehicle = {
                     _x disableAI "AUTOCOMBAT";
                 } forEach (crew _vic);
                 sleep 2;
-                _commander sideChat format ["%1 is RTB, over", groupId (group _commander)];
+                playSound "beep";
+                _commander sideChat format ["%1: RTB", groupId (group _commander)];
                 waitUntil {sleep 0.1; (unitReady _vic) or (!alive _vic)};
                 {
                     _x enableAI "AUTOCOMBAT";
@@ -605,6 +613,7 @@ pl_getOut_vehicle = {
 
 pl_spawn_getOut_vehicle = {
     params [["_moveInConvoy", false]];
+    playSound "beep";
     private _convoyArray = [];
     {
         if (vehicle (leader _x) != leader _x) then {
@@ -616,7 +625,7 @@ pl_spawn_getOut_vehicle = {
 
     _convoyArray = _convoyArray arrayIntersect _convoyArray;
     if (_moveInConvoy and ((count _convoyArray) < 2)) exitWith {
-        playSound "beep";
+        
         (leader (hcSelected player select 0)) sidechat "Not enough Vehicle to form a Convoy";
     };
     _convoyId = str (random 2);
@@ -720,6 +729,9 @@ pl_vehicle_speed_limit = {
 
 pl_spawn_vic_speed = {
     params ["_speed"];
+
+    playsound "beep";
+
     {  
        [_x, _speed] spawn pl_vehicle_speed_limit; 
     } forEach hcSelected player;
@@ -765,7 +777,9 @@ pl_crew_vehicle = {
         if (_targetVic emptyPositions "Driver" > 0) then {
             _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
             playSound "beep";
-            leader _group sideChat format ["Getting in %1, over", _vicName];
+            leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName];
+
+            pl_left_vehicles = pl_left_vehicles - [[_group getVariable ["pl_group_left_vehicle", objNull], _group]];
 
             [_group] call pl_reset;
             sleep 0.2;
@@ -843,19 +857,19 @@ pl_crew_vehicle = {
             }
             else
             {
-                playSound "beep";
-                leader _group sideChat "Negativ, there aren't enough avaiable seats, Over";
+                // playSound "beep";
+                hint "Not enough avaiable seats!";
             };
         };
     }
     else
     {
-        playSound "beep";
-        leader _group sideChat "Negativ, there is no avaiable Transport, Over";
+        // playSound "beep";
+        hint "No avaiable Transport!";
     };
 };
 
-
+pl_left_vehicles = [];
 
 pl_leave_vehicle = {
     params ["_group"];
@@ -863,6 +877,10 @@ pl_leave_vehicle = {
 
     if ((leader _group) != vehicle (leader _group)) then {
         _vic = vehicle (leader _group);
+        if ((driver _vic) in (units _group)) then {
+            pl_left_vehicles pushBack [_vic, _group];
+            _group setVariable ["pl_group_left_vehicle", _vic];
+        };
         _group leaveVehicle _vic;
         _group setVariable ["setSpecial", false];
         _group setVariable ["onTask", false];
@@ -900,7 +918,8 @@ pl_inf_trans_set_up = {
 sleep 1;
 {
     _leader = leader _x;
-    _hcs = allMissionObjects "HighCommandSubordinate" select 0;
+    private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
+    if (isNil{_hcs}) exitWith {};
     if ((_hcs in (synchronizedObjects _leader)) and (vehicle _leader != _leader)) then {
         if (((assignedVehicleRole _leader) select 0) isEqualTo "cargo") then {
             [_x] call pl_inf_trans_set_up;
@@ -923,9 +942,11 @@ player addEventHandler ["GetInMan", {
     _vicGroup = group (driver (vehicle player));
     _vicGroup setVariable ["setSpecial", true];
     _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
-    _group setVariable ["pl_show_info", false];
     player setVariable ["pl_player_vicGroup", _vicGroup];
-    player hcRemoveGroup _group;
+    if (_vicGroup != (group player)) then {
+        _group setVariable ["pl_show_info", false];
+        player hcRemoveGroup _group;
+    };
 }];
 
 player addEventHandler ["GetOutMan", {
