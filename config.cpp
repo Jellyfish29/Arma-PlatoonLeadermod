@@ -1813,56 +1813,41 @@ class CfgMarkers
         texture="\Plmod\gfx\SFP.paa";
     };
 };
+class RscSubmenu;
+class RscMenuStatus: RscSubmenu
+{
+    class Items
+    {
+        class Pl_Status_Separator1
+        {
+            title="";
+            shortcuts[]={};
+            submenu="";
+            command=-1;
+            class params
+            {
+                expression="";
+            };
+            show="1";
+            enable="1";
+            speechId=0;
+        };
+        class Pl_Status_CreateHCGroup
+        {
+            title="Create HC Group";
+            shortcuts[]={10};
+            submenu="";
+            command=-5;
+            class params
+            {
+                expression="[] call pl_create_hc_group";
+            };
+            show="1";
+            enable="NotEmpty";
+            speechId=0;
+        };
+    };
+};
 
-// class CfgFactionClasses
-// {
-//     class NO_CATEGORY;
-//     class pl_faction: NO_CATEGORY
-//     {
-//         displayName = "Platoon Leader";
-//     };
-// };
-
-// class CfgVehicles
-// {
-//     class Logic;
-//     class Module_F: Logic
-//     {
-//         class ArgumentsBaseUnits
-//         {
-//             class Units;
-//         };
-//         class ModuleDescription;
-//     };
-//     class Pl_Support_module: Module_F
-//     {
-//         author = "Jellyfish";
-//         scope = 2;
-//         displayName = "Support Options";
-//         category = "pl_faction";
-//         function = "Plmod_fnc_supportModule";
-//         functionPriority = 1;
-//         isGlobal = 1;
-//         isTriggerActivated = 0;
-//         isDisposable = 0;
-//         class Arguments
-//         {
-//             class pl_arty_rounds
-//             {
-//                 displayName = "Artillery Ammo";
-//                 description = "155mm Artillery Ammo";
-//                 typeName = "NUMBER";
-//                 defaultValue = "30";
-//             };
-//             class pl_sorties
-//             {
-//                 displayName = "Sortie Ammount";
-//                 description = "Amount of avaiable CAS Sorties";
-//                 typeName = "NUMBER";
-//                 defaultValue = "20";
-//             };
-//         }
-//     }
-// }
 
 

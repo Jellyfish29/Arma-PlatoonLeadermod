@@ -70,8 +70,8 @@ pl_merge_hc_groups = {
             (units _x) joinSilent _largestGroup;
         };
     } forEach _groups;
-    // _leader = ["_largestGroup"] call pl_get_highest_rank;
-    // _largestGroup selectLeader _leader;
+    sleep 0.1;
+    [_largestGroup] call pl_reset;
 };
 
 pl_add_to_hc = {
@@ -110,6 +110,19 @@ pl_spawn_remove_hc = {
         [_x] spawn pl_remove_from_hc;
     } forEach hcSelected player;  
 };
+
+pl_create_hc_group = {
+    private ["_group"];
+
+    _group = createGroup [playerSide, true];
+    {
+        [_x] join _group;
+    } forEach (groupSelectedUnits player);
+    player hcSetGroup [_group];
+    [_group] spawn pl_set_up_ai;
+};
+
+// [] call pl_create_hc_group;
 
 // [] call pl_merge_hc_groups;
 

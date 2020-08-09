@@ -103,18 +103,24 @@ addMissionEventHandler ["EntityKilled",{
     };
 }];
 
+pl_vehicle_group_check = {
+    private ["_vicArray"];
+    {       
+        _vicArray = [];
+        {
+            if (vehicle _x != _x) then {
+                0 = _vicArray pushBackUnique (vehicle _x);
+            };
+        } forEach (units _x);
+
+        if ((count _vicArray) > 1) exitWith {hint "There are Groups with more then ONE vehicle! Grouped up Vehicles are not recomended to use with High Command as it will lead to uncontrollable and unintended AI behaviour."};
+
+    } forEach (allGroups select {side _x isEqualto playerSide});  
+};
+
+[] call pl_vehicle_group_check;
 
 
-// 
-// pl_medic_cls_names = ["B_medic_F", "O_medic_F", "I_medic_F", "I_E_medic_F"];
-// 
-
-
- 
-// clearGroupIcons g1;
-// _n = g1 addGroupIcon ["b_mech_inf", [0, 0]];
-
-// g1 setVariable ["bis_marta_icon_type", 1];
 
 
 

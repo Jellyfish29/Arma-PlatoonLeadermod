@@ -206,7 +206,7 @@ pl_find_cover = {
             _unit setUnitPos "DOWN";
             if (_moveBehind) then {
                 sleep 2;
-                _checkPos = [15*(sin _watchDir), 15*(cos _watchDir), 0.1] vectorAdd (getPosASL _unit);
+                _checkPos = [15*(sin _watchDir), 15*(cos _watchDir), 0.25] vectorAdd (getPosASL _unit);
 
                 // _helper = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
                 // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
@@ -215,7 +215,7 @@ pl_find_cover = {
 
                 _cansee = [objNull, "VIEW"] checkVisibility [(eyePos _unit), _checkPos];
                 // _unit sideChat str _cansee;
-                if (_cansee < 0.7) then {
+                if (_cansee < 0.6) then {
                     _unit setUnitPos "MIDDLE";
                 };
             };
@@ -229,7 +229,7 @@ pl_find_cover = {
         _unit setUnitPos "DOWN";
        if (_moveBehind) then {
             sleep 2;
-            _checkPos = [15*(sin _watchDir), 15*(cos _watchDir), 0.1] vectorAdd (getPosASL _unit);
+            _checkPos = [15*(sin _watchDir), 15*(cos _watchDir), 0.25] vectorAdd (getPosASL _unit);
 
             // _helper = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
             // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
@@ -238,7 +238,7 @@ pl_find_cover = {
 
             _cansee = [objNull, "VIEW"] checkVisibility [(eyePos _unit), _checkPos];
             // _unit sideChat str _cansee;
-            if (_cansee < 0.7) then {
+            if (_cansee < 0.6) then {
                 _unit setUnitPos "MIDDLE";
             };
         };

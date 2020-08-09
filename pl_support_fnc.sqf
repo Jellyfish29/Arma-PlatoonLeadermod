@@ -486,7 +486,6 @@ pl_interdiction_cas = {
         };
         pl_mapClicked = false;
 
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
 
     }
     else
@@ -500,6 +499,8 @@ pl_interdiction_cas = {
         _markerName setMarkerDir _dir;
     };
 
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _areaMarkerName;};
+        
     playSound "beep";
     [playerSide, "HQ"] sideChat "Strike Aircraft on the Way!";
 
