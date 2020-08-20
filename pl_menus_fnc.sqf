@@ -63,7 +63,7 @@ pl_show_css_menu = {
         [parseText '%4', [3], '', -5, [['expression', '[] spawn pl_ccp']], '%1', 'HCNotEmpty'],
         [parseText '%5', [4], '', -5, [['expression', '[] spawn pl_transfer_medic']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%1', '1'],
-        [parseText '%6', [5], '', -5, [['expression', '[] spawn pl_spawn_rearm']], '1', 'HCNotEmpty'],
+        [parseText '%6', [5], '', -5, [['expression', '{[_x] spawn pl_resupply} forEach (hcSelected player)']], '1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
         [parseText '%7', [6], '', -5, [['expression', '[] spawn pl_repair']], '%2', 'HCNotEmpty'],
         [parseText '%8', [7], '', -5, [['expression', '[] spawn pl_maintenance_point']], '%2', 'HCNotEmpty']
@@ -172,4 +172,21 @@ pl_mortar_round_menu =
     ['4', [2], '', -5, [['expression', 'pl_mortar_rounds = 4; [] spawn pl_show_mortar_menu']], '1', '1'],
     ['8', [3], '', -5, [['expression', 'pl_mortar_rounds = 8; [] spawn pl_show_mortar_menu']], '1', '1']
 
+];
+
+pl_task_plan_menu = [
+    ['Task Plan', true],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] call pl_task_planer']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] call pl_task_planer']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'/><t> Take Cover</t>", [4], '', -5, [['expression', '["cover"] call pl_task_planer']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\military\circle_CA.paa'/><t> Form 360</t>", [5], '', -5, [['expression', '["360"] call pl_task_planer']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa'/><t> Clear Area/Buildings</t>", [6], '', -5, [['expression', '["clear"] call pl_task_planer']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'/><t> Defend Buildings</t>", [7], '', -5, [['expression', '["buildings"] call pl_task_planer']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Resupply</t>', [8], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>', [9], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Set up Maintenance Point</t>', [10], '', -5, [['expression', '["maintenance"] call pl_task_planer']], '1', '1']
 ];

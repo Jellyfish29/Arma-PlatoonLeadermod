@@ -90,11 +90,13 @@ addMissionEventHandler ["Draw3D", {
 
                 _setSpecial = _x getVariable 'setSpecial';
                 _specialIcon = _x getVariable 'specialIcon';
-                
+                _specialColor = [0.9,0.9,0,0.7];
+                if (_x getVariable ['pl_on_hold', false]) then {_specialColor = [0.92,0.24,0.07,1];};
+
                 if (_setSpecial) then {
                     drawIcon3D [
                         _specialIcon,
-                        [0.9,0.9,0,0.7],
+                        _specialColor,
                         _specialPos,
                         0.4,
                         0.4,

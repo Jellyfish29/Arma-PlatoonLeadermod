@@ -138,9 +138,18 @@ pl_360 = {
 };
 
 pl_360_at_mappos = {
-    params ["_group", "_radius"];
+    params ["_group", "_radius", ["_taskPlanWp", []]];
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+
+    if (count _taskPlanWp != 0) then {
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+
+        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+        _group setVariable ["pl_task_planed", false];
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
 
     [_group] call pl_reset;
 
@@ -249,9 +258,18 @@ pl_find_cover = {
 };
 
 pl_take_cover = {
-    params ["_group"];
+    params ["_group", ["_taskPlanWp", []]];
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+
+    if (count _taskPlanWp != 0) then {
+            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+
+            if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+            _group setVariable ["pl_task_planed", false];
+        };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
 
     [_group] call pl_reset;
 
@@ -279,8 +297,10 @@ pl_spawn_take_cover = {
 pl_deploy_static = false;
 
 pl_defend_position = {
-    private ["_group", "_markerName", "_isStatic", "_staticMarkerName", "_cords", "_watchDir", "_watchPos", "_offSet", "_moveDir", "_medic", "_medicPos"];
-    _group = hcSelected player select 0;
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_markerName", "_isStatic", "_staticMarkerName", "_cords", "_watchDir", "_watchPos", "_offSet", "_moveDir", "_medic", "_medicPos", "_icon"];
+    // _group = hcSelected player select 0;
+
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
     if (visibleMap) then {
         hintSilent "";
@@ -329,6 +349,23 @@ pl_defend_position = {
         };
         pl_mapClicked = false;
 
+        _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa";
+
+        // Wait until planed Task Wp Reached then continue Code if pl_reset called cancel execution
+        if (count _taskPlanWp != 0) then {
+
+            // add Arrow indicator
+            pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+
+            // remove Arrow indicator
+            pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+            if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+            _group setVariable ["pl_task_planed", false];
+        };
+
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
 
         [_group] call pl_reset;
@@ -337,7 +374,7 @@ pl_defend_position = {
 
         _group setVariable ["onTask", true];
         _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"];
+        _group setVariable ["specialIcon", _icon];
 
         _watchPos = [1000*(sin _watchDir), 1000*(cos _watchDir), 0] vectorAdd _cords;
         _leaderDir = _watchDir - 90;

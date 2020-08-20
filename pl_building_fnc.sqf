@@ -197,8 +197,8 @@ pl_garrison_building = {
 };
 
 pl_garrison_area_building = {
-    params ["_group"];
-    private ["_watchDir", "_cords", "_watchPos", "_markerAreaName", "_markerDirName", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_pos"];
+    params ["_group", ["_taskPlanWp", []]];
+    private ["_watchDir", "_cords", "_watchPos", "_markerAreaName", "_markerDirName", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon"];
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
     if (visibleMap) then {
@@ -254,6 +254,21 @@ pl_garrison_area_building = {
             _markerDirName setMarkerDir _watchDir;
         };
         pl_mapClicked = false;
+        _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa";
+
+        if (count _taskPlanWp != 0) then {
+
+            // add Arrow indicator
+            pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+
+            // remove Arrow indicator
+            pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+            if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true};
+            _group setVariable ["pl_task_planed", false];
+        };
 
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
 
@@ -269,7 +284,7 @@ pl_garrison_area_building = {
 
         _group setVariable ["onTask", true];
         _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"];
+        _group setVariable ["specialIcon", _icon];
 
 
         _validPos = [];

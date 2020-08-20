@@ -425,13 +425,13 @@ class RscHCGroupRootMenu
                 menu = "RscHCReply";
                 speechId = 0;
             };
-            class Back
-            {
-                shortcuts[] = {"BACK"};
-                title = "";
-                command = -4;
-                speechId = 0;
-            };
+            // class Back
+            // {
+            //     shortcuts[] = {"BACK"};
+            //     title = "";
+            //     command = -4;
+            //     speechId = 0;
+            // };
         };
         access = 0;
         title = "High Command - Commander";
@@ -528,7 +528,7 @@ class RscHCGroupRootMenu
             };
             class PlHold
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa'/><t> Hold</t>";
+                title="<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa'/><t> Hold</t>";
                 shortcuts[]={6};
                 submenu="";
                 command=-5;
@@ -542,7 +542,7 @@ class RscHCGroupRootMenu
             };
             class PlExecute
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Execute</t>";
+                title="<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Execute</t>";
                 shortcuts[]={7};
                 submenu="";
                 command=-5;
@@ -671,7 +671,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[hcSelected player select 0, false] spawn pl_defend_position;";
+                    expression="[] spawn pl_defend_position;";
                 };
                 show="1";
                 enable="HCNotEmpty";
@@ -989,7 +989,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "[15] call pl_spawn_vic_speed";
                 };
-                title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> 15 km/h</t";
+                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> 15 km/h</t";
                 shortcutsAction = "CommandingMenu4";
                 command = -5;
                 show = "";
@@ -1015,7 +1015,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "[50] call pl_spawn_vic_speed";
                 };
-                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> 50 km/h</t";
+                title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> 50 km/h</t";
                 shortcutsAction = "CommandingMenu6";
                 command = -5;
                 show = "";
@@ -1261,13 +1261,27 @@ class RscHCGroupRootMenu
             };
             class PlGetOutVic
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Unload / Insertion</t";
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa'/><t> Unload / Insertion</t";
                 shortcuts[]={3};
                 submenu="";
                 command=-5;
                 class params
                 {
                     expression="[] spawn pl_spawn_getOut_vehicle";
+                };
+                show="1";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlGetOutVicAtPos
+            {
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Unload at current Pos</t";
+                shortcuts[]={4};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="{[_x, 0.0, 0.0, true] spawn pl_getOut_vehicle} forEach (hcSelected player);";
                 };
                 show="1";
                 enable="HCNotEmpty";
@@ -1290,7 +1304,7 @@ class RscHCGroupRootMenu
             class PlCrewVehicle
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Crew Vehicle</t";
-                shortcuts[]={4};
+                shortcuts[]={5};
                 submenu="";
                 command=-5;
                 class params
@@ -1304,7 +1318,7 @@ class RscHCGroupRootMenu
             class PlLeaveVehicle
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Leave Vehicle</t";
-                shortcuts[]={5};
+                shortcuts[]={6};
                 submenu="";
                 command=-5;
                 class params
@@ -1332,7 +1346,7 @@ class RscHCGroupRootMenu
             class PlmoveInConvoy
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa'/><t> Move as Convoy</t";
-                shortcuts[]={6};
+                shortcuts[]={7};
                 submenu="";
                 command=-5;
                 class params
@@ -1651,12 +1665,12 @@ class RscHCWPRootMenu
         {
             class Type
             {
-                shortcuts[] = {2};
-                title = "Type";
+                shortcuts[] = {1};
+                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Type</t>";
                 shortcutsAction = "CommandingMenu1";
                 menu = "RscHCWPType";
-                show = "0";
-                enable = "0";
+                show = "1";
+                enable = "1";
                 speechId = 0;
             };
             class CombatMode
@@ -1727,16 +1741,31 @@ class RscHCWPRootMenu
             };
             class CreateTask
             {
-                shortcuts[] = {9};
+                shortcuts[] = {2};
+                // class Params
+                // {
+                //     expression = "[] call pl_get_task_plan_wp";
+                // };
+                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Plan Task</t>";
+                shortcutsAction = "CommandingMenu2";
+                menu = "#USER:pl_task_plan_menu"
+                command = -5;
+                show = "1";
+                enable = "1";
+                speechId = 0;
+            };
+            class CancleTask
+            {
+                shortcuts[] = {3};
                 class Params
                 {
-                    expression = "'WP_CREATETASK' call BIS_HC_path_menu";
+                    expression = "[] pl_cancel_planed_task";
                 };
-                title = "Create Task";
-                shortcutsAction = "CommandingMenu8";
+                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Cancel Planed Task</t>";
+                shortcutsAction = "CommandingMenu3";
                 command = -5;
-                show = "0";
-                enable = "0";
+                show = "";
+                enable = "";
                 speechId = 0;
             };
             class Separator2
@@ -1747,13 +1776,13 @@ class RscHCWPRootMenu
             };
             class CancelWP
             {
-                shortcuts[] = {1};
+                shortcuts[] = {4};
                 class Params
                 {
                     expression = "'WP_CANCELWP' call BIS_HC_path_menu";
                 };
                 title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Cancel Waypoint</t>";
-                shortcutsAction = "CommandingMenu1";
+                shortcutsAction = "CommandingMenu4";
                 command = -5;
                 show = "";
                 enable = "";

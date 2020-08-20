@@ -150,7 +150,6 @@ pl_cas = {
 
         while {!pl_mapClicked} do {sleep 0.1;};
         pl_mapClicked = false;
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
         // hint "Select APPROACH Vector for Strike (SHIFT + LMB to cancel)";
         _message = "Select APPROACH Vector <br /><br />
         <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
@@ -162,6 +161,7 @@ pl_cas = {
         createMarker [_markerName, _cords];
         _markerName setMarkerType "mil_arrow";
         _markerName setMarkerColor "colorBLUFOR";
+        if (pl_cancel_strike) exitWith {};
 
         onMapSingleClick {
             pl_cas_cords = _pos;
@@ -177,7 +177,6 @@ pl_cas = {
         };
         pl_mapClicked = false;
 
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
     }
     else
     {
@@ -190,6 +189,7 @@ pl_cas = {
         _markerName setMarkerDir _dir;
     };
 
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
     pl_sorties = pl_sorties - _sortiesCost;
 
     switch (_key) do { 
@@ -282,13 +282,13 @@ pl_arty = {
             _markerName setMarkerPos _mPos;
         };
         pl_mapClicked = false;
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
     }
     else
     {
         pl_arty_cords = screenToWorld [0.5,0.5];
     };
     pl_arty_enabled = 0;
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
     
     _markerName setMarkerAlpha 0.4;
     createMarker ["pl_arty_center", pl_arty_cords];
@@ -459,7 +459,6 @@ pl_interdiction_cas = {
             _areaMarkerName setMarkerPos _mPos;
         };
         pl_mapClicked = false;
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
         _areaMarkerName setMarkerAlpha 0.28;
         _message = "Select APPROACH Vector <br /><br />
         <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
@@ -472,6 +471,7 @@ pl_interdiction_cas = {
         _markerName setMarkerType "mil_arrow";
         _markerName setMarkerColor "colorBLUFOR";
 
+        if (pl_cancel_strike) exitWith {};
         onMapSingleClick {
             pl_cas_cords = _pos;
             pl_mapClicked = true;

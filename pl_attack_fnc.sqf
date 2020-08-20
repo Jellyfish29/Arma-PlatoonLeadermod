@@ -7,6 +7,7 @@ pl_advance = {
     params ["_group"];
     private ["_cords", "_awp"];
 
+    // if Map at mousclick else at cursor position
     if (visibleMap) then {
         _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
     }
@@ -15,61 +16,75 @@ pl_advance = {
         _cords = screenToWorld [0.5,0.5];
     };
 
+    // exit if vehicle
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
+    // reset _group before execution
     [_group] call pl_reset;
 
     sleep 0.2;
     playsound "beep";
 
+    // limit to speed (no sprinting)
     (leader _group) limitSpeed 15;
 
+    // disable combatmode 
     {
         _x disableAI "AUTOCOMBAT";
     } forEach (units _group);
-
-    _awp = _group addWaypoint [_cords, 0];
     _group setBehaviour "AWARE";
 
+    // set wp
+    _awp = _group addWaypoint [_cords, 0];
+
+    // set Variables
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\walk_ca.paa";
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\walk_ca.paa"];
+    _group setVariable ["specialIcon", _icon];
 
+    // add Task Icon to wp
+    pl_draw_planed_task_array pushBack [_awp, _icon];
+
+    // waitUntil waypoint reached or task canceled
     waitUntil {if (_group isEqualTo grpNull) exitWith {true}; (((leader _group) distance2D (waypointPosition _awp)) < 10) or !(_group getVariable ["onTask", true])};
 
-    // sleep 1;
-
+    // remove Task Icon from wp and delete wp
+    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_awp,  _icon]];
     deleteWaypoint [_group, _awp#1];
 
+    // reset advance behaviour
     (leader _group) limitSpeed 5000;
     {
         _x enableAI "AUTOCOMBAT";
     } forEach (units _group);
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];
-
-    // leader _group sideChat "We Advanced to assigned Position, Over";
-
 };
 
 pl_attack_mode = "normal";
 
-pl_attack= {
+pl_attack = {
 
-    params ["_group", ["_cords", [0,0,0]]];
-    private ["_atkwp", "_posArray", "_fastAtk"];
+    params ["_group", ["_cords", [0,0,0]], ["_taskPlanWp", []]];
+    private ["_atkwp", "_posArray", "_fastAtk", "_icon"];
 
+    // exit if vehicle
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
+    // check if called from other Task (Bounding)
     if (_cords isEqualTo [0,0,0]) then {
+        // if map at mouseclick position with speedmode selection
         if (visibleMap) then {
-            // hint "Select location on MAP (LMB = Tactical, SHIFT + LMB = SLOW, ALT + LMB = FAST)";
+            
+            // Hint       
             _message = "Select Assault Location <br /><br />
             <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>TACTICAL</t> <br />
             <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>SLOW</t> <br />
             <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>FAST</t>";
             hint parseText _message;
 
+            // Mapclick logic
             onMapSingleClick {
                 pl_bounding_cords = _pos;
                 pl_mapClicked = true;
@@ -82,15 +97,39 @@ pl_attack= {
             while {!pl_mapClicked} do {sleep 0.2;};
             pl_mapClicked = false;
             _cords = pl_bounding_cords;
-            _moveDir = (leader _group) getDir _cords;
         }
         else
+        // 3d View
         {
             _cords = screenToWorld [0.5,0.5];
             pl_attack_mode = "normal";
         };
     };
 
+    // set Task Icon
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa";
+
+    // Check if task planed from Waypointmenu
+    if (count _taskPlanWp != 0) then {
+
+            // add Arrow indicator
+            pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+            // wait till taskwp reached
+            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+
+            // remove Arrow indicator
+            pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+            // if task canceld end execution
+            if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true};
+            _group setVariable ["pl_task_planed", false];
+        };
+
+    // if task canceld end execution
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
+
+    // reset _group before execution
     [_group] call pl_reset;
     sleep 0.2;
 
@@ -103,6 +142,7 @@ pl_attack= {
     } forEach (units _group);
     _group setBehaviour "AWARE";
 
+    // Speedmode switch
     _fastAtk = false;
     switch (pl_attack_mode) do { 
         case "normal" : {leader _group limitSpeed 12;}; 
@@ -111,14 +151,19 @@ pl_attack= {
         default {leader _group limitSpeed 12;}; 
     };
     
-
+    // add SAD wp
     _atkwp =_group addWaypoint [_cords, 0];
     _atkwp setWaypointType "SAD";
 
+    // set Variables
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
-    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"];
+    _group setVariable ["specialIcon", _icon];
 
+    // add Task Icon to SAD Wp
+    pl_draw_planed_task_array pushBack [_atkwp, _icon];
+
+    // fast attack setup
     if (_fastAtk) then {
         _atkDir = (leader _group) getDir _cords;
         {
@@ -127,10 +172,16 @@ pl_attack= {
             [_x, _pos, _cords, _atkDir, 45] spawn pl_bounding_move;
         } forEach (units _group);
     };
+
+    // waituntil wp reached or task canceled
     waitUntil {if (_group isEqualTo grpNull) exitWith {true}; (((leader _group) distance2D (waypointPosition _atkwp)) < 30) or ((count (units _group)) <= (_groupStrength - 4)) or !(_group getVariable ["onTask", true])};
 
     sleep 1;
 
+    // remove Icon form wp
+    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_atkwp,  _icon]];
+
+    // set attack behaviour
     _group setVariable ["pl_combat_mode", true];
     _group setCombatMode "RED";
     _group enableAttack true;
@@ -140,12 +191,15 @@ pl_attack= {
     } forEach (units _group);
     leader _group limitSpeed 5000;
 
+    // waituntil task canceled
     waitUntil {!(_atkwp in (waypoints _group)) or !(_group getVariable ["onTask", true])};
 
+    // reset attack behaviour
     _group setVariable ["pl_combat_mode", false];
     _group setCombatMode "YELLOW";
     _group enableAttack false;
 
+    // make units in group forget targets to cancel currentCommand "ATTACK"
     {
         _targets = _x targetsQuery [objNull, sideUnknown, "", [], 0];
         _count = count _targets;
@@ -491,8 +545,8 @@ pl_sweep_cords = [0,0,0];
 pl_sweep_area_size = 35;
 
 pl_sweep_area = {
-    params ["_group"];
-    private ["_cords", "_limiter", "_targets", "_markerName", "_wp"];
+    params ["_group", ["_taskPlanWp", []]];
+    private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon"];
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
@@ -530,6 +584,22 @@ pl_sweep_area = {
         };
     };
 
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa";
+
+    if (count _taskPlanWp != 0) then {
+
+        // add Arrow indicator
+        pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+
+        // remove Arrow indicator
+        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+        _group setVariable ["pl_task_planed", false];
+    };
+
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
 
     [_group] call pl_reset;
@@ -539,7 +609,7 @@ pl_sweep_area = {
 
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"];
+    _group setVariable ["specialIcon", _icon];
 
     (leader _group) limitSpeed 15;
 
@@ -551,6 +621,8 @@ pl_sweep_area = {
     } forEach (units _group);
 
     _wp = _group addWaypoint [_cords, 0];
+
+    pl_draw_planed_task_array pushBack [_wp, _icon];
     _group setBehaviour "AWARE";
 
     
@@ -593,7 +665,7 @@ pl_sweep_area = {
         } forEach (units _group);
         _group setCombatMode "RED";
         _group setVariable ["pl_combat_mode", true];
-        _time = time + 30;
+        _time = time + 20;
         waitUntil {!(_group getVariable ["onTask", true]) or (time > _time)};
         _group setCombatMode "YELLOW";
         _group setVariable ["pl_combat_mode", false];
@@ -616,34 +688,28 @@ pl_sweep_area = {
                     _currentTarget = _currentTarget + 1;
                     _target = _targets select _currentTarget + _teamid;
                     if (alive _target) then {
-                        _unit reveal [_target, 3];
+                        // _unit reveal [_target, 3];
                         _pos = getPosATL _target;
                         // debug
                         // _markerName = createMarker [str _unit, _pos];
                         // _markerName setMarkerType "mil_dot";
                         // _markerName setMarkerText str _unit;
-
-                        _unit doMove _pos;
-                        _unit moveTo _pos;
                         sleep 0.2;
                         while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true])} do {
-                            if (lineIntersects [aimPos _unit, aimPos _target, _unit, _target]) then {
-                                _unit doTarget _target;
-                                _unit doFire _target;
-                            }
-                            else
-                            {
+                            _unit doTarget _target;
+                            _unit doFire _target;
+                            if ((speed _unit) < 1) then {
                                 _unit doMove _pos;
                                 _unit moveTo _pos;
                             };
-                            sleep 0.1;
+
+                            sleep 1;
                         };
                     };
                     // waitUntil {(!alive _unit) or (!alive _target) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])};
                     _teamid = 0;
                     // deleteMarker _markerName;
                     if ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) exitWith {};
-                    // _unit sideChat "next Target";
                 };
                 // _unit sideChat "finished";
             };
@@ -653,12 +719,30 @@ pl_sweep_area = {
                 if (_teamid > (count _targets) - 1) then {_teamid = 0};
             };
         } forEach (units _group);
+
+        // make group forget Targets outside sweep area --> More aggressive behaviour
+        [_group, _cords] spawn {
+            params ["_group", "_cords"];
+            while {_group getVariable ["onTask", true]} do {
+                _targets = (leader _group) targetsQuery [objNull, sideUnknown, "", [], 0];
+                {
+                    if (((_x select 1) distance2D _cords) > pl_sweep_area_size + 15) then {
+                        _group forgetTarget (_x#1);
+                    };
+                } forEach _targets;
+                sleep 2;
+            };
+        };
+
+
         waitUntil {!(_group getVariable ["onTask", true]) or ({!alive _x} count _targets == count _targets)};
     };
 
     deleteMarker _markerName;
     // _group setVariable ["pl_combat_mode", false];
     // _group setCombatMode "YELLOW";
+    // remove Icon form wp
+    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
     {
         _x setVariable ["pl_damage_reduction", false];
     } forEach (units _group);

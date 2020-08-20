@@ -5,18 +5,18 @@ pl_follow_array = [];
 
 pl_reset = {
     params ["_group", ["_isNotWp", true]];
+    // resets and stops Group
 
-    // _group setVariable ['pl_hold_fire', false];
-    
+    // reset individual units variables
     {
         _unit = _x;
         if ((currentCommand _unit) isEqualTo "SUPPORT") then {
             [_unit] spawn pl_hard_reset;
         };
+        if !(_group getVariable ["pl_on_hold", false]) then {_unit enableAI "PATH"};
         _unit enableAI "AUTOCOMBAT";
         _unit enableAI "AUTOTARGET";
         _unit enableAI "TARGET";
-        _unit enableAI "PATH";
         _unit enableAI "SUPPRESSION";
         _unit enableAI "COVER";
         _unit enableAI "ANIM";
@@ -31,35 +31,53 @@ pl_reset = {
         };
     } forEach (units _group);
     
+    // rejoin group hack
     _leader = leader _group;
     (units _group) joinSilent _group;
     _group selectLeader _leader;
+
+    // if player group select player as leader
     if (_group isEqualTo (group player)) then {
         _group selectLeader player;
-        // {
-        //     _x commandFollow player;
-        // } forEach (units _group);
     };
+
+
+    // if group is not leading a formation reset Task
+    if !(!(_isNotWp) and (_group getVariable ["pl_formation_leader", false])) then {
+
+        _group setVariable ["onTask", false];
+
+        // if group is not transporting Infantry reset special Icon
+        if !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa") then {
+            if !(_group getVariable ["pl_on_hold", false]) then {
+                _group setVariable ["setSpecial", false];
+            };
+        };
+    };
+
+    // reenable map info
+    _group setVariable ["pl_show_info", true];
+    // reset convoc indicator
+    _group setVariable ["pl_draw_convoy", false];
+
+    // cancel planed Task
+    _group setVariable ["pl_task_planed", false];
 
     if (vehicle (leader _group) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic forceSpeed -1;
-        // _vic setVariable ["pl_on_transport", nil];
-    };
-
-    if !(!(_isNotWp) and (_group getVariable ["pl_formation_leader", false])) then {
-        _group setVariable ["onTask", false];
-        if !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa") then {
-            _group setVariable ["setSpecial", false];
+        if (_vic getVariable ["pl_on_transport", false]) then {
+            _vic setVariable ["pl_on_transport", nil];
+            _group setVariable ["setSpecial", true];
+            _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
         };
     };
-    _group setVariable ["pl_show_info", true];
-    _group setVariable ["pl_draw_convoy", false];
-    // _group setCombatMode "YELLOW";
 
+    // only delete Waypoints when not called from Move or MoveAdd
     if (_isNotWp) then {
         _group setSpeedMode "NORMAL";
         _group setBehaviour "AWARE";
+        [_group, (currentWaypoint _group)] setWaypointType "MOVE";
         [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
         sleep 0.1;
         deleteWaypoint [_group, (currentWaypoint _group)];
@@ -69,18 +87,6 @@ pl_reset = {
     };
 };
 
-pl_execute = {
-    params ["_group"];
-    playSound "beep";
-
-    {
-        _x enableAI "PATH";
-        // _x doFollow (leader _group);
-    } forEach (units _group);
-
-    // (units _group) joinSilent _group;
-};
-
 pl_spawn_reset = {
     {
         [_x] spawn pl_reset;
@@ -88,10 +94,25 @@ pl_spawn_reset = {
 };
 
 pl_hold = {
+    // disables pathfinding on group
+
     params ["_group"];
     playSound "beep";
+
+    // set Variable
+    _group setVariable ["pl_on_hold", true];
+
+    // if not already having special set, set special
+    if !(_group getVariable ["setSpecial", false]) then {
+        _group setVariable ["setSpecial", true];
+        // if not on Transportmission
+        if !((vehicle (leader _group)) getVariable ["pl_on_transport", false]) then {
+            _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa"];
+        };
+    };
+
+    // disable "PATH" for each unit
     {
-        // doStop _x;
         _x disableAI "PATH";   
     } forEach (units _group);  
 };
@@ -102,6 +123,35 @@ pl_spawn_hold = {
     } forEach hcSelected player;
 };
 
+pl_execute = {
+    params ["_group"];
+    playSound "beep";
+    _group setVariable ["pl_on_hold", false];
+
+    // if icon == "wait" disable icon
+    if ((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa") then {
+        _group setVariable ["setSpecial", false];
+    };
+
+    // if group not on task and not on transport mission disable icon
+    if (!(_group getVariable "onTask") and !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa")) then {
+        _group setVariable ["setSpecial", false];
+    };
+
+    // if on transport mission set land icon
+    if ((vehicle (leader _group)) getVariable ["pl_on_transport", false]) then {
+        _group setVariable ["setSpecial", true];
+        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa"];
+    };
+
+    // reeanable "PATH"
+    {
+        _x enableAI "PATH";
+        // _x doFollow (leader _group);
+    } forEach (units _group);
+
+    // (units _group) joinSilent _group;
+};
 
 pl_spawn_execute = {
     {
@@ -109,7 +159,74 @@ pl_spawn_execute = {
     } forEach hcSelected player;
 };
 
+pl_draw_planed_task_array = [];
+
+pl_task_planer = {
+    // plan Task to be executed when reaching a Waypoint
+
+    params ["_taskType"];
+    private ["_group", "_wp", "_icon"];
+
+    // get _wp and _group
+    _logic = player getvariable "BIS_HC_scope";
+    _wp = _logic getvariable "WPover";
+    if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan Task!"};
+    _group = _wp select 0;
+    
+    // if Task already planed exit
+    if (_group getVariable "pl_task_planed") exitWith {hint format ["%1 already has a Task planed", groupId _group]};
+
+    // if already on active Task exit
+    if (_group getVariable "onTask" and !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa")) exitWith {hint format ["%1 already has a Task", groupId _group]};
+
+    // delete following wps
+    for "_i" from count waypoints _group - 1 to (_wp select 1) + 1 step -1 do {
+            deleteWaypoint [_group, _i];
+    };
+
+    // set Variable
+    _group setVariable ["pl_task_planed", true];
+
+    // call task to be executed
+    switch (_taskType) do { 
+        case "assault" : {[_group, [0,0,0], _wp] spawn pl_attack; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
+        case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "cover" : {[_group, _wp] spawn pl_take_cover; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "360" : {[_group, 15, _wp] spawn pl_360_at_mappos; _icon = "\A3\ui_f\data\map\markers\military\circle_CA.paa"};
+        case "clear" : {[_group, _wp] spawn pl_sweep_area; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"};
+        case "buildings" : {[_group, _wp] spawn pl_garrison_area_building; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+        case "resupply" : {[_group, _wp] spawn pl_resupply; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
+        case "recover" : {[_group, _wp] spawn pl_repair; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
+        case "maintenance" : {[_group, _wp] spawn pl_maintenance_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
+        default {}; 
+    };
+
+    // add indicator
+    pl_draw_planed_task_array pushBack [_wp, _icon];
+
+    // waituntil wp reached then delete indicator
+    [_wp, _group, _icon] spawn {
+        params ["_wp", "_group", "_icon"];
+        waitUntil {sleep 1; !(_group getVariable ["pl_task_planed", true])};
+        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+    };
+};
+
+pl_cancel_planed_task = {
+    // cancels planed Task
+
+    _logic = player getvariable "BIS_HC_scope";
+    _wp = _logic getvariable "WPover";
+    if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan cancel Task!"};
+    _group = _wp select 0;
+    _group setVariable ["pl_task_planed", false];
+};
+
+
+
 pl_select_group = {
+    // select hcGroup form player cursorTraget
+
     _target = cursorTarget;
     _group = group _target;
     player hcSelectGroup [_group];
@@ -126,7 +243,6 @@ pl_remote_camera_in = {
 pl_spawn_cam = {
     [leader (hcSelected player select 0)] call pl_remote_camera_in;
 };
-
 
 pl_remote_camera_out = {
 
@@ -146,23 +262,55 @@ pl_angle_switcher = {
 };
 
 pl_watch_dir = {
+    // order group to watch direction and vehicles to turn in direction
+
     params ["_group"];
     private ["_watchPos"];
 
+
+    playSound "beep";
     _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
     _groupPos = getPos (leader _group);
     _watchDir = [_cords, _groupPos] call BIS_fnc_dirTo;
-    _group setFormDir _watchDir;
-    _watchDir = [(_watchDir - 180)] call pl_angle_switcher;
-    _watchPos = [1000*(sin _watchDir), 1000*(cos _watchDir), 0] vectorAdd _groupPos;
-    {
-        _x doWatch _watchPos;
-    } forEach (units _group);
 
-    playSound "beep";
-    // leader _group sideChat "Roger Watching Direction, Over";
+    _leader = leader _group;
+        if (_leader == vehicle _leader) then {
+        _group setFormDir _watchDir;
+        _watchDir = [(_watchDir - 180)] call pl_angle_switcher;
+        _watchPos = [1000*(sin _watchDir), 1000*(cos _watchDir), 0] vectorAdd _groupPos;
+        {
+            _x doWatch _watchPos;
+        } forEach (units _group);
+    }
+    else
+    {
+        _vic = vehicle _leader;
+        _pos = [_vic, (_watchDir - 180)] call pl_get_turn_vehicle;
+        _vic doMove _pos;
+    };
 };
 
+
+pl_get_turn_vehicle = {
+    params ["_vic", "_turnDir"];
+
+    private _pos = [];
+    private _min = 20;      // Minimum range
+    private _i = 0;         // iterations
+
+    while {_pos isEqualTo []} do {
+        _pos = (_vic getPos [_min, _turnDir]) findEmptyPosition [0, 2.2, typeOf _vic];
+
+        // water
+        if !(_pos isEqualTo []) then {if (surfaceIsWater _pos) then {_pos = []};};
+
+        // update
+        _min = _min + 15;
+        _i = _i + 1;
+        if (_i > 6) exitWith {_pos = _vic modelToWorldVisual [0, -100, 0]};
+    };
+    _pos
+};
 pl_spawn_watch_dir = {
     {
         [_x] spawn pl_watch_dir;
@@ -465,7 +613,7 @@ pl_march = {
         _group setFormation _f;
         _group setVariable ["pl_on_march", nil];
 
-        if (_group getVariable ["onTask", true]) then {[_group] call pl_reset;};
+        if (_group getVariable ["onTask", true] and !(_group getVariable ["pl_task_planed", false])) then {[_group] call pl_reset;};
         
     }
     else

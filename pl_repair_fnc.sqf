@@ -137,8 +137,9 @@ pl_set_vic_laodout = {
 };
 
 pl_repair = {
-    private ["_group", "_engVic", "_vicPos", "_validEng", "_cords", "_repairTarget", "_toRepairVic", "_markerName", "_vicGroup", "_smokeGroup"];
-    _group = hcSelected player select 0;
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_group", "_engVic", "_vicPos", "_validEng", "_cords", "_repairTarget", "_toRepairVic", "_markerName", "_vicGroup", "_smokeGroup", "_icon"];
+
     if (vehicle (leader _group) != leader _group) then {
         _engVic = vehicle (leader _group);
         _validEng = false;
@@ -182,23 +183,46 @@ pl_repair = {
             _vicGroupId = _repairTarget #3;
             _smokeGroup = _repairTarget #4;
 
+            _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa";
+
+            if (count _taskPlanWp != 0) then {
+
+                // add Arrow indicator
+                pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+                waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+
+                // remove Arrow indicator
+                pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+                if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+                _group setVariable ["pl_task_planed", false];
+            };
+
+            if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
+
             [_group] call pl_reset;
             sleep 0.2;
 
             _group setVariable ["onTask", true];
             _group setVariable ["setSpecial", true];
-            _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"];
+            _group setVariable ["specialIcon", _icon];
 
             for "_i" from count waypoints _group - 1 to 0 step -1 do{
                 deleteWaypoint [_group, _i];
             };
-            _group addWaypoint [_repairTarget #0, 0];
+            _wp = _group addWaypoint [_repairTarget #0, 0];
             _group setVariable ["MARTA_customIcon", ["b_maint"]];
+            // add Task Icon to wp
+            pl_draw_planed_task_array pushBack [_wp, _icon];
             playSound "beep";
             // leader _group sideChat format ["%1 is moving to damaged vehicle, over", (groupId _group)];
             sleep 4;
             waitUntil {sleep 0.1; !alive _engVic or (unitReady _engVic) or !(_group getVariable ["onTask", true])};
             sleep 2;
+
+            // remove Task Icon from wp and delete wp
+            pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
 
             _repairTime = time + 90;
             {
@@ -247,9 +271,10 @@ pl_repair = {
 pl_maintenance_area = 45;
 
 pl_maintenance_point = {
-    private ["_group", "_markerName", "_areaMarkerName", "_cords", "_engineer", "_vics", "_groupId"];
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_group", "_markerName", "_areaMarkerName", "_cords", "_engineer", "_vics", "_groupId", "_icon"];
 
-    _group = hcSelected player select 0;
+    // _group = hcSelected player select 0;
     _cords = getPos (leader _group);
     _engineer = {
         if (getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "engineer" ) isEqualTo 1) exitWith {_x};
@@ -257,7 +282,6 @@ pl_maintenance_point = {
     } forEach (units _group);
 
     if (isNull _engineer) exitWith {hint format ["%1 has no Engineer!", groupId _group]};
-    if (vehicle (leader _group) != leader _group) exitWith {hint format ["%1 needs to dismount first!", groupId _group]};
 
     // _markerName = createMarker ["maintenance_point_center", (getPos (leader _group))];
     // _markerName setMarkerType "b_maint";
@@ -265,24 +289,41 @@ pl_maintenance_point = {
 
     // _group addGroupIcon ["b_maint"];
     // _group removeGroupIcon 1;
+
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa";
+
+    if (count _taskPlanWp != 0) then {
+
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+
+        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+        _group setVariable ["pl_task_planed", false];
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+
+    if (vehicle (leader _group) != leader _group) then {
+        _vic = vehicle (leader _group);
+        [_group] call pl_leave_vehicle;
+        waitUntil {(count (crew _vic) == 0)};
+    };
+    
+    [_group] call pl_reset;
+    
+    sleep 0.2;
+
     _groupId = groupId _group;
     _group setGroupId [format ["%1 (Maintenance Point)", _groupId]];
     _group setVariable ["MARTA_customIcon", ["b_maint"]];
-    
     _areaMarkerName = createMarker ["maintenance_point_area", getPos (leader _group)];
     _areaMarkerName setMarkerShape "ELLIPSE";
     _areaMarkerName setMarkerBrush "DiagGrid";
     _areaMarkerName setMarkerColor "colorBLUFOR";
     _areaMarkerName setMarkerAlpha 0.4;
     _areaMarkerName setMarkerSize [pl_maintenance_area, pl_maintenance_area];
-
-    [_group] call pl_reset;
-    
-    sleep 0.2;
-
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"];
+    _group setVariable ["specialIcon", _icon];
     _engineer setVariable ["pl_is_ccp_medic", true];
 
     private _fn_repair_action = {
@@ -291,7 +332,7 @@ pl_maintenance_point = {
         (driver _vic) disableAI "PATH";
 
         (group (driver _vic)) setVariable ["setSpecial", true];
-        (group (driver _vic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"];
+        (group (driver _vic)) setVariable ["specialIcon", _icon];
 
         _offsetZ = ((getPosASL _vic)#2) - ((getPosWorldVisual _vic)#2);
         _offsetX = (((boundingBoxReal _vic) select 0) select 0) / 2 - 1;
@@ -345,7 +386,7 @@ pl_maintenance_point = {
     while {(_group getVariable ["onTask", true] and (alive _engineer))} do {
         _vics = nearestObjects [_cords, ["Car", "Tank", "Truck"], pl_maintenance_area];
         {
-            if ((getDammage _x) > 0.1) then {
+            if ((getDammage _x) > 0) then {
                 _s1 = [_x, _engineer, _group] spawn _fn_repair_action;
                 waitUntil {scriptDone _s1};
             };

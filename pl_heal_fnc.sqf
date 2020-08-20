@@ -113,7 +113,7 @@ pl_heal_group = {
                 } forEach ((units _group) select {_x getVariable ["pl_wia", false]});;
                 // _medic sideChat "Tick";
                 {
-                    if ((_x getVariable "pl_injured") and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
+                    if ((_x getVariable "pl_injured") and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED") and (_x checkAIFeature "PATH")) then {
                         _h1 = [_medic, _x, nil] spawn pl_medic_heal;
                         waitUntil {sleep 0.1; scriptDone _h1 or !(_group getVariable ["onTask", true])}
                     };
@@ -345,7 +345,7 @@ pl_ccp = {
                     };
                 } forEach (_reviveTargets select {_x getVariable ["pl_wia", false]});
                 {
-                    if ((_x getVariable "pl_injured") and (alive _x) and !(_x getVariable "pl_wia")) then {
+                    if ((_x getVariable "pl_injured") and (alive _x) and !(_x getVariable "pl_wia") and (_x checkAIFeature "PATH")) then {
                         _h2 = [_medic, _x, _ccpPos] spawn pl_medic_heal;
                         _time = time + 30;
                         waitUntil {scriptDone _h2 or !(_group getVariable ["onTask", true]) or (time > _time)}

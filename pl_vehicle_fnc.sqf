@@ -171,7 +171,7 @@ pl_getIn_vehicle = {
 
 
 pl_getOut_vehicle = {
-    params ["_group", "_convoyId", "_moveInConvoy"];
+    params ["_group", "_convoyId", "_moveInConvoy", ["_atPosition", false]];
     private ["_vic", "_commander", "_markerName", "_cargo", "_cargoGroups", "_vicTransport", "_transportedVic", "_inLandConvoy", "_convoyLeader", "_convoyArray", "_convoyPosition", "_watchPos"];
 
     _leader = leader _group;
@@ -209,7 +209,7 @@ pl_getOut_vehicle = {
         };
         _cargo = fullCrew [_vic, "cargo", false];
 
-        if (visibleMap) then {
+        if (visibleMap and !_atPosition) then {
             // Unload at selected Map Position
             // For Land Vehicles and Air Transport
 
@@ -226,11 +226,16 @@ pl_getOut_vehicle = {
             };
             waitUntil {pl_mapClicked};
 
-            // if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
             sleep 0.1;
             pl_mapClicked = false;
             _cords = pl_lz_cords;
+
+            // (group (driver _vic)) setVariable ["onTask", true];
+            if (!(_moveInConvoy) and (count _cargo) > 0) then {
+                (group (driver _vic)) setVariable ["setSpecial", true];
+                (group (driver _vic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa"];
+            };
 
             if ((_cords distance2D (_vic getVariable "pl_rtb_pos")) > 200) then {
                 // playSound "beep";
@@ -336,14 +341,15 @@ pl_getOut_vehicle = {
 
             _wp = (group _commander) addWaypoint [_cords, 0];
             _wp setWaypointType "TR UNLOAD";
+
             // Create Destination Marker
+            private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa";
+            if (_moveInConvoy) then {_icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"};
+            pl_draw_planed_task_array pushBack [_wp, _icon];
+
             if ((group driver (_vic)) == (group player)) then {
                 (driver _vic) commandMove _cords;
             };
-            _markerName = format ["lzmarker%1", (groupId _group)];
-            createMarker [_markerName, pl_lz_marker_cords];
-            _markerName setMarkerType "mil_marker";
-            _markerName setMarkerColor "colorBLUFOR";
             // Setup the cargo of Transport Vehicle
             _cargo = fullCrew [_vic, "cargo", false];
             _cargoGroups = [];
@@ -394,6 +400,9 @@ pl_getOut_vehicle = {
                         if (_moveInConvoy) then {
                             _wp setWaypointType "MOVE";
                         };
+
+                        _vic setVariable ["pl_speed_limit", "CON"];
+
                         while {
                         (alive (vehicle (leader _convoyLeader))) and
                         // !(unitReady (driver (vehicle (leader _convoyLeader)))) and
@@ -438,46 +447,52 @@ pl_getOut_vehicle = {
                             };
                             sleep 1;
                         };
+                        sleep 0.5;
                         _vic forceSpeed -1;
                         _vic limitSpeed 50;
+                        _vic setVariable ["pl_speed_limit", "50"];
                         // Land Convoy Arriving
                         // if moveInConvoy do not unload Cargo
-                        {
-                            deleteMarker _x;
-                        } forEach pl_convoy_path_marker;
+
                         if !(_moveInConvoy) then {
-                            {
+                            if (_vic getVariable ["pl_on_transport", false]) then {
                                 {
-                                    if ((assignedVehicleRole _x) select 0 isEqualTo "Cargo") then {
-                                        unassignVehicle _x;
-                                        doGetOut _x;
+                                    {
+                                        if ((assignedVehicleRole _x) select 0 isEqualTo "Cargo") then {
+                                            unassignVehicle _x;
+                                            doGetOut _x;
+                                        };
+                                    } forEach (units _x);
+                                    if (_x == (group player)) then {
+                                        doStop driver (vehicle (player));
+                                        sleep 0.1;
+                                        driver (vehicle (player)) doFollow player;
                                     };
-                                } forEach (units _x);
-                                if (_x == (group player)) then {
-                                    doStop driver (vehicle (player));
-                                    sleep 0.1;
-                                    driver (vehicle (player)) doFollow player;
-                                };
-                                player hcSetGroup [_x];
-                            } forEach _cargoGroups;
+                                    player hcSetGroup [_x];
+                                } forEach _cargoGroups;
+                            };
                         };
                         {
                             player hcSetGroup [_x];
                         } forEach _convoyArray;
                         _wp setWaypointPosition [getPos _vic, 0];
-                        // if !(_convoyLeader getVariable "onTask" and _convoyLeader == (group _commander)) then {
-                        //     _wp = (group _commander) addWaypoint [getPos _vic, 0];
-                        //     _wp setWaypointType "TR UNLOAD";
-                        // };
+
+                        // remnove wp task icon
+                        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+
                         _convoyLeader setVariable ["onTask", false];
                         _convoyLeader setVariable ["setSpecial", false];
+                        // check if convoyLeader has cargo --> set icon
                         _cVic = vehicle (leader _convoyLeader);
-                        // if (_cVic getVariable ["pl_on_transport", false]) then {
-                        //     _convoyLeader setVariable ["setSpecial", true];
-                        //     _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"]
-                        // };
+                        _cCargo = fullCrew [_cvic, "cargo", false];
+                        if ((count _cCargo) > 0) then {
+                            _convoyLeader setVariable ["setSpecial", true];
+                            _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+                        };
+
                         group (_commander) setVariable ["pl_draw_convoy", false];
                         group (_commander) setBehaviour "AWARE";
+
                         {
                             _x enableAI "AUTOCOMBAT";
                         } forEach units (group _commander);
@@ -486,17 +501,23 @@ pl_getOut_vehicle = {
                     // Single Vehicle
                     else
                     {
-                        waitUntil {sleep 0.1; ((leader _group) distance2D waypointPosition[(group _commander), currentWaypoint (group _commander)] < 30) or (!alive _vic)};
-                        {
-                            _unit = _x select 0;
-                            _unit enableAI "AUTOCOMBAT";
-                            if (_x select 1 isEqualTo "cargo") then {
-                                unassignVehicle _unit;
-                                doGetOut _unit;
-                            };
-                        } forEach _cargo;
+                        waitUntil {((leader _group) distance2D waypointPosition[(group _commander), currentWaypoint (group _commander)] < 30) or (!alive _vic)};
+                        // remnove wp task icon
+                        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+
+                        sleep 0.5;
+                        if (_vic getVariable ["pl_on_transport", false]) then {
+                            {
+                                _unit = _x select 0;
+                                _unit enableAI "AUTOCOMBAT";
+                                if (_x select 1 isEqualTo "cargo") then {
+                                    unassignVehicle _unit;
+                                    doGetOut _unit;
+                                };
+                            } forEach _cargo;
+                        };
                     };
-                    if !(_moveInConvoy) then {
+                    if (!_moveInConvoy and _vic getVariable ["pl_on_transport", false]) then {
                         {
                             _x setVariable ["pl_show_info", true];
                             // _x addWaypoint [getPos _vic, 10];
@@ -546,7 +567,6 @@ pl_getOut_vehicle = {
                 (group _commander) setVariable ["setSpecial", false];
             };
             _vic setVariable ["pl_on_transport", nil];
-            deleteMarker _markerName;
             sleep 10;
 
             // Air Tranport Ariving
@@ -582,9 +602,6 @@ pl_getOut_vehicle = {
             // Unload at Current Position when map closed
             _cargoGroups = [];
             doStop _vic;
-            for "_i" from count waypoints (group _commander) - 1 to 0 step -1 do{
-                deleteWaypoint [(group _commander), _i];
-            };
             {
                 _unit = _x select 0;
                 unassignVehicle _unit;
@@ -719,12 +736,15 @@ pl_airassualt_security = {
 
 pl_vehicle_speed_limit = {
     Params ["_group", "_speed"];
+    private ["_strSpeed", "_vic"];
 
     _leader = leader _group;
+    _vic = vehicle _leader;
     if (vehicle _leader != _leader) then {
-        _vic = vehicle _leader;
         _vic limitSpeed _speed;
     };
+    if (_speed > 50) then {_strSpeed = "MAX"} else {_strSpeed = str _speed};
+    _vic setVariable ["pl_speed_limit", _strSpeed];
 };
 
 pl_spawn_vic_speed = {

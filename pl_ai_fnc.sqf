@@ -294,6 +294,7 @@ pl_set_up_ai = {
     _magCountAll = 0;
     {
         // Ammo Count
+        _x setVariable ["pl_start_backpack_load", backpackitems _x];
         _mags = magazines _x;
         _mag = "";
         if ((primaryWeapon _x) != "") then {
@@ -339,6 +340,7 @@ pl_vehicle_setup = {
     
     if (isNil {_vic getVariable "pl_vehicle_setup_complete"}) then {
         _vic limitSpeed 50;
+        _vic setVariable ["pl_speed_limit", "50"];
         if (isNil {_vic getVariable "pl_repair_lifes"}) then {
             if (_vic isKindOf "Tank") then {
                 _vic setVariable ["pl_repair_lifes", 3];

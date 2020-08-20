@@ -15,6 +15,22 @@ pl_get_group_health = {
     _healthState;
 };
 
+pl_get_vic_health = {
+    params ["_vic"];
+    private ["_healthState"];
+    _healthState = [0.4,1,0.2,1];
+    if ((damage _vic) > 0.2) then {
+        _healthState = [0.9,0.9,0,1];
+    };
+    if ((damage _vic) > 0.8) then {
+        _healthState = [0.7,0,0,1];
+    };
+    if !(canMove _vic) then {
+        _healthState = [0.92,0.24,0.07,1];
+    };
+    _healthState;
+};
+
 
 pl_draw_group_info = {
 
@@ -124,8 +140,6 @@ pl_draw_group_info = {
 
                 _behaviourPos = [(_pos select 0) + _mapscaleX, (_pos select 1) - _mapScaleY];
                 _behaviour = behaviour (leader _x);
-                _setSpecial = _x getVariable 'setSpecial';
-                _specialIcon = _x getVariable 'specialIcon';
                 _color = [0.4,1,0.2,1];
                 _icon = '\A3\ui_f\data\igui\cfg\simpleTasks\types\listen_ca.paa';
                 if (_behaviour isEqualTo 'COMBAT') then {
@@ -151,11 +165,12 @@ pl_draw_group_info = {
                     2
                 ];
 
-
-                if (_setSpecial) then {
+                if (_x getVariable 'setSpecial') then {
+                    _specialIcon = _x getVariable 'specialIcon';
                     _posOffset = _mapscaleX + (_mapscaleX * 0.85);
                     _specialPos = [(_pos select 0) + _posOffset, (_pos select 1) - _mapScaleY];
                     _color = [0.9,0.9,0,1];
+                    if (_x getVariable ['pl_on_hold', false]) then {_color = [0.92,0.24,0.07,1];};
                     _display drawIcon [
                         _specialIcon,
                         _color,
@@ -165,6 +180,41 @@ pl_draw_group_info = {
                         0,
                         '',
                         2
+                    ];
+                };
+
+                if ((vehicle (leader _x)) != leader _x) then {
+                    _vicPos = [(_pos select 0), (_pos select 1) - _mapscaleY];
+                    _vicColor = [vehicle (leader _x)] call pl_get_vic_health;
+                    _display drawIcon [
+                        '\A3\ui_f\data\map\markers\military\triangle_CA.paa',
+                        _vicColor,
+                        _vicpos,
+                        11,
+                        11,
+                        180,
+                        '',
+                        2
+                    ];
+
+                    _vicSpeedLimit = vehicle (leader _x) getVariable 'pl_speed_limit';
+                    _vicSpeedStr = format ['   %1/%2 km/h', round (speed (vehicle (leader _x))),_vicSpeedLimit];
+                    _vicSpeedPos = [(_pos select 0) - (_mapscalex + (_mapscalex * 0.85)), (_pos select 1) - (_mapscaleY + (_mapscaleY * 0.9))];
+                    _vicSpeedColor = [0.4,1,0.2,1];
+                    if (_vicSpeedLimit isEqualTo '30') then {_vicSpeedColor = [0.9,0.9,0,1]};
+                    if (_vicSpeedLimit isEqualTo '15') then {_vicSpeedColor = [0.7,0,0,1]};
+                    _display drawIcon [
+                        '#(rgb,4,1,1)color(1,1,1,0)',
+                        _vicSpeedColor,
+                        _vicSpeedPos,
+                        17,
+                        17,
+                        0,
+                        _vicSpeedStr,
+                        0,
+                        0.015,
+                        'TahomaB',
+                        'right'
                     ];
                 };
 
@@ -400,6 +450,68 @@ pl_draw_left_vehicles = {
 };
 
 [] spawn pl_draw_left_vehicles;
+
+
+pl_draw_planed_task = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                    _wp = _x select 0;
+                    _icon = _x select 1;
+                    _pos = waypointPosition _wp;
+                    _color = [0.9,0.9,0,1];
+                    _display drawIcon [
+                        _icon,
+                        _color,
+                        _pos,
+                        15,
+                        15,
+                        0,
+                        '',
+                        2
+                    ];
+            } forEach pl_draw_planed_task_array;
+        };
+    "]; // "
+};
+
+[] spawn pl_draw_planed_task;
+
+pl_draw_planed_task_array_wp = [];
+
+pl_draw_planed_task_wp = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                    _pos_dest = _x select 0;
+                    _pos_src = waypointPosition (_x select 1);
+                    _icon = _x select 2;
+                    _color = [0.9,0.9,0,1];
+                    _display drawIcon [
+                        _icon,
+                        _color,
+                        _pos_dest,
+                        15,
+                        15,
+                        0,
+                        '',
+                        2
+                    ];
+
+                    _display drawLine [
+                        _pos_src,
+                        _pos_dest,
+                        [0.9,0.9,0,1]
+                    ];
+
+            } forEach pl_draw_planed_task_array_wp;
+        };
+    "]; // "
+};
+
+[] spawn pl_draw_planed_task_wp;
 
 
 pl_marker_targets = [];
