@@ -544,6 +544,17 @@ pl_bounding_move = {
 pl_sweep_cords = [0,0,0];
 pl_sweep_area_size = 35;
 
+pl_get_assault_speed = {
+    params ["_unit", "_target"];
+
+    private _distance = _unit distance2d _target;
+    if (_distance > 20) exitWith {-1};
+    if (_distance > 15) exitWith {3};
+    if (_distance > 4) exitWith {2};
+    1
+};
+
+
 pl_sweep_area = {
     params ["_group", ["_taskPlanWp", []]];
     private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon"];
@@ -674,19 +685,17 @@ pl_sweep_area = {
     {
         sleep 0.2;
 
-        _limiter = 1;
-        _teamid = 0;
         {
             _x enableAI "AUTOCOMBAT";
             _x forceSpeed 12;
-            [_x, _targets, _teamid] spawn {
-                params ["_unit", "_targets", "_teamid"];
+            [_x, _targets] spawn {
+                params ["_unit", "_targets"];
 
                 private ["_markerName"];
                 private _currentTarget = -1;
-                while {(_currentTarget < (count _targets) - 1)} do {
-                    _currentTarget = _currentTarget + 1;
-                    _target = _targets select _currentTarget + _teamid;
+                while {(count _targets) > 0} do {
+                    private _target = ([_targets, [], {_x distance2D _unit}, "ASCEND"] call BIS_fnc_sortBy) select 0;
+                    if (isNil "_target") exitWith {};
                     if (alive _target) then {
                         // _unit reveal [_target, 3];
                         _pos = getPosATL _target;
@@ -694,29 +703,35 @@ pl_sweep_area = {
                         // _markerName = createMarker [str _unit, _pos];
                         // _markerName setMarkerType "mil_dot";
                         // _markerName setMarkerText str _unit;
-                        sleep 0.2;
-                        while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true])} do {
-                            _unit doTarget _target;
-                            _unit doFire _target;
-                            if ((speed _unit) < 1) then {
-                                _unit doMove _pos;
-                                _unit moveTo _pos;
-                            };
+                        // _markerName setMarkerPos (getPos _target);
 
-                            sleep 1;
+                        _unit disableAI "AUTOCOMBAT";
+                        _unit disableAI "TARGET";
+                        _unit disableAI "AUTOTARGET";
+
+                        sleep 0.2;
+                        _unit doMove _pos;
+                        _unit moveTo _pos;
+                        while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true])} do {
+                            _enemy = _unit findNearestEnemy _unit;
+                            // _unit forceSpeed ([_unit, _enemy] call pl_get_assault_speed);
+                            if ((_unit distance2D _enemy) < 7) then {
+                                _unit doTarget _enemy;
+                                _unit doFire _enemy;
+                            };
                         };
+                        doStop _unit;
+                        if (!alive  _target) then {_targets deleteAt (_targets find _target)};
                     };
                     // waitUntil {(!alive _unit) or (!alive _target) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])};
-                    _teamid = 0;
                     // deleteMarker _markerName;
                     if ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) exitWith {};
                 };
+                _unit enableAI "AUTOCOMBAT";
+                _unit enableAI "TARGET";
+                _unit enableAI "AUTOTARGET";
+                _unit forceSpeed -1;
                 // _unit sideChat "finished";
-            };
-            _limiter = _limiter + 1;
-            if (_limiter % 2 == 0) then {
-                _teamid = _teamid + 1;
-                if (_teamid > (count _targets) - 1) then {_teamid = 0};
             };
         } forEach (units _group);
 
