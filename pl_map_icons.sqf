@@ -68,8 +68,7 @@ pl_draw_group_info = {
                 _mapScale = ctrlMapScale (_this select 0);
                 _mapscaleX = _mapScale * _worldSizeX;
                 _mapScaleY = _mapScale * _worldSizeY;
-                _pos = getPosVisual (leader _x);
-
+                _pos = getPosVisual (vehicle (leader _x));
 
                 _callsignText = format ['  %1', groupId _x];
                 if (count (units _x) == 1 and _x != (group player)) then {
@@ -86,8 +85,8 @@ pl_draw_group_info = {
                     '#(rgb,4,1,1)color(1,1,1,0)',
                     [0,0.3,0.6,1],
                     _pos,
-                    25,
-                    25,
+                    23,
+                    23,
                     0,
                     _callsignText,
                     0,
@@ -103,7 +102,7 @@ pl_draw_group_info = {
                     '#(rgb,4,1,1)color(1,1,1,0)',
                     _healthColor,
                     _pos,
-                    25,
+                    23,
                     25,
                     0,
                     _strengthText,
@@ -130,8 +129,8 @@ pl_draw_group_info = {
                     _contactIcon,
                     _contactColor,
                     _contactPos,
-                    15,
-                    15,
+                    14,
+                    14,
                     0,
                     '',
                     2
@@ -158,8 +157,8 @@ pl_draw_group_info = {
                     _icon,
                     _color,
                     _behaviourPos,
-                    15,
-                    15,
+                    14,
+                    14,
                     0,
                     '',
                     2
@@ -175,8 +174,8 @@ pl_draw_group_info = {
                         _specialIcon,
                         _color,
                         _specialpos,
-                        15,
-                        15,
+                        14,
+                        14,
                         0,
                         '',
                         2
@@ -192,29 +191,27 @@ pl_draw_group_info = {
                         _vicpos,
                         11,
                         11,
-                        180,
+                        0,
                         '',
                         2
                     ];
 
                     _vicSpeedLimit = vehicle (leader _x) getVariable 'pl_speed_limit';
-                    _vicSpeedStr = format ['   %1/%2 km/h', round (speed (vehicle (leader _x))),_vicSpeedLimit];
-                    _vicSpeedPos = [(_pos select 0) - (_mapscalex + (_mapscalex * 0.85)), (_pos select 1) - (_mapscaleY + (_mapscaleY * 0.9))];
-                    _vicSpeedColor = [0.4,1,0.2,1];
+                    _vicSpeedPos = [(_pos select 0), (_pos select 1) - (_mapscaleY * 1.4)];
+                    _vicSpeedColor = [0.9, 0.9, 0.9,1];
+                    if (_vicSpeedLimit isEqualTo '50') then {_vicSpeedColor = [0.4,1,0.2,1]};
                     if (_vicSpeedLimit isEqualTo '30') then {_vicSpeedColor = [0.9,0.9,0,1]};
                     if (_vicSpeedLimit isEqualTo '15') then {_vicSpeedColor = [0.7,0,0,1]};
+                    if (_vicSpeedLimit isEqualTo 'CON') then {_vicSpeedColor = [0.92,0.24,0.07,1]};
                     _display drawIcon [
-                        '#(rgb,4,1,1)color(1,1,1,0)',
+                        '\A3\ui_f\data\map\markers\military\dot_CA.paa',
                         _vicSpeedColor,
                         _vicSpeedPos,
-                        17,
-                        17,
+                        12,
+                        12,
                         0,
-                        _vicSpeedStr,
-                        0,
-                        0.015,
-                        'TahomaB',
-                        'right'
+                        '',
+                        2
                     ];
                 };
 

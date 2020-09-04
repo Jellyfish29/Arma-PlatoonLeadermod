@@ -24,7 +24,7 @@ addMissionEventHandler ["EntityKilled",{
 
             _crewClassName = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "crew");
             {
-                if (typeOf _x isEqualTo _crewClassName) then {
+                if (typeOf _x isEqualTo _crewClassName and !(((_killed call BIS_fnc_objectType) select 1) isEqualTo "Car")) then {
                     deleteVehicle _x;
                 }
                 else
@@ -248,7 +248,9 @@ pl_repair = {
                     // deleteVehicle ((_x getVariable "effectLight") select 0);
                 } forEach (units _smokeGroup);
                 sleep 0.1;
-                _vicGroup = createVehicleCrew _toRepairVic;
+                if !(((_toRepairVic call BIS_fnc_objectType) select 1) isEqualTo "Car") then {
+                    _vicGroup = createVehicleCrew _toRepairVic;
+                };
                 sleep 0.1;
                 _vicGroup setGroupId [_vicGroupId];
                 sleep  0.1;
@@ -400,8 +402,3 @@ pl_maintenance_point = {
     _group setGroupId [_groupId];
     // deleteMarker _markerName;
 };
-
-
-
-// [vic_1] spawn pl_vehicle_setup;
-// [vic_2] spawn pl_vehicle_setup;

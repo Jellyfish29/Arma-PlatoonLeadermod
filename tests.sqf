@@ -11,7 +11,7 @@ pl_get_assault_speed = {
 
 pl_sweep_area = {
     params ["_group", ["_taskPlanWp", []]];
-    private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon"];
+    private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation"];
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
@@ -88,33 +88,18 @@ pl_sweep_area = {
     _wp = _group addWaypoint [_cords, 0];
 
     pl_draw_planed_task_array pushBack [_wp, _icon];
+
+    _formation = formation _group;
+    _group setFormation "FILE";
     _group setBehaviour "AWARE";
-
     
-
     _targets = [];
-    // _targets arrayIntersect _targets;
-
-    // player sideChat str _targets;
-
-    // debug
-    // for "_i" from 0 to (count _targets) -1 step 1 do {
-    //     _markerName = createMarker [str _i, getPos (_targets#_i)];
-    //     _markerName setMarkerType "mil_dot";
-    //     _markerName setMarkerText str _i;
-    // };
-
     waitUntil {sleep 0.1; (((leader _group) distance _cords) < (pl_sweep_area_size + 10)) or !(_group getVariable ["onTask", true])};
     _allMen = _cords nearObjects ["Man", pl_sweep_area_size];
     {
         _targets pushBack _x;
     } forEach (_allMen select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
     _targets = [_targets, [], {(leader _group) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy;
-    // _group setSpeedMode "LIMITED";
-    // _group setCombatMode "RED";
-    // _group setVariable ["pl_combat_mode", true];
-
-    // player sideChat str _targets;
 
     [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
     sleep 0.1;
@@ -138,86 +123,120 @@ pl_sweep_area = {
     else
     {
         sleep 0.2;
+        missionNamespace setVariable [format ["targets_%1", _group], _targets];
 
         {
             _x enableAI "AUTOCOMBAT";
             _x forceSpeed 12;
-            [_x, _targets] spawn {
-                params ["_unit", "_targets"];
+            [_x, _group] spawn {
+                params ["_unit", "_group"];
+                private ["_movePos", "_movementCheck", "_movementCheckTim", "_target"];
 
-                private ["_markerName"];
-                private _currentTarget = -1;
-                while {(count _targets) > 0} do {
-                    private _target = ([_targets, [], {_x distance2D _unit}, "ASCEND"] call BIS_fnc_sortBy) select 0;
-                    if (isNil "_target") exitWith {};
+                _movementCheckTime = 0;
+                _movementCheck = false;
+                while {(count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {
+                    _target = selectRandom (missionNamespace getVariable format ["targets_%1", _group]);
                     if (alive _target) then {
-                        // _unit reveal [_target, 3];
                         _pos = getPosATL _target;
-                        // debug
-                        // _markerName = createMarker [str _unit, _pos];
-                        // _markerName setMarkerType "mil_dot";
-                        // _markerName setMarkerText str _unit;
-                        // _markerName setMarkerPos (getPos _target);
+                        _movePos = _pos vectorAdd [0.5 - random 1, 0.5 - random 1, 0];
+                        _unit doMove _movePos;
+                        _unit moveTo _movePos;
 
-                        _unit disableAI "AUTOCOMBAT";
-                        _unit disableAI "TARGET";
-                        _unit disableAI "AUTOTARGET";
-
-                        sleep 0.2;
-                        _unit doMove _pos;
-                        _unit moveTo _pos;
                         while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true])} do {
                             _enemy = _unit findNearestEnemy _unit;
-                            // _unit forceSpeed ([_unit, _enemy] call pl_get_assault_speed);
                             if ((_unit distance2D _enemy) < 7) then {
                                 _unit doTarget _enemy;
                                 _unit doFire _enemy;
                             };
+                            if ((speed _unit) == 0 and !(_movementCheck)) then {
+                                _movementCheck = true;
+                                _movementCheckTime = time + 3;
+                            };
+                            if (_movementCheck) then {
+                                if (time > _movementCheckTime) exitWith {_movementCheck = false};
+                                if ((speed _unit) > 0) then {_movementCheck = false};
+                            };
                         };
                         doStop _unit;
-                        if (!alive  _target) then {_targets deleteAt (_targets find _target)};
+                        if (!alive  _target) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
                     };
-                    // waitUntil {(!alive _unit) or (!alive _target) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])};
-                    // deleteMarker _markerName;
                     if ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) exitWith {};
                 };
-                _unit enableAI "AUTOCOMBAT";
-                _unit enableAI "TARGET";
-                _unit enableAI "AUTOTARGET";
-                _unit forceSpeed -1;
-                // _unit sideChat "finished";
             };
         } forEach (units _group);
 
-        // make group forget Targets outside sweep area --> More aggressive behaviour
-        [_group, _cords] spawn {
-            params ["_group", "_cords"];
-            while {_group getVariable ["onTask", true]} do {
-                _targets = (leader _group) targetsQuery [objNull, sideUnknown, "", [], 0];
-                {
-                    if (((_x select 1) distance2D _cords) > pl_sweep_area_size + 15) then {
-                        _group forgetTarget (_x#1);
-                    };
-                } forEach _targets;
-                sleep 2;
-            };
-        };
-
-
-        waitUntil {!(_group getVariable ["onTask", true]) or ({!alive _x} count _targets == count _targets)};
+        waitUntil {!(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
     };
 
     deleteMarker _markerName;
-    // _group setVariable ["pl_combat_mode", false];
-    // _group setCombatMode "YELLOW";
+    missionNamespace setVariable [format ["targets_%1", _group], nil];
+    _group setFormation _formation;
+
     // remove Icon form wp
     pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
     {
         _x setVariable ["pl_damage_reduction", false];
     } forEach (units _group);
+    sleep 1;
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
         playsound "beep";
         (leader _group) sideChat format ["%1 Area sweep complete", (groupId _group)];
     };
 };
+
+pl_suppressive_fire = {
+    params ["_units"];
+    private ["_pos", "_time", "_target", "_leader", "_alt", "_aimPoint"];
+
+    _target = cursorTarget;
+    _leader = leader (group (_units select 0));
+    if (isNull _target) then {
+        if (visibleMap) then {
+            _pos = (findDisplay 12 displayCtrl 51) posScreenToWorld getMousePosition;
+        }
+        else
+        {
+            _pos = screenToWorld [0.5,0.5];
+        };
+        _pos = [_pos#0, _pos#1, 1.5];
+        _pos = AGLToASL _pos;
+
+        _targetHouse = nearestTerrainObjects [_pos, ["BUILDING", "HOUSE", "BUNKER", "FORTRESS"], 25, true, true];
+        if (count _targetHouse == 0) then {
+            _target = _pos;  
+        }
+        else
+        {
+            _target = _targetHouse select 0;
+        };
+    };
+    {
+        _unit = _x;
+        _aimPoint = _target;
+        if (typeName _target isEqualTo "ARRAY") then {
+            if (([_unit, "FIRE"] checkVisibility [getPosAsl _unit, _target]) < 1) then {
+                _dir = _unit getDir _target;
+                if (vehicle _unit != _unit) then {
+                    _aimPoint = [25*(sin _dir), 25*(cos _dir), 0] vectorAdd (eyePos _unit);
+                }
+                else
+                {
+                    _aimPoint = [15*(sin _dir), 15*(cos _dir), 0] vectorAdd (eyePos _unit);
+                }; 
+                _aimPoint = ASLToATL _aimPoint;
+                _aimPoint = [_aimPoint#0, _aimPoint#1, 1];
+                _aimPoint = ATLToASL _aimPoint;
+            };
+            createSimpleObject ["Sign_Sphere100cm_F", _aimPoint, true];
+        };
+        _friends = (nearestObjects [_aimPoint, ["Man"], 8]) select {(side _x) isEqualTo playerSide};
+        if (count _friends == 0) then {
+            _unit doSuppressiveFire _aimPoint;
+        };
+    } forEach _units;
+    player sideRadio "SentCmdSuppress";
+};
+
+
+// g1 apply {currentCommand _x};

@@ -343,11 +343,11 @@ pl_vehicle_setup = {
         _vic setVariable ["pl_speed_limit", "50"];
         if (isNil {_vic getVariable "pl_repair_lifes"}) then {
             if (_vic isKindOf "Tank") then {
-                _vic setVariable ["pl_repair_lifes", 3];
+                _vic setVariable ["pl_repair_lifes", 4];
             }
             else
             {
-                _vic setVariable ["pl_repair_lifes", 1];
+                _vic setVariable ["pl_repair_lifes", 2];
             };
         };
 
