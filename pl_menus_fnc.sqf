@@ -54,11 +54,14 @@ pl_str_transfer = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTask
 pl_str_resupply = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Resupply</t>';
 pl_str_repair = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>';
 pl_str_maintenance = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Set up Maintenance Point</t>';
+pl_str_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Place Mine/Charge</t>';
+pl_str_clear_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mines</t>';
+pl_str_op = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa"/><t> Set Up OP</t>';
 
 pl_show_css_menu = {
     call compile format ["
     HC_Missions_0 = [
-        ['CSS',true],
+        ['Combat Support',true],
         [parseText '%3', [2], '', -5, [['expression', '[] spawn pl_spawn_heal_group']], '%1', 'HCNotEmpty'],
         [parseText '%4', [3], '', -5, [['expression', '[] spawn pl_ccp']], '%1', 'HCNotEmpty'],
         [parseText '%5', [4], '', -5, [['expression', '[] spawn pl_transfer_medic']], '%1', 'HCNotEmpty'],
@@ -66,8 +69,13 @@ pl_show_css_menu = {
         [parseText '%6', [5], '', -5, [['expression', '{[_x] spawn pl_resupply} forEach (hcSelected player)']], '1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
         [parseText '%7', [6], '', -5, [['expression', '[] spawn pl_repair']], '%2', 'HCNotEmpty'],
-        [parseText '%8', [7], '', -5, [['expression', '[] spawn pl_maintenance_point']], '%2', 'HCNotEmpty']
-    ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance];
+        [parseText '%8', [7], '', -5, [['expression', '[] spawn pl_maintenance_point']], '%2', 'HCNotEmpty'],
+        ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%9', [8], '', -5, [['expression', '[] spawn pl_create_mine_menu']], '%2', 'HCNotEmpty'],
+        [parseText '%10', [9], '', -5, [['expression', '[] spawn pl_mine_clearing']], '%2', 'HCNotEmpty'],
+        ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%11', [10], '', -5, [['expression', '[] spawn pl_recon']], '%2', 'HCNotEmpty']
+    ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance, pl_str_mine, pl_str_clear_mine, pl_str_op];
     // showCommandingMenu "#USER:pl_mortar_menu";
 };
 [] call pl_show_css_menu;

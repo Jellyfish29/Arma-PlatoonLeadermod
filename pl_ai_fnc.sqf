@@ -204,8 +204,10 @@ pl_auto_crouch = {
             if !((group _unit) getVariable ["onTask", false]) then {
                 if ((speed _unit) == 0) then {
                     _unit setUnitPos "MIDDLE";
-                    waitUntil {sleep 2; (speed _unit) > 0 or !(alive _unit)};
-                    _unit setUnitPos "AUTO";
+                    waitUntil {sleep 1; (speed _unit) > 0 or !(alive _unit)};
+                    if ((unitPos _unit) == "MIDDLE") then {
+                        _unit setUnitPos "AUTO";
+                    };
                 };
             };
         };

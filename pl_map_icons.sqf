@@ -510,6 +510,25 @@ pl_draw_planed_task_wp = {
 
 [] spawn pl_draw_planed_task_wp;
 
+pl_draw_mine_dir = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            if (pl_show_draw_mine_dir) then {
+                _pos1 = pl_mine_cords;
+                _pos2 = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                _display drawArrow [
+                    _pos1,
+                    _pos2,
+                    [0.9,0.9,0,1]
+                    ];
+            };
+        };
+    "]; // "
+};
+
+[] call pl_draw_mine_dir;
+
 
 pl_marker_targets = [];
 

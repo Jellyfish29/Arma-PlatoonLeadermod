@@ -260,11 +260,11 @@ pl_suppressive_fire = {
             if (([_unit, "FIRE"] checkVisibility [getPosAsl _unit, _target]) < 1) then {
                 _dir = _unit getDir _target;
                 if (vehicle _unit != _unit) then {
-                    _aimPoint = [25*(sin _dir), 25*(cos _dir), 0] vectorAdd (eyePos _unit);
+                    _aimPoint = [25*(sin _dir), 25*(cos _dir), 1.75] vectorAdd (eyePos _unit);
                 }
                 else
                 {
-                    _aimPoint = [15*(sin _dir), 15*(cos _dir), 0] vectorAdd (eyePos _unit);
+                    _aimPoint = [15*(sin _dir), 15*(cos _dir), 0.5] vectorAdd (eyePos _unit);
                 }; 
                 _aimPoint = ASLToATL _aimPoint;
                 _aimPoint = [_aimPoint#0, _aimPoint#1, 1];
@@ -687,56 +687,56 @@ pl_sweep_area = {
     };
 };
 
-pl_suppressive_fire = {
-    params ["_units"];
-    private ["_pos", "_time", "_target", "_leader", "_alt", "_aimPoint"];
+// pl_suppressive_fire = {
+//     params ["_units"];
+//     private ["_pos", "_time", "_target", "_leader", "_alt", "_aimPoint"];
 
-    _target = cursorTarget;
-    _leader = leader (group (_units select 0));
-    if (isNull _target) then {
-        if (visibleMap) then {
-            _pos = (findDisplay 12 displayCtrl 51) posScreenToWorld getMousePosition;
-        }
-        else
-        {
-            _pos = screenToWorld [0.5,0.5];
-        };
-        _pos = [_pos#0, _pos#1, 1.5];
-        _pos = AGLToASL _pos;
+//     _target = cursorTarget;
+//     _leader = leader (group (_units select 0));
+//     if (isNull _target) then {
+//         if (visibleMap) then {
+//             _pos = (findDisplay 12 displayCtrl 51) posScreenToWorld getMousePosition;
+//         }
+//         else
+//         {
+//             _pos = screenToWorld [0.5,0.5];
+//         };
+//         _pos = [_pos#0, _pos#1, 1.5];
+//         _pos = AGLToASL _pos;
 
-        _targetHouse = nearestTerrainObjects [_pos, ["BUILDING", "HOUSE", "BUNKER", "FORTRESS"], 25, true, true];
-        if (count _targetHouse == 0) then {
-            _target = _pos;  
-        }
-        else
-        {
-            _target = _targetHouse select 0;
-        };
-    };
-    {
-        _unit = _x;
-        _aimPoint = _target;
-        if (typeName _target isEqualTo "ARRAY") then {
-            if (([_unit, "FIRE"] checkVisibility [getPosAsl _unit, _target]) < 1) then {
-                _dir = _unit getDir _target;
-                if (vehicle _unit != _unit) then {
-                    _aimPoint = [25*(sin _dir), 25*(cos _dir), 0] vectorAdd (eyePos _unit);
-                }
-                else
-                {
-                    _aimPoint = [15*(sin _dir), 15*(cos _dir), 0] vectorAdd (eyePos _unit);
-                }; 
-                _aimPoint = ASLToATL _aimPoint;
-                _aimPoint = [_aimPoint#0, _aimPoint#1, 1];
-                _aimPoint = ATLToASL _aimPoint;
-            };
-            createSimpleObject ["Sign_Sphere100cm_F", _aimPoint, true];
-        };
-        _friends = (nearestObjects [_aimPoint, ["Man"], 8]) select {(side _x) isEqualTo playerSide};
-        if (count _friends == 0) then {
-            _unit doSuppressiveFire _aimPoint;
-        };
-    } forEach _units;
-    player sideRadio "SentCmdSuppress";
-};
+//         _targetHouse = nearestTerrainObjects [_pos, ["BUILDING", "HOUSE", "BUNKER", "FORTRESS"], 25, true, true];
+//         if (count _targetHouse == 0) then {
+//             _target = _pos;  
+//         }
+//         else
+//         {
+//             _target = _targetHouse select 0;
+//         };
+//     };
+//     {
+//         _unit = _x;
+//         _aimPoint = _target;
+//         if (typeName _target isEqualTo "ARRAY") then {
+//             if (([_unit, "FIRE"] checkVisibility [getPosAsl _unit, _target]) < 1) then {
+//                 _dir = _unit getDir _target;
+//                 if (vehicle _unit != _unit) then {
+//                     _aimPoint = [25*(sin _dir), 25*(cos _dir), 0] vectorAdd (eyePos _unit);
+//                 }
+//                 else
+//                 {
+//                     _aimPoint = [15*(sin _dir), 15*(cos _dir), 0] vectorAdd (eyePos _unit);
+//                 }; 
+//                 _aimPoint = ASLToATL _aimPoint;
+//                 _aimPoint = [_aimPoint#0, _aimPoint#1, 1];
+//                 _aimPoint = ATLToASL _aimPoint;
+//             };
+//             createSimpleObject ["Sign_Sphere100cm_F", _aimPoint, true];
+//         };
+//         _friends = (nearestObjects [_aimPoint, ["Man"], 8]) select {(side _x) isEqualTo playerSide};
+//         if (count _friends == 0) then {
+//             _unit doSuppressiveFire _aimPoint;
+//         };
+//     } forEach _units;
+//     player sideRadio "SentCmdSuppress";
+// };
 // {[_x] spawn pl_sweep_area} forEach (hcSelected player);

@@ -624,6 +624,122 @@ pl_march = {
 };
 // {[_x] spawn pl_march}forEach (hcSelected player)
 
+pl_recon_active = false;
+
+pl_recon = {
+    private ["_group", "_markerName", "_intelInterval", "_intelMarkers", "_wp", "_leader", "_distance", "_pos", "_dir", "_markerNameArrow", "_markerNameGroup", "_posOccupied"];
+
+    _group = (hcSelected player) select 0;
+
+    if (pl_recon_active) exitWith {hint "Only one Group can set up a OP"};
+    pl_recon_active = true;
+
+    [_group] call pl_reset;
+    sleep 0.2;
+
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["onTask", true];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa"];
+
+    _group setBehaviour "STEALTH";
+    // {
+    //     [_x, getPos _x, 0, 10, false] spawn pl_find_cover;
+    // } forEach (units _group);
+
+    _intelInterval = 30;
+    if (leader _group == vehicle (leader _group)) then {
+        [_group, getPos (leader _group), 40] spawn pl_360;
+        _intelInterval = 60;
+    }
+    else
+    {
+        _intelInterval = 30;
+        _vic = vehicle (leader _group);
+        _covers = nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 70, true, true];
+        if ((count _covers) > 0) then {
+            _vic doMove getPosATL (_covers select 0);
+        };
+    };
+    
+    _group setVariable ["MARTA_customIcon", ["b_recon"]];
+
+    _markerName = createMarker ["reconArea", getPos (leader _group)];
+    _markerName setMarkerColor "colorBlue";
+    _markerName setMarkerShape "ELLIPSE";
+    _markerName setMarkerBrush "Border";
+    _markerName setMarkerAlpha 0.3;
+    _markerName setMarkerSize [1000, 1000];
+
+    sleep 1;
+
+    _intelMarkers = [];
+
+    while {_group getVariable ["onTask", true]} do {
+        
+        {
+            if (((currentWaypoint _x) < count (waypoints _x)) and ((leader _x) distance2D (leader _group) < 1000)) then {
+
+                _wp = waypointPosition ((waypoints _x) select (currentWaypoint _x));
+                _leader = leader _x;
+                _distance = _wp distance2D _leader;
+                _markerNameArrow = format ["intelMarkerArrow%1", _x];
+                _markerNameGroup = format ["intelMarkerGroup%1", _x];
+
+                if (_distance > 100) then {
+
+                    _dir = _leader getDir _wp;
+                    _pos = [(_distance * 0.1)*(sin _dir), (_distance * 0.1)*(cos _dir), 0] vectorAdd (getPos _leader);
+
+                    _posOccupied = false;
+                    if ((count _intelMarkers) == 0) then {
+                        _posOccupied = false;
+                    }
+                    else
+                    {
+                        _posOccupied = {
+                            if ((_pos distance2D (markerPos (_x#0))) < 100) exitWith {true};
+                            false
+                        } forEach _intelMarkers;
+                    };
+
+                    if !(_posOccupied) then {
+                        createMarker [_markerNameArrow, _pos];
+                        _markerNameArrow setMarkerDir _dir;
+                        _markerNameArrow setMarkerType "mil_arrow2";
+                        _markerNameArrow setMarkerSize [0.3, 0.3];
+                        _markerNameArrow setMarkerAlpha 0.7;
+                        _markerNameArrow setMarkerColor "COLOROPFOR";
+
+                        createMarker [_markerNameGroup, getPos _leader];
+                        _markerNameGroup setMarkerType "o_unknown";
+                        _markerNameGroup setMarkerSize [0.4, 0.4];
+                        _markerNameGroup setMarkerAlpha 0.7;
+
+                        _intelMarkers pushBack [_markerNameArrow , _markerNameGroup];
+                    };
+                };
+            };
+
+            if ((leader _x) distance2D (leader _group) < 300) then {
+                _group reveal [leader _x, 3.5];
+            };
+
+        } forEach (allGroups select {side _x != playerSide});
+
+        _time = time + _intelInterval;
+        waitUntil {time >= _time or !(_group getVariable ["onTask", true])};
+
+        {
+            deleteMarker (_x#0);
+            deleteMarker (_x#1);
+        } forEach _intelMarkers;
+    };
+
+    pl_recon_active = false;
+    deleteMarker _markerName;
+    _group setVariable ["MARTA_customIcon", nil];
+};
+
 
 
 
