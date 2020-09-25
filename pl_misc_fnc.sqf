@@ -625,44 +625,53 @@ pl_march = {
 // {[_x] spawn pl_march}forEach (hcSelected player)
 
 pl_recon_active = false;
+pl_recon_group = grpNull;
 
+// designate group as Recon
 pl_recon = {
     private ["_group", "_markerName", "_intelInterval", "_intelMarkers", "_wp", "_leader", "_distance", "_pos", "_dir", "_markerNameArrow", "_markerNameGroup", "_posOccupied"];
 
     _group = (hcSelected player) select 0;
 
-    if (pl_recon_active) exitWith {hint "Only one Group can set up a OP"};
+    if (pl_recon_active and _group == pl_recon_group) exitWith {pl_recon_active = false; pl_recon_group = grpNull};
+
+    if (pl_recon_active) exitWith {hint "Only one GROUP can be designated as Recon"};
+
+    // check if another group is in Recon
     pl_recon_active = true;
+    pl_recon_group = _group;
+
 
     [_group] call pl_reset;
     sleep 0.2;
 
-    _group setVariable ["setSpecial", true];
-    _group setVariable ["onTask", true];
-    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa"];
+    playSound "beep";
 
+    // sealth, holdfire, recon icon
     _group setBehaviour "STEALTH";
-    // {
-    //     [_x, getPos _x, 0, 10, false] spawn pl_find_cover;
-    // } forEach (units _group);
+    _group setVariable ["MARTA_customIcon", ["b_recon"]];
+    _group setVariable ["pl_recon_area_size", 1000];
+    _group setCombatMode "GREEN";
+    _group setVariable ["pl_hold_fire", true];
+    _group setVariable ["pl_combat_mode", true];
 
+    // chosse intervall
     _intelInterval = 30;
+    // if  infantry slower recon Interval
     if (leader _group == vehicle (leader _group)) then {
-        [_group, getPos (leader _group), 40] spawn pl_360;
         _intelInterval = 60;
     }
+    // if Vehicle faster recon interval
     else
     {
         _intelInterval = 30;
-        _vic = vehicle (leader _group);
-        _covers = nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 70, true, true];
-        if ((count _covers) > 0) then {
-            _vic doMove getPosATL (_covers select 0);
-        };
     };
-    
-    _group setVariable ["MARTA_customIcon", ["b_recon"]];
 
+    // stop leader to get full recon size
+    sleep 0.5;
+    doStop (leader _group);
+    
+    // create Recon are Marker
     _markerName = createMarker ["reconArea", getPos (leader _group)];
     _markerName setMarkerColor "colorBlue";
     _markerName setMarkerShape "ELLIPSE";
@@ -674,70 +683,134 @@ pl_recon = {
 
     _intelMarkers = [];
 
-    while {_group getVariable ["onTask", true]} do {
+    // check if group is moving --> change area size + limit Speed, force stealth
+    [_group, _markerName] spawn {
+    params ["_group", "_markerName"];
+
+        while {pl_recon_active} do {
+            _group setBehaviour "STEALTH";
+            _markerName setMarkerPos (getPos (leader _group));
+            if (((currentWaypoint _group) < count (waypoints _group))) then {
+                _group setVariable ["pl_recon_area_size", 800];
+                _markerName setMarkerSize [800, 800];
+            }
+            else
+            {
+                _group setVariable ["pl_recon_area_size", 1400];
+                _markerName setMarkerSize [1400, 1400];
+            };
+            sleep 1;
+        };
+        _group setBehaviour "AWARE";
+        _group setVariable ["pl_recon_area_size", nil];
+    };
+
+    // short delay
+    sleep 5;
+
+    // recon logic
+    while {pl_recon_active} do {
         
         {
-            if (((currentWaypoint _x) < count (waypoints _x)) and ((leader _x) distance2D (leader _group) < 1000)) then {
+            // check if group has active WP and within reconarea
+            if (((leader _x) distance2D (leader _group) < (_group getVariable ["pl_recon_area_size", 1400]))) then {
 
-                _wp = waypointPosition ((waypoints _x) select (currentWaypoint _x));
-                _leader = leader _x;
-                _distance = _wp distance2D _leader;
                 _markerNameArrow = format ["intelMarkerArrow%1", _x];
                 _markerNameGroup = format ["intelMarkerGroup%1", _x];
 
-                if (_distance > 100) then {
+                if ((currentWaypoint _x) < count (waypoints _x)) then {
+                    _wp = waypointPosition ((waypoints _x) select (currentWaypoint _x));
+                    _leader = leader _x;
+                    _distance = _wp distance2D _leader;
 
-                    _dir = _leader getDir _wp;
-                    _pos = [(_distance * 0.1)*(sin _dir), (_distance * 0.1)*(cos _dir), 0] vectorAdd (getPos _leader);
+                    // if distance to wp > 100 create Markers
+                    if (_distance > 100) then {
 
-                    _posOccupied = false;
-                    if ((count _intelMarkers) == 0) then {
+                        _dir = _leader getDir _wp;
+                        _pos = [(_distance * 0.1)*(sin _dir), (_distance * 0.1)*(cos _dir), 0] vectorAdd (getPos _leader);
+
+                        // check if marker already exists at pos --> avoid clutter
                         _posOccupied = false;
-                    }
-                    else
-                    {
-                        _posOccupied = {
-                            if ((_pos distance2D (markerPos (_x#0))) < 100) exitWith {true};
-                            false
-                        } forEach _intelMarkers;
+                        if ((count _intelMarkers) == 0) then {
+                            _posOccupied = false;
+                        }
+                        else
+                        {
+                            _posOccupied = {
+                                if ((_pos distance2D (markerPos (_x#0))) < 100) exitWith {true};
+                                false
+                            } forEach _intelMarkers;
+                        };
+
+                        // 75 % chance to create Marker
+                        if (!_posOccupied and (random 1) > 0.2) then {
+                            createMarker [_markerNameArrow, _pos];
+                            _markerNameArrow setMarkerDir _dir;
+                            _markerNameArrow setMarkerType "mil_arrow2";
+                            _markerNameArrow setMarkerSize [0.3, 0.3];
+                            _markerNameArrow setMarkerAlpha 0.7;
+                            _markerNameArrow setMarkerColor "COLOROPFOR";
+
+                            createMarker [_markerNameGroup, getPos _leader];
+                            _markerType = "o_unknown";
+                            _markerSize = 0.4;
+                            if (vehicle (leader _x) != leader _x) then {
+                                _markerType = "o_recon";
+                                _markerSize = 0.5;
+                            };
+
+                            _markerNameGroup setMarkerType _markerType;
+                            _markerNameGroup setMarkerSize [_markerSize, _markerSize];
+                            _markerNameGroup setMarkerAlpha 0.7;
+
+                            _intelMarkers pushBack [_markerNameArrow , _markerNameGroup];
+                        };
                     };
-
-                    if !(_posOccupied) then {
-                        createMarker [_markerNameArrow, _pos];
-                        _markerNameArrow setMarkerDir _dir;
-                        _markerNameArrow setMarkerType "mil_arrow2";
-                        _markerNameArrow setMarkerSize [0.3, 0.3];
-                        _markerNameArrow setMarkerAlpha 0.7;
-                        _markerNameArrow setMarkerColor "COLOROPFOR";
-
-                        createMarker [_markerNameGroup, getPos _leader];
-                        _markerNameGroup setMarkerType "o_unknown";
-                        _markerNameGroup setMarkerSize [0.4, 0.4];
+                }
+                else
+                {
+                    if ((random 1) > 0.55) then {
+                        createMarker [_markerNameGroup, getPos (leader _x)];
+                        _markerType = "o_unknown";
+                        _markerSize = 0.4;
+                        if (vehicle (leader _x) != leader _x) then {
+                            _markerType = "o_recon";
+                            _markerSize = 0.5;
+                        };
+                        _markerNameGroup setMarkerType _markerType;
+                        _markerNameGroup setMarkerSize [_markerSize, _markerSize];
                         _markerNameGroup setMarkerAlpha 0.7;
 
-                        _intelMarkers pushBack [_markerNameArrow , _markerNameGroup];
+                        _intelMarkers pushBack ["" , _markerNameGroup];
                     };
                 };
             };
 
+            // if enemy closer then 300 m --> reveal enemy
             if ((leader _x) distance2D (leader _group) < 300) then {
                 _group reveal [leader _x, 3.5];
             };
 
         } forEach (allGroups select {side _x != playerSide});
 
+        // intervall
         _time = time + _intelInterval;
-        waitUntil {time >= _time or !(_group getVariable ["onTask", true])};
+        waitUntil {time >= _time or !pl_recon_active};
 
+        // delete all markers after Intervall
         {
             deleteMarker (_x#0);
             deleteMarker (_x#1);
         } forEach _intelMarkers;
+        _intelMarkers = [];
     };
 
     pl_recon_active = false;
     deleteMarker _markerName;
     _group setVariable ["MARTA_customIcon", nil];
+    _group setCombatMode "YELLOW";
+    _group setVariable ["pl_hold_fire", false];
+    _group setVariable ["pl_combat_mode", false];
 };
 
 

@@ -632,17 +632,14 @@ pl_sweep_area = {
             _x forceSpeed 12;
             [_x, _group] spawn {
                 params ["_unit", "_group"];
-                private ["_movePos", "_movementCheck", "_movementCheckTim", "_target"];
+                private ["_movePos", "_target"];
 
-                _movementCheckTime = 0;
-                _movementCheck = false;
                 while {(count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {
                     _target = selectRandom (missionNamespace getVariable format ["targets_%1", _group]);
                     if (alive _target) then {
                         _pos = getPosATL _target;
                         _movePos = _pos vectorAdd [0.5 - random 1, 0.5 - random 1, 0];
                         _unit doMove _movePos;
-                        _unit moveTo _movePos;
 
                         while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true])} do {
                             _enemy = _unit findNearestEnemy _unit;
@@ -650,16 +647,7 @@ pl_sweep_area = {
                                 _unit doTarget _enemy;
                                 _unit doFire _enemy;
                             };
-                            if ((speed _unit) == 0 and !(_movementCheck)) then {
-                                _movementCheck = true;
-                                _movementCheckTime = time + 3;
-                            };
-                            if (_movementCheck) then {
-                                if (time > _movementCheckTime) exitWith {_movementCheck = false};
-                                if ((speed _unit) > 0) then {_movementCheck = false};
-                            };
                         };
-                        doStop _unit;
                         if (!alive  _target) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
                     };
                     if ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) exitWith {};
