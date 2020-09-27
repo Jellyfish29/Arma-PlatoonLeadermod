@@ -633,27 +633,29 @@ pl_recon = {
 
     _group = (hcSelected player) select 0;
 
+    // turn off recon mode
     if (pl_recon_active and _group == pl_recon_group) exitWith {pl_recon_active = false; pl_recon_group = grpNull};
 
+    // check if another group is in Recon
     if (pl_recon_active) exitWith {hint "Only one GROUP can be designated as Recon"};
 
-    // check if another group is in Recon
     pl_recon_active = true;
     pl_recon_group = _group;
 
 
-    [_group] call pl_reset;
-    sleep 0.2;
+    // [_group] call pl_reset;
+    // sleep 0.2;
 
     playSound "beep";
 
     // sealth, holdfire, recon icon
     _group setBehaviour "STEALTH";
     _group setVariable ["MARTA_customIcon", ["b_recon"]];
-    _group setVariable ["pl_recon_area_size", 1000];
-    _group setCombatMode "GREEN";
-    _group setVariable ["pl_hold_fire", true];
-    _group setVariable ["pl_combat_mode", true];
+    _group setVariable ["pl_recon_area_size", 1400];
+
+    // _group setCombatMode "GREEN";
+    // _group setVariable ["pl_hold_fire", true];
+    // _group setVariable ["pl_combat_mode", true];
 
     // chosse intervall
     _intelInterval = 30;
@@ -677,13 +679,13 @@ pl_recon = {
     _markerName setMarkerShape "ELLIPSE";
     _markerName setMarkerBrush "Border";
     _markerName setMarkerAlpha 0.3;
-    _markerName setMarkerSize [1000, 1000];
+    _markerName setMarkerSize [1400, 1400];
 
     sleep 1;
 
     _intelMarkers = [];
 
-    // check if group is moving --> change area size + limit Speed, force stealth
+    // check if group is moving --> change area size + force stealth
     [_group, _markerName] spawn {
     params ["_group", "_markerName"];
 
@@ -713,7 +715,7 @@ pl_recon = {
         
         {
             // check if group has active WP and within reconarea
-            if (((leader _x) distance2D (leader _group) < (_group getVariable ["pl_recon_area_size", 1400]))) then {
+            if (((leader _x) distance2D (leader _group) < (_group getVariable ["pl_recon_area_size", 1400])) and alive (leader _x)) then {
 
                 _markerNameArrow = format ["intelMarkerArrow%1", _x];
                 _markerNameGroup = format ["intelMarkerGroup%1", _x];
@@ -742,7 +744,7 @@ pl_recon = {
                             } forEach _intelMarkers;
                         };
 
-                        // 75 % chance to create Marker
+                        // 80 % chance to create Marker
                         if (!_posOccupied and (random 1) > 0.2) then {
                             createMarker [_markerNameArrow, _pos];
                             _markerNameArrow setMarkerDir _dir;
@@ -769,6 +771,7 @@ pl_recon = {
                 }
                 else
                 {
+                    // 45 % chance to discover static groups
                     if ((random 1) > 0.55) then {
                         createMarker [_markerNameGroup, getPos (leader _x)];
                         _markerType = "o_unknown";
@@ -796,6 +799,8 @@ pl_recon = {
         // intervall
         _time = time + _intelInterval;
         waitUntil {time >= _time or !pl_recon_active};
+        // cancel recon if leader dead
+        if !(alive (leader pl_recon_group)) exitWith {pl_recon_active = false; pl_recon_group = grpNull};
 
         // delete all markers after Intervall
         {
@@ -805,12 +810,14 @@ pl_recon = {
         _intelMarkers = [];
     };
 
+    // rest variables
     pl_recon_active = false;
     deleteMarker _markerName;
     _group setVariable ["MARTA_customIcon", nil];
-    _group setCombatMode "YELLOW";
-    _group setVariable ["pl_hold_fire", false];
-    _group setVariable ["pl_combat_mode", false];
+
+    // _group setCombatMode "YELLOW";
+    // _group setVariable ["pl_hold_fire", false];
+    // _group setVariable ["pl_combat_mode", false];
 };
 
 
