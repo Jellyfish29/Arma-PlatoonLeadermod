@@ -719,15 +719,15 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class Pl360
+            class PlGarrisonArea
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\military\circle_CA.paa'/><t> Form 360</t>";
+                title="<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Area</t>";
                 shortcuts[]={6};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_360";
+                    expression="{[_x] spawn pl_garrison_area_building} forEach (hcSelected player)";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -761,24 +761,10 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlGarrisonArea
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'/><t> Defend Buildings</t>";
-                shortcuts[]={8};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="{[_x] spawn pl_garrison_area_building} forEach (hcSelected player)";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
             class PlGarBuilding
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>";
-                shortcuts[]={9};
+                shortcuts[]={8};
                 submenu="";
                 command=-5;
                 class params
@@ -1756,19 +1742,19 @@ class RscHCWPRootMenu
             };
             class CancleTask
             {
-                shortcuts[] = {3};
+                shortcuts[] = {4};
                 class Params
                 {
-                    expression = "[] pl_cancel_planed_task";
+                    expression = "[] call pl_cancel_planed_task";
                 };
                 title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Cancel Planed Task</t>";
-                shortcutsAction = "CommandingMenu3";
+                shortcutsAction = "CommandingMenu4";
                 command = -5;
-                show = "";
-                enable = "";
+                show = "1";
+                enable = "1";
                 speechId = 0;
             };
-            class Separator2
+            class Separator200
             {
                 shortcuts[] = {0};
                 title = "";
@@ -1776,16 +1762,16 @@ class RscHCWPRootMenu
             };
             class CancelWP
             {
-                shortcuts[] = {4};
+                shortcuts[] = {3};
                 class Params
                 {
-                    expression = "'WP_CANCELWP' call BIS_HC_path_menu";
+                    expression = "[] call pl_cancel_planed_task; 'WP_CANCELWP' call BIS_HC_path_menu";
                 };
                 title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Cancel Waypoint</t>";
-                shortcutsAction = "CommandingMenu4";
+                shortcutsAction = "CommandingMenu3";
                 command = -5;
-                show = "";
-                enable = "";
+                show = "1";
+                enable = "1";
                 speechId = 0;
             };
             // class Back

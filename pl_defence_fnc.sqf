@@ -3,6 +3,7 @@ pl_covers = [];
 pl_defence_cords = [0,0,0];
 pl_mapClicked = false;
 pl_denfence_draw_array = [];
+pl_valid_covers = ["TREE", "SMALL TREE", "BUSH", "FOREST BORDER", "FOREST TRIANGLE", "FOREST SQUARE", "CHAPEL", "CROSS", "FOUNTAIN", "QUAY", "FENCE", "WALL", "HIDE", "BUSSTOP", "FOREST", "TRANSMITTER", "STACK", "RUIN", "TOURISM", "WATERTOWER", "ROCK", "ROCKS", "POWER LINES", "POWERSOLAR", "POWERWAVE", "POWERWIND", "SHIPWRECK"];
 
 pl_rush = {
 
@@ -183,7 +184,7 @@ pl_spawn_360 = {
 pl_find_cover = {
     params ["_unit", "_watchPos", "_watchDir", "_radius", "_moveBehind"];
 
-    _covers = nearestTerrainObjects [getPos _unit, [], _radius, true, true];
+    _covers = nearestTerrainObjects [getPos _unit, pl_valid_covers, _radius, true, true];
     // _unit enableAI "AUTOCOMBAT";
     _watchPos = [1000*(sin _watchDir), 1000*(cos _watchDir), 0] vectorAdd _watchPos;
     if ((count _covers) > 0) then {

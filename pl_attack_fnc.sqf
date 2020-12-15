@@ -526,7 +526,8 @@ pl_sweep_area = {
     _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
     if (visibleMap) then {
         _message = "Select Search Area <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>
+        <br /> <t size='0.8' align='left'>-> W/S</t><t size='0.8' align='right'>Increase/Decrease Size</t>";
         hint parseText _message;
         onMapSingleClick {
             pl_sweep_cords = _pos;
@@ -539,6 +540,11 @@ pl_sweep_area = {
             // sleep 0.1;
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             _markerName setMarkerPos _mPos;
+            if (inputAction "MoveForward" > 0) then {pl_sweep_area_size = pl_sweep_area_size + 5; sleep 0.2};
+            if (inputAction "MoveBack" > 0) then {pl_sweep_area_size = pl_sweep_area_size - 5; sleep 0.2};
+            _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
+            if (pl_sweep_area_size >= 70) then {pl_sweep_area_size = 70};
+            if (pl_sweep_area_size <= 10) then {pl_sweep_area_size = 10};
         };
         pl_mapClicked = false;
         _cords = pl_sweep_cords;

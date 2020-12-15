@@ -192,9 +192,8 @@ pl_task_planer = {
         case "assault" : {[_group, [0,0,0], _wp] spawn pl_attack; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
         case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "cover" : {[_group, _wp] spawn pl_take_cover; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "360" : {[_group, 15, _wp] spawn pl_360_at_mappos; _icon = "\A3\ui_f\data\map\markers\military\circle_CA.paa"};
         case "clear" : {[_group, _wp] spawn pl_sweep_area; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"};
-        case "buildings" : {[_group, _wp] spawn pl_garrison_area_building; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+        case "buildings" : {[_group, _wp] spawn pl_garrison_area_building; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "resupply" : {[_group, _wp] spawn pl_resupply; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
         case "recover" : {[_group, _wp] spawn pl_repair; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
         case "maintenance" : {[_group, _wp] spawn pl_maintenance_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
@@ -633,11 +632,13 @@ pl_recon = {
 
     _group = (hcSelected player) select 0;
 
+    if (_group == (group player)) exitWith {hint "Player group can´t be designated as Recon Group!";};
+
     // turn off recon mode
     if (pl_recon_active and _group == pl_recon_group) exitWith {pl_recon_active = false; pl_recon_group = grpNull};
 
     // check if another group is in Recon
-    if (pl_recon_active) exitWith {hint "Only one GROUP can be designated as Recon"};
+    if (pl_recon_active) exitWith {hint "Only one GROUP can be designated as Recon";};
 
     pl_recon_active = true;
     pl_recon_group = _group;
@@ -693,13 +694,31 @@ pl_recon = {
             _group setBehaviour "STEALTH";
             _markerName setMarkerPos (getPos (leader _group));
             if (((currentWaypoint _group) < count (waypoints _group))) then {
-                _group setVariable ["pl_recon_area_size", 800];
-                _markerName setMarkerSize [800, 800];
+                _group setVariable ["pl_recon_area_size", 700 ];
+                _markerName setMarkerSize [700, 700];
             }
             else
             {
-                _group setVariable ["pl_recon_area_size", 1400];
-                _markerName setMarkerSize [1400, 1400];
+                // Get height of Group and compare to average sorrounding Height to get Bounus Vision Range
+                _height = getTerrainHeightASL (getPos (leader _group));
+                _diff = 360 / 12;
+                _avHeight = 0;
+                // check 12 test location 350m around group and calc average terrain height
+                for "_i" from 0 to 12 do {
+                    _degree = 1 + _i*_diff;
+                    _checkPos = [350 *(sin _degree), 350 *(cos _degree), 0] vectorAdd (getPos leader _group);
+                    _checkheight = getTerrainHeightASL _checkPos;
+                    _avHeight = _avHeight + _checkheight;
+                };
+                _reconHeight = _height - (_avHeight / 12);
+                // hintSilent str _reconHeight;
+                // if negativ Height no Bonus Range
+                if (_reconHeight <= 0) then {_reconHeight = 0};
+
+                // Set Bonus Range
+                _group setVariable ["pl_recon_area_size", 800 + (_reconHeight * 20)];
+                _h = _group getVariable "pl_recon_area_size";
+                _markerName setMarkerSize [_h, _h];
             };
             sleep 1;
         };
@@ -790,7 +809,7 @@ pl_recon = {
             };
 
             // if enemy closer then 300 m --> reveal enemy
-            if ((leader _x) distance2D (leader _group) < 300) then {
+            if ((leader _x) distance2D (leader _group) < 200) then {
                 _group reveal [leader _x, 3.5];
             };
 

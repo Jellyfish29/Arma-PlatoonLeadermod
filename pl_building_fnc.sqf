@@ -1,7 +1,9 @@
 pl_draw_building_array = [];
 pl_building_search_cords = [0,0,0];
-pl_garrison_area_size = 25; 
+pl_garrison_area_size = 20; 
 pl_mapClicked = false;
+pl_360_area = false;
+
 
 pl_move_building = {
     params ["_unit", "_buildPosArray", "_building"];
@@ -201,25 +203,29 @@ pl_garrison_area_building = {
     private ["_watchDir", "_cords", "_watchPos", "_markerAreaName", "_markerDirName", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon"];
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa";
+
+    _markerAreaName = format ["%1garrison", _group];
+    createMarker [_markerAreaName, [0,0,0]];
+    _markerAreaName setMarkerShape "ELLIPSE";
+    _markerAreaName setMarkerBrush "Vertical";
+    _markerAreaName setMarkerColor "colorYellow";
+    _markerAreaName setMarkerAlpha 0.5;
+    _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
+
     if (visibleMap) then {
         hintSilent "";
 
-        _message = "Select Area <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
+        pl_garrison_area_size = 20;
+        pl_360_area = false;
+        _message = "Select Area <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br /> <t size='0.8' align='left'>-> W/S</t><t size='0.8' align='right'>Increase/Decrease Size</t>";
         hint parseText _message;
-
-        _markerAreaName = format ["%1garrison", _group];
-        createMarker [_markerAreaName, [0,0,0]];
-        _markerAreaName setMarkerShape "ELLIPSE";
-        _markerAreaName setMarkerBrush "Vertical";
-        _markerAreaName setMarkerColor "colorYellow";
-        _markerAreaName setMarkerAlpha 0.5;
-        _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
 
         onMapSingleClick {
             pl_defence_cords = _pos;
             pl_mapClicked = true;
             if (_shift) then {pl_cancel_strike = true};
-            if (_alt) then {pl_deploy_static = true};
             hintSilent "";
             onMapSingleClick "";
         };
@@ -227,17 +233,23 @@ pl_garrison_area_building = {
         while {!pl_mapClicked} do {
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             _markerAreaName setMarkerPos _mPos;
+            if (inputAction "MoveForward" > 0) then {pl_garrison_area_size = pl_garrison_area_size + 5; sleep 0.2};
+            if (inputAction "MoveBack" > 0) then {pl_garrison_area_size = pl_garrison_area_size - 5; sleep 0.2};
+            _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
+            if (pl_garrison_area_size >= 55) then {pl_garrison_area_size = 55};
+            if (pl_garrison_area_size <= 10) then {pl_garrison_area_size = 10};
         };
 
         pl_mapClicked = false;
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+        if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerAreaName};
         _message = "Select Defence FACING <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />
+        <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>360° Security</t>";
         hint parseText _message;
 
         sleep 0.1;
         _cords = pl_defence_cords;
-        _markerDirName = format ["defence%1", _group];
+        _markerDirName = format ["defenceArea%1", _group];
         createMarker [_markerDirName, _cords];
         _markerDirName setMarkerType "marker_afp";
         _markerDirName setMarkerColor "colorBLUFOR";
@@ -245,6 +257,7 @@ pl_garrison_area_building = {
         onMapSingleClick {
             pl_mapClicked = true;
             if (_shift) then {pl_cancel_strike = true};
+            if (_alt) then {pl_360_area = true};
             hintSilent "";
             onMapSingleClick "";
         };
@@ -254,7 +267,10 @@ pl_garrison_area_building = {
             _markerDirName setMarkerDir _watchDir;
         };
         pl_mapClicked = false;
-        _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa";
+        if (pl_360_area) then {
+            _markerDirName setMarkerType "mil_circle";
+            _markerDirName setMarkerSize [0.5, 0.5];
+        };
 
         if (count _taskPlanWp != 0) then {
 
@@ -272,15 +288,33 @@ pl_garrison_area_building = {
 
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
 
+    }
+    else
+    {
+        _cords = screenToWorld [0.5,0.5];
+        _watchDir = ((leader _group) getDir player) - 180;
+        pl_garrison_area_size = 10;
+        pl_360_area = true;
+        _markerDirName = format ["defenceArea%1", _group];
+        createMarker [_markerDirName, _cords];
+        _markerDirName setMarkerType "mil_circle";
+        _markerDirName setMarkerColor "colorBLUFOR";
+        _markerAreaName setMarkerPos _cords;
+        _markerDirName setMarkerSize [0.5, 0.5];
+    };
+
         _buildings = nearestObjects [_cords, ["house"], pl_garrison_area_size];
 
-        if ((count _buildings == 0)) exitWith {hint "No buildings in Area!"; deleteMarker _markerAreaName; deleteMarker _markerDirName;};
+        // if ((count _buildings == 0)) exitWith {hint "No buildings in Area!"; deleteMarker _markerAreaName; deleteMarker _markerDirName;};
 
         [_group] call pl_reset;
 
         sleep 0.2;
 
         playSound "beep";
+
+        if (pl_360_area) then {_icon = "\A3\ui_f\data\map\markers\military\circle_CA.paa"};
+        if ((count _buildings) > 0) then {_icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
 
         _group setVariable ["onTask", true];
         _group setVariable ["setSpecial", true];
@@ -327,6 +361,11 @@ pl_garrison_area_building = {
         _units = units _group;
         for "_i" from 0 to (count _units) - 1 step 1 do {
             private _cover = false;
+            private _covers = nearestTerrainObjects [_cords, pl_valid_covers, pl_garrison_area_size, true, true];
+            // private _blacklist = nearestTerrainObjects [_cords, [], (pl_garrison_area_size - 8), true, true];
+            // _covers = _covers - _blacklist;
+            _covers = [_covers, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
+
             if (_i < (count _validPos)) then {
                 _pos = _validPos#_i;
                 _unit = _units#_i;
@@ -341,6 +380,20 @@ pl_garrison_area_building = {
                 {
                     _cover = true;
                     _unit = _units#_i;
+                    if ((_i < count _covers) and !(pl_360_area)) then {
+                        _pos = getPos (_covers#_i);
+                        if (_i == (count _units) - 1) then {
+                            _pos = getPos (_covers#((count _covers) - 1));
+                            _watchDir = _watchDir - 180;
+                        };
+                    }
+                    else
+                    {
+                        _diff = 360/ (count _units);
+                        _degree = 1 + _i*_diff;
+                        _pos = [pl_garrison_area_size*(sin _degree), pl_garrison_area_size*(cos _degree), 0] vectorAdd _cords;
+                        _watchDir = _degree;
+                    };
                 };
             };
             _pos = ATLToASL _pos;
@@ -355,12 +408,7 @@ pl_garrison_area_building = {
             };
 
             _pos = ASLToATL _pos;
-            if (_cover) then {
-                _b = (nearestObjects [_cords, ["house"], pl_garrison_area_size]) select 0;
-                _pos = [[[(position _b), 30]],[]] call BIS_fnc_randomPos;
-                _pos = _pos findEmptyPosition [0, 20];
-                // player sideChat str _pos;
-            };
+
             [_unit, _pos, _watchPos, _watchDir, _unitPos, _cover] spawn {
                 params ["_unit", "_pos", "_watchPos", "_watchDir", "_unitPos", "_cover"];
                 _unit disableAI "AUTOCOMBAT";
@@ -380,7 +428,7 @@ pl_garrison_area_building = {
                 else
                 {
                     // player sideChat "off";
-                    [_unit, _watchPos, _watchDir, 8, true] spawn pl_find_cover;
+                    [_unit, _watchPos, _watchDir, 5, true] spawn pl_find_cover;
                 };
             };
         };
@@ -395,7 +443,7 @@ pl_garrison_area_building = {
         {
             pl_draw_building_array = pl_draw_building_array - [[_group, _x]];
         } forEach _buildings;
-    };
+    // };
 };
 
 
