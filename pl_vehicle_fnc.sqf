@@ -822,46 +822,153 @@ pl_spawn_leave_vehicle = {
     } forEach hcSelected player;  
 };
 
-pl_viv_trans_set_up = {
-    params ["_group"];
-    _vic = vehicle (leader _group);
-    _targetVic = isVehicleCargo _vic;
-    _group setVariable ["pl_show_info", false];
-    (group (driver _targetVic)) setVariable ["setSpecial", true];
-    (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+pl_attach_inf = {
+    private ["_group", "_vic", "_vicGroup", "_attachForm", "_leader"];
+
+    _group = (hcSelected player) select 0;
+
+    if (vehicle (leader _group) != leader _group) exitWith {"Infantry Only Task!"};
+
+    pl_attach_form = false;
+  
+    if (visibleMap) then {
+        pl_follow_array_other_setup = pl_follow_array_other_setup + [_group];
+        pl_show_vehicles_pos = getPos (leader _group);
+        pl_show_vehicles = true;
+
+        _message = "Select Vehicle <br /><br />
+        <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>LINE Formation</t> <br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>FILE Formation</t> <br />
+        <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>DIAMOND Formation</t> <br />";
+        hint parseText _message;
+
+        onMapSingleClick {
+            pl_mapClicked = true;
+            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], 10, true];
+            if (_shift) then {pl_attach_form = "File"};
+            if (_alt) then {pl_attach_form = "Diamond"};
+            hintSilent "";
+            onMapSingleClick "";
+        };
+        while {!pl_mapClicked} do {sleep 0.1};
+        pl_show_vehicles = false;
+        pl_mapClicked = false;
+        pl_follow_array_other_setup = pl_follow_array_other_setup - [_group];
+    }
+    else
     {
-        player hcRemoveGroup (group (_x select 0));
-    } forEach fullCrew[_vic, "cargo", false];
-};
-
-pl_inf_trans_set_up = {
-    params ["_group"];
-    _targetVic = vehicle (leader _group);
-    (group (driver _targetVic)) setVariable ["setSpecial", true];
-    (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
-    _group setVariable ["onTask", false];
-    _group setVariable ["setSpecial", false];
-    _group setVariable ["pl_show_info", false];
-};
-
-sleep 1;
-{
-    _leader = leader _x;
-    private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
-    if (isNil{_hcs}) exitWith {};
-    if ((_hcs in (synchronizedObjects _leader)) and (vehicle _leader != _leader)) then {
-        if (((assignedVehicleRole _leader) select 0) isEqualTo "cargo") then {
-            [_x] call pl_inf_trans_set_up;
-            [_x, true] spawn pl_contact_report;
-        };
-        if !(isNull (isVehicleCargo (vehicle _leader))) then {
-            [_x] call pl_viv_trans_set_up;
-            [_x, true] spawn pl_contact_report;
-
-        };
-
+        pl_vics = [cursorTarget];
     };
-} forEach (allGroups select {side _x isEqualTo playerSide});
+
+    _vic = pl_vics#0;
+    _vicGroup = group (driver _vic);
+    _attachForm = pl_attach_form;
+
+
+    [_group] call pl_reset;
+    [_vicGroup] call pl_reset;
+    sleep 0.2;
+
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["onTask", true];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\map\markers\nato\n_mech_inf.paa"];
+    // _group setVariable ["specialIcon", "\A3\3den\data\Attributes\Formation\line_ca.paa"];
+
+    pl_follow_array_other = pl_follow_array_other + [[_vicGroup, _group]];
+    _vic setVariable ["pl_speed_limit", "CON"];
+
+    _attachForm = pl_attach_form;
+    switch (_attachForm) do { 
+        case "File" : {_group setFormation "FILE"}; 
+        case "Diamond" : {_group setFormation "DIAMOND"}; 
+        default {_group setFormation "LINE"}; 
+    };
+
+    {
+        _x disableAI "AUTOCOMBAT";
+    } forEach (units _group);
+
+    _leader = leader _group;
+    _leader limitSpeed 14;
+    _leaderPos = [5*(sin ((getDir _vic) - 180)), 5*(cos ((getDir _vic) - 180)), 0] vectorAdd getPos _vic;
+    _leader doMove _leaderPos;
+    {
+        _x doFollow _leader;
+    } forEach ((units _group) - [_leader]);
+    _group setFormDir (getDir _vic);
+
+    while {_group getVariable ["onTask", true] and (alive _vic)} do {
+
+        if (speed _vic > 0) then {
+            _group setBehaviour "AWARE";
+            _leader = leader _group;
+            _leader limitSpeed 14;
+            _leaderPos = [5*(sin ((getDir _vic) - 180)), 5*(cos ((getDir _vic) - 180)), 0] vectorAdd getPos _vic;
+            _leader doMove _leaderPos;
+            {
+                _x doFollow _leader;
+            } forEach ((units _group) - [_leader]);
+            _group setFormDir (getDir _vic);
+        };
+
+        if ((_leader distance2D _vic) > 22) then {_vic forceSpeed 0} else {_vic forceSpeed -1; _vic limitSpeed 15};
+        _vic setVariable ["pl_speed_limit", "CON"];
+
+        // sleep 2;
+        _time = time + 2;
+        waitUntil {time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
+    };
+
+    pl_follow_array_other = pl_follow_array_other - [[_vicGroup, _group]];
+    if !(alive _vic) exitWith {[_group] call pl_reset};
+    _vic forceSpeed -1;
+    _vic limitSpeed 50;
+    _vic setVariable ["pl_speed_limit", "50"];
+};
+
+// pl_viv_trans_set_up = {
+//     params ["_group"];
+//     _vic = vehicle (leader _group);
+//     _targetVic = isVehicleCargo _vic;
+//     _group setVariable ["pl_show_info", false];
+//     (group (driver _targetVic)) setVariable ["setSpecial", true];
+//     (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+//     {
+//         player hcRemoveGroup (group (_x select 0));
+//     } forEach fullCrew[_vic, "cargo", false];
+// };
+
+// pl_inf_trans_set_up = {
+//     params ["_group"];
+//     _targetVic = vehicle (leader _group);
+//     (group (driver _targetVic)) setVariable ["setSpecial", true];
+//     (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+//     _group setVariable ["onTask", false];
+//     _group setVariable ["setSpecial", false];
+//     _group setVariable ["pl_show_info", false];
+// };
+
+
+
+// sleep 3;
+// {
+//     _leader = leader _x;
+//     private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
+//     if (isNil{_hcs}) exitWith {};
+//     if ((_hcs in (synchronizedObjects _leader)) and (vehicle _leader != _leader)) then {
+//         if (((assignedVehicleRole _leader) select 0) isEqualTo "cargo") then {
+//             [_x] call pl_inf_trans_set_up;
+//             [_x, true] spawn pl_contact_report;
+//         };
+//         if !(isNull (isVehicleCargo (vehicle _leader))) then {
+//             [_x] call pl_viv_trans_set_up;
+//             [_x, true] spawn pl_contact_report;
+
+//         };
+
+//     };
+// } forEach (allGroups select {side _x isEqualTo playerSide});
 
 
 player addEventHandler ["GetInMan", {
@@ -900,6 +1007,10 @@ player addEventHandler ["GetOutMan", {
         };
     };
 }];
+
+
+
+
 
 
 

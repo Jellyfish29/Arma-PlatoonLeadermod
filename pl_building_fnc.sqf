@@ -249,8 +249,9 @@ pl_garrison_area_building = {
 
         sleep 0.1;
         _cords = pl_defence_cords;
-        _markerDirName = format ["defenceArea%1", _group];
+        _markerDirName = format ["defenceAreaDir%1", _group];
         createMarker [_markerDirName, _cords];
+        _markerDirName setMarkerPos _cords;
         _markerDirName setMarkerType "marker_afp";
         _markerDirName setMarkerColor "colorBLUFOR";
 
@@ -286,7 +287,7 @@ pl_garrison_area_building = {
             _group setVariable ["pl_task_planed", false];
         };
 
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
+        // if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
 
     }
     else
@@ -303,147 +304,154 @@ pl_garrison_area_building = {
         _markerDirName setMarkerSize [0.5, 0.5];
     };
 
-        _buildings = nearestObjects [_cords, ["house"], pl_garrison_area_size];
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
 
-        // if ((count _buildings == 0)) exitWith {hint "No buildings in Area!"; deleteMarker _markerAreaName; deleteMarker _markerDirName;};
+    _buildings = nearestObjects [_cords, ["house"], pl_garrison_area_size];
 
-        [_group] call pl_reset;
+    // if ((count _buildings == 0)) exitWith {hint "No buildings in Area!"; deleteMarker _markerAreaName; deleteMarker _markerDirName;};
 
-        sleep 0.2;
+    [_group] call pl_reset;
 
-        playSound "beep";
+    sleep 0.2;
 
-        if (pl_360_area) then {_icon = "\A3\ui_f\data\map\markers\military\circle_CA.paa"};
-        if ((count _buildings) > 0) then {_icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+    playSound "beep";
 
-        _group setVariable ["onTask", true];
-        _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", _icon];
+    if (pl_360_area) then {_icon = "\A3\ui_f\data\map\markers\military\circle_CA.paa"};
+    if ((count _buildings) > 0) then {_icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+
+    _group setVariable ["onTask", true];
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", _icon];
+    _group setVariable ["pl_defending", true];
 
 
-        _validPos = [];
-        _allPos = [];
+    _validPos = [];
+    _allPos = [];
+    {
+        _building = _x;
+        pl_draw_building_array pushBack [_group, _building];
+        _bPos = [_building] call BIS_fnc_buildingPositions;
         {
-            _building = _x;
-            pl_draw_building_array pushBack [_group, _building];
-            _bPos = [_building] call BIS_fnc_buildingPositions;
-            {
-                _allPos pushBack _x;
-                _watchPos = [10*(sin _watchDir), 10*(cos _watchDir), 1.7] vectorAdd _x;
-                _standingPos = [0, 0, 1.7] vectorAdd _x;
-                _standingPos = ATLToASL _standingPos;
-                _watchPos = ATLToASL _watchPos;
+            _allPos pushBack _x;
+            _watchPos = [10*(sin _watchDir), 10*(cos _watchDir), 1.7] vectorAdd _x;
+            _standingPos = [0, 0, 1.7] vectorAdd _x;
+            _standingPos = ATLToASL _standingPos;
+            _watchPos = ATLToASL _watchPos;
 
-                // _helper = createVehicle ["Sign_Sphere25cm_F", _x, [], 0, "none"];
-                // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
-                // _helper setposASL _standingPos;
+            // _helper = createVehicle ["Sign_Sphere25cm_F", _x, [], 0, "none"];
+            // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
+            // _helper setposASL _standingPos;
 
-                _cansee = [objNull, "VIEW"] checkVisibility [_standingPos, _watchPos];
-                if (_cansee == 1) then {
-                    _validPos pushBack _x;
-                };
-            } forEach _bPos;
-        } forEach _buildings;
+            _cansee = [objNull, "VIEW"] checkVisibility [_standingPos, _watchPos];
+            if (_cansee == 1) then {
+                _validPos pushBack _x;
+            };
+        } forEach _bPos;
+    } forEach _buildings;
 
 
-        // {
-        //     _helper = createVehicle ["Sign_Sphere25cm_F", _x, [], 0, "none"];
-        //     _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
-        //     _helper setposATL _x;
-        // } forEach _validPos;
+    // {
+    //     _helper = createVehicle ["Sign_Sphere25cm_F", _x, [], 0, "none"];
+    //     _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
+    //     _helper setposATL _x;
+    // } forEach _validPos;
 
-        _watchPos = [500*(sin _watchDir), 500*(cos _watchDir), 0] vectorAdd _cords;
+    _watchPos = [500*(sin _watchDir), 500*(cos _watchDir), 0] vectorAdd _cords;
 
-        _validPos = [_validPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
-        _allPos = _allPos - _validPos;
-        _allPos = [_allPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
+    _validPos = [_validPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
+    _allPos = _allPos - _validPos;
+    _allPos = [_allPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
 
-        _units = units _group;
-        for "_i" from 0 to (count _units) - 1 step 1 do {
-            private _cover = false;
-            private _covers = nearestTerrainObjects [_cords, pl_valid_covers, pl_garrison_area_size, true, true];
-            // private _blacklist = nearestTerrainObjects [_cords, [], (pl_garrison_area_size - 8), true, true];
-            // _covers = _covers - _blacklist;
-            _covers = [_covers, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
+    _units = units _group;
+    for "_i" from 0 to (count _units) - 1 step 1 do {
+        private _cover = false;
+        private _covers = nearestTerrainObjects [_cords, pl_valid_covers, pl_garrison_area_size, true, true];
+        // private _blacklist = nearestTerrainObjects [_cords, [], (pl_garrison_area_size - 8), true, true];
+        // _covers = _covers - _blacklist;
+        _covers = [_covers, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
 
-            if (_i < (count _validPos)) then {
-                _pos = _validPos#_i;
+        if (_i < (count _validPos)) then {
+            _pos = _validPos#_i;
+            _unit = _units#_i;
+        }
+        else
+        {
+            if (_i < (count _allPos)) then {
+                _pos = _allPos#_i;
                 _unit = _units#_i;
             }
             else
             {
-                if (_i < (count _allPos)) then {
-                    _pos = _allPos#_i;
-                    _unit = _units#_i;
-                }
-                else
-                {
-                    _cover = true;
-                    _unit = _units#_i;
-                    if ((_i < count _covers) and !(pl_360_area)) then {
-                        _pos = getPos (_covers#_i);
-                        if (_i == (count _units) - 1) then {
-                            _pos = getPos (_covers#((count _covers) - 1));
-                            _watchDir = _watchDir - 180;
-                        };
-                    }
-                    else
-                    {
-                        _diff = 360/ (count _units);
-                        _degree = 1 + _i*_diff;
-                        _pos = [pl_garrison_area_size*(sin _degree), pl_garrison_area_size*(cos _degree), 0] vectorAdd _cords;
-                        _watchDir = _degree;
+                _cover = true;
+                _unit = _units#_i;
+                if ((_i < count _covers) and !(pl_360_area)) then {
+                    _pos = getPos (_covers#_i);
+                    if (_i == (count _units) - 1) then {
+                        _pos = getPos (_covers#((count _covers) - 1));
+                        _watchDir = _watchDir - 180;
                     };
-                };
-            };
-            _pos = ATLToASL _pos;
-            private _unitPos = "UP";
-            _checkPos = [7*(sin _watchDir), 7*(cos _watchDir), 1.7] vectorAdd _pos;
-            _crouchPos = [0, 0, 0.6] vectorAdd _pos;
-            if (([objNull, "VIEW"] checkVisibility [_crouchPos, _checkPos]) == 1) then {
-                _unitPos = "MIDDLE";
-            };
-            if (([objNull, "VIEW"] checkVisibility [_pos, _checkPos]) == 1) then {
-                _unitPos = "DOWN";
-            };
-
-            _pos = ASLToATL _pos;
-
-            [_unit, _pos, _watchPos, _watchDir, _unitPos, _cover] spawn {
-                params ["_unit", "_pos", "_watchPos", "_watchDir", "_unitPos", "_cover"];
-                _unit disableAI "AUTOCOMBAT";
-                _unit disableAI "TARGET";
-                _unit doMove _pos;
-                _unit moveTo _pos;
-                sleep 1;
-                waitUntil {(unitReady _unit) or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
-                if !(_cover) then {
-                    _unit doWatch _watchPos;
-                    doStop _unit;
-                    _unit setUnitPos _unitPos;
-                    _unit disableAI "PATH";
-                    _unit enableAI "AUTOCOMBAT";
-                    _unit enableAI "TARGET";
                 }
                 else
                 {
-                    // player sideChat "off";
-                    [_unit, _watchPos, _watchDir, 5, true] spawn pl_find_cover;
+                    _diff = 360/ (count _units);
+                    _degree = 1 + _i*_diff;
+                    _pos = [pl_garrison_area_size*(sin _degree), pl_garrison_area_size*(cos _degree), 0] vectorAdd _cords;
+                    _watchDir = _degree;
                 };
             };
         };
+        _pos = ATLToASL _pos;
+        private _unitPos = "UP";
+        _checkPos = [7*(sin _watchDir), 7*(cos _watchDir), 1.7] vectorAdd _pos;
+        _crouchPos = [0, 0, 0.6] vectorAdd _pos;
+        if (([objNull, "VIEW"] checkVisibility [_crouchPos, _checkPos]) == 1) then {
+            _unitPos = "MIDDLE";
+        };
+        if (([objNull, "VIEW"] checkVisibility [_pos, _checkPos]) == 1) then {
+            _unitPos = "DOWN";
+        };
 
-        // hint (str _allPos);
+        _pos = ASLToATL _pos;
 
-        waitUntil {!(_group getVariable ["onTask", true])};
+        [_unit, _pos, _watchPos, _watchDir, _unitPos, _cover] spawn {
+            params ["_unit", "_pos", "_watchPos", "_watchDir", "_unitPos", "_cover"];
+            _unit disableAI "AUTOCOMBAT";
+            _unit disableAI "TARGET";
+            _unit doMove _pos;
+            _unit moveTo _pos;
+            sleep 1;
+            waitUntil {(unitReady _unit) or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
+            if !(_cover) then {
+                _unit doWatch _watchPos;
+                doStop _unit;
+                _unit setUnitPos _unitPos;
+                _unit disableAI "PATH";
+                _unit enableAI "AUTOCOMBAT";
+                _unit enableAI "TARGET";
+            }
+            else
+            {
+                // player sideChat "off";
+                [_unit, _watchPos, _watchDir, 5, true] spawn pl_find_cover;
+            };
+        };
+    };
 
+    // hint (str _allPos);
+
+    waitUntil {!(_group getVariable ["onTask", true])};
+    _group setVariable ["pl_defending", nil];
+
+    sleep 0.35;
+
+    if !(_group getVariable ["pl_defending", false]) then {
         deleteMarker _markerAreaName;
         deleteMarker _markerDirName;
+    };
 
-        {
-            pl_draw_building_array = pl_draw_building_array - [[_group, _x]];
-        } forEach _buildings;
-    // };
+    {
+        pl_draw_building_array = pl_draw_building_array - [[_group, _x]];
+    } forEach _buildings;
 };
 
 

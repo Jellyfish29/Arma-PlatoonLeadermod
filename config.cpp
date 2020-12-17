@@ -657,35 +657,21 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_attack";
+                    expression="{[_x] spawn pl_sweep_area} forEach (hcSelected player)";
                 };
-                show="1";
+                show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
             };
             class HoldFire
             {
-                title="<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Defend Position</t>";
+                title="<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Position</t>";
                 shortcuts[]={3};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] spawn pl_defend_position;";
-                };
-                show="1";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlBoundingSquad
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
-                shortcuts[]={4};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_bounding_squad";
+                    expression="{[_x] spawn pl_garrison_area_building} forEach (hcSelected player)";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -705,6 +691,20 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
+            class PlTakePosition
+            {
+                title="<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>";
+                shortcuts[]={4};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_defend_position;";
+                };
+                show="1";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
             class PlTakeCover
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'/><t> Take Cover</t>";
@@ -719,15 +719,15 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlGarrisonArea
+            class PlBoundingSquad
             {
-                title="<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Area</t>";
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
                 shortcuts[]={6};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="{[_x] spawn pl_garrison_area_building} forEach (hcSelected player)";
+                    expression="[] spawn pl_bounding_squad";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -747,24 +747,10 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlClearBuilding
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa'/><t> Clear Area/Buildings</t>";
-                shortcuts[]={7};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="{[_x] spawn pl_sweep_area} forEach (hcSelected player)";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
             class PlGarBuilding
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>";
-                shortcuts[]={8};
+                shortcuts[]={7};
                 submenu="";
                 command=-5;
                 class params
@@ -1037,7 +1023,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'COLUMN' call BIS_HC_path_menu";
                 };
-                title = "Column";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\column_ca.paa'/><t> Column</t>";
                 shortcutsAction = "CommandingMenu1";
                 command = -5;
                 show = "";
@@ -1050,7 +1036,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'STAG COLUMN' call BIS_HC_path_menu";
                 };
-                title = "Staggered Col.";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\stag_column_ca.paa'/><t> Stag Column</t>";
                 shortcutsAction = "CommandingMenu2";
                 command = -5;
                 show = "";
@@ -1063,7 +1049,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'WEDGE' call BIS_HC_path_menu";
                 };
-                title = "Wedge";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\wedge_ca.paa'/><t> Wedge</t>";
                 shortcutsAction = "CommandingMenu3";
                 command = -5;
                 show = "";
@@ -1076,7 +1062,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'ECH LEFT' call BIS_HC_path_menu";
                 };
-                title = "Echelon L.";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\ech_left_ca.paa'/><t> Echelon L.</t>";
                 shortcutsAction = "CommandingMenu4";
                 command = -5;
                 show = "";
@@ -1089,7 +1075,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'ECH RIGHT' call BIS_HC_path_menu";
                 };
-                title = "Echelon R.";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\ech_right_ca.paa'/><t> Echelon R.</t>";
                 shortcutsAction = "CommandingMenu5";
                 command = -5;
                 show = "";
@@ -1102,7 +1088,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'VEE' call BIS_HC_path_menu";
                 };
-                title = "Vee";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\vee_ca.paa'/><t> Vee</t>";
                 shortcutsAction = "CommandingMenu6";
                 command = -5;
                 show = "";
@@ -1115,7 +1101,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'LINE' call BIS_HC_path_menu";
                 };
-                title = "Line";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\line_ca.paa'/><t> Line</t>";
                 shortcutsAction = "CommandingMenu7";
                 command = -5;
                 show = "";
@@ -1128,7 +1114,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'FILE' call BIS_HC_path_menu";
                 };
-                title = "File";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\file_ca.paa'/><t> File</t>";
                 shortcutsAction = "CommandingMenu8";
                 command = -5;
                 show = "";
@@ -1141,7 +1127,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'DIAMOND' call BIS_HC_path_menu";
                 };
-                title = "Diamond";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\diamond_ca.paa'/><t> Diamond</t>";
                 shortcutsAction = "CommandingMenu9";
                 command = -5;
                 show = "";
@@ -1357,6 +1343,37 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
+
+            class PlAttachInf
+            {
+                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Attach Infantry</t";
+                shortcuts[]={8};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_attach_inf";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+
+            class PlSeperator201
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+
             class PlReverseVic
             {
                 title="Reverse Vehicle Direction";

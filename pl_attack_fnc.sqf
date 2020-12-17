@@ -309,14 +309,13 @@ pl_bounding_squad = {
     // hint "Select location on MAP (LMB = MOVE, SHIFT + LMB = ATTACK)";
     _message = "Select location <br /><br />
     <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>MOVE</t> <br />
-    <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>ATTACK</t> <br />
     <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
     hint parseText _message;
     onMapSingleClick {
         pl_bounding_cords = _pos;
         pl_mapClicked = true;
         pl_bounding_mode = "move";
-        if (_alt) then {pl_bounding_mode = "attack"};
+        // if (_alt) then {pl_bounding_mode = "attack"};
         if (_shift) then {pl_cancel_strike = true};
         hintSilent "";
         onMapSingleClick "";
@@ -346,7 +345,7 @@ pl_bounding_squad = {
     _team1 = [];
     _team2 = [];
 
-    _tactic = pl_bounding_mode;
+    // _tactic = pl_bounding_mode;
 
     _group setSpeedMode "FULL";
 
@@ -460,13 +459,13 @@ pl_bounding_squad = {
 
     if !(_group getVariable ["onTask", true]) exitWith {};
 
-    if (_tactic isEqualTo "attack") then { 
-        [_group, _cords] spawn pl_attack
-    }
-    else
-    {
-        [_group] spawn pl_take_cover; 
-    };
+    // if (_tactic isEqualTo "attack") then { 
+    //     [_group, _cords] spawn pl_attack
+    // }
+    // else
+    // {
+    [_group] spawn pl_take_cover; 
+    // };
 };
 
 pl_bounding_move = {
@@ -513,7 +512,7 @@ pl_get_assault_speed = {
 
 pl_sweep_area = {
     params ["_group", ["_taskPlanWp", []]];
-    private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation"];
+    private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_attackMode", "_fastAtk"];
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
@@ -525,13 +524,18 @@ pl_sweep_area = {
     _markerName setMarkerAlpha 0.5;
     _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
     if (visibleMap) then {
-        _message = "Select Search Area <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>
-        <br /> <t size='0.8' align='left'>-> W/S</t><t size='0.8' align='right'>Increase/Decrease Size</t>";
+        _message = "Select Assault Location <br /><br />
+            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>TACTICAL</t> <br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>SLOW</t> <br />
+            <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>FAST</t>
+            <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
         hint parseText _message;
         onMapSingleClick {
             pl_sweep_cords = _pos;
-            if (_shift) then {pl_cancel_strike = true};
+            // if (_shift) then {pl_cancel_strike = true};
+            pl_attack_mode = "normal";
+            if (_shift) then {pl_attack_mode = "slow"};
+            if (_alt) then {pl_attack_mode = "fast"};
             pl_mapClicked = true;
             hintSilent "";
             onMapSingleClick "";
@@ -545,6 +549,7 @@ pl_sweep_area = {
             _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
             if (pl_sweep_area_size >= 70) then {pl_sweep_area_size = 70};
             if (pl_sweep_area_size <= 10) then {pl_sweep_area_size = 10};
+
         };
         pl_mapClicked = false;
         _cords = pl_sweep_cords;
@@ -557,7 +562,8 @@ pl_sweep_area = {
         };
     };
 
-    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa";
+    _attackMode = pl_attack_mode;
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa";
 
     if (count _taskPlanWp != 0) then {
 
@@ -597,12 +603,35 @@ pl_sweep_area = {
 
     pl_draw_planed_task_array pushBack [_wp, _icon];
 
+    _fastAtk = false;
+    switch (_attackMode) do { 
+        case "normal" : {leader _group limitSpeed 12;}; 
+        case "slow" : {_group setSpeedMode "LIMITED"}; 
+        case "fast" : {_fastAtk = true; _group setSpeedMode "FULL";};
+        default {leader _group limitSpeed 12;}; 
+    };
+
     _formation = formation _group;
-    _group setFormation "FILE";
+    _group setFormation "LINE";
     _group setBehaviour "AWARE";
+
+    // fast attack setup
+    if (_fastAtk) then {
+        _atkDir = (leader _group) getDir _cords;
+        {
+            _pos = [[[_cords, 25]],[]] call BIS_fnc_randomPos;
+            _x setUnitPos "UP";
+            [_x, _pos, _cords, _atkDir, 45] spawn pl_bounding_move;
+        } forEach (units _group);
+    };
+
     
-    _targets = [];
     waitUntil {sleep 0.1; (((leader _group) distance _cords) < (pl_sweep_area_size + 10)) or !(_group getVariable ["onTask", true])};
+
+    leader _group limitSpeed 200;
+    _group setSpeedMode "NORMAL";
+
+    _targets = [];
     _allMen = _cords nearObjects ["Man", pl_sweep_area_size];
     {
         _targets pushBack _x;
@@ -677,7 +706,7 @@ pl_sweep_area = {
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
         playsound "beep";
-        (leader _group) sideChat format ["%1 Area sweep complete", (groupId _group)];
+        (leader _group) sideChat format ["%1 Assault complete", (groupId _group)];
     };
 };
 

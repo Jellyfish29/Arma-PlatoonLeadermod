@@ -157,8 +157,8 @@ pl_draw_group_info = {
                     _icon,
                     _color,
                     _behaviourPos,
-                    14,
-                    14,
+                    12,
+                    12,
                     0,
                     '',
                     2
@@ -209,6 +209,37 @@ pl_draw_group_info = {
                         _vicSpeedPos,
                         12,
                         12,
+                        0,
+                        '',
+                        2
+                    ];
+                }
+                else
+                {
+                    _formPos = [(_pos select 0), (_pos select 1) - _mapscaleY];
+
+                    _form = formation _x;
+                    _formIcon = '\A3\3den\data\Attributes\Formation\wedge_ca.paa';
+                    switch (_form) do { 
+                        case 'COLUMN' : {_formIcon = '\A3\3den\data\Attributes\Formation\column_ca.paa'}; 
+                        case 'STAG COLUMN' : {_formIcon = '\A3\3den\data\Attributes\Formation\stag_column_ca.paa'}; 
+                        case 'WEDGE' : {_formIcon = '\A3\3den\data\Attributes\Formation\wedge_ca.paa'}; 
+                        case 'ECH LEFT' : {_formIcon = '\A3\3den\data\Attributes\Formation\ech_left_ca.paa'}; 
+                        case 'ECH RIGHT' : {_formIcon = '\A3\3den\data\Attributes\Formation\ech_right_ca.paa'}; 
+                        case 'VEE' : {_formIcon = '\A3\3den\data\Attributes\Formation\vee_ca.paa'}; 
+                        case 'LINE' : {_formIcon = '\A3\3den\data\Attributes\Formation\line_ca.paa'};
+                        case 'FILE' : {_formIcon = '\A3\3den\data\Attributes\Formation\file_ca.paa'}; 
+                        case 'DIAMOND' : {_formIcon = '\A3\3den\data\Attributes\Formation\diamond_ca.paa'}; 
+
+                        default {_formIcon = '\A3\3den\data\Attributes\Formation\line_ca.paa'}; 
+                    };
+
+                    _display drawIcon [
+                        _formIcon,
+                        [0.9,0.9,0,1],
+                        _formPos,
+                        15,
+                        15,
                         0,
                         '',
                         2

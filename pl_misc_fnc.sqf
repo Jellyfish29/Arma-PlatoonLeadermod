@@ -189,11 +189,10 @@ pl_task_planer = {
 
     // call task to be executed
     switch (_taskType) do { 
-        case "assault" : {[_group, [0,0,0], _wp] spawn pl_attack; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
-        case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "assault" : {[_group, _wp] spawn pl_sweep_area; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
+        case "defend" : {[_group, _wp] spawn pl_garrison_area_building; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "cover" : {[_group, _wp] spawn pl_take_cover; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "clear" : {[_group, _wp] spawn pl_sweep_area; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"};
-        case "buildings" : {[_group, _wp] spawn pl_garrison_area_building; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "defPos" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "resupply" : {[_group, _wp] spawn pl_resupply; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
         case "recover" : {[_group, _wp] spawn pl_repair; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
         case "maintenance" : {[_group, _wp] spawn pl_maintenance_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
@@ -660,21 +659,12 @@ pl_recon = {
 
     // chosse intervall
     _intelInterval = 30;
-    // if  infantry slower recon Interval
-    if (leader _group == vehicle (leader _group)) then {
-        _intelInterval = 60;
-    }
-    // if Vehicle faster recon interval
-    else
-    {
-        _intelInterval = 30;
-    };
 
     // stop leader to get full recon size
     sleep 0.5;
     doStop (leader _group);
     
-    // create Recon are Marker
+    // create Recon area Marker
     _markerName = createMarker ["reconArea", getPos (leader _group)];
     _markerName setMarkerColor "colorBlue";
     _markerName setMarkerShape "ELLIPSE";
@@ -701,16 +691,17 @@ pl_recon = {
             {
                 // Get height of Group and compare to average sorrounding Height to get Bounus Vision Range
                 _height = getTerrainHeightASL (getPos (leader _group));
-                _diff = 360 / 12;
+                _interval = 12;
+                _diff = 360 / _interval;
                 _avHeight = 0;
-                // check 12 test location 350m around group and calc average terrain height
-                for "_i" from 0 to 12 do {
-                    _degree = 1 + _i*_diff;
-                    _checkPos = [350 *(sin _degree), 350 *(cos _degree), 0] vectorAdd (getPos leader _group);
+                // check _interval test location 350m around group and calc average terrain height
+                for "_i" from 0 to _interval do {
+                    _degree = 1 + _i * _diff;
+                    _checkPos = [350 * (sin _degree), 350 * (cos _degree), 0] vectorAdd (getPos leader _group);
                     _checkheight = getTerrainHeightASL _checkPos;
                     _avHeight = _avHeight + _checkheight;
                 };
-                _reconHeight = _height - (_avHeight / 12);
+                _reconHeight = _height - (_avHeight / _interval);
                 // hintSilent str _reconHeight;
                 // if negativ Height no Bonus Range
                 if (_reconHeight <= 0) then {_reconHeight = 0};
