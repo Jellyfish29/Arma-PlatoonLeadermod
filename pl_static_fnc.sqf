@@ -1,37 +1,37 @@
 pl_mortar_names = ["B_Mortar_01_F", "B_T_Mortar_01_F", "O_Mortar_01_F", "O_T_Mortar_01_F", "I_Mortar_01_F"];
 
 pl_reworked_bis_unpack = {
-    /*
-        Author: 
-            Dean "Rocket" Hall, reworked by Killzone_Kid
+    
+        // Author: 
+        //     Dean "Rocket" Hall, reworked by Killzone_Kid
 
-        Description:
-            This function will move given support team to the given position
-            The weapon crew will unpack carried weapon and start watching given position
-            Requires three personnel in the team: Team Leader, Gunner and Asst. Gunner
-            This function is MP compatible
-            When weapon is unpacked, scripted EH "StaticWeaponUnpacked" is called with the following params: [group, leader, gunner, assistant, weapon]
+        // Description:
+        //     This function will move given support team to the given position
+        //     The weapon crew will unpack carried weapon and start watching given position
+        //     Requires three personnel in the team: Team Leader, Gunner and Asst. Gunner
+        //     This function is MP compatible
+        //     When weapon is unpacked, scripted EH "StaticWeaponUnpacked" is called with the following params: [group, leader, gunner, assistant, weapon]
 
-        Parameters:
-            0: GROUP or OBJECT - the support team group or a unit from this group 
-            1: ARRAY, STRING or OBJECT - weapon placement position, object position or marker
-            2: ARRAY, STRING or OBJECT - target position, object position to watch or marker
-            3: (Optional) ARRAY, STRING or OBJECT - position, object or marker group leader should move to
+        // Parameters:
+        //     0: GROUP or OBJECT - the support team group or a unit from this group 
+        //     1: ARRAY, STRING or OBJECT - weapon placement position, object position or marker
+        //     2: ARRAY, STRING or OBJECT - target position, object position to watch or marker
+        //     3: (Optional) ARRAY, STRING or OBJECT - position, object or marker group leader should move to
             
-        Returns:
-            NOTHING
+        // Returns:
+        //     NOTHING
         
-        NOTE:
-            If a unit flees, all bets are off and the function will exit leaving units on their own
-            To guarantee weapon assembly, make sure the group has maximum courage (_group allowFleeing 0)
+        // NOTE:
+        //     If a unit flees, all bets are off and the function will exit leaving units on their own
+        //     To guarantee weapon assembly, make sure the group has maximum courage (_group allowFleeing 0)
         
-        Example1:
-            [leader1, "weapon_mrk", "target_mrk"] call BIS_fnc_unpackStaticWeapon;
+        // Example1:
+        //     [leader1, "weapon_mrk", "target_mrk"] call BIS_fnc_unpackStaticWeapon;
             
-        Example2:
-            group1 allowFleeing 0;
-            [group1, "weapon_mrk", tank1, "leader_mrk"] call BIS_fnc_unpackStaticWeapon;
-    */
+        // Example2:
+        //     group1 allowFleeing 0;
+        //     [group1, "weapon_mrk", tank1, "leader_mrk"] call BIS_fnc_unpackStaticWeapon;
+    
 
     params [
         ["_group", grpNull, [grpNull, objNull]], 
@@ -127,13 +127,17 @@ pl_reworked_bis_unpack = {
             
             _group = group _gunner;
             _group addVehicle _weapon;
+
             
             [_group, "StaticWeaponUnpacked", [_group, _leader, _gunner, _assistant, _weapon]] call BIS_fnc_callScriptedEventHandler;
         ', 
+                    
         _leader call BIS_fnc_netId,
         _assistant call BIS_fnc_netId,
         _targetPos
     ]]; 
+
+    ((units _group) - [_gunner]) allowGetIn false;
 
     // -- leader logic
     [_leader, _leaderPos, _targetPos] spawn
@@ -157,12 +161,13 @@ pl_reworked_bis_unpack = {
         
         _leader setUnitPos "MIDDLE";
         _leader doWatch _targetPos;
-        
+
         waitUntil {stance _leader isEqualTo "CROUCH" || !alive _leader};
         
         _leader selectWeapon binocular _leader;
-        _markerName = format ["defence%1", (group _leader)];
-        pl_denfence_draw_array = pl_denfence_draw_array - [[_markerName, _leader]];
+        // _markerName = format ["defence%1", (group _leader)];
+        // _leader disableAI "PATH";
+        // pl_denfence_draw_array = pl_denfence_draw_array - [[_markerName, _leader]];
     };
 
     // -- assistant logic
@@ -214,7 +219,7 @@ pl_reworked_bis_unpack = {
         _gunner action ["Assemble", _weaponBase];
         sleep 2;
         _weapon = vehicle _gunner;
-        if ((typeOf _weapon) in pl_mortar_names) then {[] call pl_show_fire_support_menu;};
+        [] call pl_show_fire_support_menu;
         _pos = getPosASL _weapon;
         _pos = [_pos#0, _pos#1, _pos#2 + 1.5];
         _weapon setPosASL _pos;
@@ -224,37 +229,37 @@ pl_reworked_bis_unpack = {
 };
 
 
-/*
-    Author: 
-        Dean "Rocket" Hall, reworked by Killzone_Kid
 
-    Description:
-        This function will make weapon team pack a static weapon
-        The weapon crew will pack carried weapon (or given weapon if different) and follow leader
-        Requires three personnel in the team: Team Leader, Gunner and Asst. Gunner
-        This function is MP compatible
-        When weapon is packed, scripted EH "StaticWeaponPacked" is called with the following params: [group, leader, gunner, assistant, weaponBag, tripodBag]
+    // Author: 
+    //     Dean "Rocket" Hall, reworked by Killzone_Kid
 
-    Parameters:
-        0: GROUP or OBJECT - the support team group or a unit from this group
-        1: (Optional) OBJECT - weapon to pack. If nil, current group weapon is packed
-        2: (Optional) ARRAY, STRING or OBJECT - position, object or marker the group leader should move to after weapon is packed. By default the group will
-           resume on to the next assigned waypoint. If this param is provided, group will not go to the next waypoint and will move to given position instead
+    // Description:
+    //     This function will make weapon team pack a static weapon
+    //     The weapon crew will pack carried weapon (or given weapon if different) and follow leader
+    //     Requires three personnel in the team: Team Leader, Gunner and Asst. Gunner
+    //     This function is MP compatible
+    //     When weapon is packed, scripted EH "StaticWeaponPacked" is called with the following params: [group, leader, gunner, assistant, weaponBag, tripodBag]
+
+    // Parameters:
+    //     0: GROUP or OBJECT - the support team group or a unit from this group
+    //     1: (Optional) OBJECT - weapon to pack. If nil, current group weapon is packed
+    //     2: (Optional) ARRAY, STRING or OBJECT - position, object or marker the group leader should move to after weapon is packed. By default the group will
+    //        resume on to the next assigned waypoint. If this param is provided, group will not go to the next waypoint and will move to given position instead
         
-    Returns:
-        NOTHING
+    // Returns:
+    //     NOTHING
     
-    NOTE:
-        If a unit flees, all bets are off and the function will exit leaving units on their own
-        To guarantee weapon disassembly, make sure the group has maximum courage (_group allowFleeing 0)
+    // NOTE:
+    //     If a unit flees, all bets are off and the function will exit leaving units on their own
+    //     To guarantee weapon disassembly, make sure the group has maximum courage (_group allowFleeing 0)
     
-    Example1:
-        [leader1] call BIS_fnc_packStaticWeapon;
+    // Example1:
+    //     [leader1] call BIS_fnc_packStaticWeapon;
         
-    Example2:
-        group1 allowFleeing 0;
-        [group1, nil, "leaderpos_marker"] call BIS_fnc_packStaticWeapon;
-*/
+    // Example2:
+    //     group1 allowFleeing 0;
+    //     [group1, nil, "leaderpos_marker"] call BIS_fnc_packStaticWeapon;
+
 
 pl_reworked_bis_pack = {
     params [
@@ -294,16 +299,7 @@ pl_reworked_bis_pack = {
     private _supportUnits = (units _group - [_leader]); // changed by Jellyfish from select {getText (_cfg >> typeOf _x >> "vehicleClass") == "MenSupport"};
 
     private _gunnerBackpackClass = "";
-    private _gunner = 
-    {
-        // -- unit is weapon carrier
-        _gunnerBackpackClass = getText (_cfg >> typeOf _x >> "backpack");
-        
-        if (_gunnerBackpackClass isKindOf "Weapon_Bag_Base") exitWith {_x};
-        
-        objNull
-    } 
-    forEach _supportUnits;
+    private _gunner = gunner _weapon;
 
     if (isNull _gunner) exitWith {_err_badGroup};
 
@@ -311,20 +307,10 @@ pl_reworked_bis_pack = {
     private _compatibleBases = if (isText _cfgBase) then {[getText _cfgBase]} else {getArray _cfgBase};
     private _assistant = 
     {   
-        private _xx = _x;
-        
-        if (
-            {
-                // -- unit is assistant weapon carrier
-                getText (_cfg >> typeOf _xx >> "backpack") isKindOf _x
-            } 
-            count _compatibleBases > 0
-        ) 
-        exitWith {_xx};
-        
-        objNull
+        if (isNull (unitBackpack _x)) exitWith {_x};
+        objNull;
     }
-    forEach (_supportUnits - [_gunner]);
+    forEach (_supportUnits - [_gunner, _leader]);
 
     if (isNull _assistant) exitWith {_err_badGroup};
 
@@ -357,6 +343,8 @@ pl_reworked_bis_pack = {
             _assistant setUnitPos "AUTO";
             _assistant doWatch objNull;
             _assistant doFollow _leader;
+
+            [] call pl_show_fire_support_menu;
             
             _group = group _gunner;
             [_group, "StaticWeaponPacked", [_group, _leader, _gunner, _assistant, _weaponBag, _baseBag]] call BIS_fnc_callScriptedEventHandler;
@@ -449,7 +437,8 @@ pl_reworked_bis_pack = {
         _gunner doWatch _weapon;
         
         waitUntil {scriptDone _assistantReady};
-        
+
+
         if (!alive _assistant || fleeing _assistant) exitWith {_gunner removeAllEventHandlers "WeaponDisassembled"};
         
         // -- pack weapon

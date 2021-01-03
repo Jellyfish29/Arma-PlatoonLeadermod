@@ -118,15 +118,25 @@ pl_sitrep_solo = {
             _message = _message + format ["<t color='#cccccc' size='0.8' align='right'>/%1x</t>", _missileCount];
         };
 
-    }forEach (units _group);
-    if (vehicle (leader _group) != (leader _group)) then{
+    } forEach (units _group);
+
+    if (vehicle (leader _group) != (leader _group)) then {
         _vic = vehicle (leader _group);
         _vicName = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");
         _unitDamage = getDammage _vic;
         _unitDamage = 100 - (round (_unitDamage * 100));
         _message = _message + format ["
-            <br /><br /><t color='#cccccc' size='1' align='left'>Vehicle:</t>
-            <br /><t color='#cccccc' size='1' align='left'>- %1 </t><t color='#cccccc' size='1' align='center'>%2 %3</t>", _vicName, _unitDamage, "%"];
+            <br /><br /><t color='#cccccc' size='1' align='left'>Vehicle: %1</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>Status</t><t color='#cccccc' size='1' align='right'>%2%3</t>", _vicName, _unitDamage, "%"];
+        if (_vic getVariable ["pl_is_supply_vehicle", false]) then {
+            _ammoCargo = (getAmmoCargo _vic) * 100;
+            _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];
+
+            _message = _message + format ["
+            <br /><t color='#cccccc' size='0.8' align='left'>Ammo Supplies: </t><t color='#cccccc' size='1' align='right'>%1%2</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>Avaible Reinforcements: </t><t color='#cccccc' size='1' align='right'>%3</t>", _ammoCargo, "%", _reinforcements];
+
+        };
     };
 
 
@@ -150,7 +160,7 @@ pl_sitrep_solo = {
         <br /><br />
         <t color='#7f0000' size='1.3' align='center' underline='1'>CONTACTS</t>
         <br /><br />
-        <img align='left' image='\A3\ui_f\data\map\markers\nato\o_inf.paa'/><t size='0.9' align='center'>INF</t><t size='0.9' align='right'>%1x</t>
+        <img align='left' image='\A3\ui_f\data\map\markers\nato\o_inf.paa'/><t size='0.9' align='center'>INF</t><t size='0.8' align='right'>%1x</t>
         <br />
         <img align='left' image='\A3\ui_f\data\map\markers\nato\o_armor.paa'/><t size='0.9' align='center'>ARM</t><t color='#ffffff' size='0.9' align='right'>%2x</t>
         <br />

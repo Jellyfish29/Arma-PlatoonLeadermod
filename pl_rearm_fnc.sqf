@@ -7,7 +7,8 @@ pl_rearm = {
         if (_unit getVariable "pl_wia") exitWith {};
         createMarker ["sup_zone_marker", (getPos _target)];
         "sup_zone_marker" setMarkerType "b_support";
-        "sup_zone_marker" setMarkerText "Supply Point";
+        "sup_zone_marker" setMarkerSize [0.5, 0.5];
+        // "sup_zone_marker" setMarkerText "Supply Point";
 
         _unit disableAI "AUTOCOMBAT";
         _unit doMove (position _target);
@@ -115,158 +116,244 @@ pl_spawn_rearm = {
 // call pl_spawn_rearm;
 
 
-pl_supply_area_size = 25;
+pl_supply_area = 80;
+pl_supply_point_active = false;
+pl_supply_draw_array = [];
 
-pl_resupply = {
-    params ["_group", ["_taskPlanWp", []]];
-    private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_supplies"];
+pl_supply_point = {
+    params [["_taskPlanWp", []]];
+    private ["_group", "_cords", "_suppliedGroups", "_ammoBearer", "_toSupplyGroups", "_toSupplyGroups", "_ammoCargo"];
 
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    // if already supply point exit
+    if (pl_supply_point_active) exitWith {hint "Only on Supply Point!"};
 
-    _markerName = format ["%1resupply", _group];
-    createMarker [_markerName, [0,0,0]];
-    _markerName setMarkerShape "ELLIPSE";
-    _markerName setMarkerBrush "Vertical";
-    _markerName setMarkerColor "colorBLUFOR";
-    _markerName setMarkerAlpha 0.5;
-    _markerName setMarkerSize [pl_supply_area_size, pl_supply_area_size];
-    if (visibleMap) then {
-        _message = "Select Resupply Area <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
-        hint parseText _message;
-        onMapSingleClick {
-            pl_sweep_cords = _pos;
-            if (_shift) then {pl_cancel_strike = true};
-            pl_mapClicked = true;
-            hintSilent "";
-            onMapSingleClick "";
-        };
-        while {!pl_mapClicked} do {
-            // sleep 0.1;
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            _markerName setMarkerPos _mPos;
-        };
-        pl_mapClicked = false;
-        _cords = pl_sweep_cords;
-    }
-    else
-    {
-        _vic = cursorTarget;
-        if !(isNil "_vic") then {
-            _cords = getPos _vic;
-        };
+    // check if vehicle group
+    _group = (hcSelected player) select 0;
+    if (vehicle (leader _group) == (leader _group)) exitWith {hint "Requires Supply Vehicle!"};
+
+    _vic = vehicle (leader _group);
+
+    // check if vehicle is supply vehicle
+    if !(_vic getVariable ["pl_is_supply_vehicle", false]) exitWith {hint "Requires Supply Vehicle!"};
+
+    // get current Ammo Cargo of Vic and calc _ammoStep -> per one inve refill -2% Supplies
+    _vicType = typeOf _vic;
+    _ammoCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportAmmo");
+    _ammoCargoPercent = getAmmoCargo _vic;
+    _ammoCargo = _ammoCap * _ammoCargoPercent;
+    _ammoStep = _ammoCap * 0.02;
+
+    // if no Ammo Left send message
+    if (_ammoCargo <= 0) then {
+        (leader _group) sideChat format ["%1: No Ammo left!", groupId _group];
     };
 
-    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa";
+    // setup Variables
+    _suppliedGroups = [_group];
+    _toSupplyGroups = [];
+    _ammoBearer = leader _group;
+    pl_supply_point_active = true;
 
+    // Taskplanning
     if (count _taskPlanWp != 0) then {
 
-        // add Arrow indicator
-        pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
-
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
-
-        // remove Arrow indicator
-        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
-    _supplies = _cords nearSupplies pl_supply_area_size;
-    if ((count _supplies) == 0) exitWith {deleteMarker _markerName; hint "No availble Supplies in Area!"};
+    // Setup Markers
+    _areaMarkerName = createMarker ["supply_point_area", getPos (leader _group)];
+    _areaMarkerName setMarkerShape "ELLIPSE";
+    _areaMarkerName setMarkerBrush "SolidBorder";
+    _areaMarkerName setMarkerColor "colorIndependent";
+    _areaMarkerName setMarkerAlpha 0.15;
+    _areaMarkerName setMarkerSize [pl_supply_area, pl_supply_area];
 
+    _pointMarkerName = createMarker ["supply_point_center", (getPos (leader _group))];
+    _pointMarkerName setMarkerType "b_support";
+    _pointMarkerName setMarkerText "Supply Point";
+    _pointMarkerName setMarkerSize [1.3, 1.3];
+
+    // Setup Group at Position
     [_group] call pl_reset;
     sleep 0.2;
-    
-    playsound "beep";
 
+    _cords = getPos (leader _group);
+
+    [_group] call pl_leave_vehicle;
+
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa";
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
-
-    (leader _group) limitSpeed 15;
-
-    _markerName setMarkerPos _cords;
-
+    _group setVariable ["pl_is_support", true];
+    // _group setVariable ["MARTA_customIcon", ["b_support"]];
+    _ammoBearer setVariable ["pl_is_ccp_medic", true];
     {
         _x disableAI "AUTOCOMBAT";
+        _x disableAI "TARGET";
     } forEach (units _group);
-
-    _wp = _group addWaypoint [_cords, 0];
-
-    pl_draw_planed_task_array pushBack [_wp, _icon];
     _group setBehaviour "AWARE";
 
-    waitUntil {sleep 0.1; (((leader _group) distance _cords) < (pl_supply_area_size)) or !(_group getVariable ["onTask", true])};
+    sleep 2;
+    [_group, "support"] call pl_change_group_icon;
+    // delay to geive _ammoBearer Time to disembark
+    sleep 4;
 
-    [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
-    sleep 0.1;
-    for "_i" from count waypoints _group - 1 to 0 step -1 do {
-        deleteWaypoint [_group, _i];
+    // create ambiant Net and Crate behind _vic
+    _netPos = [5 * (sin ((getDir _vic) - 180)), 5 * (cos ((getDir _vic) - 180)), 0] vectorAdd (getPos _vic);
+    _cPos = _netPos findEmptyPosition [0, 20];
+    _crate = "VirtualReammoBox_camonet_F" createVehicle _cPos;
+    sleep 0.5;
+    _net = "CamoNet_BLUFOR_open_F" createVehicle _netPos;
+
+    // Rest of group take Cover
+    {
+        _x disableAI "PATH";
+        // [_x, (getPos _engineer), 0, 10, false] spawn pl_find_cover;
+        // _anim = selectRandom ["WATCH", "WATCH1", "WATCH2"];
+        // [_x, _anim, "ASIS"] call BIS_fnc_ambientAnimCombat;
+    } forEach (units _group) - [_ammoBearer];
+
+    // Supply Loop -> Supllies every Group in Range once while actice
+    while {(_group getVariable ["onTask", true] and (alive _ammoBearer))} do {
+
+        // Get all friendly Groups in Range
+        {
+            if (((leader _x) distance2D _vic) <= pl_supply_area and !(_x getVariable ["pl_is_support", false])) then {
+                _toSupplyGroups pushBackUnique _x;
+            };
+        } forEach (allGroups select {side _x == playerSide});
+
+        // remove already supplied Groups and sort group closed to vic
+        _toSupplyGroups = _toSupplyGroups - _suppliedGroups;
+        _toSupplyGroups = [_toSupplyGroups, [], {_vic distance2D (leader _x)}, "ASCEND"] call BIS_fnc_sortBy;
+
+        {
+            if !(isNull _x) then {
+
+                // ammobearer move to Pos of group
+                _targetGrp = _x;
+                _pos = getPos (leader _targetGrp) findEmptyPosition [0, 15];
+                if !((count _pos) <= 0) then {
+                    if ((_pos distance2D _cords) <= pl_supply_area and _group getVariable ["onTask", true]) then {
+
+                        // target group on hold
+                        [_targetGrp] call pl_hold;
+                        pl_supply_draw_array pushBack [_cords, _pos, [0.4,1,0.2,1]];
+                        _ammoBearer doMove _pos;
+
+                        waitUntil {unitReady _ammoBearer or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
+
+                        // 15s Supply Time
+                        doStop _ammoBearer;
+                        _time = time + 15;
+                        waitUntil {time >= _time or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
+
+                        if (_group getVariable ["onTask", true]) then {
+
+                            // refill Loadout and subtract used supplies for Inf
+                            {
+                                if (_ammoCargo > 0 and _x != player) then {
+                                    _loadout = _x getVariable "pl_loadout";
+                                    if !((getUnitLoadout _x) isEqualTo _loadout) then {
+                                        _x setUnitLoadout _loadout;
+                                        _ammoCargo = _ammoCargo - _ammoStep;
+                                    };
+                                };
+                                // heal Unit
+                                _x setDamage 0;
+                            } forEach (units _targetGrp);
+
+                            // vehicle rearm
+                            if (vehicle (leader _targetGrp) != leader _targetGrp) then {
+                                if (_ammoCargo > 0) then {
+                                    vehicle (leader _targetGrp) setVehicleAmmo 1;
+                                    _ammoCargo = _ammoCargo - (_ammoStep * 1.5);
+                                };
+                            }; 
+
+                            // reinforcements if enabled -> add dead units back to group
+                            if (pl_enable_reinforcements) then {
+                                _groupComp = _targetGrp getVariable ["pl_group_comp", []];
+                                _groupUnits = units _targetGrp;
+                                _avaibleReinforcements =  _vic getVariable "pl_avaible_reinforcements";
+                                private _reinforced = 0;
+
+                                {
+                                    if (_reinforced <= _avaibleReinforcements) then {
+                                        _unit = _x#0;
+                                        _type = _x#1;
+                                        _loadout = _x#2;
+                                        if !(alive _unit) then {
+                                            _newUnit = _targetGrp createUnit [_type, getPos _vic,[],0, "NONE"];
+                                            _newUnit setUnitLoadout _loadout;
+                                            _newUnit doFollow (leader _targetGrp);
+                                            _newUnit setVariable ["pl_wia", false];
+                                            _newUnit setVariable ["pl_unstuck_cd", 0];
+                                            [_newUnit] spawn pl_auto_crouch;
+                                            _newUnit setVariable ["pl_loadout", _loadout];
+                                            _newUnit setSkill pl_ai_skill;
+                                            if (pl_enabled_medical) then {
+                                                [_newUnit] call pl_medical_setup; 
+                                            };
+                                            _reinforced = _reinforced + 1;
+                                        };
+                                    };
+                                } forEach _groupComp;
+                                _vic setVariable ["pl_avaible_reinforcements", _avaibleReinforcements - _reinforced];
+                                _groupComposition = [];
+                                {
+                                    _type = typeOf _x;
+                                    _loadout = getUnitLoadout _x;
+                                    _groupComposition pushBack [_x, _type, _loadout];
+                                } forEach (units _targetGrp);
+
+                                _targetGrp setVariable ["pl_group_comp", _groupComposition];
+                            };
+                        };
+
+                        // stop Hold and move back to _vic
+                        [_targetGrp] call pl_execute;
+                        pl_supply_draw_array = pl_supply_draw_array - [[_cords, _pos, [0.4,1,0.2,1]]];
+                        _pos = _cords findEmptyPosition [0, 15];
+                        _ammoBearer doMove _pos;
+                        _suppliedGroups pushBack _targetGrp;
+
+                        waitUntil {unitReady _ammoBearer or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
+
+                        if !(_group getVariable ["onTask", true]) exitWith{};
+                    };
+                };
+            };
+        } forEach _toSupplyGroups;
     };
 
-    {
-        _unit = _x;
-        _box = selectRandom _supplies;
+    // subtract used ammo from _vic
+    _ammoCargo = _ammoCargo / _ammoCap;
+    _vic setAmmoCargo _ammoCargo;
 
-        [_unit, _box, _supplies] spawn {
-            params ["_unit", "_box", "_supplies"];
-
-            // move to box
-            private _pos = getPosATL _box;
-            _unit doMove _pos;
-            _unit moveTo _pos;
-
-            // wait unit box reached
-            waitUntil {!alive _unit or (_unit distance2D _pos) < 4 or !((group _unit) getVariable ["onTask", true])};
-
-            // if Task canceled exit
-            if !((group _unit) getVariable ["onTask", true]) exitWith {};
-
-            // rearm on each box
-            {
-                _unit action ["rearm", _x];
-            } forEach _supplies;
-
-            // get Items to be added to backpack
-            _startBackpackLoad = _unit getVariable "pl_start_backpack_load";
-            _currentBackpackLoad = backpackItems _unit;
-            private _backPackLoad = [];
-            {
-                _item = _x;
-                if (_item in _currentBackpackLoad) then {
-                    _currentBackpackLoad deleteAt (_currentBackpackLoad find _item);
-                }
-                else
-                {
-                    _backPackLoad pushBack _item;
-                };
-            } forEach _startBackpackLoad;
-
-            // add avaiable magzines form supplies to _unit
-            {
-                _item = _x;
-                {
-                    _availableItems = ((getMagazineCargo _x) select 0);
-                    if (_item in _availableItems) exitWith {
-                        if (([_x, _item, 1] call CBA_fnc_removeMagazineCargo)) then {
-                            _unit addItemToBackpack _item;
-                        };
-                    };
-                } forEach (_supplies select {!(_x isKindOf "Man")}) ;
-            } forEach _backPackLoad;
-        };
-    } forEach (units _group);
-
-    sleep 2;
-    // waitUnitl all units ready or task canceled
-    waitUntil{(({unitReady _x} count (units _group)) == count (units _group)) or !(_group getVariable ["onTask", true])};
-
-    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp, _icon]];
-    deleteMarker _markerName;
+    // reset group Variables
     _group setVariable ["onTask", false];
     _group setVariable ["setSpecial", false];
+    _group setVariable ["pl_is_support", false];
+    _ammoBearer setVariable ["pl_is_ccp_medic", false];
+    pl_supply_point_active = false;
+    deleteMarker _areaMarkerName;
+    deleteMarker _pointMarkerName;
+
+    _group addVehicle _vic;
+    {
+        // _x call BIS_fnc_ambientAnim__terminate;
+        [_x] allowGetIn true;
+        [_x] orderGetIn true;
+    } forEach (units _group);
+
+    sleep 3;
+    deleteVehicle _net;
+    deleteVehicle _crate;
 };

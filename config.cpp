@@ -66,21 +66,21 @@ class RscHCGroupRootMenu
             show="(1 - HCIsLeader)";
             enable="0";
         };
-        class Attack
-        {
-            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Suppress</t>";
-            shortcuts[]={0};
-            command=-5;
-            class Params
-            {
-                expression="[] call pl_spawn_suppression";
-            };
-            show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
-            enable="HCNotEmpty";
-            speechId=0;
-            cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
-            priority=2;
-        };
+        // class Attack
+        // {
+        //     title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Suppress</t>";
+        //     shortcuts[]={0};
+        //     command=-5;
+        //     class Params
+        //     {
+        //         expression="[] call pl_spawn_suppression";
+        //     };
+        //     show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
+        //     enable="HCNotEmpty";
+        //     speechId=0;
+        //     cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
+        //     priority=2;
+        // };
         class EmptyBlank2: Empty1
         {
             title="command 3";
@@ -149,7 +149,7 @@ class RscHCGroupRootMenu
         };
         class Empty4
         {
-            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\walk_ca.paa'/><t> Advance</t>";
+            title="<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Advance</t>";
             shortcuts[]={0};
             command=-5;
             class Params
@@ -651,7 +651,7 @@ class RscHCGroupRootMenu
         {
             class OpenFire
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>";
+                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\military\arrow_CA.paa'/><t> Assault Position</t>";
                 shortcuts[]={2};
                 submenu="";
                 command=-5;
@@ -662,6 +662,7 @@ class RscHCGroupRootMenu
                 show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
+                cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             };
             class HoldFire
             {
@@ -676,6 +677,7 @@ class RscHCGroupRootMenu
                 show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
+                cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             };
             class PlSeperator11
             {
@@ -707,57 +709,15 @@ class RscHCGroupRootMenu
             };
             class PlTakeCover
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'/><t> Take Cover</t>";
+                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover</t>";
                 shortcuts[]={5};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] call pl_spawn_take_cover";
+                    expression="{[_x] spawn pl_full_cover} forEach (hcSelected player)";
                 };
                 show="1";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlBoundingSquad
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
-                shortcuts[]={6};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_bounding_squad";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlSeperator5
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
-            class PlGarBuilding
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>";
-                shortcuts[]={7};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_garrison_building";
-                };
-                show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
             };
@@ -775,20 +735,135 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlCancelTask2
+            class PlSuppressArea
             {
-                title="<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Cancel Task</t>";
-                shortcuts[]={10};
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Suppress Position</t>";
+                shortcuts[]={6};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="playSound 'beep'; [] call pl_spawn_reset";
+                    expression="[] spawn pl_suppressive_fire_position";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+                cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
+            };
+            // class PlTankHunt
+            // {
+            //     title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa'/><t> Destroy Vehicles</t>";
+            //     shortcuts[]={6};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_tank_hunt";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            //     cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
+            // };
+            class PlSeperator5
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlBoundingSquad
+            {
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
+                shortcuts[]={7};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_bounding_squad";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
             };
+            class PlFormationMove
+            {
+                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\line_ca.paa'/><t> Formation Move</t";
+                shortcuts[]={8};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_move_as_formation";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlSeperator301
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlAttachInf
+            {
+                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Follow Vehicle</t";
+                shortcuts[]={9};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_attach_inf";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            // class PlGarBuilding
+            // {
+            //     title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>";
+            //     shortcuts[]={7};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_garrison_building";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
+            
+            // class PlCancelTask2
+            // {
+            //     title="<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Cancel Task</t>";
+            //     shortcuts[]={10};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="playSound 'beep'; [] call pl_spawn_reset";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
         };
         title = "Combat Tasking";
         access = 0;
@@ -908,7 +983,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'SPEED_LIMITED' call BIS_HC_path_menu";
                 };
-                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move1_ca.paa'/><t> Limited</t";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\limited_ca.paa'/><t> Limited</t";
                 shortcutsAction = "CommandingMenu1";
                 command = -5;
                 show = "";
@@ -921,7 +996,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'SPEED_NORMAL' call BIS_HC_path_menu";
                 };
-                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move2_ca.paa'/><t> Normal</t";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Normal</t";
                 shortcutsAction = "CommandingMenu2";
                 command = -5;
                 show = "";
@@ -934,7 +1009,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'SPEED_FULL' call BIS_HC_path_menu";
                 };
-                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move3_ca.paa'/><t> Full</t";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\full_ca.paa'/><t> Full</t";
                 shortcutsAction = "CommandingMenu3";
                 command = -5;
                 show = "";
@@ -1344,21 +1419,6 @@ class RscHCGroupRootMenu
                 speechId=0;
             };
 
-            class PlAttachInf
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Attach Infantry</t";
-                shortcuts[]={8};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_attach_inf";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-
             class PlSeperator201
             {
                 title="";
@@ -1377,12 +1437,26 @@ class RscHCGroupRootMenu
             class PlReverseVic
             {
                 title="Reverse Vehicle Direction";
-                shortcuts[]={11};
+                shortcuts[]={10};
                 submenu="";
                 command=-5;
                 class params
                 {
                     expression="{[_x] call pl_ch_vehicle_dir} forEach (hcSelected player)";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlUnstuckVic
+            {
+                title="Unstuck Vehicle/Group";
+                shortcuts[]={11};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="{[_x] call pl_vehicle_unstuck;} forEach (hcSelected player);";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -1641,10 +1715,38 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
+            class PlChangeIconGroup
+            {
+                title="Change Group Marker";
+                shortcuts[]={10};
+                menu="#USER:pl_change_icon_menu";
+                command=-5;
+                class params
+                {
+                    expression="";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlSeperator303
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
             class PlResetGroup
             {
                 title="Reset Group";
-                shortcuts[]={10};
+                shortcuts[]={11};
                 submenu="";
                 command=-5;
                 class params

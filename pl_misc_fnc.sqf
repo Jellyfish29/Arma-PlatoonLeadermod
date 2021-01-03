@@ -2,6 +2,96 @@
 pl_follow_active = false;
 pl_follow_array = [];
 
+addMissionEventHandler ["GroupIconClick", {
+    params [
+        "_is3D", "_group", "_waypointId",
+        "_mouseButton", "_posX", "_posY",
+        "_shift", "_control", "_alt"];
+    private ["_vic", "_vicGroup"];
+
+    if (side _group == playerSide) then {
+        playsound "beep";
+        if ((vehicle (leader _group)) != (leader _group)) then {
+            _vic = vehicle (leader _group);
+            // player sideChat str _vic;
+            _vicGroup = group (driver _vic);
+            // player sideChat str _vicGroup;
+            [_vicGroup] spawn {
+                params ["_vicGroup"];
+                sleep 0.35;
+                player hcSelectGroup [_vicGroup];
+            };
+        };
+        if (pl_add_group_to_hc) then {
+            if (_group getVariable ["pl_not_addalbe", false]) exitWith {pl_add_group_to_hc = false; hint "Group cant be added!"};
+            [_group ] spawn pl_add_to_hc_execute;
+            [_group] spawn pl_set_up_ai;
+        };
+        if (missionNamespace getVariable ["pl_select_formation_leader", false]) then {
+            missionNamespace setVariable ["pl_formation_leader", _group];
+            missionNamespace setVariable ["pl_select_formation_leader", false];
+            if (_shift) then {
+                missionNamespace setVariable ["pl_formation_cancel", true];
+            }
+            else 
+            {
+                missionNamespace setVariable ["pl_formation_cancel", false]
+            };
+        };
+        if (missionNamespace getVariable ["pl_transfer_medic_enabled", false]) then {
+            missionNamespace setVariable ["pl_transfer_medic_enabled", false];
+            missionNamespace setVariable ["pl_transfer_medic_group", _group];
+        };
+    };
+}];
+
+
+pl_vehicle_destroyed_report_cd = 0;
+
+addMissionEventHandler ["EntityKilled",{
+    params ["_killed", "_killer", "_instigator", "_useEffects"];
+    if ((side group _killed) isEqualto playerside) then {
+        if (vehicle _killed == _killed) then {
+            _leader = leader (group _killed);
+            _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "displayName");
+            _unitName = name _killed;
+            _killed setVariable ["pl_wia", false];
+            [_killed] spawn pl_draw_kia;
+            _group = group _killed;
+            _mags = _group getVariable "magCountAllDefault";
+            _mag = _group getVariable "magCountSoloDefault";
+            _mags = _mags - _mag;
+            _group setVariable ["magCountAllDefault", _mags];
+
+            // // reinforcements
+            // _type = typeOf _killed;
+            // _loadout = _killed getVariable "pl_loadout";
+            // _killedUnits = _group getVariable "pl_killed_units";
+            // _killedUnits pushBack [_type, _loadout];
+            // _group setVariable ["pl_killed_units", _killedUnits];
+
+            // playSound "beep";
+            // _leader sideChat format ["%1: %2 K.I.A", groupId _group, _unitMos];
+        };
+
+        // else
+        // {
+        //     if (time >= pl_vehicle_destroyed_report_cd) then {
+        //         _vic = vehicle _killed;
+        //         _vicName = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");
+        //         player sideChat format ["%1 was destroyed", _vicName];
+        //         pl_vehicle_destroyed_report_cd = time + 3;
+        //     };
+        // };
+    }
+    else
+    {
+        if (_killed isEqualTo (leader (group _killed))) then {
+            [_killed, _killer, (group _killed)] spawn pl_enemy_destroyed_report;
+        };
+    };
+}];
+
 
 pl_reset = {
     params ["_group", ["_isNotWp", true]];
@@ -41,6 +131,8 @@ pl_reset = {
         _group selectLeader player;
     };
 
+    // reset Healing
+    // _group setVariable ["pl_healing_active", nil];
 
     // if group is not leading a formation reset Task
     if !(!(_isNotWp) and (_group getVariable ["pl_formation_leader", false])) then {
@@ -72,6 +164,10 @@ pl_reset = {
             _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
         };
     };
+
+    // stop suppression
+
+    if (_group getVariable ["pl_is_suppressing", false]) then {_group setVariable ["pl_is_suppressing", false]};
 
     // only delete Waypoints when not called from Move or MoveAdd
     if (_isNotWp) then {
@@ -191,11 +287,11 @@ pl_task_planer = {
     switch (_taskType) do { 
         case "assault" : {[_group, _wp] spawn pl_sweep_area; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
         case "defend" : {[_group, _wp] spawn pl_garrison_area_building; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "cover" : {[_group, _wp] spawn pl_take_cover; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "defPos" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "resupply" : {[_group, _wp] spawn pl_resupply; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
+        case "resupply" : {[_wp] spawn pl_supply_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
         case "recover" : {[_group, _wp] spawn pl_repair; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
         case "maintenance" : {[_group, _wp] spawn pl_maintenance_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
+        case "aid" : {[_wp] spawn pl_vehicle_ccp_aid_station; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"};
         default {}; 
     };
 
@@ -235,7 +331,8 @@ pl_select_group = {
 pl_remote_camera_in = {
     params ["_leader"];
 
-    _leader switchCamera "GROUP";  
+    player setVariable ["pl_camera_mode", cameraView];
+    _leader switchCamera "EXTERNAL";  
 };
 
 pl_spawn_cam = {
@@ -244,7 +341,7 @@ pl_spawn_cam = {
 
 pl_remote_camera_out = {
 
-    player switchCamera "EXTERNAL";  
+    player switchCamera (player getVariable ["pl_camera_mode", "INTERNAL"]);  
 };
 
 pl_angle_switcher = {
@@ -625,6 +722,8 @@ pl_march = {
 pl_recon_active = false;
 pl_recon_group = grpNull;
 
+pl_recon_count = 0;
+
 // designate group as Recon
 pl_recon = {
     private ["_group", "_markerName", "_intelInterval", "_intelMarkers", "_wp", "_leader", "_distance", "_pos", "_dir", "_markerNameArrow", "_markerNameGroup", "_posOccupied"];
@@ -634,13 +733,18 @@ pl_recon = {
     if (_group == (group player)) exitWith {hint "Player group can´t be designated as Recon Group!";};
 
     // turn off recon mode
-    if (pl_recon_active and _group == pl_recon_group) exitWith {pl_recon_active = false; pl_recon_group = grpNull};
+    // if (pl_recon_active and _group == pl_recon_group) exitWith {pl_recon_active = false; pl_recon_group = grpNull};
+    // if (_group getVariable ["pl_is_recon", false]) exitWith {_group setVariable ["pl_is_recon", false]};
 
     // check if another group is in Recon
-    if (pl_recon_active) exitWith {hint "Only one GROUP can be designated as Recon";};
+    // if (pl_recon_active) exitWith {hint "Only one GROUP can be designated as Recon";};
+    if (pl_recon_count >= 2) exitWith {hint "Only TWO Groups can be designated as Recon";};
 
-    pl_recon_active = true;
-    pl_recon_group = _group;
+    // pl_recon_active = true;
+    // pl_recon_group = _group;
+
+    _group setVariable ["pl_is_recon", true];
+    pl_recon_count = pl_recon_count + 1;
 
 
     // [_group] call pl_reset;
@@ -649,28 +753,28 @@ pl_recon = {
     playSound "beep";
 
     // sealth, holdfire, recon icon
-    _group setBehaviour "STEALTH";
-    _group setVariable ["MARTA_customIcon", ["b_recon"]];
-    _group setVariable ["pl_recon_area_size", 1400];
+    // _group setBehaviour "STEALTH";
+    [_group, "recon"] call pl_change_group_icon;
+    _group setVariable ["pl_recon_area_size", 600];
 
     // _group setCombatMode "GREEN";
     // _group setVariable ["pl_hold_fire", true];
     // _group setVariable ["pl_combat_mode", true];
 
     // chosse intervall
-    _intelInterval = 30;
+    _intelInterval = 45;
 
     // stop leader to get full recon size
     sleep 0.5;
-    doStop (leader _group);
+    // doStop (leader _group);
     
     // create Recon area Marker
-    _markerName = createMarker ["reconArea", getPos (leader _group)];
+    _markerName = createMarker [format ["reconArea%1", _group], getPos (leader _group)];
     _markerName setMarkerColor "colorBlue";
     _markerName setMarkerShape "ELLIPSE";
     _markerName setMarkerBrush "Border";
     _markerName setMarkerAlpha 0.3;
-    _markerName setMarkerSize [1400, 1400];
+    _markerName setMarkerSize [600, 600];
 
     sleep 1;
 
@@ -680,12 +784,14 @@ pl_recon = {
     [_group, _markerName] spawn {
     params ["_group", "_markerName"];
 
-        while {pl_recon_active} do {
-            _group setBehaviour "STEALTH";
+        while {_group getVariable ["pl_is_recon", false]} do {
+            _bonus = 0;
+            // _group setBehaviour "STEALTH";
+            if (behaviour (leader _group) == "STEALTH") then {_bonus = 250};
             _markerName setMarkerPos (getPos (leader _group));
             if (((currentWaypoint _group) < count (waypoints _group))) then {
-                _group setVariable ["pl_recon_area_size", 700 ];
-                _markerName setMarkerSize [700, 700];
+                _group setVariable ["pl_recon_area_size", 500 + _bonus];
+                _markerName setMarkerSize [500 + _bonus, 500 + _bonus];
             }
             else
             {
@@ -707,9 +813,9 @@ pl_recon = {
                 if (_reconHeight <= 0) then {_reconHeight = 0};
 
                 // Set Bonus Range
-                _group setVariable ["pl_recon_area_size", 800 + (_reconHeight * 20)];
+                _group setVariable ["pl_recon_area_size", 700 + (_reconHeight * 20) + _bonus];
                 _h = _group getVariable "pl_recon_area_size";
-                _markerName setMarkerSize [_h, _h];
+                _markerName setMarkerSize [_h + _bonus, _h + _bonus];
             };
             sleep 1;
         };
@@ -721,7 +827,7 @@ pl_recon = {
     sleep 5;
 
     // recon logic
-    while {pl_recon_active} do {
+    while {_group getVariable ["pl_is_recon", false]} do {
         
         {
             // check if group has active WP and within reconarea
@@ -754,8 +860,8 @@ pl_recon = {
                             } forEach _intelMarkers;
                         };
 
-                        // 80 % chance to create Marker
-                        if (!_posOccupied and (random 1) > 0.2) then {
+                        // 60 % chance to create Marker
+                        if (!_posOccupied and (random 1) > 0.4) then {
                             createMarker [_markerNameArrow, _pos];
                             _markerNameArrow setMarkerDir _dir;
                             _markerNameArrow setMarkerType "mil_arrow2";
@@ -781,8 +887,8 @@ pl_recon = {
                 }
                 else
                 {
-                    // 45 % chance to discover static groups
-                    if ((random 1) > 0.55) then {
+                    // 25 % chance to discover static groups
+                    if ((random 1) < 0.25) then {
                         createMarker [_markerNameGroup, getPos (leader _x)];
                         _markerType = "o_unknown";
                         _markerSize = 0.4;
@@ -799,29 +905,30 @@ pl_recon = {
                 };
             };
 
-            // if enemy closer then 300 m --> reveal enemy
-            if ((leader _x) distance2D (leader _group) < 200) then {
-                _group reveal [leader _x, 3.5];
-            };
+            // if enemy closer then 350 m --> reveal enemy
+            // if ((leader _x) distance2D (leader _group) < 350) then {
+            //     _group reveal [leader _x, 3.5];
+            // };
 
         } forEach (allGroups select {side _x != playerSide});
 
         // intervall
         _time = time + _intelInterval;
-        waitUntil {time >= _time or !pl_recon_active};
+        waitUntil {time >= _time or !(_group getVariable ["pl_is_recon", false])};
         // cancel recon if leader dead
-        if !(alive (leader pl_recon_group)) exitWith {pl_recon_active = false; pl_recon_group = grpNull};
-
         // delete all markers after Intervall
         {
             deleteMarker (_x#0);
             deleteMarker (_x#1);
         } forEach _intelMarkers;
         _intelMarkers = [];
+
+        if !(alive (leader _group)) exitWith {_group setVariable ["pl_is_recon", false]; pl_recon_count = pl_recon_count - 1;};
+
     };
 
     // rest variables
-    pl_recon_active = false;
+    // pl_recon_active = false;
     deleteMarker _markerName;
     _group setVariable ["MARTA_customIcon", nil];
 
@@ -829,6 +936,125 @@ pl_recon = {
     // _group setVariable ["pl_hold_fire", false];
     // _group setVariable ["pl_combat_mode", false];
 };
+
+
+pl_draw_sync_wp_array = [];
+
+
+pl_move_as_formation = {
+    params [["_groups", hcSelected player]];
+    private ["_cords", "_wpPos", "_pos1", "_pos2", "_syncWps", "_infIncluded"];
+
+    if !(visibleMap) exitWith {hint "Open Map to order Formation Move"};
+
+    _infIncluded = {
+        if (vehicle (leader _x) == leader _x) exitWith {true};
+        false
+    } forEach _groups;
+
+    // choose formationleader -> first group in array every Position will be calculated relatic to leader
+    _formationLeaderGroup = _groups#0;
+
+    // get WP Position of FormationLeader or current position if no waypoint and add to indicator array
+    _wpsL = waypoints _formationLeaderGroup;
+    if !(_wpsL isEqualTo []) then {
+        _wpPos = waypointPosition (_wpsL select ((count _wpsL) - 1)); //getPos (leader _formationLeaderGroup);
+    }
+    else
+    {
+        _wpPos = getPos (leader _formationLeaderGroup)
+    };
+    if (isNil "_wpPos") then {_wpPos = getPos (leader _formationLeaderGroup)};
+    pl_draw_formation_move_mouse_array = [[vehicle (leader _formationLeaderGroup), [0,0], _wpPos]];
+
+    // calc relativ position to formationleader for every other group and add to indicator array
+    {
+        _wps1 = waypoints _x;
+        if !(_wps1 isEqualTo []) then {
+            _pos1 = waypointPosition (_wps1 select ((count _wps1) - 1)); //getPos (leader _x);
+        }
+        else
+        {
+            _pos1 = getPos (leader _x);
+        };
+        _wps2 = waypoints _formationLeaderGroup;
+        if !(_wps2 isEqualTo []) then {
+            _pos2 = waypointPosition (_wps2 select ((count _wps2) - 1)); //getPos (leader _formationLeaderGroup);
+        }
+        else
+        {
+            _pos2 = getPos (leader _formationLeaderGroup);
+        };
+        _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
+        pl_draw_formation_move_mouse_array pushBack [vehicle (leader _x), _relPos, _pos1];
+    } forEach (_groups) - [_formationLeaderGroup];
+
+    // draw Indicator and wait for mouseclick;
+    pl_draw_formation_mouse = true;
+
+    waitUntil {inputAction "defaultAction" > 0 or inputAction "zoomTemp" > 0};
+
+    if (_infIncluded) then {
+        {
+            if (vehicle (leader _x) != leader _x) then {
+                (vehicle (leader _x)) limitSpeed 23;
+                (vehicle (leader _x)) setVariable ["pl_speed_limit", "CON"];
+            };
+        } forEach _groups;
+    };
+
+
+    pl_draw_formation_mouse = false;
+    pl_draw_formation_move_mouse_array = [];
+
+    if (inputAction "zoomTemp" > 0) exitWith {};
+
+    if (_cancel) exitWith {};
+    _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+
+    // calc new Move position relativ ro mouseposition and add Waypoints
+    _syncWps = [];
+
+    // 1. set position or wpPosition of Formationleader as absolute
+    _wps2 = waypoints _formationLeaderGroup;
+    if !(_wps2 isEqualTo []) then {
+        _pos2 = waypointPosition (_wps2 select ((count _wps2) - 1)); //getPos (leader _formationLeaderGroup);
+    }
+    else
+    {
+        _pos2 = getPos (leader _formationLeaderGroup);
+    };
+
+    // 2. add wp for formationleader;
+    _lWp = _formationLeaderGroup addWaypoint [_cords, 0];
+    _formationLeaderGroup setVariable ["pl_wait_wp", _lWp];
+    _syncWps = [_lWp];
+    // _syncWps pushBack _lWp;
+
+    // 3. calc waypoint for other groups relativ to Formationleader and add WP
+    {
+        _wps1 = waypoints _x;
+        if !(_wps1 isEqualTo []) then {
+            _pos1 = waypointPosition (_wps1 select ((count _wps1) - 1)); //getPos (leader _x);
+        }
+        else
+        {
+            _pos1 = getPos (leader _x);
+        };
+        _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
+        _newPos = _relPos vectorAdd _cords;
+        _gWp = _x addWaypoint [_newPos, 0];
+        _gWp synchronizeWaypoint _syncWps;
+        _syncWps pushBack _gWp;
+    } forEach _groups - [_formationLeaderGroup];
+
+    _syncWps = [_syncWps, [], {(waypointPosition _x) distance2D (waypointPosition _lWp)}, "ASCEND"] call BIS_fnc_sortBy;
+
+    pl_draw_sync_wp_array pushBack _syncWps;
+
+    if (inputAction "curatorGroupMod" > 0) exitWith {sleep 0.4; [_groups] spawn pl_move_as_formation};
+};
+
 
 
 

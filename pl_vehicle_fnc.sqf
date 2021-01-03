@@ -285,6 +285,14 @@ pl_getOut_vehicle = {
                 pl_draw_convoy_array = pl_draw_convoy_array arrayIntersect pl_draw_convoy_array;
                 _convoyLeader = (missionNamespace getVariable _convoyId) select 0;
                 _convoyArray = (missionNamespace getVariable _convoyId);
+                if (_group == _convoyLeader) then {
+                    // private _convoyLeaderGroupId = groupId _convoyLeader;
+                    // _convoyLeader setGroupId [format ["%1 (Convoy Leader)", _convoyLeaderGroupId]];
+                    _leaderIsTransport = false;
+                    if (_convoyLeader getVariable ["setSpecial", false]) then {
+                        _leaderIsTransport = true;
+                    };
+                };
                 _convoyLeader setVariable ["onTask", true];
                 _convoyLeader setVariable ["setSpecial", true];
                 _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"];
@@ -316,7 +324,7 @@ pl_getOut_vehicle = {
                     {
                         _x disableAI "AUTOCOMBAT";
                     } forEach units (group _commander);
-                    _vic limitSpeed 50;
+                    _vic limitSpeed 51;
                     // _vic forceFollowRoad true;
                     // _vic setConvoySeparation 20;
                     group _commander setBehaviour "SAFE"; // SAFE
@@ -402,6 +410,7 @@ pl_getOut_vehicle = {
                         };
 
                         _vic setVariable ["pl_speed_limit", "CON"];
+                        // _vic forceFollowRoad true;
 
                         while {
                         (alive (vehicle (leader _convoyLeader))) and
@@ -409,25 +418,45 @@ pl_getOut_vehicle = {
                         ((leader _convoyLeader) distance2D waypointPosition[_convoyLeader, currentWaypoint _convoyLeader] > 60) and
                         (_convoyLeader getVariable ["onTask", true])
                         } do {
+                            private _convoyLeaderSpeed = (vehicle (leader _convoyLeader)) getVariable "pl_speed_limit";
+                            switch (_convoyLeaderSpeed) do { 
+                                case "CON" : {_convoyLeaderSpeed = 50}; 
+                                case "MAX" : {_convoyLeaderSpeed = 70}; 
+                                default {_convoyLeaderSpeed = parseNumber _convoyLeaderSpeed}; 
+                            };
                             if ((group _commander) != _convoyLeader) then {
-                                if ((speed (vehicle (leader (_convoyArray select _convoyPosition - 1)))) < 4) then {
+                                _leaderBehavior = behaviour (leader _convoyLeader);
+                                _group setBehaviour _leaderBehavior;
+                                if ((speed (vehicle (leader (_convoyArray select (_convoyPosition - 1))))) < 4) then {
                                     _vic forceSpeed 0;
                                 };
                                 _distance = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition - 1));
                                 if (_distance > 60) then {
                                     _vic forceSpeed -1;
-                                    _vic limitSpeed 55;
+                                    _vic limitSpeed (_convoyLeaderSpeed + 8);
                                 };
                                 if (_distance < 60) then {
                                     _vic forceSpeed -1;
-                                    _vic limitSpeed 30;
+                                    _vic limitSpeed _convoyLeaderSpeed;
                                 };
                                 if (_distance < 30) then {
                                     _vic forceSpeed -1;
-                                    _vic limitSpeed 20;
+                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
                                 };
                                 if (_distance < 20) then {
                                     _vic forceSpeed 0;
+                                };
+                                if (_convoyPosition < ((count (_convoyArray)) - 1)) then {
+                                    _distanceBack = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition + 1));
+                                    if (_distanceBack > 90) then {
+                                        _vic forceSpeed 0;
+                                        if (speed (vehicle (leader (_convoyArray select (_convoyPosition + 1)))) == 0) then {
+                                            sleep 6;
+                                            if (speed (vehicle (leader (_convoyArray select (_convoyPosition + 1)))) == 0) then {
+                                                [_convoyArray select (_convoyPosition + 1)] call pl_vehicle_soft_unstuck;
+                                            };
+                                        };
+                                    };
                                 };
                             }
                             else
@@ -435,22 +464,35 @@ pl_getOut_vehicle = {
                                 _distance = _vic distance2d vehicle (leader (_convoyArray select 1));
                                 if (_distance < 70) then {
                                     _vic forceSpeed -1;
-                                    _vic limitSpeed 50;
+                                    _vic limitSpeed _convoyLeaderSpeed;
                                 };
                                 if (_distance > 70) then {
                                     _vic forceSpeed -1;
-                                    _vic limitSpeed 25;
+                                    _vic limitSpeed _convoyLeaderSpeed - (_convoyLeaderSpeed / 2);
                                 };
                                 if (_distance > 90) then {
                                     _vic forceSpeed 0;
+                                    if (speed (vehicle (leader (_convoyArray select 1))) == 0) then {
+                                        sleep 6;
+                                        if (speed (vehicle (leader (_convoyArray select 1))) == 0) then {
+                                            [_convoyArray select (_convoyPosition + 1)] call pl_vehicle_soft_unstuck;
+                                        };
+                                    };
+                                };
+                                if ((speed _vic) == 0) then {
+                                    sleep 5;
+                                    if ((speed _vic) == 0) then {
+                                        [_group] call pl_vehicle_soft_unstuck;
+                                    };
                                 };
                             };
-                            sleep 1;
+                            sleep 0.5;
                         };
                         sleep 0.5;
                         _vic forceSpeed -1;
                         _vic limitSpeed 50;
                         _vic setVariable ["pl_speed_limit", "50"];
+                        _vic forceFollowRoad false;
                         // Land Convoy Arriving
                         // if moveInConvoy do not unload Cargo
 
@@ -482,13 +524,16 @@ pl_getOut_vehicle = {
 
                         _convoyLeader setVariable ["onTask", false];
                         _convoyLeader setVariable ["setSpecial", false];
-                        // check if convoyLeader has cargo --> set icon
+                        // if (_group == _convoyLeader) then {
+                            // _convoyLeader setGroupId [_convoyLeaderGroupId];
                         _cVic = vehicle (leader _convoyLeader);
                         _cCargo = fullCrew [_cvic, "cargo", false];
                         if ((count _cCargo) > 0) then {
                             _convoyLeader setVariable ["setSpecial", true];
                             _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
                         };
+                        // };
+                        // check if convoyLeader has cargo --> set icon
 
                         group (_commander) setVariable ["pl_draw_convoy", false];
                         group (_commander) setBehaviour "AWARE";
@@ -760,7 +805,6 @@ pl_spawn_vic_speed = {
 pl_crew_vehicle = {
     private ["_group", "_targetVic", "_groupLen"];
     _group = hcSelected player select 0;
-    _groupLen = count (units _group);
 
     if (visibleMap) then {
         pl_show_vehicles_pos = getPos (leader _group);
@@ -782,6 +826,8 @@ pl_crew_vehicle = {
     _targetVic = pl_vics select 0;
     if (isNil "_targetVic") exitWith {hint "No available vehicle!"};
 
+    _unitsInVic = {vehicle _x == _targetVic} count (units _group);
+    _groupLen = (count (units _group)) - _unitsInVic;
     _occupiedSeats = count (fullCrew [_targetVic, "", false]);
     _avaibleSeats = (count (fullCrew [_targetVic, "", true])) - _occupiedSeats;
     if (_avaibleSeats >= _groupLen) then {
@@ -804,16 +850,20 @@ pl_leave_vehicle = {
     params ["_group"];
     private ["_vic"];
 
-    if ((leader _group) != vehicle (leader _group)) then {
-        _vic = vehicle (leader _group);
-        if ((driver _vic) in (units _group)) then {
-            pl_left_vehicles pushBack [_vic, _group];
-            _group setVariable ["pl_group_left_vehicle", _vic];
-        };
-        _group leaveVehicle _vic;
-        _group setVariable ["setSpecial", false];
-        _group setVariable ["onTask", false];
+    _vic = {
+        if (vehicle _x != _x) exitWith {vehicle _x};
+        objNull
+    } forEach (units _group);
+
+    if (isNull _vic) exitWith {hint "Group is not crewing a Vehicle!"};
+
+    if ((driver _vic) in (units _group)) then {
+        pl_left_vehicles pushBack [_vic, _group];
+        _group setVariable ["pl_group_left_vehicle", _vic];
     };
+    _group leaveVehicle _vic;
+    _group setVariable ["setSpecial", false];
+    _group setVariable ["onTask", false];
 };
 
 pl_spawn_leave_vehicle = {

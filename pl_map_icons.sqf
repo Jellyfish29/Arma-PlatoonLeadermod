@@ -18,11 +18,11 @@ pl_get_group_health = {
 pl_get_vic_health = {
     params ["_vic"];
     private ["_healthState"];
-    _healthState = [0.4,1,0.2,1];
-    if ((damage _vic) > 0.2) then {
+    _healthState = [0,0.3,0.6,0.8];
+    if ((damage _vic) > 0) then {
         _healthState = [0.9,0.9,0,1];
     };
-    if ((damage _vic) > 0.8) then {
+    if ((damage _vic) > 0.6) then {
         _healthState = [0.7,0,0,1];
     };
     if !(canMove _vic) then {
@@ -182,24 +182,42 @@ pl_draw_group_info = {
                     ];
                 };
 
+                if (_x getVariable ['pl_healing_active', false]) then {
+                    _healingPos = [(_pos select 0) - (_mapscaleX * 1.8), _pos select 1];
+                    _color = [0.9,0.9,0,1];
+                    if (_x getVariable ['pl_on_hold', false]) then {_color = [0.92,0.24,0.07,1];};
+                    _display drawIcon [
+                        '\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa',
+                        _color,
+                        _healingPos,
+                        8,
+                        8,
+                        0,
+                        '',
+                        2
+                    ];
+                };
+
                 if ((vehicle (leader _x)) != leader _x) then {
                     _vicPos = [(_pos select 0), (_pos select 1) - _mapscaleY];
                     _vicColor = [vehicle (leader _x)] call pl_get_vic_health;
+                    _vicDir = getDir (vehicle (leader _x));
+                    _vicIcon = getText (configfile >> 'CfgVehicles' >> typeof vehicle (leader _x) >> 'icon');
                     _display drawIcon [
-                        '\A3\ui_f\data\map\markers\military\triangle_CA.paa',
+                        _vicIcon,
                         _vicColor,
                         _vicpos,
                         11,
                         11,
-                        0,
+                        _vicDir,
                         '',
                         2
                     ];
 
                     _vicSpeedLimit = vehicle (leader _x) getVariable 'pl_speed_limit';
-                    _vicSpeedPos = [(_pos select 0), (_pos select 1) - (_mapscaleY * 1.4)];
+                    _vicSpeedPos = [(_pos select 0), (_pos select 1) - (_mapscaleY * 1.5)];
                     _vicSpeedColor = [0.9, 0.9, 0.9,1];
-                    if (_vicSpeedLimit isEqualTo '50') then {_vicSpeedColor = [0.4,1,0.2,1]};
+                    if (_vicSpeedLimit isEqualTo '50') then {_vicSpeedColor = [0,0.5,0,1]};
                     if (_vicSpeedLimit isEqualTo '30') then {_vicSpeedColor = [0.9,0.9,0,1]};
                     if (_vicSpeedLimit isEqualTo '15') then {_vicSpeedColor = [0.7,0,0,1]};
                     if (_vicSpeedLimit isEqualTo 'CON') then {_vicSpeedColor = [0.92,0.24,0.07,1]};
@@ -211,7 +229,7 @@ pl_draw_group_info = {
                         12,
                         0,
                         '',
-                        2
+                        0
                     ];
                 }
                 else
@@ -253,7 +271,7 @@ pl_draw_group_info = {
 };
 
 
-[] spawn pl_draw_group_info;
+[] call pl_draw_group_info;
 
 pl_mark_vics = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -282,7 +300,7 @@ pl_mark_vics = {
     "]; // "
 };
 
-[] spawn pl_mark_vics;
+[] call pl_mark_vics;
 
 pl_convoy_marker = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -307,7 +325,7 @@ pl_convoy_marker = {
     "]; // "
 };
 
-[] spawn pl_convoy_marker;
+[] call pl_convoy_marker;
 
 pl_dead_vics = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -330,7 +348,7 @@ pl_dead_vics = {
     "]; // "
 };
 
-[] spawn pl_dead_vics;
+[] call pl_dead_vics;
 
 pl_draw_building_search_marker = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -371,7 +389,7 @@ pl_draw_follow_marker = {
     "]; // "
 };
 
-[] spawn pl_draw_follow_marker;
+[] call pl_draw_follow_marker;
 
 pl_draw_defence_line = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -390,7 +408,7 @@ pl_draw_defence_line = {
     "]; // "
 };
 
-[] spawn pl_draw_defence_line;
+[] call pl_draw_defence_line;
 
 pl_draw_bounding_line = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -409,7 +427,7 @@ pl_draw_bounding_line = {
     "]; // "
 };
 
-[] spawn pl_draw_bounding_line;
+[] call pl_draw_bounding_line;
 
 pl_draw_follow_marker_other = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -428,7 +446,7 @@ pl_draw_follow_marker_other = {
     "]; // "
 };
 
-[] spawn pl_draw_follow_marker_other;
+[] call pl_draw_follow_marker_other;
 
 pl_draw_follow_marker_other_setup = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -447,7 +465,7 @@ pl_draw_follow_marker_other_setup = {
     "]; // "
 };
 
-[] spawn pl_draw_follow_marker_other_setup;
+[] call pl_draw_follow_marker_other_setup;
 
 pl_draw_left_vehicles = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -477,7 +495,7 @@ pl_draw_left_vehicles = {
     "]; // "
 };
 
-[] spawn pl_draw_left_vehicles;
+// [] call pl_draw_left_vehicles;
 
 
 pl_draw_planed_task = {
@@ -504,7 +522,7 @@ pl_draw_planed_task = {
     "]; // "
 };
 
-[] spawn pl_draw_planed_task;
+[] call pl_draw_planed_task;
 
 pl_draw_planed_task_array_wp = [];
 
@@ -539,7 +557,7 @@ pl_draw_planed_task_wp = {
     "]; // "
 };
 
-[] spawn pl_draw_planed_task_wp;
+[] call pl_draw_planed_task_wp;
 
 pl_draw_mine_dir = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -559,6 +577,150 @@ pl_draw_mine_dir = {
 };
 
 [] call pl_draw_mine_dir;
+
+pl_draw_suppression = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                    _targetPos = _x select 0;
+                    _grpPos = getPos (_x select 1);
+                    _icon = _x select 3;
+                    _color = [0.9,0.9,0,1];
+                    _text = '';
+                    if (_x select 2) then {
+                        _color = [0.7,0,0,1];
+                        _text = 'C';
+                    };
+                    _display drawIcon [
+                        _icon,
+                        _color,
+                        _targetPos,
+                        15,
+                        15,
+                        0,
+                        _text,
+                        2,
+                        0.05
+                    ];
+
+                    _display drawLine [
+                        _grpPos,
+                        _targetPos,
+                        _color
+                    ];
+
+            } forEach pl_draw_suppression_array;
+        };
+    "]; // "
+};
+
+[] call pl_draw_suppression;
+
+pl_draw_resupply_line = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                _pos1 = _x select 0;
+                _pos2 =_x select 1;
+                _color = _x select 2;
+                _display drawArrow [
+                    _pos1,
+                    _pos2,
+                    _color
+                    ];
+            } forEach pl_supply_draw_array;
+        };
+    "]; // "
+};
+
+[] call pl_draw_resupply_line;
+
+pl_draw_formation_move_mouse = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar and pl_draw_formation_mouse) then {
+            {
+                _vic = _x#0;
+                _relPos = _x#1;
+                _wpPos = _x#2;
+                _formationLeader = (pl_draw_formation_move_mouse_array#0)#0;
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                _vicPos = getPos _vic;
+                _newPos = [(_mPos select 0) + (_relPos select 0), (_mPos select 1) + (_relPos select 1)];
+                _vDir = _wpPos getDir _newPos;
+                _icon = getText (configfile >> 'CfgVehicles' >> typeof _vic >> 'icon');
+                _size = 30;
+
+                _display drawLine [
+                    _wpPos,
+                    _newPos,
+                    [0.9,0.9,0,1]
+                    ];
+
+                _display drawIcon [
+                    _icon,
+                    [0.9,0.9,0,1],
+                    _newPos,
+                    _size,
+                    _size,
+                    _vDir
+                ]
+            } forEach pl_draw_formation_move_mouse_array;
+        };
+    "]; // "
+};
+
+[] call pl_draw_formation_move_mouse;
+
+
+pl_draw_sync_wps = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar) then {
+            {
+                for '_i' from ((count _x) - 1) to 1 step -1 do {
+                    _pos1 = waypointPosition (_x#_i);
+                    _pos2 = waypointPosition (_x#(_i - 1));
+                    _grp = (_x#_i)#0;
+                    if (((leader _grp) distance2d _pos1) < 20) then {
+                        _x deleteAt (_x find (_x#_i));
+                    };
+
+                    if (!(_pos1 isEqualto [0,0,0]) and !(_pos2 isEqualto [0,0,0])) then {
+                        _display drawLine [
+                            _pos1,
+                            _pos2,
+                            [0.92,0.24,0.07,1]
+                        ];
+                    };
+                };
+            } forEach pl_draw_sync_wp_array;
+        };
+    "]; // "
+};
+
+[] call pl_draw_sync_wps;
+
+// pl_draw_tank_hunt = {
+//     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+//         _display = _this#0;
+//         if (hcShownBar) then {
+//             {
+//                 _pos1 = _x;
+//                 _pos2 = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+//                 _display drawLine [
+//                     _pos1,
+//                     _pos2,
+//                     [0.7,0,0,1]
+//                 ];
+//             } forEach pl_draw_tank_hunt_array
+//         };
+//     "]; // "
+// };
+
+// [] call pl_draw_tank_hunt;
 
 
 pl_marker_targets = [];
@@ -615,3 +777,25 @@ pl_draw_kia = {
     waitUntil {time >= _time};
     deleteMarker _markerName;
 };
+
+
+addMissionEventHandler ["Loaded", {
+    params ["_saveType"];
+    [] call pl_draw_group_info;
+    [] call pl_mark_vics;
+    [] call pl_convoy_marker;
+    [] call pl_dead_vics;
+    [] call pl_draw_building_search_marker;
+    [] call pl_draw_follow_marker;
+    [] call pl_draw_defence_line;
+    [] call pl_draw_bounding_line;
+    [] call pl_draw_follow_marker_other;
+    [] call pl_draw_follow_marker_other_setup;
+    [] call pl_draw_planed_task;
+    [] call pl_draw_planed_task_wp;
+    [] call pl_draw_mine_dir;
+    [] call pl_draw_suppression;
+    [] call pl_draw_resupply_line;
+    [] call pl_draw_formation_move_mouse;
+    [] call pl_draw_sync_wps;
+}];

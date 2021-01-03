@@ -137,7 +137,7 @@ addMissionEventHandler ["GroupIconOverEnter", {
     if (_is3D) then {
         _group setVariable ["pl_show_3d_info", true];
     };
-    if (_shift and ((side (leader _group)) isEqualTo playerside)) then {
+    if (inputAction "BuldTextureInfo" > 0 and ((side (leader _group)) isEqualTo playerside)) then {
         if (time > pl_3dIcon_select_cd) then {
             playsound "beep";
             player hcSelectGroup [_group];

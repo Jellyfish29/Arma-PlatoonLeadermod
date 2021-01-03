@@ -4,6 +4,7 @@ pl_global_spotrep_cd = 0;
 pl_At_fire_report_cd = 0;
 // pl_ai_skill = 0.8;
 // pl_radio_range = 700;
+pl_max_reinforcement_per_vic = parseNumber pl_max_reinforcement_per_vic;
 
 pl_share_info = {
 
@@ -220,7 +221,7 @@ pl_medical_setup = {
     _unit setVariable ["pl_beeing_treatet", false];
     _unit setVariable ["pl_wia_calledout", false];
     _unit setVariable ["pl_injured", false];
-    _unit setVariable ["pl_bleedout_time", 400];
+    _unit setVariable ["pl_bleedout_time", 700];
     _unit setVariable ["pl_bleedout_set", false];
     _unit setVariable ["pl_damage_reduction", false];
     _unit addEventHandler ['HandleDamage', {
@@ -234,6 +235,9 @@ pl_medical_setup = {
                 if (([0, 100] call BIS_fnc_randomInt) > 10) then {
                     _damage = 0;
                     _unit setUnconscious true;
+                    if (vehicle _unit != _unit) then {
+                        [_unit, vehicle _unit] call pl_crew_eject;
+                    };
                     if !(_unit getVariable "pl_wia_calledout") then {
                         [_unit] spawn pl_wia_callout;
                     };
@@ -278,11 +282,20 @@ pl_set_up_ai = {
     _group setVariable ["sitrepCd", 0];
     _group setVariable ["pl_show_info", true];
     _group setVariable ["pl_hold_fire", false];
+    _group setVariable ["pl_killed_units", []];
+    _groupComposition = [];
+    {
+        _type = typeOf _x;
+        _loadout = getUnitLoadout _x;
+        _groupComposition pushBack [_x, _type, _loadout];
+    } forEach (units _group);
+
+    _group setVariable ["pl_group_comp", _groupComposition];
     _group allowFleeing 0;
 
     [_group] spawn pl_ammoBearer;
-    {
-        _x setSkill pl_ai_skill;
+    _magCountAll = 0;
+    {     
         if ((_x != player) or !(_x in switchableUnits)) then {
             _x unassignItem "Binocular";
             _x removeWeapon "Binocular";
@@ -292,11 +305,6 @@ pl_set_up_ai = {
         if (_x getVariable ["pl_special_force", false]) then {
             [_x] spawn pl_special_forces_skills;
         };
-    } forEach (units _group);
-    _magCountAll = 0;
-    {
-        // Ammo Count
-        _x setVariable ["pl_start_backpack_load", backpackitems _x];
         _mags = magazines _x;
         _mag = "";
         if ((primaryWeapon _x) != "") then {
@@ -311,9 +319,9 @@ pl_set_up_ai = {
         _magCountAll = _magCountAll + _magCount;
         _x setVariable ["pl_wia", false];
         _x setVariable ["pl_unstuck_cd", 0];
-
+        _laodout = getUnitLoadout _x;
+        _x setVariable ["pl_loadout", _laodout];
         [_x] spawn pl_auto_crouch;
-
         if (pl_enabled_medical) then {
             [_x] call pl_medical_setup; 
         };
@@ -365,6 +373,17 @@ pl_vehicle_setup = {
 
             _vic setVariable ["pl_appereance", _animationPhases];
         };
+        // Supply Vehicle setup
+        _vicType = typeOf _vic;
+        _ammoCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportAmmo");
+        if (_ammoCap > 0 or _vic getVariable ["pl_is_supply_vehicle", false]) then {
+            _vic setVariable ["pl_is_supply_vehicle", true];
+            _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
+        };
+        if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {
+            _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
+            _vic setVariable ["pl_is_supply_vehicle", true];
+        };
         _vic addEventHandler ["IncomingMissile", {
             params ["_target", "_ammo", "_vehicle", "_instigator"];
 
@@ -384,6 +403,10 @@ pl_vehicle_setup = {
                 deleteMarker _markerName;
             };
         }];
+
+
+
+
         _vic setVariable ["pl_vehicle_setup_complete", true];
     };
     _w = getWeaponCargo _vic;
@@ -403,7 +426,7 @@ pl_ai_setUp_loop = {
             }
             else
             {
-                _x limitSpeed 45;
+                // _x limitSpeed 45;
                 _x setUnloadInCombat [true, true];
             };
         } forEach vehicles;
@@ -453,16 +476,43 @@ pl_ai_setUp_loop = {
 
 pl_auto_unstuck = {
     params ["_unit"];
-    if (group _unit != group player and (time >= _unit getVariable "pl_unstuck_cd")) then {
+    if (group _unit != group player and (time >= _unit getVariable "pl_unstuck_cd") and !(group _unit getVariable ["pl_combat_mode", true])) then {
         _distance = _unit distance2D leader (group _unit);
         if (_distance > 150) then {
-            [_unit] spawn pl_hard_reset;
+            // [_unit] spawn pl_hard_reset;
             _unit setVariable ["pl_unstuck_cd", time + 90];
-            _pos = (getPos _unit) findEmptyPosition [0, 30];
+            _type = typeOf _unit;
+            _pos = (getPos _unit) findEmptyPosition [0, 50, _type];
             _unit setPos _pos;
             _unit doFollow leader (group _unit);
         };
     };
+};
+
+pl_vehicle_unstuck = {
+    params ["_group"];
+    private ["_vic"];
+    if (vehicle (leader _group) != leader _group) then {
+        _vic = vehicle (leader _group);
+        _type = typeOf _vic;
+        _pos = (getPos _vic) findEmptyPosition [0, 40, _type];
+        _vic setPos _pos;
+    }
+    else
+    {
+        {
+            _type = typeOf _x;
+            _pos = (getPos _x) findEmptyPosition [0, 40, _type];
+            _x setPos _pos;
+        } forEach (units _group);
+    };
+};
+pl_vehicle_soft_unstuck = {
+    params ["_group"];
+    private ["_vic"];
+    _vic = vehicle (leader _group);
+    _pos = [1, 1, 0.1] vectorAdd (getPos _vic);
+    _vic setPos _pos;
 };
 
 pl_reset_group = {
@@ -526,14 +576,17 @@ pl_hard_reset = {
 
     if (pl_enabled_medical) then {
         [_newUnit] call pl_medical_setup; 
-        sleep 0.1;
         if (_unitWia) then {
-            _newUnit setUnconscious true;
-            _newUnit setVariable ["pl_bleedout_time", 150];
-            sleep 2;
-            _newUnit setVariable ["pl_wia", true];
-            sleep 1;
-            [_newUnit] spawn pl_bleedout;
+            [_newUnit] spawn {
+                params ["_newUnit"];
+                sleep 0.1;
+                _newUnit setUnconscious true;
+                _newUnit setVariable ["pl_bleedout_time", 300];
+                sleep 2;
+                _newUnit setVariable ["pl_wia", true];
+                sleep 1;
+                [_newUnit] spawn pl_bleedout;
+            };
         };
     };
 };
@@ -542,9 +595,16 @@ pl_hard_reset = {
 pl_spawn_hard_reset = {
     {
         {
-            [_x] spawn pl_hard_reset;
+            [_x] call pl_hard_reset;
         } forEach (units _x);
-    } forEach hcSelected player;  
+        {
+            _type = typeOf _x;
+            _loadout = getUnitLoadout _x;
+            _groupComposition pushBack [_x, _type, _loadout];
+        } forEach (units _x);
+    } forEach hcSelected player;
+
+    _group setVariable ["pl_group_comp", _groupComposition];
 };
 
 pl_ch_vehicle_dir = {

@@ -126,3 +126,20 @@ pl_create_hc_group = {
 
 // [] call pl_merge_hc_groups;
 
+pl_change_group_icon = {
+    params ["_group", "_type"];
+    private ["_prefix"];
+
+    _side = side _group;
+
+    switch (_side) do { 
+        case west : {_prefix = "b"}; 
+        case east : {_prefix = "o"};
+        case independent : {_prefix = "n"}; 
+        default {_prefix = "b"}; 
+    };
+    _typeStr = format ["%1_%2", _prefix, _type];
+
+    _group setVariable ["MARTA_customIcon", [_typeStr]];      
+};
+

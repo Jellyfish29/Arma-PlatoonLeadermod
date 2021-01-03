@@ -66,6 +66,28 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "pl_enable_reinforcements",
+    "CHECKBOX",
+    ["Enable Reinforcements","enable or disable Reinforcements from Supply Points"],
+    "Platoon Leader",
+    true,
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_max_reinforcement_per_vic",
+    "EDITBOX",
+    ["Max Reinforcements","Max Reinforcements per Supply Vehicle"],
+    "Platoon Leader",
+    ["20"],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
     "pl_additional_engVic",
     "EDITBOX",
     ["Additional Repair Vehicles classnames","Define Vehicles that can repair/recover other Vehicles: Format ['example_class_1', 'example_class_2']"],
@@ -115,6 +137,72 @@
     ["CAS Sortie Amount","Different CAS Strikes cost different amount of 'Sorties' select Amount"],
     "Platoon Leader",
     ["25"],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_cas_plane_1",
+    "EDITBOX",
+    ["CAS Plane 1","Define Classname for CAS Plane 1 (Gun, Attack, SAD)"],
+    "Platoon Leader",
+    ['B_Plane_CAS_01_F'],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_cas_plane_2",
+    "EDITBOX",
+    ["CAS Plane 2","Define Classname for CAS Plane 2 (JDAM)"],
+    "Platoon Leader",
+    ['B_Plane_Fighter_01_F'],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_cas_plane_3",
+    "EDITBOX",
+    ["CAS Plane 3","Define Classname for CAS Plane 3 (Cluster)"],
+    "Platoon Leader",
+    ['B_Plane_Fighter_01_Cluster_F'],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_cas_Heli_1",
+    "EDITBOX",
+    ["CAS Heli 1","Define Classname for CAS Heli 1 (SAD)"],
+    "Platoon Leader",
+    ['B_Heli_Attack_01_F'],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_medevac_Heli_1",
+    "EDITBOX",
+    ["MEDEVAC Heli","Define Classname for MEDEVAC Heli"],
+    "Platoon Leader",
+    ['B_Heli_Transport_01_F'],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_uav_1",
+    "EDITBOX",
+    ["UAV","Define Classname for UAV"],
+    "Platoon Leader",
+    ['B_UAV_02_dynamicLoadout_F'],
     nil,
     {},
     true

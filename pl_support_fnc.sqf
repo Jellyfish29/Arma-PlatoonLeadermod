@@ -193,15 +193,16 @@ pl_cas = {
     pl_sorties = pl_sorties - _sortiesCost;
 
     switch (_key) do { 
-        case 1 : {pl_gun_enabled = 0, _type = 0, _plane = 'B_Plane_CAS_01_F', _cs = 'Viper 1'};
-        case 2 : {pl_gun_rocket_enabled = 0, _type = 2, _plane = 'B_Plane_CAS_01_F', _cs = 'Viper 4'};
-        case 3 : {pl_cluster_enabled = 0,  _type = 3, _plane = 'B_Plane_Fighter_01_Cluster_F', _cs = 'Black Knight 2'}; 
-        case 4 : {pl_jdam_enabled = 0,  _type = 3, _plane = 'B_Plane_Fighter_01_F', _cs = 'Stroke 3'};
+        case 1 : {pl_gun_enabled = 0, _type = 0, _plane = pl_cas_plane_1, _cs = 'Viper 1'};
+        case 2 : {pl_gun_rocket_enabled = 0, _type = 2, _plane = pl_cas_plane_1, _cs = 'Viper 4'};
+        case 3 : {pl_cluster_enabled = 0,  _type = 3, _plane = pl_cas_plane_3, _cs = 'Black Knight 2'}; 
+        case 4 : {pl_jdam_enabled = 0,  _type = 3, _plane = pl_cas_plane_2, _cs = 'Stroke 3'};
         default {sleep 0.1}; 
     };
     sleep 1;
     _group = createGroup playerSide;
     _support = _group createUnit ["ModuleCAS_F", _cords, [],0 , ""];
+    
     _support setVariable ["vehicle", _plane];
     _support setVariable ["type", _type];
 
@@ -211,6 +212,7 @@ pl_cas = {
     _support setDir _dir;
     sleep 5;
     _vicGroup = group (driver (_support getVariable "plane"));
+    if (isNil "_vicGroup") exitWith {deleteVehicle _support; hint "Defined Plane Class not supported!"};
     _vicGroup setGroupId [_cs];
     _vicGroup setVariable ["pl_not_addalbe", true];
     waitUntil {sleep 0.1; _support isEqualTo objNull};
@@ -287,8 +289,8 @@ pl_arty = {
     {
         pl_arty_cords = screenToWorld [0.5,0.5];
     };
-    pl_arty_enabled = 0;
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+    pl_arty_enabled = 0;
     
     _markerName setMarkerAlpha 0.4;
     createMarker ["pl_arty_center", pl_arty_cords];
@@ -363,7 +365,8 @@ pl_fire_mortar = {
 
     sleep 3,
     {
-        _x commandArtilleryFire [_cords, "8Rnd_82mm_Mo_shells", pl_mortar_rounds];
+        _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
+        _x commandArtilleryFire [_cords, _ammoType, pl_mortar_rounds];
         sleep 0.7;
     } forEach pl_mortars;
     sleep 20;
@@ -381,7 +384,7 @@ pl_interdiction_cas = {
             _height = 1500;
             _flyHeight = 200;
             _spawnDistance = 6000;
-            _planeType = 'B_Plane_CAS_01_F';
+            _planeType = pl_cas_plane_1;
             // _planeType = "B_Plane_Fighter_01_F";
             _sortiesCost = 5;
             _groupId = "Reaper 1";
@@ -395,7 +398,7 @@ pl_interdiction_cas = {
             _height = 100;
             _flyHeight = 100;
             _spawnDistance = 3000;
-            _planeType = 'B_Heli_Attack_01_F';
+            _planeType = pl_cas_Heli_1;
             _sortiesCost = 4;
             _groupId = "Black Jack 4";
             _evacHeight = 200;
@@ -407,7 +410,7 @@ pl_interdiction_cas = {
             _height = 1700;
             _flyHeight = 1700;
             _spawnDistance = 4500;
-            _planeType = 'B_UAV_02_dynamicLoadout_F';
+            _planeType = pl_uav_1;
             _sortiesCost = 3;
             _groupId = "Sentry 3";
             _evacHeight = 1700;
@@ -419,7 +422,7 @@ pl_interdiction_cas = {
             _height = 100;
             _flyHeight = 80;
             _spawnDistance = 3000;
-            _planeType = 'B_Heli_Transport_01_F';
+            _planeType = pl_medevac_Heli_1;
             _sortiesCost = 4;
             _groupId = "Angel 6";
             _evacHeight = 150;

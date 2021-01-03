@@ -18,7 +18,7 @@ pl_on_map_mortar = {
     pl_mortars = [];
     _mortars = [];
     {
-        if ((typeOf _x) in pl_mortar_names and (count (crew _x)) > 0) then {
+        if ((getNumber (configFile >> "CfgVehicles" >> typeOf _x >> "artilleryScanner")) == 1) then {
             _mortars pushBack _x;
         };
     } forEach (vehicles select {side _x isEqualTo playerSide});
@@ -48,15 +48,19 @@ pl_show_fire_support_menu = {
 };
 [] call pl_show_fire_support_menu;
 
-pl_str_heal = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"/><t> Heal Squad</t>';
-pl_str_ccp = '<img color="#e5e500" image="\Plmod\gfx\CCP.paa"/><t> Set Up CCP</t>';
+pl_str_heal = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"/><t> Enable/Disable autonomous Medic</t>';
+pl_str_ccp = '<img color="#e5e500" image="\Plmod\gfx\CCP.paa"/><t> Set Up Casualty Collection Point</t>';
+pl_str_aidStation = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"/><t> Set Up Aid Station</t>';
 pl_str_transfer = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\exit_ca.paa"/><t> Transfer Medic</t>';
 pl_str_resupply = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Resupply</t>';
+pl_str_supply_point = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up Supply Point</t>';
 pl_str_repair = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>';
 pl_str_maintenance = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Set up Maintenance Point</t>';
 pl_str_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Place Mine/Charge</t>';
 pl_str_clear_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mines</t>';
-pl_str_recon = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa"/><t> Designate/Undesignate Recon</t>';
+pl_str_recon = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa"/><t> Designate as Recon</t>';
+
+//        [parseText '%13', [4], '', -5, [['expression', '[] spawn pl_vehicle_ccp_aid_station']], '%1', 'HCNotEmpty'],
 
 pl_show_css_menu = {
     call compile format ["
@@ -64,18 +68,20 @@ pl_show_css_menu = {
         ['Combat Support',true],
         [parseText '%3', [2], '', -5, [['expression', '[] spawn pl_spawn_heal_group']], '%1', 'HCNotEmpty'],
         [parseText '%4', [3], '', -5, [['expression', '[] spawn pl_ccp']], '%1', 'HCNotEmpty'],
+
         [parseText '%5', [4], '', -5, [['expression', '[] spawn pl_transfer_medic']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%1', '1'],
         [parseText '%6', [5], '', -5, [['expression', '[] spawn pl_spawn_rearm']], '1', 'HCNotEmpty'],
+        [parseText '%12', [6], '', -5, [['expression', '[] spawn pl_supply_point']], '1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%7', [6], '', -5, [['expression', '[] spawn pl_repair']], '%2', 'HCNotEmpty'],
-        [parseText '%8', [7], '', -5, [['expression', '[] spawn pl_maintenance_point']], '%2', 'HCNotEmpty'],
+        [parseText '%7', [7], '', -5, [['expression', '[] spawn pl_repair']], '%2', 'HCNotEmpty'],
+        [parseText '%8', [8], '', -5, [['expression', '[] spawn pl_maintenance_point']], '%2', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%9', [8], '', -5, [['expression', '[] spawn pl_create_mine_menu']], '%2', 'HCNotEmpty'],
-        [parseText '%10', [9], '', -5, [['expression', '[] spawn pl_mine_clearing']], '%2', 'HCNotEmpty'],
+        [parseText '%9', [9], '', -5, [['expression', '[] spawn pl_create_mine_menu']], '%2', 'HCNotEmpty'],
+        [parseText '%10', [10], '', -5, [['expression', '[] spawn pl_mine_clearing']], '%2', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%11', [10], '', -5, [['expression', '[] spawn pl_recon']], '%2', 'HCNotEmpty']
-    ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance, pl_str_mine, pl_str_clear_mine, pl_str_recon];
+        [parseText '%11', [11], '', -5, [['expression', '[] spawn pl_recon']], '%2', 'HCNotEmpty']
+    ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance, pl_str_mine, pl_str_clear_mine, pl_str_recon, pl_str_supply_point, pl_str_aidStation];
     // showCommandingMenu "#USER:pl_mortar_menu";
 };
 [] call pl_show_css_menu;
@@ -182,16 +188,31 @@ pl_mortar_round_menu =
 
 ];
 
+//    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"/><t> Set Up Aid Station</t>', [5], '', -5, [['expression', '["aid"] call pl_task_planer']], '1', '1'],
 pl_task_plan_menu = [
     ['Task Plan', true],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] call pl_task_planer']], '1', '1'],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'/><t> Take Cover</t>", [4], '', -5, [['expression', '["cover"] call pl_task_planer']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>", [5], '', -5, [['expression', '["defPos"] call pl_task_planer']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>", [4], '', -5, [['expression', '["defPos"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Resupply</t>', [7], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up Supply Point</t>', [5], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>', [8], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Set up Maintenance Point</t>', [9], '', -5, [['expression', '["maintenance"] call pl_task_planer']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>', [6], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Set up Maintenance Point</t>', [7], '', -5, [['expression', '["maintenance"] call pl_task_planer']], '1', '1']
+];
+
+pl_change_icon_menu = 
+[
+    ['Nato Markers',true],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_inf.paa'/><t> Infantry</t>", [2], '', -5, [['expression', '{[_x, "inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_armor.paa'/><t> Armor</t>", [3], '', -5, [['expression', '{[_x, "armor"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_mech_inf.paa'/><t> Mech Inf</t>", [4], '', -5, [['expression', '{[_x, "mech_inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_motor_inf.paa'/><t> Mot Inf</t>", [5], '', -5, [['expression', '{[_x, "motor_inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_recon.paa'/><t> Recon</t>", [6], '', -5, [['expression', '{[_x, "recon"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_maint.paa'/><t> Maintenance</t>", [7], '', -5, [['expression', '{[_x, "maint"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_support.paa'/><t> Support</t>", [8], '', -5, [['expression', '{[_x, "support"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_antiair.paa'/><t> Anti Air</t>", [9], '', -5, [['expression', '{[_x, "antiair"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_art.paa'/><t> Artillery</t>", [10], '', -5, [['expression', '{[_x, "art"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_unknown.paa'/><t> Unknown</t>", [11], '', -5, [['expression', '{[_x, "unknown"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1']
 ];
