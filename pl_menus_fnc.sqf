@@ -53,7 +53,7 @@ pl_str_ccp = '<img color="#e5e500" image="\Plmod\gfx\CCP.paa"/><t> Set Up Casual
 pl_str_aidStation = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"/><t> Set Up Aid Station</t>';
 pl_str_transfer = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\exit_ca.paa"/><t> Transfer Medic</t>';
 pl_str_resupply = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Resupply</t>';
-pl_str_supply_point = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up Supply Point</t>';
+pl_str_supply_point = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up Supply/Service Point</t>';
 pl_str_repair = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>';
 pl_str_maintenance = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Set up Maintenance Point</t>';
 pl_str_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Place Mine/Charge</t>';
@@ -68,19 +68,17 @@ pl_show_css_menu = {
         ['Combat Support',true],
         [parseText '%3', [2], '', -5, [['expression', '[] spawn pl_spawn_heal_group']], '%1', 'HCNotEmpty'],
         [parseText '%4', [3], '', -5, [['expression', '[] spawn pl_ccp']], '%1', 'HCNotEmpty'],
-
         [parseText '%5', [4], '', -5, [['expression', '[] spawn pl_transfer_medic']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%1', '1'],
         [parseText '%6', [5], '', -5, [['expression', '[] spawn pl_spawn_rearm']], '1', 'HCNotEmpty'],
         [parseText '%12', [6], '', -5, [['expression', '[] spawn pl_supply_point']], '1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
         [parseText '%7', [7], '', -5, [['expression', '[] spawn pl_repair']], '%2', 'HCNotEmpty'],
-        [parseText '%8', [8], '', -5, [['expression', '[] spawn pl_maintenance_point']], '%2', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%9', [9], '', -5, [['expression', '[] spawn pl_create_mine_menu']], '%2', 'HCNotEmpty'],
-        [parseText '%10', [10], '', -5, [['expression', '[] spawn pl_mine_clearing']], '%2', 'HCNotEmpty'],
+        [parseText '%9', [8], '', -5, [['expression', '[] spawn pl_create_mine_menu']], '%2', 'HCNotEmpty'],
+        [parseText '%10', [9], '', -5, [['expression', '[] spawn pl_mine_clearing']], '%2', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%11', [11], '', -5, [['expression', '[] spawn pl_recon']], '%2', 'HCNotEmpty']
+        [parseText '%11', [10], '', -5, [['expression', '[] spawn pl_recon']], '%2', 'HCNotEmpty']
     ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance, pl_str_mine, pl_str_clear_mine, pl_str_recon, pl_str_supply_point, pl_str_aidStation];
     // showCommandingMenu "#USER:pl_mortar_menu";
 };
@@ -198,9 +196,10 @@ pl_task_plan_menu = [
     ['', [], '', -1, [['expression', '']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up Supply Point</t>', [5], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>', [6], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Set up Maintenance Point</t>', [7], '', -5, [['expression', '["maintenance"] call pl_task_planer']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>', [6], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1']
 ];
+
+
 
 pl_change_icon_menu = 
 [

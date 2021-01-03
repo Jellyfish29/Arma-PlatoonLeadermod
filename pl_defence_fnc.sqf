@@ -3,7 +3,7 @@ pl_covers = [];
 pl_defence_cords = [0,0,0];
 pl_mapClicked = false;
 pl_denfence_draw_array = [];
-pl_valid_covers = ["TREE", "SMALL TREE", "BUSH", "FOREST BORDER", "FOREST TRIANGLE", "FOREST SQUARE", "CHAPEL", "CROSS", "FOUNTAIN", "QUAY", "FENCE", "WALL", "HIDE", "BUSSTOP", "FOREST", "TRANSMITTER", "STACK", "RUIN", "TOURISM", "WATERTOWER", "ROCK", "ROCKS", "POWER LINES", "POWERSOLAR", "POWERWAVE", "POWERWIND", "SHIPWRECK"];
+pl_valid_covers = ["TREE", "SMALL TREE", "BUSH", "FOREST BORDER", "FOREST TRIANGLE", "FOREST SQUARE", "FENCE", "WALL", "HIDE", "FOREST", "ROCK", "ROCKS"];
 
 pl_rush = {
 
@@ -465,21 +465,21 @@ pl_defend_position = {
                     _movePos = _cords;
                     _isLeader = true;
                 };
-                if (!(isNil "_medic") and pl_enabled_medical) then {
+                if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
                     if (_unit == _medic) then {
                         _movePos = _medicPos;
                     };
                 };
                 [_unit, _movePos, _watchDir, _isLeader, _markerName, _group] spawn {
                     params ["_unit", "_pos", "_watchDir", "_isLeader", "_markerName", "_group"];
-                    // _unit disableAI "AUTOCOMBAT";
+                    _unit disableAI "AUTOCOMBAT";
                     _unit disableAI "AUTOTARGET";
                     _unit disableAI "TARGET";
                     // _unit disableAI "FSM";
                     _unit doMove _pos;
-                    _unit setDestination [_pos, "FORMATION PLANNED", false];
+                    // _unit setDestination [_pos, "FORMATION PLANNED", false];
                     waitUntil {(!alive _unit) or (unitReady _unit) or !(_group getVariable ["onTask", true])};
-                    // _unit enableAI "AUTOCOMBAT";
+                    _unit enableAI "AUTOCOMBAT";
                     _unit enableAI "AUTOTARGET";
                     _unit enableAI "TARGET";
                     // _unit enableAI "FSM";
@@ -494,7 +494,7 @@ pl_defend_position = {
         };
         // Cancel Task
         
-        if (!(isNil "_medic") and pl_enabled_medical) then {
+        if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
             _medic setVariable ["pl_is_ccp_medic", true];
             while {(_group getVariable ["onTask", true])} do {
                 {
@@ -503,7 +503,10 @@ pl_defend_position = {
                         _h1 = [_group, _medic, nil, _x, _medicPos, 50, "onTask"] spawn pl_ccp_revive_action;
                         waitUntil {sleep 0.1; scriptDone _h1 or !(_group getVariable ["onTask", true])};
                         [_x, getPos _x, _watchDir, 7, false] spawn pl_find_cover;
-                        _medic setUnitPos "MIDDLE";
+                        sleep 1;
+                        waitUntil {unitReady _medic or !alive _medic or !(_group getVariable ["onTask", true])};
+                        [_medic, getPos _medic, _watchDir, 10, false] spawn pl_find_cover;
+                        // _medic setUnitPos "MIDDLE";
                     };
                 } forEach (units _group);
                 _time = time + 10;

@@ -35,10 +35,12 @@ pl_advance = {
     (leader _group) limitSpeed 15;
 
     // disable combatmode 
-    // {
-    //     _x disableAI "AUTOCOMBAT";
-    // } forEach (units _group);
-    // _group setBehaviour "AWARE";
+    {
+        _x disableAI "AUTOCOMBAT";
+        // _x disableAI "COVER";
+        // _x disableAI "SUPPRESSION";
+    } forEach (units _group);
+    _group setBehaviour "AWARE";
 
     // set wp
     _awp = _group addWaypoint [_cords, 0];
@@ -49,15 +51,18 @@ pl_advance = {
     {   
         _pos = [_offset * (sin (_atkDir - 90)), _offset * (cos (_atkDir - 90)), 0] vectorAdd _cords;
         _offset = _offset + _increment;
-        // _x setUnitPos "UP";
+        if (_x == leader _group) then {_pos = _cords};
+        _pos = _pos findEmptyPosition [0, 15, typeOf _x];
         
         // _m = createMarker [str (random 1), _pos];
         // _m setMarkerType "mil_dot";
+
         [_x, _pos] spawn {
             params ["_unit", "_pos"];
             _unit doMove _pos;
-            _unit setDestination [_pos, "FORMATION PLANNED", false];
-            _unit limitSpeed 15;
+            // _unit setDestination [_pos, "FORMATION PLANNED", false];
+            _unit forceSpeed 15;
+            sleep 1;
             waitUntil {!(alive _unit) or (unitReady _unit) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
             doStop _unit;
         };
@@ -74,7 +79,8 @@ pl_advance = {
     pl_draw_planed_task_array pushBack [_awp, _icon];
 
     // waitUntil waypoint reached or task canceled
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; (((leader _group) distance2D (waypointPosition _awp)) < 10) or !(_group getVariable ["onTask", true])};
+    sleep 1;
+    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true])};
 
     // remove Task Icon from wp and delete wp
     pl_draw_planed_task_array = pl_draw_planed_task_array - [[_awp,  _icon]];
@@ -83,8 +89,11 @@ pl_advance = {
     // reset advance behaviour
     (leader _group) limitSpeed 5000;
     {
-        // _x enableAI "AUTOCOMBAT";
-        _x limitSpeed 5000;
+        // _x enableAI "COVER";
+        // _x enableAI "SUPPRESSION";
+        _x enableAI "AUTOCOMBAT";
+        _x forceSpeed -1;
+        _x doFollow (leader _group);
     } forEach (units _group);
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];
@@ -665,6 +674,7 @@ pl_bounding_squad = {
             _x setUnitPos "UP";
             _x enableAI "PATH";
             _pos = [_offSet*(sin (_moveDir - 90)), _offSet*(cos (_moveDir - 90)), 0] vectorAdd _movePos;
+            _pos = _pos findEmptyPosition [0, 15, typeOf _x];
             _offSet = _offSet + 6;
             [_x, _pos, _cords, _moveDir] spawn pl_bounding_move;
         } forEach _team1;
@@ -682,6 +692,7 @@ pl_bounding_squad = {
             _x setUnitPos "UP";
             _x enableAI "PATH";
             _pos = [_offSet*(sin (_moveDir + 90)), _offSet*(cos (_moveDir + 90)), 0] vectorAdd _movePos;
+            _pos = _pos findEmptyPosition [0, 15, typeOf _x];
             _offSet = _offSet + 6;
             [_x, _pos, _cords, _moveDir] spawn pl_bounding_move;
         } forEach _team2;
@@ -726,7 +737,7 @@ pl_bounding_move = {
         if (speed _unit == 0) then {
             sleep 2;
             if (speed _unit == 0) then {
-                _pos = [0.5, 0.5, 0.1] vectorAdd (getPos _unit);
+                _pos = [1, 1, 0.1] vectorAdd (getPos _unit);
                 _unit setPos _pos;
             };
         };
@@ -928,8 +939,8 @@ pl_sweep_area = {
             [_x, _pos] spawn {
                 params ["_unit", "_pos"];
                 _unit doMove _pos;
-                _unit setDestination [_pos, "FORMATION PLANNED", false];
-                _unit limitSpeed 12;
+                // _unit setDestination [_pos, "FORMATION PLANNED", false];
+                _unit forceSpeed 12;
                 waitUntil {!(alive _unit) or (unitReady _unit) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
                 doStop _unit;
             };
@@ -1025,6 +1036,7 @@ pl_sweep_area = {
     pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
     {
         _x setVariable ["pl_damage_reduction", false];
+        _x forceSpeed -1;
     } forEach (units _group);
     _group setCombatMode "YELLOW";
     _group setVariable ["pl_combat_mode", false];

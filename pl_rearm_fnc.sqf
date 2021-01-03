@@ -134,11 +134,11 @@ pl_supply_point = {
     _vic = vehicle (leader _group);
 
     // check if vehicle is supply vehicle
-    if !(_vic getVariable ["pl_is_supply_vehicle", false]) exitWith {hint "Requires Supply Vehicle!"};
-
-    // get current Ammo Cargo of Vic and calc _ammoStep -> per one inve refill -2% Supplies
     _vicType = typeOf _vic;
     _ammoCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportAmmo");
+    if (_ammoCap <= 0) exitWith {hint "Requires Supply Vehicle!"};
+
+    // get current Ammo Cargo of Vic and calc _ammoStep -> per one inve refill -2% Supplies
     _ammoCargoPercent = getAmmoCargo _vic;
     _ammoCargo = _ammoCap * _ammoCargoPercent;
     _ammoStep = _ammoCap * 0.02;
@@ -175,7 +175,7 @@ pl_supply_point = {
 
     _pointMarkerName = createMarker ["supply_point_center", (getPos (leader _group))];
     _pointMarkerName setMarkerType "b_support";
-    _pointMarkerName setMarkerText "Supply Point";
+    _pointMarkerName setMarkerText "Supply/Service Point";
     _pointMarkerName setMarkerSize [1.3, 1.3];
 
     // Setup Group at Position
@@ -273,6 +273,7 @@ pl_supply_point = {
                             if (vehicle (leader _targetGrp) != leader _targetGrp) then {
                                 if (_ammoCargo > 0) then {
                                     vehicle (leader _targetGrp) setVehicleAmmo 1;
+                                    vehicle (leader _targetGrp) setDamage 0;
                                     _ammoCargo = _ammoCargo - (_ammoStep * 1.5);
                                 };
                             }; 

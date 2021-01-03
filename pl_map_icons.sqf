@@ -348,7 +348,32 @@ pl_dead_vics = {
     "]; // "
 };
 
-[] call pl_dead_vics;
+// [] call pl_dead_vics;
+
+pl_damaged_vics = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (hcShownBar and pl_show_damaged_vehicles) then {
+            {
+                if ((getDammage _x) > 0 and alive _x and (count (crew _x)) <= 0) then {
+                    _vic = _x;
+                    _icon = getText (configfile >> 'CfgVehicles' >> typeof _vic >> 'icon');
+                    _size = 30;
+                    _display drawIcon [
+                        _icon,
+                        [0.92,0.24,0.07,1],
+                        getPosVisual _vic,
+                        _size,
+                        _size,
+                        getDirVisual _vic
+                    ]
+                };
+            } forEach vehicles;
+        };
+    "]; // "
+};
+
+[] call pl_damaged_vics;
 
 pl_draw_building_search_marker = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","

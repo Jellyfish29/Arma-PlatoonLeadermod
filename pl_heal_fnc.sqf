@@ -211,7 +211,7 @@ pl_ccp_revive_action = {
     };
     waitUntil {(unitReady _medic) or ((_medic distance2D _healTarget) < 2) or !(_group getVariable [_waitVar, true]) or (!alive _healTarget) or (!alive _medic) or (_medic getVariable ["pl_wia", false])};
     // Animation
-    if (_group getVariable [_waitVar, true] and (alive _healTarget) and (alive _medic) and !(_medic getVariable ["pl_wia", false])) then {
+    if (_group getVariable [_waitVar, true] and (alive _healTarget) and (alive _medic) and !(_medic getVariable ["pl_wia", false]) and ((_medic distance2D _healTarget) < 2)) then {
         // _medic setUnitPos "MIDDLE";
         sleep 0.1;
         _reviveTime = time + _reviveTime;

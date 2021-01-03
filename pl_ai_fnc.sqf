@@ -236,7 +236,9 @@ pl_medical_setup = {
                     _damage = 0;
                     _unit setUnconscious true;
                     if (vehicle _unit != _unit) then {
-                        [_unit, vehicle _unit] call pl_crew_eject;
+                        if (alive (vehicle _unit)) then {
+                            [_unit, vehicle _unit] call pl_crew_eject;
+                        };
                     };
                     if !(_unit getVariable "pl_wia_calledout") then {
                         [_unit] spawn pl_wia_callout;
@@ -353,11 +355,11 @@ pl_vehicle_setup = {
         _vic setVariable ["pl_speed_limit", "50"];
         if (isNil {_vic getVariable "pl_repair_lifes"}) then {
             if (_vic isKindOf "Tank") then {
-                _vic setVariable ["pl_repair_lifes", 4];
+                _vic setVariable ["pl_repair_lifes", 100]; //4
             }
             else
             {
-                _vic setVariable ["pl_repair_lifes", 2];
+                _vic setVariable ["pl_repair_lifes", 100]; //2
             };
         };
 
@@ -376,9 +378,14 @@ pl_vehicle_setup = {
         // Supply Vehicle setup
         _vicType = typeOf _vic;
         _ammoCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportAmmo");
+        _repairCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportRepair");
         if (_ammoCap > 0 or _vic getVariable ["pl_is_supply_vehicle", false]) then {
             _vic setVariable ["pl_is_supply_vehicle", true];
             _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
+        };
+        if (_repairCap > 0 or _vic getVariable ["pl_is_supply_vehicle", false]) then {
+            _vic setVariable ["pl_is_supply_vehicle", true];
+            // _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
         };
         if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {
             _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];

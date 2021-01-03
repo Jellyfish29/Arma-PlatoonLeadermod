@@ -330,6 +330,9 @@ pl_garrison_area_building = {
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
+    _medic = {
+        if (getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "attendant" ) isEqualTo 1) exitWith {_x};
+    } forEach (units _group); 
 
 
     _validPos = [];
@@ -441,11 +444,11 @@ pl_garrison_area_building = {
 
         [_unit, _pos, _watchPos, _watchDir, _unitPos, _cover] spawn {
             params ["_unit", "_pos", "_watchPos", "_watchDir", "_unitPos", "_cover"];
-            // _unit disableAI "AUTOCOMBAT";
+            _unit disableAI "AUTOCOMBAT";
             _unit disableAI "TARGET";
             _unit disableAI "AUTOTARGET";
             _unit doMove _pos;
-            _unit setDestination [_pos, "FORMATION PLANNED", false];
+            // _unit setDestination [_pos, "FORMATION PLANNED", false];
 
             waitUntil {(unitReady _unit) or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
             if ((group _unit) getVariable ["onTask", true]) then {
@@ -454,7 +457,7 @@ pl_garrison_area_building = {
                     doStop _unit;
                     _unit setUnitPos _unitPos;
                     _unit disableAI "PATH";
-                    // _unit enableAI "AUTOCOMBAT";
+                    _unit enableAI "AUTOCOMBAT";
                     _unit enableAI "TARGET";
                     _unit enableAI "AUTOTARGET";
                 }
@@ -469,7 +472,30 @@ pl_garrison_area_building = {
 
     // hint (str _allPos);
 
-    waitUntil {!(_group getVariable ["onTask", true])};
+    if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
+        _medic setVariable ["pl_is_ccp_medic", true];
+        while {(_group getVariable ["onTask", true])} do {
+            {
+                if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet")) then {
+                    _medic setUnitPos "MIDDLE";
+                    _h1 = [_group, _medic, nil, _x, getPos _medic, 50, "onTask"] spawn pl_ccp_revive_action;
+                    waitUntil {sleep 0.1; scriptDone _h1 or !(_group getVariable ["onTask", true])};
+                    [_x, getPos _x, getDir _x, 7, false] spawn pl_find_cover;
+                    sleep 1;
+                    waitUntil {unitReady _medic or !alive _medic or !(_group getVariable ["onTask", true])};
+                    [_medic, getPos _medic, getDir _medic, 10, false] spawn pl_find_cover;
+                    // _medic setUnitPos "MIDDLE";
+                };
+            } forEach (units _group);
+            _time = time + 10;
+            waitUntil {time > _time or !(_group getVariable ["onTask", true])};
+        };
+        _medic setVariable ["pl_is_ccp_medic", false];
+    }
+    else
+    {
+        waitUntil {!(_group getVariable ["onTask", true])};
+    };
     deleteMarker _markerAreaName;
     deleteMarker _markerDirName;
 

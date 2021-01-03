@@ -707,19 +707,20 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlTakeCover
+            class PlSuppressArea
             {
-                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover</t>";
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Suppress Position</t>";
                 shortcuts[]={5};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="{[_x] spawn pl_full_cover} forEach (hcSelected player)";
+                    expression="[] spawn pl_suppressive_fire_position";
                 };
-                show="1";
+                show="HCIsLeader";
                 enable="HCNotEmpty";
                 speechId=0;
+                cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
             };
             class PlSeperator21
             {
@@ -735,20 +736,19 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlSuppressArea
+            class PlTakeCover
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Suppress Position</t>";
+                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover</t>";
                 shortcuts[]={6};
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[] spawn pl_suppressive_fire_position";
+                    expression="{[_x] spawn pl_full_cover} forEach (hcSelected player)";
                 };
-                show="HCIsLeader";
+                show="1";
                 enable="HCNotEmpty";
                 speechId=0;
-                cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
             };
             // class PlTankHunt
             // {

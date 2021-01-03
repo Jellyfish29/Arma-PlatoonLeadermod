@@ -130,11 +130,16 @@ pl_sitrep_solo = {
             <br /><t color='#cccccc' size='0.8' align='left'>Status</t><t color='#cccccc' size='1' align='right'>%2%3</t>", _vicName, _unitDamage, "%"];
         if (_vic getVariable ["pl_is_supply_vehicle", false]) then {
             _ammoCargo = (getAmmoCargo _vic) * 100;
+            _repairCargo = (getRepairCargo _vic) * 100;
             _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];
+
+            if (_ammoCargo < 0) then {_ammoCargo = 0};
+            if (_repairCargo < 0) then {_repairCargo = 0};
 
             _message = _message + format ["
             <br /><t color='#cccccc' size='0.8' align='left'>Ammo Supplies: </t><t color='#cccccc' size='1' align='right'>%1%2</t>
-            <br /><t color='#cccccc' size='0.8' align='left'>Avaible Reinforcements: </t><t color='#cccccc' size='1' align='right'>%3</t>", _ammoCargo, "%", _reinforcements];
+            <br /><t color='#cccccc' size='0.8' align='left'>Repair Supplies: </t><t color='#cccccc' size='1' align='right'>%4%2</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>Avaible Reinforcements: </t><t color='#cccccc' size='1' align='right'>%3</t>", _ammoCargo, "%", _reinforcements, _repairCargo];
 
         };
     };
