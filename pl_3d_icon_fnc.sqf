@@ -7,26 +7,28 @@ addMissionEventHandler ["Draw3D", {
 
 
         if (hcShownBar and _x getVariable ["pl_show_info", false]) then {
-            _pos = getPosATLVisual (vehicle (leader _x));
-            if ((vehicle (leader _x)) isKindOf "Air") exitWith{};
-            if ((count (units _group)) < 1) exitWith{};
-            _distance = round (player distance2D (leader _x));
+            if (pl_3d_ids_enabled) then {
+                _pos = getPosATLVisual (vehicle (leader _x));
+                if ((vehicle (leader _x)) isKindOf "Air") exitWith{};
+                if ((count (units _group)) < 1) exitWith{};
+                _distance = round (player distance2D (leader _x));
 
-            _offset = 0.03 * _distance;
-            _dir = (getPosATLVisual player) getDir _pos;
+                _offset = 0.03 * _distance;
+                _dir = (getPosATLVisual player) getDir _pos;
 
-            _callsignText = format ["%1 (%2m)", (groupId _x), _distance];
-            drawIcon3D [
-                '',
-                [0,0.3,0.6,0.7],
-                [(_pos select 0),(_pos select 1), 5 + _offset],
-                0,
-                0,
-                0,
-                _callsignText,
-                2,
-                0.02,
-                'TahomaB'];
+                _callsignText = format ["%1 (%2m)", (groupId _x), _distance];
+                drawIcon3D [
+                    '',
+                    [0,0.3,0.6,0.7],
+                    [(_pos select 0),(_pos select 1), 5 + _offset],
+                    0,
+                    0,
+                    0,
+                    _callsignText,
+                    2,
+                    0.02,
+                    'TahomaB'];
+            };
 
             if (_x getVariable ["inContact", false] or (_x in hcSelected player) or ((_x getVariable ["pl_show_3d_info", false] and _x getVariable ["pl_show_info", false]))) then {
                 _cdir = _dir - 90;

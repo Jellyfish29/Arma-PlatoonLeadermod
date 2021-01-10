@@ -5,9 +5,11 @@ pl_suppress_area_size = 20;
 pl_suppress_cords = [0,0,0];
 pl_supppress_continuous = false;
 pl_draw_suppression_array = [];
+pl_sweep_cords = [0,0,0];
+pl_sweep_area_size = 35;
+pl_attack_mode = "normal";
 
 pl_advance = {
-
     params ["_group"];
     private ["_cords", "_awp"];
 
@@ -37,6 +39,7 @@ pl_advance = {
     // disable combatmode 
     {
         _x disableAI "AUTOCOMBAT";
+        // _x disableAI "FSM";
         // _x disableAI "COVER";
         // _x disableAI "SUPPRESSION";
     } forEach (units _group);
@@ -45,28 +48,28 @@ pl_advance = {
     // set wp
     _awp = _group addWaypoint [_cords, 0];
 
-    _atkDir = (leader _group) getDir _cords;
-    _offset = -30;
-    _increment = 8;
-    {   
-        _pos = [_offset * (sin (_atkDir - 90)), _offset * (cos (_atkDir - 90)), 0] vectorAdd _cords;
-        _offset = _offset + _increment;
-        if (_x == leader _group) then {_pos = _cords};
-        _pos = _pos findEmptyPosition [0, 15, typeOf _x];
-        
-        // _m = createMarker [str (random 1), _pos];
-        // _m setMarkerType "mil_dot";
+    if ((_cords distance2D (getPos (leader _group))) < 150 ) then {
+        _atkDir = (leader _group) getDir _cords;
+        _offset = -20;
+        _increment = 4;
+        {   
+            _pos = [_offset * (sin (_atkDir - 90)), _offset * (cos (_atkDir - 90)), 0] vectorAdd _cords;
+            _offset = _offset + _increment;
+            if (_x == leader _group) then {_pos = _cords};
+            _pos = _pos findEmptyPosition [0, 50, typeOf _x];
+            
+            // _m = createMarker [str (random 1), _pos];
+            // _m setMarkerType "mil_dot";
 
-        [_x, _pos] spawn {
-            params ["_unit", "_pos"];
-            _unit doMove _pos;
-            // _unit setDestination [_pos, "FORMATION PLANNED", false];
-            _unit forceSpeed 15;
-            sleep 1;
-            waitUntil {!(alive _unit) or (unitReady _unit) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
-            doStop _unit;
-        };
-    } forEach (units _group);
+            [_x, _pos] spawn {
+                params ["_unit", "_pos"];
+                _unit limitSpeed 15;
+                _unit doMove _pos;
+                _unit setDestination [_pos, "FORMATION PLANNED", false];
+                _reachable = [_unit, _pos, 20] call pl_not_reachable_escape;
+            };
+        } forEach (units _group);
+    };
 
     // set Variables
     // _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\walk_ca.paa";
@@ -91,177 +94,16 @@ pl_advance = {
     {
         // _x enableAI "COVER";
         // _x enableAI "SUPPRESSION";
+        // _x enableAI "FSM";
         _x enableAI "AUTOCOMBAT";
         _x forceSpeed -1;
+        _x limitSpeed 5000;
+        _x setDestination [getPos _x, "DoNotPlan", true];
+        doStop _x;
         _x doFollow (leader _group);
     } forEach (units _group);
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];
-};
-
-pl_attack_mode = "normal";
-
-pl_attack = {
-
-    params ["_group", ["_cords", [0,0,0]], ["_taskPlanWp", []]];
-    private ["_atkwp", "_posArray", "_fastAtk", "_icon"];
-
-    // exit if vehicle
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
-
-    // check if called from other Task (Bounding)
-    if (_cords isEqualTo [0,0,0]) then {
-        // if map at mouseclick position with speedmode selection
-        if (visibleMap) then {
-            
-            // Hint       
-            _message = "Select Assault Location <br /><br />
-            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>TACTICAL</t> <br />
-            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>tactical</t> <br />
-            <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>FAST</t>";
-            hint parseText _message;
-
-            // Mapclick logic
-            onMapSingleClick {
-                pl_bounding_cords = _pos;
-                pl_mapClicked = true;
-                pl_attack_mode = "normal";
-                if (_shift) then {pl_attack_mode = "tactical"};
-                if (_alt) then {pl_attack_mode = "fast"};
-                hintSilent "";
-                onMapSingleClick "";
-            };
-            while {!pl_mapClicked} do {sleep 0.2;};
-            pl_mapClicked = false;
-            _cords = pl_bounding_cords;
-        }
-        else
-        // 3d View
-        {
-            _cords = screenToWorld [0.5,0.5];
-            pl_attack_mode = "normal";
-        };
-    };
-
-    // set Task Icon
-    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa";
-
-    // Check if task planed from Waypointmenu
-    if (count _taskPlanWp != 0) then {
-
-            // add Arrow indicator
-            pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
-
-            // wait till taskwp reached
-            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
-
-            // remove Arrow indicator
-            pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
-
-            // if task canceld end execution
-            if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true};
-            _group setVariable ["pl_task_planed", false];
-        };
-
-    // if task canceld end execution
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
-
-    // reset _group before execution
-    [_group] call pl_reset;
-    sleep 0.2;
-
-    _groupStrength = count (units _group);
-    playsound "beep";
-    // leader _group sideChat "Roger beginning Assault, Over";
-
-    {
-        _x disableAI "AUTOCOMBAT";
-    } forEach (units _group);
-    _group setBehaviour "AWARE";
-
-    // Speedmode switch
-    _fastAtk = false;
-    switch (pl_attack_mode) do { 
-        case "normal" : {leader _group limitSpeed 12;}; 
-        case "tactical" : {_group setSpeedMode "LIMITED"}; 
-        case "fast" : {_fastAtk = true; _group setSpeedMode "FULL";};
-        default {leader _group limitSpeed 12;}; 
-    };
-    
-    // add SAD wp
-    _atkwp =_group addWaypoint [_cords, 0];
-    _atkwp setWaypointType "SAD";
-
-    // set Variables
-    _group setVariable ["setSpecial", true];
-    _group setVariable ["onTask", true];
-    _group setVariable ["specialIcon", _icon];
-
-    // add Task Icon to SAD Wp
-    pl_draw_planed_task_array pushBack [_atkwp, _icon];
-
-    // fast attack setup
-    if (_fastAtk) then {
-        _atkDir = (leader _group) getDir _cords;
-        {
-            _pos = [[[_cords, 25]],[]] call BIS_fnc_randomPos;
-            _x setUnitPos "UP";
-            [_x, _pos, _cords, _atkDir, 45] spawn pl_bounding_move;
-        } forEach (units _group);
-    };
-
-    // waituntil wp reached or task canceled
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; (((leader _group) distance2D (waypointPosition _atkwp)) < 30) or ((count (units _group)) <= (_groupStrength - 4)) or !(_group getVariable ["onTask", true])};
-
-    sleep 1;
-
-    // remove Icon form wp
-    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_atkwp,  _icon]];
-
-    // set attack behaviour
-    _group setVariable ["pl_combat_mode", true];
-    _group setCombatMode "RED";
-    _group enableAttack true;
-
-    {
-        _x enableAI "AUTOCOMBAT";
-    } forEach (units _group);
-    leader _group limitSpeed 5000;
-
-    // waituntil task canceled
-    waitUntil {!(_atkwp in (waypoints _group)) or !(_group getVariable ["onTask", true])};
-
-    // reset attack behaviour
-    _group setVariable ["pl_combat_mode", false];
-    _group setCombatMode "YELLOW";
-    _group enableAttack false;
-
-    // make units in group forget targets to cancel currentCommand "ATTACK"
-    {
-        _targets = _x targetsQuery [objNull, sideUnknown, "", [], 0];
-        _count = count _targets;
-            
-        for [{private _i = 0}, {_i < _count}, {_i = _i + 1}] do {
-            private _y = _targets select _i;
-            _x forgetTarget (_y select 1);
-        };
-    } forEach (units _group);
-
-    _group setVariable ["setSpecial", false];
-    _group setVariable ["onTask", false];
-};
-
-
-pl_spawn_advance = {
-    {
-        [_x] spawn pl_advance;
-    } forEach hcSelected player;
-};
-
-pl_spawn_attack = {
-    {
-        [_x] spawn pl_attack;
-    } forEach hcSelected player;
 };
 
 pl_suppressive_fire_position = {
@@ -337,15 +179,15 @@ pl_suppressive_fire_position = {
     } forEach (_allTargets select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
 
     // if no enemy target buildings;
-    _buildings = nearestObjects [_cords, ["house"], pl_suppress_area_size];
-    if !((count _buildings) == 0) then {
-        {
-            _targetsPos pushBack (getPos _x);
-        } forEach _buildings;
-    };
+    // _buildings = nearestObjects [_cords, ["house"], pl_suppress_area_size];
+    // if !((count _buildings) == 0) then {
+    //     {
+    //         _targetsPos pushBack (getPosASL _x);
+    //     } forEach _buildings;
+    // };
 
     // add Random Possitions
-    private _posAmount = 0;
+    private _posAmount = 2;
     if (_targetsPos isEqualTo []) then {_posAmount = 6};
     for "_i" from 0 to _posAmount do {
         _rPos = [[[_cords, pl_suppress_area_size]], nil] call BIS_fnc_randomPos;
@@ -544,7 +386,6 @@ pl_friendly_check = {
 //     deleteMarker _markerName;
 // };
 
-
 pl_bounding_squad = {
     private ["_cords", "_group", "_moveDir", "_movePos", "_tactic", "_offSet", "_groupLen", "_units", "_team1", "_team2", "_moveRange"];
 
@@ -618,17 +459,16 @@ pl_bounding_squad = {
 
     _arrive_pos_fn = {
         params ["_unit", "_movePos", "_moveDir"];
-        _unit doMove _movePos;
         _unit disableAI "AUTOCOMBAT";
+        _unit doMove _movePos;
         // _unit disableAI "TARGET";
         // _unit disableAI "AUTOTARGET";
         // _unit disableAI "SUPPRESSION";
         // _unit disableAI "COVER";
-        sleep 2;
-        if (speed _unit == 0) then {
-            _pos = [0.5, 0.5, 0.1] vectorAdd (getPos _unit);
-            _unit setPos _pos;
-        };
+        _unit setDestination [_movePos, "FORMATION PLANNED", false];
+        _reachable = [_unit, _movePos, 20] call pl_not_reachable_escape;
+        sleep 0.5;
+
         waitUntil {(unitReady _unit) or ((_unit distance2D _movePos) < 1.5) or (!alive _unit) or ( _unit getVariable["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])};
         _unit enableAI "AUTOCOMBAT";
         if ((group _unit) getVariable ["onTask", true]) then {
@@ -717,7 +557,7 @@ pl_bounding_squad = {
     // }
     // else
     // {
-    [_group] spawn pl_take_cover; 
+    // [_group] spawn pl_take_cover; 
     // };
 };
 
@@ -728,27 +568,21 @@ pl_bounding_move = {
     _unit disableAI "COVER";
     _unit disableAI "TARGET";
     _unit disableAI "AUTOTARGET";
-        // _unit disableAI "FSM";
+    // _unit disableAI "FSM";
     _unit setVariable ["pl_bounding_set", false];
     _unit doMove _pos;
-    _unit moveTo _pos;
+    _unit setDestination [_pos, "FORMATION PLANNED", false];
+    _reachable = [_unit, _pos, 20] call pl_not_reachable_escape;
     sleep 0.5;
-    while {(alive _unit) and !(unitReady _unit) and ((_unit distance2D _pos) > _atkRange) and !(_unit getVariable["pl_wia", false] and ((group _unit) getVariable ["onTask", true]))} do {
-        if (speed _unit == 0) then {
-            sleep 2;
-            if (speed _unit == 0) then {
-                _pos = [1, 1, 0.1] vectorAdd (getPos _unit);
-                _unit setPos _pos;
-            };
-        };
-        sleep 0.1;
-    };
+
+    waitUntil {!(alive _unit) or (unitReady _unit) or ((_unit distance2D _pos) < _atkRange) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
+
     _unit enableAI "AUTOCOMBAT";
     _unit enableAI "TARGET";
     _unit enableAI "AUTOTARGET";
     _unit enableAI "SUPPRESSION";
     _unit enableAI "COVER";
-    // _unit enableAI "FSM";
+    _unit enableAI "FSM";
     _unit setUnitPos "UP";
     sleep 0.1;
     if ((group _unit) getVariable ["onTask", true] and (_atkRange == 1.5)) then {
@@ -757,26 +591,10 @@ pl_bounding_move = {
     };
 };
 
-
-pl_sweep_cords = [0,0,0];
-pl_sweep_area_size = 35;
-
-pl_get_assault_speed = {
-    params ["_unit", "_target"];
-    private _r = 1;
-    private _distance = _unit distance2d _target;
-    if (_distance > 20) exitWith {_r = -1};
-    if (_distance > 15) exitWith {_r = 3};
-    if (_distance > 4) exitWith {_r = 2};
-    _r
-};
-
-
-pl_sweep_area = {
+pl_assault_position = {
     params ["_group", ["_taskPlanWp", []]];
     private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_attackMode", "_fastAtk", "_tacticalAtk"];
 
-    _group = (hcSelected player) select 0;
     pl_sweep_area_size = 35;
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
@@ -885,7 +703,7 @@ pl_sweep_area = {
     _markerName setMarkerPos _cords;
 
     {
-        // _x disableAI "AUTOCOMBAT";
+        _x disableAI "AUTOCOMBAT";
         _x setVariable ["pl_damage_reduction", true];
     } forEach (units _group);
 
@@ -896,7 +714,14 @@ pl_sweep_area = {
     _fastAtk = false;
     _tacticalAtk = false;
     switch (_attackMode) do { 
-        case "normal" : {(leader _group) limitSpeed 12; {_x disableAI "AUTOCOMBAT"} forEach (units _group)}; 
+        case "normal" : {
+            (leader _group) limitSpeed 12;
+            {
+                _x disableAI "AUTOCOMBAT";
+                // _x disableAI "FSM";
+            } forEach (units _group);
+            // (leader _group) setDestination [_cords, "LEADER DIRECT", true];
+        }; 
         case "tactical" : {_tacticalAtk = true;}; 
         case "fast" : {_fastAtk = true; _group setSpeedMode "FULL";};
         default {leader _group limitSpeed 12;}; 
@@ -905,8 +730,8 @@ pl_sweep_area = {
     _formation = formation _group;
     _group setFormation "LINE";
     _group setBehaviour "AWARE";
-    _group setCombatMode "RED";
-    _group setVariable ["pl_combat_mode", true];
+    // _group setCombatMode "RED";
+    // _group setVariable ["pl_combat_mode", true];
 
     // fast attack setup
     if (_fastAtk) then {
@@ -916,6 +741,7 @@ pl_sweep_area = {
         {   
             _rPos = [pl_sweep_area_size * (sin (_atkDir - 180)), pl_sweep_area_size * (cos (_atkDir - 180)), 0] vectorAdd _cords;
             _pos = [_offset * (sin (_atkDir - 90)), _offset * (cos (_atkDir - 90)), 0] vectorAdd _rPos;
+            _pos = _pos findEmptyPosition [0, 15, typeOf _x];
             _offset = _offset + _increment;
             _x setUnitPos "UP";
             // _group setCombatMode "RED";
@@ -925,32 +751,29 @@ pl_sweep_area = {
     };
 
     if (_tacticalAtk) then {
-        _atkDir = (leader _group) getDir _cords;
-        _offset = pl_sweep_area_size - (pl_sweep_area_size * 1.5);
-        _increment = pl_sweep_area_size / (count (units _group));
-        {   
-            _rPos = [pl_sweep_area_size * (sin (_atkDir - 180)), pl_sweep_area_size * (cos (_atkDir - 180)), 0] vectorAdd _cords;
-            _pos = [_offset * (sin (_atkDir - 90)), _offset * (cos (_atkDir - 90)), 0] vectorAdd _rPos;
-            _offset = _offset + _increment;
-            // _x setUnitPos "UP";
-            
-            // _m = createMarker [str (random 1), _pos];
-            // _m setMarkerType "mil_dot";
+        {
+            _pos = _cords findEmptyPosition [0, pl_sweep_area_size, typeOf _x];
+
             [_x, _pos] spawn {
                 params ["_unit", "_pos"];
+                _unit limitSpeed 12;
+                _unit disableAI "AUTOCOMBAT";
+                // _unit forceSpeed 12;
                 _unit doMove _pos;
-                // _unit setDestination [_pos, "FORMATION PLANNED", false];
-                _unit forceSpeed 12;
-                waitUntil {!(alive _unit) or (unitReady _unit) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
-                doStop _unit;
+                _unit setDestination [_pos, "FORMATION PLANNED", false];
+                _reachable = [_unit, _pos, 20] call pl_not_reachable_escape;
+                // _unit forceSpeed 12;
+                // waitUntil {!(alive _unit) or (unitReady _unit) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
+                // doStop _unit;
             };
         } forEach (units _group);
     };
 
 
+    _area = pl_sweep_area_size;
     
     // waitUntil {(((leader _group) distance _cords) < (pl_sweep_area_size + 10)) or !(_group getVariable ["onTask", true])};
-    waitUntil {(({(_x distance _cords) < (pl_sweep_area_size + 10)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
+    waitUntil {(({(_x distance _cords) < (_area + 10)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
 
     // leader _group limitSpeed 200;
     // _group setSpeedMode "NORMAL";
@@ -965,7 +788,7 @@ pl_sweep_area = {
     };
 
     _targets = [];
-    _allMen = _cords nearObjects ["Man", pl_sweep_area_size];
+    _allMen = _cords nearObjects ["Man", _area];
     {
         _targets pushBack _x;
     } forEach (_allMen select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
@@ -979,12 +802,12 @@ pl_sweep_area = {
     
     if ((count _targets) == 0) then {
         {
-            _pos = [_cords, 1, pl_sweep_area_size, 0, 0, 0, 0] call BIS_fnc_findSafePos;
+            _pos = [_cords, 1, _area, 0, 0, 0, 0] call BIS_fnc_findSafePos;
             _x doMove _pos;
-            _x moveTo _pos;
+            _x setDestination [_pos, "FORMATION PLANNED", false];
         } forEach (units _group);
-        _group setCombatMode "RED";
-        _group setVariable ["pl_combat_mode", true];
+        // _group setCombatMode "RED";
+        // _group setVariable ["pl_combat_mode", true];
         _time = time + 20;
         waitUntil {!(_group getVariable ["onTask", true]) or (time > _time)};
         _group setCombatMode "YELLOW";
@@ -997,6 +820,7 @@ pl_sweep_area = {
 
         {
             _x enableAI "AUTOCOMBAT";
+            _x enableAI "FSM";
             _x forceSpeed 12;
             [_x, _group] spawn {
                 params ["_unit", "_group"];
@@ -1007,9 +831,13 @@ pl_sweep_area = {
                     if (alive _target) then {
                         _pos = getPosATL _target;
                         _movePos = _pos vectorAdd [0.5 - random 1, 0.5 - random 1, 0];
+                        _unit limitSpeed 15;
                         _unit doMove _movePos;
+                        _unit setDestination [_movePos, "FORMATION PLANNED", false];
+                        _reachable = [_unit, _movePos, 20] call pl_not_reachable_escape;
 
-                        while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true])} do {
+
+                        while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and _reachable} do {
                             // _enemy = _unit findNearestEnemy _unit;
                             // if ((_unit distance2D _enemy) < 7) then {
                             //     _unit doTarget _enemy;
@@ -1027,6 +855,7 @@ pl_sweep_area = {
         waitUntil {!(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
     };
 
+
     deleteMarker _markerName;
     deleteMarker _arrowMarkerName;
     missionNamespace setVariable [format ["targets_%1", _group], nil];
@@ -1036,6 +865,7 @@ pl_sweep_area = {
     pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
     {
         _x setVariable ["pl_damage_reduction", false];
+        _x limitSpeed 5000;
         _x forceSpeed -1;
     } forEach (units _group);
     _group setCombatMode "YELLOW";
@@ -1045,6 +875,11 @@ pl_sweep_area = {
         [_group] call pl_reset;
         playsound "beep";
         (leader _group) sideChat format ["%1 Assault complete", (groupId _group)];
+        if (_tacticalAtk or _fastAtk) then {
+            {
+                [_x, getPos _x, getDir _x, 15, true] spawn pl_find_cover;
+            } forEach (units _group);
+        };
     };
 };
 

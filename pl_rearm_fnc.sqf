@@ -1,122 +1,121 @@
+sleep 1;
+
+pl_max_supplies_per_vic = parseNumber pl_max_supplies_per_vic;
+
+
+pl_show_supllies = false;
+pl_show_supplies_pos = [0,0,0];
+pl_rearm_supplies = [];
 
 pl_rearm = {
+    private ["_group", "_cords", "_targetBox"];
 
-    params ["_unit", "_target"];
+    _group = (hcSelected player) select 0;
 
-    if !(isNull _target) then {
-        if (_unit getVariable "pl_wia") exitWith {};
-        createMarker ["sup_zone_marker", (getPos _target)];
-        "sup_zone_marker" setMarkerType "b_support";
-        "sup_zone_marker" setMarkerSize [0.5, 0.5];
-        // "sup_zone_marker" setMarkerText "Supply Point";
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
-        _unit disableAI "AUTOCOMBAT";
-        _unit doMove (position _target);
-        _unit moveTo (position _target);
-
-        waitUntil {sleep 0.1; ((_unit distance2D  _target) < 8) or !((group _unit) getVariable ["onTask", true])};
-        _unit action ["rearm",_target];
-        0 = [_unit, "Rearming..."] remoteExecCall ["groupChat",[0,-2] select isDedicated,false];
-        sleep 1;
-        if ((secondaryWeapon _unit) != "") then {
-            sleep 3;
-            _unit action ["rearm",_target];
-            0 = [_unit, "Rearming..."] remoteExecCall ["groupChat",[0,-2] select isDedicated,false];
+    if (visibleMap) then {
+        pl_show_supplies_pos = getPos (leader _group);
+        pl_show_supllies = true;
+        hint "Select Box on Map";
+        onMapSingleClick {
+            pl_mapClicked = true;
+            pl_show_supplies_pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            pl_rearm_supplies = pl_show_supplies_pos nearSupplies 150 select {!(_x isKindOf "Man")};
+            pl_rearm_pos = _pos;
+            onMapSingleClick "";
         };
-
-        _unit enableAI "AUTOCOMBAT";
-
-        _time = time + 20;
-        waitUntil {sleep 0.1; (time > _time) or !((group _unit) getVariable ["onTask", true])};
-        deleteMarker "sup_zone_marker";
-        (group _unit) setVariable ["setSpecial", false];
-        (group _unit) setVariable ["onTask", true];
-    };
-};
-
-pl_spawn_rearm = {
-    private ["_box", "_magAmount"];
+        while {!pl_mapClicked} do {sleep 0.1};
+        pl_show_supllies = false;
+        pl_mapClicked = false;
+        _cords = pl_rearm_pos;
+        hintSilent "";
+    }
+    else
     {
-        if (vehicle (leader _x) != leader _x) exitWith {hint "Infantry ONLY Task!"};
-        if (visibleMap) then {
-            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            _supplies = _cords nearSupplies 100;
-            _magAmount = 0;
+        pl_rearm_supplies = [cursorTarget];
+        _cords = getPos cursorTarget;
+    };
+    _supplies = [pl_rearm_supplies, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;
+    _targetBox = _supplies select 0;
+    if (isNil "_targetBox") exitWith {hint "No available Supplies!"};
+    if ((_targetBox distance2D _cords) >= 25) exitWith {hint "No available Supplies!"};
 
-            if (count _supplies > 0) then {
-                {
-                    if !(_x isKindOf "Man") then {
-                        _cargo = magazineCargo _x;
-                        if (count _cargo > _magAmount) then {
-                            _magAmount = count _cargo;
-                            _box = _x;
+    [_group] call pl_reset;
+
+    sleep 0.2;
+
+    playSound "beep";
+
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["onTask", true];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];    
+
+    _markerName = createMarker [format ["sup_zone_marker%1", random 1], (getPos _targetBox)];
+    _markerName setMarkerType "b_support";
+    _markerName setMarkerSize [0.5, 0.5];
+    _markerName setMarkerColor "colorYellow";
+
+    _boxName = getText (configFile >> "CfgVehicles" >> typeOf _targetBox >> "displayName");
+    (leader _group) sideChat format ["%1: Resupplying at %2", (groupId _group), _boxName];
+    {    
+        [_x, _targetBox] spawn {
+            params ["_unit", "_targetBox"];
+            if (_unit getVariable "pl_wia" or !alive _unit) exitWith {};
+
+            _unit disableAI "AUTOCOMBAT";
+            _pos = getPosATL _targetBox;
+            _finalPos = _pos findEmptyPosition [0, 8];
+            if (_finalPos isEqualTo []) then {_finalPos = _pos};
+            _unit doMove _finalPos;
+
+            sleep 1;
+
+            waitUntil {((_unit distance2D _targetBox) < 8) or unitReady _unit or !((group _unit) getVariable ["onTask", true]) or !alive _unit};
+
+            if ((group _unit) getVariable ["onTask", true]) then {
+                _unit action ["rearm",_targetBox];
+                _secWeapon = _unit getVariable ["pl_sec_weapon", []];
+                if !(_secWeapon isEqualTo []) then {
+                    _launcher = _secWeapon#0;
+                    _missile = _secWeapon#1;
+                    if (secondaryWeapon _unit == "") then {
+                        _launcherSplit = _launcher splitString "_"; 
+                        _launcherSplit = _launcherSplit - ["Loaded"];
+                        _launcher = _launcherSplit joinString "_";
+
+                        if (_launcher in ((getWeaponCargo _targetBox)#0)) then {
+                            _unit addWeapon _launcher;
+                            _unit addSecondaryWeaponItem _missile;
+                        };
+                    }
+                    else
+                    {
+                        if (_missile in ((getMagazineCargo _targetBox)#0)) then {
+                            _unit addSecondaryWeaponItem _missile;
+                            _targetBox removeMagazine _missile;
                         };
                     };
-                } forEach _supplies;
-
-                [_x] call pl_reset;
-                sleep 0.2;
-
-                playSound "beep";
-
-                _x setVariable ["setSpecial", true];
-                _x setVariable ["onTask", true];
-                _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];    
-            
-                _boxName = getText (configFile >> "CfgVehicles" >> typeOf _box >> "displayName");
-                playSound "beep";
-                (leader _x) sideChat format ["%1: Resupplying at %2", (groupId _x), _boxName];
-
-                {
-                    [_x, _box] spawn pl_rearm; 
-                } forEach units _x;
-            }
-            else
-            {
-                playSound "beep";
-                leader _x sideChat "Negativ, There are no avaiable Supplies, Over";
-            };
-        }
-        else
-        {
-            _supplies = cursorTarget nearSupplies 10;
-            if (count _supplies > 0) then {
-                _box = cursorTarget;
-                if !(_box isKindOf "Man") then {
-
-                    [_x] call pl_reset;
-                    sleep 0.2;
-
-                    _x setVariable ["setSpecial", true];
-                    _x setVariable ["onTask", true];
-                    _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];
-                    _boxName = getText (configFile >> "CfgVehicles" >> typeOf _box >> "displayName");
-                    playSound "beep";
-                    (leader _x) sideChat format ["%1: Resupplying at %2", (groupId _x), _boxName];
-                    {
-                        [_x, _box] spawn pl_rearm; 
-                    } forEach units _x;
-                }
-                else
-                {
-                    // playSound "beep";
-                    hint "No avaiable Supplies!";
                 };
-            }
-            else
-            {
-                // playSound "beep";
-                hint "No avaiable Supplies!";
+
+                _unit enableAI "AUTOCOMBAT";
+                _unit setVariable ["pl_finished_rearm", true];
             };
         };
+    } forEach (units _group);
 
-    } forEach hcSelected player;
+    _time = time + 80;
+    waitUntil {(time > _time) or !(_group getVariable ["onTask", true]) or ({_x getVariable ["pl_finished_rearm", false]} count (units _group)) == count (units _group)};
+    deleteMarker _markerName;
+    _group setVariable ["setSpecial", false];
+    _group setVariable ["onTask", true];
+
+    {
+        _x setVariable ["pl_finished_rearm", nil];
+    } forEach (units _group);
 };
 
-// call pl_spawn_rearm;
-
-
-pl_supply_area = 80;
+pl_supply_area = 70;
 pl_supply_point_active = false;
 pl_supply_draw_array = [];
 
@@ -134,36 +133,34 @@ pl_supply_point = {
     _vic = vehicle (leader _group);
 
     // check if vehicle is supply vehicle
-    _vicType = typeOf _vic;
-    _ammoCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportAmmo");
-    if (_ammoCap <= 0) exitWith {hint "Requires Supply Vehicle!"};
+    if !(_vic getVariable ["pl_is_supply_vehicle", false]) exitWith {hint "Requires Supply Vehicle!"};
 
     // get current Ammo Cargo of Vic and calc _ammoStep -> per one inve refill -2% Supplies
-    _ammoCargoPercent = getAmmoCargo _vic;
-    _ammoCargo = _ammoCap * _ammoCargoPercent;
-    _ammoStep = _ammoCap * 0.02;
-
+    _ammoCargo = _vic getVariable ["pl_supplies", 0];
     // if no Ammo Left send message
     if (_ammoCargo <= 0) then {
         (leader _group) sideChat format ["%1: No Ammo left!", groupId _group];
     };
 
-    // setup Variables
-    _suppliedGroups = [_group];
-    _toSupplyGroups = [];
-    _ammoBearer = leader _group;
-    pl_supply_point_active = true;
 
     // Taskplanning
     if (count _taskPlanWp != 0) then {
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
+
+        deleteWaypoint [_group, _taskPlanWp#1];
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+
+    // setup Variables
+    _suppliedGroups = [_group];
+    _toSupplyGroups = [];
+    _ammoBearer = leader _group;
+    pl_supply_point_active = true;
 
     // Setup Markers
     _areaMarkerName = createMarker ["supply_point_area", getPos (leader _group)];
@@ -175,7 +172,7 @@ pl_supply_point = {
 
     _pointMarkerName = createMarker ["supply_point_center", (getPos (leader _group))];
     _pointMarkerName setMarkerType "b_support";
-    _pointMarkerName setMarkerText "Supply/Service Point";
+    _pointMarkerName setMarkerText "SP/MCP";
     _pointMarkerName setMarkerSize [1.3, 1.3];
 
     // Setup Group at Position
@@ -261,9 +258,12 @@ pl_supply_point = {
                                 if (_ammoCargo > 0 and _x != player) then {
                                     _loadout = _x getVariable "pl_loadout";
                                     if !((getUnitLoadout _x) isEqualTo _loadout) then {
-                                        _x setUnitLoadout _loadout;
-                                        _ammoCargo = _ammoCargo - _ammoStep;
+                                        _x setUnitLoadout [_loadout, true];
+                                        _ammoCargo = _ammoCargo - 1;
                                     };
+                                };
+                                if (_x getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
+                                    _x setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
                                 };
                                 // heal Unit
                                 _x setDamage 0;
@@ -274,7 +274,7 @@ pl_supply_point = {
                                 if (_ammoCargo > 0) then {
                                     vehicle (leader _targetGrp) setVehicleAmmo 1;
                                     vehicle (leader _targetGrp) setDamage 0;
-                                    _ammoCargo = _ammoCargo - (_ammoStep * 1.5);
+                                    _ammoCargo = _ammoCargo - 5;
                                 };
                             }; 
 
@@ -335,8 +335,7 @@ pl_supply_point = {
     };
 
     // subtract used ammo from _vic
-    _ammoCargo = _ammoCargo / _ammoCap;
-    _vic setAmmoCargo _ammoCargo;
+    _vic setVariable ["pl_supplies", _ammoCargo];
 
     // reset group Variables
     _group setVariable ["onTask", false];
@@ -347,12 +346,7 @@ pl_supply_point = {
     deleteMarker _areaMarkerName;
     deleteMarker _pointMarkerName;
 
-    _group addVehicle _vic;
-    {
-        // _x call BIS_fnc_ambientAnim__terminate;
-        [_x] allowGetIn true;
-        [_x] orderGetIn true;
-    } forEach (units _group);
+    [_group, _vic] spawn pl_crew_vehicle_now;
 
     sleep 3;
     deleteVehicle _net;

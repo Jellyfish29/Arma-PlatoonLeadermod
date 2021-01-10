@@ -1,12 +1,10 @@
 
 execVM "Plmod\pl_settings.sqf";
 execVM "Plmod\pl_ai_fnc.sqf";
-execVM "Plmod\pl_ammoBearerReload_fnc.sqf";
 execVM "Plmod\pl_sitrep_fnc.sqf";
 execVM "Plmod\pl_attack_fnc.sqf";
 execVM "Plmod\pl_rearm_fnc.sqf";
 execVM "Plmod\pl_map_icons.sqf";
-execVM "Plmod\pl_building_fnc.sqf";
 execVM "Plmod\pl_vehicle_fnc.sqf";
 execVM "Plmod\pl_defence_fnc.sqf";
 execVM "Plmod\pl_group_fnc.sqf";
@@ -34,7 +32,7 @@ pl_vehicle_group_check = {
             };
         } forEach (units _x);
 
-        if ((count _vicArray) > 1) exitWith {hint "There are Groups with more then ONE vehicle! Grouped up Vehicles are not recomended to use with High Command as it will lead to uncontrollable and unintended AI behaviour."};
+        if ((count _vicArray) > 1) exitWith {hint "There are Groups with more then ONE vehicle! Grouped up Vehicles are not recommended to use with High Command as it will lead to uncontrollable and unintended AI behaviour."};
 
     } forEach (allGroups select {side _x isEqualto playerSide});  
 };

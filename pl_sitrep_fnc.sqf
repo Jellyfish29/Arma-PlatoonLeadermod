@@ -101,7 +101,10 @@ pl_sitrep_solo = {
             if ((_missile isEqualto _x)) then {
                 _missileCount = _missileCount + 1;
             };
-        }forEach _mags;
+        } forEach _mags;
+
+        if (_mag in (primaryWeaponMagazine _x)) then {_magCount = _magCount + 1};
+        if (_missile in (secondaryWeaponMagazine _x)) then {_missileCount = _missileCount + 1};
 
         _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName");
         _unitDamage = getDammage _x;
@@ -113,12 +116,22 @@ pl_sitrep_solo = {
         if (_unitDamage <= 0) then {
             _unitDamageStr = "M.I.A";
         };
-        _message = _message + format ["<br /><t color='#cccccc' size='0.8' align='left'>- %1 / %2</t><t color='#cccccc' size='0.8' align='right'>%3x</t>",_unitDamageStr, _unitMos, _magCount];
+        _message = _message + format ["<br /><t color='#cccccc' size='0.8' align='left'>- %1 / %2</t><t color='#cccccc' size='0.8' align='right'> x%3</t>",_unitDamageStr, _unitMos, _magCount];
         if (_missileCount > 0) then{
-            _message = _message + format ["<t color='#cccccc' size='0.8' align='right'>/%1x</t>", _missileCount];
+            _message = _message + format ["<t color='#cccccc' size='0.8' align='right'>/x%1 AT</t>", _missileCount];
         };
 
     } forEach (units _group);
+
+    private _availableMines = 0;
+    {
+        _mines = _x getVariable ["pl_virtual_mines", 0];
+        _availableMines = _availableMines + _mines;
+    } forEach (units _group);
+
+    if (_availableMines > 0) then {
+        _message = _message + format ["<br /><br /><t color='#ffffff' size='0.9' align='left'>Available Mines/Charges: </t><t color='#cccccc' size='0.9' align='right'>x%1</t>", _availableMines];
+    };
 
     if (vehicle (leader _group) != (leader _group)) then {
         _vic = vehicle (leader _group);
@@ -128,22 +141,18 @@ pl_sitrep_solo = {
         _message = _message + format ["
             <br /><br /><t color='#cccccc' size='1' align='left'>Vehicle: %1</t>
             <br /><t color='#cccccc' size='0.8' align='left'>Status</t><t color='#cccccc' size='1' align='right'>%2%3</t>", _vicName, _unitDamage, "%"];
-        if (_vic getVariable ["pl_is_supply_vehicle", false]) then {
-            _ammoCargo = (getAmmoCargo _vic) * 100;
-            _repairCargo = (getRepairCargo _vic) * 100;
+        if (_vic getVariable ["pl_is_supply_vehicle", false] or _vic getVariable ["pl_is_repair_vehicle", false]) then {
+            _ammoCargo = _vic getVariable ["pl_supplies", 0];
+            _repairCargo = _vic getVariable ["pl_repair_supplies", 0];
             _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];
 
-            if (_ammoCargo < 0) then {_ammoCargo = 0};
-            if (_repairCargo < 0) then {_repairCargo = 0};
-
             _message = _message + format ["
-            <br /><t color='#cccccc' size='0.8' align='left'>Ammo Supplies: </t><t color='#cccccc' size='1' align='right'>%1%2</t>
-            <br /><t color='#cccccc' size='0.8' align='left'>Repair Supplies: </t><t color='#cccccc' size='1' align='right'>%4%2</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>Ammo/Medical Supplies: </t><t color='#cccccc' size='1' align='right'>%1</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>Repair Supplies: </t><t color='#cccccc' size='1' align='right'>%4</t>
             <br /><t color='#cccccc' size='0.8' align='left'>Avaible Reinforcements: </t><t color='#cccccc' size='1' align='right'>%3</t>", _ammoCargo, "%", _reinforcements, _repairCargo];
 
         };
     };
-
 
     _targets = [];
     _targets = [(leader _group)] call pl_get_targets;

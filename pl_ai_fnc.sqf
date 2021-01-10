@@ -5,6 +5,9 @@ pl_At_fire_report_cd = 0;
 // pl_ai_skill = 0.8;
 // pl_radio_range = 700;
 pl_max_reinforcement_per_vic = parseNumber pl_max_reinforcement_per_vic;
+pl_max_repair_supplies_per_vic = parseNumber pl_max_repair_supplies_per_vic;
+pl_max_mines_per_explo = parseNumber pl_max_mines_per_explo;
+pl_abandoned_markers = [];
 
 pl_share_info = {
 
@@ -141,7 +144,8 @@ pl_contact_report = {
                         (group _unit) setVariable ['inContact', true];
                 };
                 (group _unit) setVariable ["PlContactTime", (time + 60)];
-                if ("launch" in (_weapon splitString "_")) then {
+                // if ("launch" in (_weapon splitString "_")) then {
+                if ((secondaryWeapon _firer) isEqualTo _weapon) then {
                     if (pl_At_fire_report_cd < time) then {
                         pl_At_fire_report_cd = time + 5;
                         _callsign = groupId (group _unit);
@@ -257,6 +261,66 @@ pl_medical_setup = {
     }];
 };
 
+pl_ammo_bearer = {
+    params ["_group"];
+
+    {
+        _unit = _x;
+        if (!(_unit getVariable ["pl_ammo_bearer_set", false]) and _unit != player) then {
+            _unit setVariable ["pl_ammo_bearer_set", true];
+            _unit addEventHandler ["Reloaded", {
+                params ["_unit", "_weapon", "_muzzle", "_newMagazine", "_oldMagazine"];
+
+                _mag = _oldMagazine#0;
+                _magCount = count ((magazines _unit) select {_x isEqualTo _mag});
+                if (_magCount <= 0 and (_weapon != (secondaryWeapon _unit))) then {
+                    _ammoBearer = objNull;
+                    _highestAmount = 1;
+                    {
+                        _friendMagCount = count ((magazines _x) select {_x isEqualTo _mag});
+                        if (_friendMagCount > _highestAmount ) then {
+                            _highestAmount = _friendMagCount;
+                            _ammoBearer = _x;
+                        };
+                    } forEach ((units (group _unit)) - [_unit]);
+                    if !(isNull _ammoBearer) then {
+                        _unit addItem _mag;
+                        _ammoBearer removeItem _mag;
+                    };
+                };
+            }];
+
+            if !((secondaryWeapon _unit) == "") then {
+                _unit addEventHandler ["FiredMan", {
+                    params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_vehicle"];
+
+                    if (_weapon == (secondaryWeapon _unit)) then {
+                        {
+                            _friend = _x;
+                            _friendMagCount = count ((magazines _friend) select {_x isEqualTo _magazine});
+                            if (_friendMagCount >= 1) exitWith {
+                                if (_unit canAdd _magazine) then {
+                                    _unit addItem _magazine;
+                                }
+                                else
+                                { 
+                                    [_unit, _magazine] spawn {
+                                        params ["_unit", "_magazine"];
+                                        sleep 1;
+                                        _unit playMove "ReloadRPG";
+                                        _unit addSecondaryWeaponItem _magazine;
+                                    };
+                                };
+                                _friend removeItem _magazine;
+                            }; 
+                        } forEach ((units (group _unit)) - [_unit]);
+                    };
+                }];
+            };
+        };
+    } forEach (units _group);
+};
+
 pl_special_forces_skills = {
     params ["_unit"];
     private ["_targets"];
@@ -295,7 +359,7 @@ pl_set_up_ai = {
     _group setVariable ["pl_group_comp", _groupComposition];
     _group allowFleeing 0;
 
-    [_group] spawn pl_ammoBearer;
+    [_group] call pl_ammo_bearer;
     _magCountAll = 0;
     {     
         if ((_x != player) or !(_x in switchableUnits)) then {
@@ -323,6 +387,17 @@ pl_set_up_ai = {
         _x setVariable ["pl_unstuck_cd", 0];
         _laodout = getUnitLoadout _x;
         _x setVariable ["pl_loadout", _laodout];
+
+        if (_x getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
+            _x setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
+        };
+
+        if (secondaryWeapon _x != "") then {
+            _launcher = secondaryWeapon _x;
+            _missile = (getArray (configFile >> "CfgWeapons" >> (secondaryWeapon _x) >> "magazines")) select 0;
+            _x setVariable ["pl_sec_weapon", [_launcher, _missile]];
+        };
+        
         [_x] spawn pl_auto_crouch;
         if (pl_enabled_medical) then {
             [_x] call pl_medical_setup; 
@@ -353,6 +428,37 @@ pl_vehicle_setup = {
     if (isNil {_vic getVariable "pl_vehicle_setup_complete"}) then {
         _vic limitSpeed 50;
         _vic setVariable ["pl_speed_limit", "50"];
+
+        // {
+        //     _x addEventHandler ["GetOutMan", {
+        //         params ["_unit", "_role", "_vehicle", "_turret"];
+
+        //         if (_role == "driver" and !(canMove _vehicle) and alive _unit) then {
+
+        //             _markerName = format ["abandoned%1", _vehicle];
+        //             createMarker [_markerName, getPos _vehicle];
+        //             _markerName setMarkerType "mil_destroy";
+        //             _vicName = getText (configFile >> "CfgVehicles" >> typeof _vehicle >> "displayName");
+        //             _markerName setMarkerText format ["Abandoned %1", _vicName];
+
+        //             pl_abandoned_markers pushBackUnique [_vehicle, _markerName];
+        //         };
+        //     }];
+
+        //     _x addEventHandler ["GetInMan", {
+        //         params ["_unit", "_role", "_vehicle", "_turret"];
+                
+        //         if (_role == "driver") then {
+        //             {
+        //                 if (_vehicle == (_x#0)) exitWith {
+        //                     deleteMarker (_x#1);
+        //                     pl_abandoned_markers = pl_abandoned_markers - [[_x#0, _x#1]];
+        //                 };
+        //             } forEach pl_abandoned_markers;
+        //         };
+        //     }];
+        // } forEach (crew _vic);
+
         if (isNil {_vic getVariable "pl_repair_lifes"}) then {
             if (_vic isKindOf "Tank") then {
                 _vic setVariable ["pl_repair_lifes", 100]; //4
@@ -375,21 +481,43 @@ pl_vehicle_setup = {
 
             _vic setVariable ["pl_appereance", _animationPhases];
         };
+
+        _vic addEventHandler ['HandleDamage', {
+            params['_unit', '_selName', '_damage', '_source'];
+            if ((_unit getVariable "pl_damage_reduction")) then {
+                _dmg = _damage * 0.8;
+                _damage = _dmg;
+            };
+            _damage
+        }];
         // Supply Vehicle setup
         _vicType = typeOf _vic;
         _ammoCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportAmmo");
+        _magazineCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportMaxMagazines");
         _repairCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportRepair");
-        if (_ammoCap > 0 or _vic getVariable ["pl_is_supply_vehicle", false]) then {
+        _transportCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportSoldier");
+
+        if ((_magazineCap >= 256 and _transportCap >= 8 and _repairCap <= 0 and _vic isKindOf "Car") or _vic getVariable ["pl_set_supply_vic", false] or _ammoCap > 0) then {
             _vic setVariable ["pl_is_supply_vehicle", true];
+            _vic setVariable ["pl_supplies", pl_max_supplies_per_vic];
             _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
+            _vic setAmmoCargo 0;
+            [group (driver _vic)] spawn {
+                params ["_grp"];
+                sleep 5;
+                [_grp, "support"] call pl_change_group_icon;
+            };
         };
-        if (_repairCap > 0 or _vic getVariable ["pl_is_supply_vehicle", false]) then {
-            _vic setVariable ["pl_is_supply_vehicle", true];
-            // _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
-        };
-        if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {
-            _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
-            _vic setVariable ["pl_is_supply_vehicle", true];
+
+        if (_repairCap > 0 or _vic getVariable ["pl_set_repair_vic", false]) then {
+            _vic setVariable ["pl_is_repair_vehicle", true];
+            _vic setVariable ["pl_repair_supplies", pl_max_repair_supplies_per_vic];
+            _vic setRepairCargo 0;
+            [group (driver _vic)] spawn {
+                params ["_grp"];
+                sleep 5;
+                [_grp, "maint"] call pl_change_group_icon;
+            };
         };
         _vic addEventHandler ["IncomingMissile", {
             params ["_target", "_ammo", "_vehicle", "_instigator"];
@@ -430,6 +558,7 @@ pl_ai_setUp_loop = {
         {
             if (side _x isEqualTo playerSide) then {
                 [_x]spawn pl_vehicle_setup;
+
             }
             else
             {
@@ -502,15 +631,15 @@ pl_vehicle_unstuck = {
     if (vehicle (leader _group) != leader _group) then {
         _vic = vehicle (leader _group);
         _type = typeOf _vic;
-        _pos = (getPos _vic) findEmptyPosition [0, 40, _type];
-        _vic setPos _pos;
+        _pos = (getPos _vic) findEmptyPosition [0, 20, _type];
+        _vic setVehiclePosition [_pos, [], 0, "NONE"];
     }
     else
     {
         {
             _type = typeOf _x;
-            _pos = (getPos _x) findEmptyPosition [0, 40, _type];
-            _x setPos _pos;
+            _pos = (getPos _x) findEmptyPosition [0, 20, _type];
+            _x setVehiclePosition [_pos, [], 0, "NONE"];
         } forEach (units _group);
     };
 };
@@ -649,7 +778,8 @@ pl_viv_trans_set_up = {
     (group (driver _targetVic)) setVariable ["setSpecial", true];
     (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
     {
-        player hcRemoveGroup (group (_x select 0));
+        // player hcRemoveGroup (group (_x select 0));
+        [group (_x select 0)] call pl_hide_group_icon;
     } forEach fullCrew[_vic, "cargo", false];
 };
 
@@ -660,7 +790,14 @@ pl_inf_trans_set_up = {
     (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
     _group setVariable ["onTask", false];
     _group setVariable ["setSpecial", false];
-    _group setVariable ["pl_show_info", false];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+    [_group, true] call pl_contact_report;
+    // _group setVariable ["pl_show_info", false];
+    {
+        _x assignAsCargo _targetVic;
+    } forEach (units _group);
+    [units _group] allowGetIn false;
+    [_group] call pl_hide_group_icon;
 };
 
 
@@ -673,8 +810,7 @@ player addEventHandler ["GetInMan", {
     _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
     player setVariable ["pl_player_vicGroup", _vicGroup];
     if (_vicGroup != (group player)) then {
-        _group setVariable ["pl_show_info", false];
-        player hcRemoveGroup _group;
+        [_group] call pl_hide_group_icon;
     };
 }];
 
@@ -685,11 +821,10 @@ player addEventHandler ["GetOutMan", {
     _vicGroup = player getVariable ["pl_player_vicGroup", (group player)];
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];
-    _group setVariable ["pl_show_info", true];
-    player hcSetGroup [_group];
+    [_group] call pl_show_group_icon;
 
     _cargo = fullCrew [(vehicle ((units _vicGroup)#0)), "cargo", false];
-    if ((count _cargo == 0)) exitWith {
+    if (count _cargo == 0) exitWith {
         _vicGroup setVariable ["setSpecial", false];
     };
     if (({(group (_x#0)) isEqualTo _group} count _cargo) > 0) then {
@@ -701,22 +836,30 @@ player addEventHandler ["GetOutMan", {
     };
 }];
 
+
+// Start Set Up
+sleep 5;
 {
     _leader = leader _x;
-    private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
-    if (isNil{_hcs}) exitWith {};
-    if ((_hcs in (synchronizedObjects _leader)) and (vehicle _leader != _leader)) then {
+    // private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
+    // if (isNil{_hcs}) exitWith {};
+    if (_x getVariable ["pl_is_recon", false]) then {
+        [_x, true] spawn pl_recon;
+    };
+
+    sleep 0.1;
+    if ((vehicle _leader) != _leader) then {
         if (((assignedVehicleRole _leader) select 0) isEqualTo "cargo") then {
             [_x] call pl_inf_trans_set_up;
-            [_x, true] spawn pl_contact_report;
+            // [_x, true] spawn pl_contact_report;
         };
         if !(isNull (isVehicleCargo (vehicle _leader))) then {
             [_x] call pl_viv_trans_set_up;
-            [_x, true] spawn pl_contact_report;
-
+            // [_x, true] spawn pl_contact_report;
         };
-
     };
+
+
 } forEach (allGroups select {side _x isEqualTo playerSide});
 
 

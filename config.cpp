@@ -84,7 +84,7 @@ class RscHCGroupRootMenu
         class EmptyBlank2: Empty1
         {
             title="command 3";
-            show="(1 - HCIsLeader) + (HCIsLeader * (1 - CursorOnGround)) + (HCCursorOnIconSelectable)";
+            show="0" //"(1 - HCIsLeader) + (HCIsLeader * (1 - CursorOnGround)) + (HCCursorOnIconSelectable)";
             enable="0";
         };
         class Move
@@ -109,7 +109,8 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="{if ((count (waypoints _x)) == 0) then {[_x, false] call pl_reset;}} forEach (hcSelected player); playSound 'beep'; ['MOVE',_pos,_is3D,hcselected player,true] call BIS_HC_path_menu";
+                expression=
+                    "{if ((count (waypoints _x)) == 0) then {[_x, false] call pl_reset}} forEach (hcSelected player); playSound 'beep'; if (count (hcSelected player) > 1 and (!pl_draw_formation_mouse)) then {[hcSelected player, true] spawn pl_move_as_formation}; if (count (hcSelected player) <= 1) then {['MOVE',_pos,_is3D,hcselected player,true] call BIS_HC_path_menu}";
             };
             show="HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * IsSelectedToAdd";
             enable="HCNotEmpty";
@@ -154,7 +155,7 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="[] call pl_spawn_advance";
+                expression="{[_x] spawn pl_advance} forEach (hcSelected player)";
             };
             show="HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -463,7 +464,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'CANCELWP' call BIS_HC_path_menu";
                 };
-                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Cancel Last Waypoint</t>";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\default_ca.paa'/><t> Cancel Last Waypoint</t>";
                 shortcutsAction = "CommandingMenu2";
                 command = -5;
                 show = "";
@@ -500,7 +501,7 @@ class RscHCGroupRootMenu
             };
             class PlStop
             {
-                title="<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Cancel Task / Stop</t>";
+                title="<img color='#b20000' image='\A3\3den\data\Attributes\default_ca.paa'/><t> Cancel Task / Stop</t>";
                 shortcuts[]={5};
                 submenu="";
                 command=-5;
@@ -582,57 +583,16 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlFollowOther
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa'/><t> Form on other Group</t>";
-                shortcuts[]={9};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="{[_x] spawn pl_follow_other} forEach (hcSelected player);";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            // class PlResupply
+
+            // class PlFormationMove
             // {
-            //     title="Resupply at Position";
-            //     shortcuts[]={8};
-            //     submenu="";
-            //     command=-5;
-            //     class params
-            //     {
-            //         expression="[] spawn pl_spawn_rearm";
-            //     };
-            //     show="HCIsLeader";
-            //     enable="HCNotEmpty";
-            //     speechId=0;
-            // };
-            // class PlHeal
-            // {
-            //     title="Heal Group";
+            //     title="<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\line_ca.paa'/><t> Formation Move</t";
             //     shortcuts[]={9};
             //     submenu="";
             //     command=-5;
             //     class params
             //     {
-            //         expression="[] spawn pl_spawn_heal_group";
-            //     };
-            //     show="HCIsLeader";
-            //     enable="HCNotEmpty";
-            //     speechId=0;
-            // };
-            // class PlCcp
-            // {
-            //     title="Set up CCP";
-            //     shortcuts[]={10};
-            //     submenu="";
-            //     command=-5;
-            //     class params
-            //     {
-            //         expression="[] spawn pl_ccp";
+            //         expression="[] spawn pl_move_as_formation";
             //     };
             //     show="HCIsLeader";
             //     enable="HCNotEmpty";
@@ -657,7 +617,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="{[_x] spawn pl_sweep_area} forEach (hcSelected player)";
+                    expression="[(hcSelected player) select 0] spawn pl_assault_position";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -672,7 +632,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="{[_x] spawn pl_garrison_area_building} forEach (hcSelected player)";
+                    expression="{[_x] spawn pl_defend_position} forEach (hcSelected player)";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -701,7 +661,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="[] spawn pl_defend_position;";
+                    expression="[] spawn pl_take_position;";
                 };
                 show="1";
                 enable="HCNotEmpty";
@@ -738,7 +698,7 @@ class RscHCGroupRootMenu
             };
             class PlTakeCover
             {
-                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover</t>";
+                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover/Button Up</t>";
                 shortcuts[]={6};
                 submenu="";
                 command=-5;
@@ -793,38 +753,25 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlFormationMove
-            {
-                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\line_ca.paa'/><t> Formation Move</t";
-                shortcuts[]={8};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_move_as_formation";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlSeperator301
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
+            
+            // class PlSeperator301
+            // {
+            //     title="";
+            //     shortcuts[]={};
+            //     submenu="";
+            //     command=-1;
+            //     class params
+            //     {
+            //         expression="";
+            //     };
+            //     show="1";
+            //     enable="1";
+            //     speechId=0;
+            // };
             class PlAttachInf
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Follow Vehicle</t";
-                shortcuts[]={9};
+                shortcuts[]={8};
                 submenu="";
                 command=-5;
                 class params
@@ -1328,7 +1275,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="{[_x, 0.0, 0.0, true] spawn pl_getOut_vehicle} forEach (hcSelected player);";
+                    expression="{[_x] spawn pl_unload_at_position_planed} forEach (hcSelected player);";
                 };
                 show="1";
                 enable="HCNotEmpty";
@@ -1631,132 +1578,132 @@ class RscHCGroupRootMenu
             //     enable="HCNotEmpty";
             //     speechId=0;
             // };
-            class PlMergeGroups
+            class PlGroupManagement
             {
-                title="Merge Groups";
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa'/><t> Group Management</t";
                 shortcuts[]={6};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_merge_hc_groups";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlSplitGroups
-            {
-                title="Split Group";
-                shortcuts[]={7};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[hcSelected player select 0] spawn pl_split_hc_group";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlSeperator13
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
-            class PlAddGroup
-            {
-                title="Add Group";
-                shortcuts[]={8};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_add_to_hc";
-                };
-                show="HCIsLeader";
-                enable="1";
-                speechId=0;
-            };
-            class PlRemoveGroup
-            {
-                title="Remove Group";
-                shortcuts[]={9};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_spawn_remove_hc";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlSeperator18
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
-            class PlChangeIconGroup
-            {
-                title="Change Group Marker";
-                shortcuts[]={10};
-                menu="#USER:pl_change_icon_menu";
+                menu="#USER:pl_group_management";
                 command=-5;
                 class params
                 {
                     expression="";
                 };
                 show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-            class PlSeperator303
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
                 enable="1";
                 speechId=0;
             };
-            class PlResetGroup
-            {
-                title="Reset Group";
-                shortcuts[]={11};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[(hcSelected player) select 0] spawn pl_reset_group";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
+            // class PlSplitGroups
+            // {
+            //     title="Split Group";
+            //     shortcuts[]={7};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[hcSelected player select 0] spawn pl_split_hc_group";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
+            // class PlSeperator13
+            // {
+            //     title="";
+            //     shortcuts[]={};
+            //     submenu="";
+            //     command=-1;
+            //     class params
+            //     {
+            //         expression="";
+            //     };
+            //     show="1";
+            //     enable="1";
+            //     speechId=0;
+            // };
+            // class PlAddGroup
+            // {
+            //     title="Add Group";
+            //     shortcuts[]={8};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_add_to_hc";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="1";
+            //     speechId=0;
+            // };
+            // class PlRemoveGroup
+            // {
+            //     title="Remove Group";
+            //     shortcuts[]={9};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_spawn_remove_hc";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
+            // class PlSeperator18
+            // {
+            //     title="";
+            //     shortcuts[]={};
+            //     submenu="";
+            //     command=-1;
+            //     class params
+            //     {
+            //         expression="";
+            //     };
+            //     show="1";
+            //     enable="1";
+            //     speechId=0;
+            // };
+            // class PlChangeIconGroup
+            // {
+            //     title="Change Group Marker";
+            //     shortcuts[]={10};
+            //     menu="#USER:pl_change_icon_menu";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
+            // class PlSeperator303
+            // {
+            //     title="";
+            //     shortcuts[]={};
+            //     submenu="";
+            //     command=-1;
+            //     class params
+            //     {
+            //         expression="";
+            //     };
+            //     show="1";
+            //     enable="1";
+            //     speechId=0;
+            // };
+            // class PlResetGroup
+            // {
+            //     title="Reset Group";
+            //     shortcuts[]={11};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[(hcSelected player) select 0] spawn pl_reset_group";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
         };
         title = "Reply";
         access = 0;
@@ -1917,7 +1864,7 @@ class CfgMarkerClasses
 };
 class CfgMarkers
 {
-    class marker_nato
+    class pl_marker
     {
         name="Check Point";
         icon="\Plmod\gfx\CP.paa";
@@ -1928,23 +1875,35 @@ class CfgMarkers
         shadow=0;
         markerClass="Check_point_1";
     };
-    class marker_CCP: marker_nato
+    class marker_CCP: pl_marker
     {
         name="CCP";
         icon="\Plmod\gfx\CCP.paa";
         texture="\Plmod\gfx\CCP.paa";
     };
-    class marker_afp: marker_nato
+    class marker_afp: pl_marker
     {
         name="Attack by Fire Position";
         icon="\Plmod\gfx\AFP.paa";
         texture="\Plmod\gfx\AFP.paa";
     };
-    class marker_sfp: marker_nato
+    class marker_sfp: pl_marker
     {
         name="Support by Fire Position";
         icon="\Plmod\gfx\SFP.paa";
         texture="\Plmod\gfx\SFP.paa";
+    };
+    class marker_eng: pl_marker
+    {
+        name="NATO Engineer";
+        icon="\Plmod\gfx\b_engineer.paa";
+        texture="\Plmod\gfx\b_engineer.paa";
+    };
+    class marker_at: pl_marker
+    {
+        name="NATO AT";
+        icon="\Plmod\gfx\b_antiarmor.paa";
+        texture="\Plmod\gfx\b_antiarmor.paa";
     };
 };
 class RscSubmenu;

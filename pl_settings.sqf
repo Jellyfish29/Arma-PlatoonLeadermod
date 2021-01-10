@@ -1,9 +1,10 @@
-
+#include "\a3\editor_f\Data\Scripts\dikCodes.h"
 
 [
     "pl_ai_skill",
     "SLIDER", 
-    ["Player Side Ai Skill", "Ai Skill Level for Player Side"], "Platoon Leader", 
+    ["Player Side Ai Skill", "AI Skill Level for Player Side"],
+    "Platoon Leader: AI", 
     [0, 1, 0.8, 2],
     nil,
     {},
@@ -14,7 +15,8 @@
     "pl_radio_range", 
     "SLIDER", 
     ["Radio Range", 
-    "Set the maximum range for ai info sharing"], "Platoon Leader", 
+    "Set the maximum range for ai info sharing"],
+    "Platoon Leader: AI", 
     [0, 2000, 700, 0], 
     nil,
     {},
@@ -25,19 +27,8 @@
     "pl_opfor_info_share_enabled",
     "CHECKBOX",
     ["Enable Enemy Info sharing","Enable the sharing of information among enemy groups"],
-    "Platoon Leader",
+    "Platoon Leader: AI",
     true,
-    nil,
-    {},
-    true
-] call CBA_fnc_addSetting;
-
-[
-    "pl_additional_ammoBearer",
-    "EDITBOX",
-    ["Additional Ammobearer classnames","Define unit classes that can be used as ammobearers: Format ['example_class_1', 'example_class_2']"],
-    "Platoon Leader",
-    ["[]"],
     nil,
     {},
     true
@@ -47,7 +38,18 @@
     "pl_enabled_medical",
     "CHECKBOX",
     ["Enable Medical System","enable or disable Medical System"],
-    "Platoon Leader",
+    "Platoon Leader: Logistics",
+    true,
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_virtual_mines_enabled",
+    "CHECKBOX",
+    ["Enable Virtual Mines","Enable or disable the ability for engineers to lay minefields"],
+    "Platoon Leader: Logistics",
     true,
     nil,
     {},
@@ -58,7 +60,7 @@
     "pl_enable_vehicle_recovery",
     "CHECKBOX",
     ["Enable Vehicle Recovery","enable or disable Vehicle Recovery"],
-    "Platoon Leader",
+    "Platoon Leader: Logistics",
     true,
     nil,
     {},
@@ -69,8 +71,19 @@
     "pl_enable_reinforcements",
     "CHECKBOX",
     ["Enable Reinforcements","enable or disable Reinforcements from Supply Points"],
-    "Platoon Leader",
+    "Platoon Leader: Logistics",
     true,
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_max_mines_per_explo",
+    "EDITBOX",
+    ["Max Mines Per Explosiv Specialist","Maximum amount of virtual mines an explosiv Specialist can carry"],
+    "Platoon Leader: Logistics",
+    ["20"],
     nil,
     {},
     true
@@ -80,7 +93,7 @@
     "pl_max_reinforcement_per_vic",
     "EDITBOX",
     ["Max Reinforcements","Max Reinforcements per Supply Vehicle"],
-    "Platoon Leader",
+    "Platoon Leader: Logistics",
     ["20"],
     nil,
     {},
@@ -88,11 +101,22 @@
 ] call CBA_fnc_addSetting;
 
 [
-    "pl_additional_engVic",
+    "pl_max_supplies_per_vic",
     "EDITBOX",
-    ["Additional Repair Vehicles classnames","Define Vehicles that can repair/recover other Vehicles: Format ['example_class_1', 'example_class_2']"],
-    "Platoon Leader",
-    ["[]"],
+    ["Max Supplies","Max Supplies per Supply Vehicle / 1xSupply == 1xInfantry Rearm/Heal / 5xSupply == 1xVehicle Rearm/Heal/Repair"],
+    "Platoon Leader: Logistics",
+    ["150"],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_max_repair_supplies_per_vic",
+    "EDITBOX",
+    ["Max Repair Supplies","Max Supplies per Repair Supply Vehicle / 1xSupply == 1xRepair / 2xSupply == 1xRecovery "],
+    "Platoon Leader: Logistics",
+    ["20"],
     nil,
     {},
     true
@@ -102,7 +126,7 @@
     "pl_arty_enabled",
     "CHECKBOX",
     ["Enable Artillery","enable or disable Platoon Leader Artillery Supports"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     true,
     nil,
     {},
@@ -113,7 +137,7 @@
     "pl_arty_ammo",
     "EDITBOX",
     ["155mm Artillery Ammo","Set Amount of Rounds for 155mm Artillery Support"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     ["24"],
     nil,
     {},
@@ -124,7 +148,7 @@
     "pl_cas_enabled",
     "CHECKBOX",
     ["Enable CAS","enable or disable Platoon Leader Close Air Support"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     [true],
     nil,
     {},
@@ -135,7 +159,7 @@
     "pl_sorties",
     "EDITBOX",
     ["CAS Sortie Amount","Different CAS Strikes cost different amount of 'Sorties' select Amount"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     ["25"],
     nil,
     {},
@@ -146,7 +170,7 @@
     "pl_cas_plane_1",
     "EDITBOX",
     ["CAS Plane 1","Define Classname for CAS Plane 1 (Gun, Attack, SAD)"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     ['B_Plane_CAS_01_F'],
     nil,
     {},
@@ -157,7 +181,7 @@
     "pl_cas_plane_2",
     "EDITBOX",
     ["CAS Plane 2","Define Classname for CAS Plane 2 (JDAM)"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     ['B_Plane_Fighter_01_F'],
     nil,
     {},
@@ -168,7 +192,7 @@
     "pl_cas_plane_3",
     "EDITBOX",
     ["CAS Plane 3","Define Classname for CAS Plane 3 (Cluster)"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     ['B_Plane_Fighter_01_Cluster_F'],
     nil,
     {},
@@ -179,7 +203,7 @@
     "pl_cas_Heli_1",
     "EDITBOX",
     ["CAS Heli 1","Define Classname for CAS Heli 1 (SAD)"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     ['B_Heli_Attack_01_F'],
     nil,
     {},
@@ -190,7 +214,7 @@
     "pl_medevac_Heli_1",
     "EDITBOX",
     ["MEDEVAC Heli","Define Classname for MEDEVAC Heli"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     ['B_Heli_Transport_01_F'],
     nil,
     {},
@@ -201,7 +225,7 @@
     "pl_uav_1",
     "EDITBOX",
     ["UAV","Define Classname for UAV"],
-    "Platoon Leader",
+    "Platoon Leader: Fire Support",
     ['B_UAV_02_dynamicLoadout_F'],
     nil,
     {},
@@ -212,12 +236,35 @@
     "pl_enable_3d_icons",
     "CHECKBOX",
     ["Enable 3D Icons","Enable Extra 3D Icons when selecting or hovering over a group"],
-    "Platoon Leader",
+    "Platoon Leader: UI",
     [true],
     nil,
     {},
     true
 ] call CBA_fnc_addSetting;
+
+[
+    "pl_enable_map_icons",
+    "CHECKBOX",
+    ["Enable Map Icons","Enable Map Icons for all player side groups"],
+    "Platoon Leader: UI",
+    [true],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_enable_map_icons_performance",
+    "CHECKBOX",
+    ["Enable Map Icons Performance Mode","Less Icons and only on selected Groups"],
+    "Platoon Leader: UI",
+    [false],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
 
 // [
 //     "pl_permanent_3d_icons",
@@ -229,6 +276,11 @@
 //     {},
 //     true
 // ] call CBA_fnc_addSetting;
+
+
+["Platoon Leader","Select HC Group", "Selects the HCGroup of the Unit the player aims at", {_this spawn pl_select_group}, "", [DIK_T, [false, false, false]]] call CBA_fnc_addKeybind;
+["Platoon Leader","hcSquadIn_key", "Remote View Leader of HC Group", {_this spawn pl_spawn_cam }, "", [DIK_HOME, [false, false, false]]] call CBA_fnc_addKeybind;
+["Platoon Leader","hcSquadOut_key", "Release Remote View", {_this spawn pl_remote_camera_out}, "", [DIK_END, [false, false, false]]] call CBA_fnc_addKeybind;
 
 
 

@@ -54,14 +54,15 @@ pl_split_hc_group = {
 pl_merge_hc_groups = {
     private ["_groupLen", "_largestGroup", "_groups"];
     _groupLen = 0;
-    _largestGroup = 0;
+    _largestGroup = grpNull;
     _groups = [];
     {
         _x setVariable ["onTask", false];
         _groups pushBack _x;
         _len = count (units _x);
         if (_len > _groupLen) then {
-            _largestGroup = _x;   
+            _largestGroup = _x;
+            _groupLen = _len;  
         };
     } forEach hcSelected player;
     sleep 0.25;
@@ -125,11 +126,9 @@ pl_create_hc_group = {
 // [] call pl_create_hc_group;
 
 // [] call pl_merge_hc_groups;
-
-pl_change_group_icon = {
-    params ["_group", "_type"];
+pl_get_side_prefix = {
+    params ["_group"];
     private ["_prefix"];
-
     _side = side _group;
 
     switch (_side) do { 
@@ -138,8 +137,91 @@ pl_change_group_icon = {
         case independent : {_prefix = "n"}; 
         default {_prefix = "b"}; 
     };
-    _typeStr = format ["%1_%2", _prefix, _type];
+    _prefix
+};
 
-    _group setVariable ["MARTA_customIcon", [_typeStr]];      
+pl_change_group_icon = {
+    params ["_group", "_type"];
+    private ["_prefix"];
+
+    _prefix = [_group] call pl_get_side_prefix;
+    _typeStr = format ["%1_%2", _prefix, _type];
+    _group setVariable ["pl_custom_icon", _typeStr];
+    clearGroupIcons _group;
+    _group addGroupIcon [_typeStr];      
+};
+
+pl_hide_group_icon = {
+    params ["_group"];
+
+    _group setVariable ["pl_show_info", false];
+    player hcRemoveGroup _group;
+    clearGroupIcons _group;
+};
+
+pl_show_group_icon = {
+    params ["_group", ["_type", "inf"]];
+
+    _cIcon = _group getVariable ["pl_custom_icon", ""];
+    _prefix = [_group] call pl_get_side_prefix;
+    _group setVariable ["pl_show_info", true];
+    player hcSetGroup [_group];
+    if !(_cIcon isEqualTo "") then {
+        _group addGroupIcon [_cIcon];
+    }
+    else
+    {
+        _group addGroupIcon [format ["%1_%2", _prefix, _type]]; 
+    };
+};
+
+pl_select_group = {
+    // select hcGroup form player cursorTraget
+
+    _target = cursorTarget;
+    _group = group _target;
+    player hcSelectGroup [_group];
+    sleep 2;
+};
+
+
+pl_remote_camera_in = {
+    params ["_leader"];
+
+    player setVariable ["pl_camera_mode", cameraView];
+    _leader switchCamera "GROUP";  
+};
+
+pl_spawn_cam = {
+    [leader (hcSelected player select 0)] call pl_remote_camera_in;
+};
+
+pl_remote_camera_out = {
+
+    player switchCamera (player getVariable ["pl_camera_mode", "INTERNAL"]);  
+};
+
+pl_add_all_groups = {
+    {
+        _x setVariable ["pl_show_info", true];
+        player hcSetGroup [_x];
+    } forEach (allGroups select {side (leader _x) == playerSide});
+};
+
+pl_hard_unstuck = {
+    params ["_group"];
+
+    if (vehicle (leader _group) != leader _group) then {
+        _vic = vehicle (leader _group);
+        _pos = getPos _vic findEmptyPosition [35, 60, typeOf _vic];
+        _vic setVehiclePosition [_pos, [], 0, "NONE"];
+    }
+    else
+    {
+        {
+            _pos = getPos _x findEmptyPosition [35, 60, typeOf _x];
+            _x setVehiclePosition [_pos, [], 0, "NONE"];
+        } forEach (units _group);
+    };
 };
 
