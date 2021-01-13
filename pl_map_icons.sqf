@@ -31,6 +31,13 @@ pl_get_vic_health = {
     _healthState;
 };
 
+
+pl_world_size_x = round (worldSize * 0.03);
+pl_world_size_y = round (worldSize * 0.02);
+pl_map_scale = ctrlMapScale (_this select 0);
+pl_map_scale_x = pl_map_scale * pl_world_size_x;
+pl_map_scale_y = pl_map_scale * pl_world_size_y;
+
 if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
     pl_draw_group_info = {
 
@@ -62,12 +69,6 @@ if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
                         };
                     } forEach (units _x);
 
-
-                    _worldSizeX = round (worldSize * 0.03);
-                    _worldSizeY = round (worldSize * 0.02);
-                    _mapScale = ctrlMapScale (_this select 0);
-                    _mapscaleX = _mapScale * _worldSizeX;
-                    _mapScaleY = _mapScale * _worldSizeY;
                     _pos = getPosVisual (vehicle (leader _x));
 
                     _callsignText = format ['  %1', groupId _x];
@@ -114,7 +115,7 @@ if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
 
 
                     _contactIcon = '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa';
-                    _contactPos = [(_pos select 0) - _mapscaleX, (_pos select 1) - _mapScaleY];
+                    _contactPos = [(_pos select 0) - pl_map_scale_x, (_pos select 1) - pl_map_scale_y];
                     _contactColor = [0.4,1,0.2,1];
                     _x setVariable ['inContact', false];
                     _time = (_x getVariable 'PlContactTime') - 30;
@@ -137,7 +138,7 @@ if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
                     ];
 
 
-                    _behaviourPos = [(_pos select 0) + _mapscaleX, (_pos select 1) - _mapScaleY];
+                    _behaviourPos = [(_pos select 0) + pl_map_scale_x, (_pos select 1) - pl_map_scale_y];
                     _behaviour = behaviour (leader _x);
                     _color = [0.4,1,0.2,1];
                     _icon = '\A3\ui_f\data\igui\cfg\simpleTasks\types\listen_ca.paa';
@@ -166,8 +167,8 @@ if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
 
                     if (_x getVariable 'setSpecial') then {
                         _specialIcon = _x getVariable 'specialIcon';
-                        _posOffset = _mapscaleX + (_mapscaleX * 0.85);
-                        _specialPos = [(_pos select 0) + _posOffset, (_pos select 1) - _mapScaleY];
+                        _posOffset = pl_map_scale_x + (pl_map_scale_x * 0.85);
+                        _specialPos = [(_pos select 0) + _posOffset, (_pos select 1) - pl_map_scale_y];
                         _color = [0.9,0.9,0,1];
                         if (_x getVariable ['pl_on_hold', false]) then {_color = [0.92,0.24,0.07,1];};
                         _display drawIcon [
@@ -183,7 +184,7 @@ if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
                     };
 
                     if (_x getVariable ['pl_healing_active', false]) then {
-                        _healingPos = [(_pos select 0) - (_mapscaleX * 1.8), _pos select 1];
+                        _healingPos = [(_pos select 0) - (pl_map_scale_x * 1.8), _pos select 1];
                         _color = [0.9,0.9,0,1];
                         if (_x getVariable ['pl_on_hold', false]) then {_color = [0.92,0.24,0.07,1];};
                         _display drawIcon [
@@ -199,7 +200,7 @@ if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
                     };
 
                     if ((vehicle (leader _x)) != leader _x) then {
-                        _vicPos = [(_pos select 0), (_pos select 1) - _mapscaleY];
+                        _vicPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
                         _vicColor = [vehicle (leader _x)] call pl_get_vic_health;
                         _vicDir = getDir (vehicle (leader _x));
                         _vicIcon = '\A3\ui_f\data\map\MapControl\viewtower_CA.paa';
@@ -216,12 +217,17 @@ if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
                         ];
 
                         _vicSpeedLimit = vehicle (leader _x) getVariable 'pl_speed_limit';
-                        _vicSpeedPos = [(_pos select 0), (_pos select 1) - (_mapscaleY * 1.5)];
+                        _vicSpeedPos = [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 1.5)];
                         _vicSpeedColor = [0.9, 0.9, 0.9,1];
-                        if (_vicSpeedLimit isEqualTo '50') then {_vicSpeedColor = [0.4,1,0.2,1]};
-                        if (_vicSpeedLimit isEqualTo '30') then {_vicSpeedColor = [0.9,0.9,0,1]};
-                        if (_vicSpeedLimit isEqualTo '15') then {_vicSpeedColor = [0.7,0,0,1]};
-                        if (_vicSpeedLimit isEqualTo 'CON') then {_vicSpeedColor = [0.92,0.24,0.07,1]};
+
+                        switch (_vicSpeedLimit) do { 
+                            case '50' : {_vicSpeedColor = [0.4,1,0.2,1]}; 
+                            case '30' : {_vicSpeedColor = [0.9,0.9,0,1]};
+                            case '15' : {_vicSpeedColor = [0.7,0,0,1]}; 
+                            case 'CON' : {_vicSpeedColor = [0.92,0.24,0.07,1]}; 
+                            default {_vicSpeedColor = [0.4,1,0.2,1]}; 
+                        };
+                        
                         _display drawIcon [
                             '\A3\ui_f\data\map\markers\military\dot_CA.paa',
                             _vicSpeedColor,
@@ -235,7 +241,7 @@ if (pl_enable_map_icons and !(pl_enable_map_icons_performance)) then {
                     }
                     else
                     {
-                        _formPos = [(_pos select 0), (_pos select 1) - _mapscaleY];
+                        _formPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
 
                         _form = formation _x;
                         _formIcon = '\A3\3den\data\Attributes\Formation\wedge_ca.paa';
@@ -851,11 +857,11 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
                 if (hcShownBar and (_x getVariable 'pl_show_info') and visibleMap) then {
                     if ((getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName')) isEqualTo 'Game Logic') exitWith {};
 
-                    _worldSizeX = round (worldSize * 0.03);
-                    _worldSizeY = round (worldSize * 0.02);
-                    _mapScale = ctrlMapScale (_this select 0);
-                    _mapscaleX = _mapScale * _worldSizeX;
-                    _mapScaleY = _mapScale * _worldSizeY;
+                    pl_world_size_x = round (worldSize * 0.03);
+                    pl_world_size_y = round (worldSize * 0.02);
+                    pl_map_scale = ctrlMapScale (_this select 0);
+                    pl_map_scale_x = pl_map_scale * pl_world_size_x;
+                    pl_map_scale_y = pl_map_scale * pl_world_size_y;
                     _pos = getPosVisual (vehicle (leader _x));
 
                     _callsignText = format ['  %1', groupId _x];
@@ -906,7 +912,7 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
                         };
                     } forEach (units _x);
 
-                    _behaviourPos = [(_pos select 0) + _mapscaleX, (_pos select 1) - _mapScaleY];
+                    _behaviourPos = [(_pos select 0) + pl_map_scale_x, (_pos select 1) - pl_map_scale_y];
                     _behaviour = behaviour (leader _x);
                     _color = [0.4,1,0.2,1];
                     _icon = '\A3\ui_f\data\igui\cfg\simpleTasks\types\listen_ca.paa';
@@ -935,8 +941,8 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
 
                     if (_x getVariable 'setSpecial') then {
                         _specialIcon = _x getVariable 'specialIcon';
-                        _posOffset = _mapscaleX + (_mapscaleX * 0.85);
-                        _specialPos = [(_pos select 0) + _posOffset, (_pos select 1) - _mapScaleY];
+                        _posOffset = pl_map_scale_x + (pl_map_scale_x * 0.85);
+                        _specialPos = [(_pos select 0) + _posOffset, (_pos select 1) - pl_map_scale_y];
                         _color = [0.9,0.9,0,1];
                         if (_x getVariable ['pl_on_hold', false]) then {_color = [0.92,0.24,0.07,1];};
                         _display drawIcon [
@@ -952,7 +958,7 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
                     };
 
                     if (_x getVariable ['pl_healing_active', false]) then {
-                        _healingPos = [(_pos select 0) - (_mapscaleX * 1.8), _pos select 1];
+                        _healingPos = [(_pos select 0) - (pl_map_scale_x * 1.8), _pos select 1];
                         _color = [0.9,0.9,0,1];
                         if (_x getVariable ['pl_on_hold', false]) then {_color = [0.92,0.24,0.07,1];};
                         _display drawIcon [
@@ -970,7 +976,7 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
                     if ((vehicle (leader _x)) != leader _x) then {
 
                         _vicSpeedLimit = vehicle (leader _x) getVariable 'pl_speed_limit';
-                        _vicSpeedPos = [(_pos select 0), (_pos select 1) - (_mapscaleY * 1.5)];
+                        _vicSpeedPos = [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 1.5)];
                         _vicSpeedColor = [0.9, 0.9, 0.9,1];
                         if (_vicSpeedLimit isEqualTo '50') then {_vicSpeedColor = [0.4,1,0.2,1]};
                         if (_vicSpeedLimit isEqualTo '30') then {_vicSpeedColor = [0.9,0.9,0,1]};
@@ -989,7 +995,7 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
                     }
                     else
                     {
-                        _formPos = [(_pos select 0), (_pos select 1) - _mapscaleY];
+                        _formPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
 
                         _form = formation _x;
                         _formIcon = '\A3\3den\data\Attributes\Formation\wedge_ca.paa';
@@ -1032,11 +1038,11 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
             {
                 if (hcShownBar and (_x getVariable 'pl_show_info') and visibleMap) then {
 
-                    _worldSizeX = round (worldSize * 0.03);
-                    _worldSizeY = round (worldSize * 0.02);
-                    _mapScale = ctrlMapScale (_this select 0);
-                    _mapscaleX = _mapScale * _worldSizeX;
-                    _mapScaleY = _mapScale * _worldSizeY;
+                    pl_world_size_x = round (worldSize * 0.03);
+                    pl_world_size_y = round (worldSize * 0.02);
+                    pl_map_scale = ctrlMapScale (_this select 0);
+                    pl_map_scale_x = pl_map_scale * pl_world_size_x;
+                    pl_map_scale_y = pl_map_scale * pl_world_size_y;
                     _pos = getPosVisual (vehicle (leader _x));
 
                     _strength = count (units _x);
@@ -1056,7 +1062,7 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
                         'left'
                     ];
 
-                    _contactPos = [(_pos select 0) - _mapscaleX, (_pos select 1) - _mapScaleY];
+                    _contactPos = [(_pos select 0) - pl_map_scale_x, (_pos select 1) - pl_map_scale_y];
                     _contactColor = [0.4,1,0.2,1];
                     _x setVariable ['inContact', false];
                     _time = (_x getVariable 'PlContactTime') - 30;
@@ -1076,7 +1082,7 @@ if (pl_enable_map_icons_performance and pl_enable_map_icons) then {
                     };
 
                     if ((vehicle (leader _x)) != leader _x) then {
-                        _vicPos = [(_pos select 0), (_pos select 1) - _mapscaleY];
+                        _vicPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
                         _vicColor = [vehicle (leader _x)] call pl_get_vic_health;
                         _vicDir = getDir (vehicle (leader _x));
                         _vicIcon = '\A3\ui_f\data\map\MapControl\viewtower_CA.paa';
