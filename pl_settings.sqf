@@ -254,16 +254,16 @@
     true
 ] call CBA_fnc_addSetting;
 
-[
-    "pl_enable_map_icons_performance",
-    "CHECKBOX",
-    ["Enable Map Icons Performance Mode","Less Icons and only on selected Groups"],
-    "Platoon Leader: UI",
-    [false],
-    nil,
-    {},
-    true
-] call CBA_fnc_addSetting;
+// [
+//     "pl_enable_map_icons_performance",
+//     "CHECKBOX",
+//     ["Enable Map Icons Performance Mode","Less Icons and only on selected Groups"],
+//     "Platoon Leader: UI",
+//     [false],
+//     nil,
+//     {},
+//     true
+// ] call CBA_fnc_addSetting;
 
 
 // [

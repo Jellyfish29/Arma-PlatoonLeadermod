@@ -175,16 +175,17 @@ pl_suppressive_fire_position = {
     // check if enemy in Area
     _allTargets = nearestObjects [_cords, ["Man", "Car", "Truck", "Tank"], pl_suppress_area_size, true];
     {
-        _targetsPos pushBack (getPosASl _x);
+        _targetsPos pushBack (getPosATL _x);
     } forEach (_allTargets select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
 
     // if no enemy target buildings;
-    // _buildings = nearestObjects [_cords, ["house"], pl_suppress_area_size];
-    // if !((count _buildings) == 0) then {
-    //     {
-    //         _targetsPos pushBack (getPosASL _x);
-    //     } forEach _buildings;
-    // };
+    _buildings = nearestObjects [_cords, ["house"], pl_suppress_area_size];
+    if !((count _buildings) == 0) then {
+        {
+            _bPos = [0,0,2] vectorAdd (getPosATL _x);
+            _targetsPos pushBack _bPos;
+        } forEach _buildings;
+    };
 
     // add Random Possitions
     private _posAmount = 2;
@@ -597,7 +598,7 @@ pl_assault_position = {
 
     pl_sweep_area_size = 35;
 
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
 
     _markerName = format ["%1sweeper%2", _group, random 1];
     createMarker [_markerName, [0,0,0]];
@@ -609,7 +610,7 @@ pl_assault_position = {
     if (visibleMap) then {
         _message = "Select Assault Location <br /><br />
             <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>In Foramtion</t> <br />
-            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>TACTICAL</t> <br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CQB</t> <br />
             <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>FAST</t> <br />
             <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
         hint parseText _message;
@@ -657,7 +658,7 @@ pl_assault_position = {
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false])};
 
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
@@ -682,8 +683,8 @@ pl_assault_position = {
     _arrowText = "";
     _arrowColor = "colorYellow";
     switch (_attackMode) do { 
-        case "tactical" : {_arrowText = "T"; _arrowColor = "colorGreen"}; 
-        case "fast" : {_arrowText = "F"; _arrowColor = "colorRed"}; 
+        case "tactical" : {_arrowText = "CQB"; _arrowColor = "colorGreen"}; 
+        case "fast" : {_arrowText = "FST"; _arrowColor = "colorRed"}; 
         default {_arrowText = ""; _arrowColor = "colorYellow"}; 
     };
     _arrowMarkerName setMarkerColor _arrowColor;
@@ -773,7 +774,15 @@ pl_assault_position = {
     _area = pl_sweep_area_size;
     
     // waitUntil {(((leader _group) distance _cords) < (pl_sweep_area_size + 10)) or !(_group getVariable ["onTask", true])};
-    waitUntil {(({(_x distance _cords) < (_area + 10)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
+
+    _vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], _area, true];
+
+    private _atkTriggerDistance = 10;
+    if ((count _vics) > 0) then {
+        _atkTriggerDistance = 40; 
+    };
+
+    waitUntil {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
 
     // leader _group limitSpeed 200;
     // _group setSpeedMode "NORMAL";
@@ -789,10 +798,19 @@ pl_assault_position = {
 
     _targets = [];
     _allMen = _cords nearObjects ["Man", _area];
+
+
     {
         _targets pushBack _x;
     } forEach (_allMen select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
+
+    {
+        _targets pushBack _x;
+    } forEach (_vics select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
+
     _targets = [_targets, [], {(leader _group) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy;
+
+
 
     [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
     sleep 0.1;
@@ -827,26 +845,50 @@ pl_assault_position = {
                 private ["_movePos", "_target"];
 
                 while {(count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {
-                    _target = selectRandom (missionNamespace getVariable format ["targets_%1", _group]);
-                    if (alive _target) then {
-                        _pos = getPosATL _target;
-                        _movePos = _pos vectorAdd [0.5 - random 1, 0.5 - random 1, 0];
-                        _unit limitSpeed 15;
-                        _unit doMove _movePos;
-                        _unit setDestination [_movePos, "FORMATION PLANNED", false];
-                        _reachable = [_unit, _movePos, 20] call pl_not_reachable_escape;
-
-
-                        while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and _reachable} do {
-                            // _enemy = _unit findNearestEnemy _unit;
-                            // if ((_unit distance2D _enemy) < 7) then {
-                            //     _unit doTarget _enemy;
-                            //     _unit doFire _enemy;
-                            // };
-                            sleep 0.5;
+                    if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
+                        _target = {
+                            if !(_x isKindOf "Man") exitWith {_x},;
+                            objNull
+                        } forEach (missionNamespace getVariable format ["targets_%1", _group]);
+                        if !(isNull _target) then {
+                            (group _unit) enableAttack true;
+                            (group _unit) setVariable ["pl_combat_mode", true];
+                            // _unit disableAI "AUTOCOMBAT";
+                            _unit reveal [_target, 4];
+                            _unit doTarget _target;
+                            _unit doFire _target;
+                            while {(alive _unit) and (alive _target) and (count (crew _target) > 0) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and !((secondaryWeaponMagazine _unit) isEqualTo [])} do {
+                                sleep 0.5;
+                            };
+                            if (!alive _target or (count (crew _target) <= 0)) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
+                            (group _unit) enableAttack false;
+                            (group _unit) setVariable ["pl_combat_mode", false];
+                            _unit enableAI "AUTOCOMBAT";
                         };
-                        if (!alive  _target) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
                     };
+
+                    _target = selectRandom (missionNamespace getVariable format ["targets_%1", _group]);
+                    if !(isNil "_target") then {
+                        if (alive _target and (_target isKindOf "Man")) then {
+                            _pos = getPosATL _target;
+                            _movePos = _pos vectorAdd [0.5 - (random 1), 0.5 - (random 1), 0];
+                            _unit limitSpeed 15;
+                            _unit doMove _movePos;
+                            _unit setDestination [_movePos, "FORMATION PLANNED", false];
+                            _reachable = [_unit, _movePos, 20] call pl_not_reachable_escape;
+
+                            while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and _reachable} do {
+                                // _enemy = _unit findNearestEnemy _unit;
+                                // if ((_unit distance2D _enemy) < 7) then {
+                                //     _unit doTarget _enemy;
+                                //     _unit doFire _enemy;
+                                // };
+                                sleep 0.5;
+                            };
+                            if (!alive  _target) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
+                        };
+                    };
+
                     if ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) exitWith {};
                 };
             };
@@ -870,6 +912,7 @@ pl_assault_position = {
     } forEach (units _group);
     _group setCombatMode "YELLOW";
     _group setVariable ["pl_combat_mode", false];
+    _group enableAttack false;
     sleep 1;
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;

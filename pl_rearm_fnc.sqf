@@ -120,14 +120,13 @@ pl_supply_point_active = false;
 pl_supply_draw_array = [];
 
 pl_supply_point = {
-    params [["_taskPlanWp", []]];
+    params [["_group", (hcSelected player) select 0],["_taskPlanWp", []]];
     private ["_group", "_cords", "_suppliedGroups", "_ammoBearer", "_toSupplyGroups", "_toSupplyGroups", "_ammoCargo"];
 
     // if already supply point exit
     if (pl_supply_point_active) exitWith {hint "Only on Supply Point!"};
 
     // check if vehicle group
-    _group = (hcSelected player) select 0;
     if (vehicle (leader _group) == (leader _group)) exitWith {hint "Requires Supply Vehicle!"};
 
     _vic = vehicle (leader _group);
@@ -282,15 +281,24 @@ pl_supply_point = {
                             if (pl_enable_reinforcements) then {
                                 _groupComp = _targetGrp getVariable ["pl_group_comp", []];
                                 _groupUnits = units _targetGrp;
+                                _groupIsReset = _targetGrp getVariable ["pl_is_reset", false];
                                 _avaibleReinforcements =  _vic getVariable "pl_avaible_reinforcements";
                                 private _reinforced = 0;
+
+                                if (_targetGrp getVariable ["pl_is_reset", false]) then {
+                                    {
+                                        deleteVehicle _x;
+                                        _reinforced = _reinforced - 1;
+                                    } forEach _groupUnits;
+                                };
 
                                 {
                                     if (_reinforced <= _avaibleReinforcements) then {
                                         _unit = _x#0;
                                         _type = _x#1;
                                         _loadout = _x#2;
-                                        if !(alive _unit) then {
+
+                                        if (!(alive _unit) or (_targetGrp getVariable ["pl_is_reset", false])) then {
                                             _newUnit = _targetGrp createUnit [_type, getPos _vic,[],0, "NONE"];
                                             _newUnit setUnitLoadout _loadout;
                                             _newUnit doFollow (leader _targetGrp);
@@ -306,6 +314,8 @@ pl_supply_point = {
                                         };
                                     };
                                 } forEach _groupComp;
+
+
                                 _vic setVariable ["pl_avaible_reinforcements", _avaibleReinforcements - _reinforced];
                                 _groupComposition = [];
                                 {
@@ -315,6 +325,7 @@ pl_supply_point = {
                                 } forEach (units _targetGrp);
 
                                 _targetGrp setVariable ["pl_group_comp", _groupComposition];
+                                _targetGrp setVariable ["pl_is_reset", false];
                             };
                         };
 

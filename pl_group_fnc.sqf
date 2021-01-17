@@ -225,3 +225,6 @@ pl_hard_unstuck = {
     };
 };
 
+_playerIcon = format ["%1_%2", [group player] call pl_get_side_prefix, "hq"];
+(group player) setVariable ["pl_custom_icon", _playerIcon];
+

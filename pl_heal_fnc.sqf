@@ -8,6 +8,7 @@ pl_medic_cls_names = ["B_medic_F", "B_recon_medic_F", "B_T_Recon_medic_F", "B_W_
 
 pl_ccp_heal_range = 50;
 pl_ccp_revive_range = 200;
+pl_ccp_draw_array = [];
 
 pl_medic_heal = {
     params ["_medic", "_target", "_ccpPos", "_waitVar"];
@@ -363,9 +364,11 @@ pl_ccp = {
             _group setVariable ["setSpecial", true];
             _group setVariable ["specialIcon", "\Plmod\gfx\CCP.paa"];
             _ccpGuard = (units _group) - [_medic];
+            pl_ccp_draw_array pushBack [_ccpPos, _medic];
             if !(isNil "_escort") then {
                 _escort setVariable ["pl_is_ccp_medic", true];
-               _ccpGuard = _ccpGuard - [_escort]
+                _ccpGuard = _ccpGuard - [_escort];
+                pl_ccp_draw_array pushBack [_ccpPos, _escort];
             };
             // {
             //     [_x, getPos leader _group, getDir leader _group, 20, false] spawn pl_find_cover;
@@ -373,6 +376,7 @@ pl_ccp = {
 
             _medic setVariable ["pl_damage_reduction", true];
             _medic setVariable ["pl_is_ccp_medic", true];
+
 
             _markerNameOuter = str (random 2);
             createMarker [_markerNameOuter, _ccpPos];
@@ -444,8 +448,10 @@ pl_ccp = {
             _group setVariable ["onTask", false];
             _medic setVariable ["pl_damage_reduction", false];
             _medic setVariable ["pl_is_ccp_medic", false];
+            pl_ccp_draw_array = pl_ccp_draw_array - [[_ccpPos, _medic]];
             if !(isNil "_escort") then {
                 _escort setVariable ["pl_is_ccp_medic", false];
+                pl_ccp_draw_array = pl_ccp_draw_array - [[_ccpPos, _escort]];
             };
             deleteMarker _markerNameCCP;
             deleteMarker _markerNameOuter;

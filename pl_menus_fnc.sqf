@@ -222,18 +222,27 @@ pl_task_plan_menu = [
     ['Task Plan', true],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] call pl_task_planer']], '1', '1'],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] call pl_task_planer']], '1', '1'],
-    ['', [], '', -1, [['expression', '']], '1', '1'],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>", [4], '', -5, [['expression', '["defPos"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up Supply Point</t>', [5], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up SP/MCP</t>', [5], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover/Repair Vehicle</t>', [6], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover Vehicle</t>', [6], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [7], '', -5, [['expression', '["mine"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [8], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [6], '', -5, [['expression', '["mine"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [6], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
-    ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Unload Cargo</t>', [6], '', -5, [['expression', '["unload"] call pl_task_planer']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Unload Cargo</t>', [9], '', -5, [['expression', '["unload"] call pl_task_planer']], '1', '1']
 
+];
+
+pl_task_plan_menu_unloaded_inf = [
+    ['Task Plan', true],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>", [4], '', -5, [['expression', '["defPos"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [5], '', -5, [['expression', '["mine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [6], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1']
 ];
 
 
@@ -260,7 +269,7 @@ pl_group_management = [
     ['Remove selected Groups', [4], '', -5, [['expression', '{[_x] call pl_remove_from_hc} forEach (hcSelected player)']], '1', 'HCNotEmpty'],
     ['Split selected Groups', [5], '', -5, [['expression', '{[_x] call pl_split_hc_group} forEach (hcSelected player)']], '1', 'HCNotEmpty'],
     ['Merge selected Groups', [6], '', -5, [['expression', '[] spawn pl_merge_hc_groups']], '1', 'HCNotEmpty'],
-    ['Reset Group', [6], '', -5, [['expression', '[(hcSelected player) select 0] spawn pl_reset_group']], '1', 'HCNotEmpty'],
-    ['Hard Unstuck Group', [6], '', -5, [['expression', '[(hcSelected player) select 0] call pl_hard_unstuck']], '1', 'HCNotEmpty'],
-    ['Change selected Group Icons', [7], '#USER:pl_change_icon_menu', -5, [['expression', '']], '1', 'HCNotEmpty']
+    ['Reset Group', [7], '', -5, [['expression', '[(hcSelected player) select 0] spawn pl_reset_group']], '1', 'HCNotEmpty'],
+    ['Hard Unstuck Group', [8], '', -5, [['expression', '[(hcSelected player) select 0] call pl_hard_unstuck']], '1', 'HCNotEmpty'],
+    ['Change selected Group Icons', [9], '#USER:pl_change_icon_menu', -5, [['expression', '']], '1', 'HCNotEmpty']
 ];

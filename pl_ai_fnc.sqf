@@ -350,13 +350,17 @@ pl_set_up_ai = {
     _group setVariable ["pl_hold_fire", false];
     _group setVariable ["pl_killed_units", []];
     _groupComposition = [];
-    {
-        _type = typeOf _x;
-        _loadout = getUnitLoadout _x;
-        _groupComposition pushBack [_x, _type, _loadout];
-    } forEach (units _group);
 
-    _group setVariable ["pl_group_comp", _groupComposition];
+    if !(_group getVariable ["pl_is_reset", false]) then {
+        {
+            _type = typeOf _x;
+            _loadout = getUnitLoadout _x;
+            _groupComposition pushBack [_x, _type, _loadout];
+        } forEach (units _group);
+
+        _group setVariable ["pl_group_comp", _groupComposition];
+    };
+    
     _group allowFleeing 0;
 
     [_group] call pl_ammo_bearer;
@@ -661,19 +665,22 @@ pl_reset_group = {
     } forEach (units _group);
 
     _groupId = groupId _group;
+    _groupComp = _group getVariable "pl_group_comp";
+    _newGroup = createGroup playerside;
+    _newGroup setVariable ["pl_is_reset", true];
 
     sleep 1.5;
 
-    _newGroup = createGroup playerside;
     { 
         [_x] joinSilent _newGroup;
     } forEach (units _group);
 
     [_newGroup] spawn pl_set_up_ai;
+    _newGroup setVariable ["pl_group_comp", _groupComp];
     deleteGroup _group;
 
     _newGroup setGroupId [_groupId];
-    player hcSetGroup [_newGroup]
+    player hcSetGroup [_newGroup];
 };
 
 
@@ -733,14 +740,8 @@ pl_spawn_hard_reset = {
         {
             [_x] call pl_hard_reset;
         } forEach (units _x);
-        {
-            _type = typeOf _x;
-            _loadout = getUnitLoadout _x;
-            _groupComposition pushBack [_x, _type, _loadout];
-        } forEach (units _x);
+        
     } forEach hcSelected player;
-
-    _group setVariable ["pl_group_comp", _groupComposition];
 };
 
 pl_ch_vehicle_dir = {

@@ -274,7 +274,7 @@ pl_take_position = {
     private ["_markerName", "_isStatic", "_staticMarkerName", "_cords", "_watchDir", "_watchPos", "_offSet", "_moveDir", "_medic", "_medicPos", "_icon"];
     // _group = hcSelected player select 0;
 
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
     if (visibleMap) then {
         hintSilent "";
 
@@ -354,7 +354,7 @@ pl_take_position = {
             // add Arrow indicator
             pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false])};
 
             // remove Arrow indicator
             pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
@@ -588,7 +588,7 @@ pl_defend_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
     private ["_watchDir", "_cords", "_watchPos", "_markerAreaName", "_markerDirName", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon"];
     
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa";
 
@@ -603,7 +603,7 @@ pl_defend_position = {
     if (visibleMap) then {
         hintSilent "";
 
-        pl_garrison_area_size = 15;
+        pl_garrison_area_size = 25;
         pl_360_area = false;
         _message = "Select Area <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br /> <t size='0.8' align='left'>-> W/S</t><t size='0.8' align='right'>Increase/Decrease Size</t>";
         hint parseText _message;
@@ -664,12 +664,12 @@ pl_defend_position = {
             // add Arrow indicator
             pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false])};
 
             // remove Arrow indicator
             pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
-            if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true};
+            if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
             _group setVariable ["pl_task_planed", false];
         };
 

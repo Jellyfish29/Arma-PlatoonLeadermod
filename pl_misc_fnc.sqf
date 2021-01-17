@@ -149,7 +149,7 @@ pl_reset = {
     };
 
     // reenable map info
-    _group setVariable ["pl_show_info", true];
+    // _group setVariable ["pl_show_info", true];
     // reset convoc indicator
     _group setVariable ["pl_draw_convoy", false];
 
@@ -164,6 +164,22 @@ pl_reset = {
             _group setVariable ["setSpecial", true];
             _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
         };
+
+        // cancel planend tasks for loaded inf groups
+        _cargo = fullCrew [_vic, "cargo", false];
+        _cargoGroups = [];
+        {
+            _unit = _x select 0;
+            if !(_unit in (units _group)) then {
+                _cargoGroups pushBack (group (_x select 0));
+            };
+        } forEach _cargo;
+
+        {
+            [_x] spawn pl_reset;
+            _x setVariable ["pl_unload_task_planed", false];
+        } forEach _cargoGroups;
+
     };
 
     // stop suppression
@@ -271,10 +287,10 @@ pl_task_planer = {
     _group = _wp select 0;
     
     // if Task already planed exit
-    if (_group getVariable "pl_task_planed") exitWith {hint format ["%1 already has a Task planed", groupId _group]};
+    if (_group getVariable ["pl_task_planed", false]) exitWith {hint format ["%1 already has a Task planed", groupId _group]};
 
     // if already on active Task exit
-    if (_group getVariable "onTask" and !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa")) exitWith {hint format ["%1 already has a Task", groupId _group]};
+    if (_group getVariable ["onTask", false] and !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa")) exitWith {hint format ["%1 already has a Task", groupId _group]};
 
     // delete following wps
     for "_i" from count waypoints _group - 1 to (_wp select 1) + 1 step -1 do {
@@ -289,12 +305,73 @@ pl_task_planer = {
         case "assault" : {[_group, _wp] spawn pl_assault_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
         case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "defPos" : {[_group, _wp] spawn pl_take_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "resupply" : {[_wp] spawn pl_supply_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
+        case "resupply" : {[_group, _wp] spawn pl_supply_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
         case "recover" : {[_group, _wp] spawn pl_repair; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
         case "maintenance" : {[_group, _wp] spawn pl_maintenance_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
         case "mine" : {[_group, _wp] spawn pl_lay_mine_field; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
         case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         case "unload" : {[_group, _wp] spawn pl_unload_at_position_planed; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
+        default {}; 
+    };
+
+    // add indicator
+    pl_draw_planed_task_array pushBack [_wp, _icon];
+
+    // waituntil wp reached then delete indicator
+    [_wp, _group, _icon] spawn {
+        params ["_wp", "_group", "_icon"];
+        waitUntil {sleep 1; !(_group getVariable ["pl_task_planed", true])};
+        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+    };
+};
+
+pl_draw_unload_inf_task_plan_icon_array = [];
+
+pl_unload_inf_follow_up_plan = {
+    params ["_group", "_cords"];
+    
+    waitUntil {inputAction 'zoomTemp' <= 0};
+
+    sleep 0.2;
+
+    missionNamespace setVariable ["pl_unload_inf_group_array", [_group, _cords]];
+    showCommandingMenu '#USER:pl_task_plan_menu_unloaded_inf';
+
+    sleep 0.2;
+
+    waitUntil {!(commandingMenu == '#USER:pl_task_plan_menu_unloaded_inf')};
+
+    sleep 0.2;
+
+    if !(_group getVariable ["pl_task_planed", false]) then {
+        pl_draw_unload_inf_task_plan_icon_array pushBack [_group, _cords];
+    };
+
+};
+
+pl_task_planer_unload_inf = {
+    // plan Task to be executed when reaching a Waypoint
+    params ["_taskType"];
+    private ["_group", "_wp", "_icon"];
+
+    // get _wp and _group
+    _group = (missionNamespace getVariable "pl_unload_inf_group_array")#0;
+    _cords = (missionNamespace getVariable "pl_unload_inf_group_array")#1;
+    _wp = _group addWaypoint [_cords, 0];
+
+    sleep 0.2;
+
+    // set Variable
+    _group setVariable ["pl_task_planed", true];
+    _group setVariable ["pl_unload_task_planed", true];
+
+    // call task to be executed
+    switch (_taskType) do { 
+        case "assault" : {[_group, _wp] spawn pl_assault_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
+        case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "defPos" : {[_group, _wp] spawn pl_take_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "mine" : {[_group, _wp] spawn pl_lay_mine_field; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         default {}; 
     };
 
@@ -317,6 +394,24 @@ pl_cancel_planed_task = {
     if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan cancel Task!"};
     _group = _wp select 0;
     _group setVariable ["pl_task_planed", false];
+
+
+    if (vehicle (leader _group) != leader _group) then {
+        _vic = vehicle (leader _group);
+        _cargo = fullCrew [_vic, "cargo", false];
+        _cargoGroups = [];
+        {
+            _unit = _x select 0;
+            if !(_unit in (units _group)) then {
+                _cargoGroups pushBack (group (_x select 0));
+            };
+        } forEach _cargo;
+
+        {
+            [_x] spawn pl_reset;
+            _x setVariable ["pl_unload_task_planed", false];
+        } forEach _cargoGroups;
+    };
 };
 
 pl_angle_switcher = {
@@ -545,7 +640,7 @@ pl_march = {
         } forEach (units _group);
         (leader _group) limitSpeed 14;
         _f = formation _group;
-        _group setFormation "FILE";
+        // _group setFormation "FILE";
         _group setBehaviour "AWARE";
         if ((vehicle (leader _group)) != (leader _group)) then {
             _group setBehaviour "SAFE";
@@ -900,7 +995,7 @@ pl_move_as_formation = {
 
     _syncWps = [_syncWps, [], {(waypointPosition _x) distance2D (waypointPosition _lWp)}, "ASCEND"] call BIS_fnc_sortBy;
 
-    pl_draw_sync_wp_array pushBack _syncWps;
+    // pl_draw_sync_wp_array pushBack _syncWps;
 
     if (inputAction "curatorGroupMod" > 0) exitWith {sleep 0.4; [_groups] spawn pl_move_as_formation};
     pl_draw_formation_mouse = false;

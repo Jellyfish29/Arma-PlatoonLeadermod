@@ -1,308 +1,301 @@
-pl_not_reachable_escape = {
-    params ["_unit", "_pos", "_area"];
+pl_unload_at_position_planed = {
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
 
-    sleep 2;
+    if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task!"};
 
-    if ((currentCommand _unit) isEqualTo "MOVE" and (speed _unit) == 0) exitWith {
-        _movePos = [[[_pos, _area * 1.1]],["water"]] call BIS_fnc_randomPos;
-        _movePos = _movePos findEmptyPosition [0, 10, typeOf _unit];
-        doStop _unit;
-        _unit doMove _movePos;
-        _unit setDestination [_movePos, "LEADER PLANNED", true];
-        false
-    };
-    true
-};
+    _vic = vehicle (leader _group);
+    _driver = driver _vic;
+    _vicGroup = group _driver;
+    _cargo = fullCrew [_vic, "cargo", false];
 
-
-pl_assault_position = {
-    params ["_group", ["_taskPlanWp", []]];
-    private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_attackMode", "_fastAtk", "_tacticalAtk"];
-
-    pl_sweep_area_size = 35;
-
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
-
-    _markerName = format ["%1sweeper%2", _group, random 1];
-    createMarker [_markerName, [0,0,0]];
-    _markerName setMarkerShape "ELLIPSE";
-    _markerName setMarkerBrush "SolidBorder";
-    _markerName setMarkerColor "colorYellow";
-    _markerName setMarkerAlpha 0.2;
-    _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
-    if (visibleMap) then {
-        _message = "Select Assault Location <br /><br />
-            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>In Foramtion</t> <br />
-            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>TACTICAL</t> <br />
-            <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>FAST</t> <br />
-            <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
-        hint parseText _message;
-        onMapSingleClick {
-            pl_sweep_cords = _pos;
-            // if (_shift) then {pl_cancel_strike = true};
-            pl_attack_mode = "normal";
-            if (_shift) then {pl_attack_mode = "tactical"};
-            if (_alt) then {pl_attack_mode = "fast"};
-            pl_mapClicked = true;
-            hintSilent "";
-            onMapSingleClick "";
-        };
-        while {!pl_mapClicked} do {
-            // sleep 0.1;
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            _markerName setMarkerPos _mPos;
-            if (inputAction "MoveForward" > 0) then {pl_sweep_area_size = pl_sweep_area_size + 5; sleep 0.1};
-            if (inputAction "MoveBack" > 0) then {pl_sweep_area_size = pl_sweep_area_size - 5; sleep 0.1};
-            _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
-            if (pl_sweep_area_size >= 80) then {pl_sweep_area_size = 80};
-            if (pl_sweep_area_size <= 5) then {pl_sweep_area_size = 5};
-
-        };
-        pl_mapClicked = false;
-        _cords = pl_sweep_cords;
-    }
-    else
+    _cargoGroups = [];
     {
-        _building = cursorTarget;
-        if !(isNil "_building") then {
-            _cords = getPos _building;
-        }
-        else
-        {
-            _cords = screenToWorld [0.5,0.5];
+        _unit = _x select 0;
+        if !(_unit in (units _vicGroup)) then {
+            _cargoGroups pushBack (group (_x select 0));
         };
-    };
+    } forEach _cargo;
 
-    _attackMode = pl_attack_mode;
-    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa";
+    _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
+
+    if (_cargoGroups isEqualTo []) exitWith {hint "No Cargo to Unload"};
 
     if (count _taskPlanWp != 0) then {
 
-        // add Arrow indicator
-        pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+        pl_draw_unload_inf_task_plan_icon_array pushBack [_cargoGroups#0, waypointPosition _taskPlanWp];
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
 
-        // remove Arrow indicator
-        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+        deleteWaypoint [_group, _taskPlanWp#1];
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
-
-    _arrowDir = (leader _group) getDir _cords;
-    _arrowDis = ((leader _group) distance2D _cords) / 2;
-    _arrowPos = [_arrowDis * (sin _arrowDir), _arrowDis * (cos _arrowDir), 0] vectorAdd (getPos (leader _group));
-
-    _arrowMarkerName = format ["%1arrow%2", _group, random 1];
-    createMarker [_arrowMarkerName, _arrowPos];
-    _arrowMarkerName setMarkerType "mil_Arrow";
-    // _arrowMarkerName setMarkerAlpha 0.8;
-    // _arrowMarkerName setMarkerSize [1.3, 1.3];
-    _arrowMarkerName setMarkerDir _arrowDir;
-    _arrowText = "";
-    _arrowColor = "colorYellow";
-    switch (_attackMode) do { 
-        case "tactical" : {_arrowText = "T"; _arrowColor = "colorGreen"}; 
-        case "fast" : {_arrowText = "F"; _arrowColor = "colorRed"}; 
-        default {_arrowText = ""; _arrowColor = "colorYellow"}; 
-    };
-    _arrowMarkerName setMarkerColor _arrowColor;
-    _arrowMarkerName setMarkerText _arrowText;
-
-    [_group] call pl_reset;
-    sleep 0.2;
-    
-    playsound "beep";
-
-    _group setVariable ["onTask", true];
-    _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", _icon];
-
-    (leader _group) limitSpeed 15;
-
-    _markerName setMarkerPos _cords;
+    doStop _vic;
+    {
+        _unit = _x select 0;
+        if !(_unit in (units _vicGroup)) then {
+            unassignVehicle _unit;
+            doGetOut _unit;
+            [_unit] allowGetIn false;
+        };
+    } forEach _cargo;
 
     {
-        _x disableAI "AUTOCOMBAT";
-        _x setVariable ["pl_damage_reduction", true];
-    } forEach (units _group);
+        [_x] call pl_show_group_icon;
+        _x leaveVehicle _vic;
+    } forEach _cargoGroups;
 
+    playSound "beep";
+    // _commander sideChat format ["Roger, %1 beginning unloading, over", groupId _group];
+    waitUntil {sleep 0.1; ((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
+    playSound "beep";
+    // _commander sideChat format ["%1 finished unloading, over", groupId _group];
+    _vic setVariable ["pl_on_transport", nil];
+    (group (driver _vic)) setVariable ["setSpecial", false];
+    _vic doFollow _vic;
+};
+
+pl_draw_unload_inf_task_plan_icon_array = [];
+
+pl_unload_inf_follow_up_plan = {
+    params ["_group", "_cords"];
+    
+    waitUntil {inputAction 'zoomTemp' <= 0};
+
+    sleep 0.2;
+
+    missionNamespace setVariable ["pl_unload_inf_group_array", [_group, _cords]];
+    showCommandingMenu '#USER:pl_task_plan_menu_unloaded_inf';
+
+    sleep 0.2;
+
+    waitUntil {!(commandingMenu == '#USER:pl_task_plan_menu_unloaded_inf')};
+
+    sleep 0.2;
+
+    if !(_group getVariable ["pl_task_planed", false]) then {
+        pl_draw_unload_inf_task_plan_icon_array pushBack [_group, _cords];
+    };
+
+};
+
+
+pl_draw_unload_inf_task_plan_icon = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                _pos = [0, 15, 0] vectorAdd (_x#1);
+                _color = [0.9,0.9,0,1];
+                _display drawIcon [
+                    '\A3\ui_f\data\map\markers\nato\b_inf.paa',
+                    _color,
+                    _pos,
+                    15,
+                    15,
+                    0,
+                    '',
+                    2
+                ];
+
+                _mpos = _display ctrlMapScreenToWorld getMousePosition;
+                if (inputAction 'zoomTemp' > 0 and (_mpos distance2D _pos) < 15) then {
+                    pl_draw_unload_inf_task_plan_icon_array = pl_draw_unload_inf_task_plan_icon_array - [[_x#0, _x#1]];
+                    [_x#0, _x#1] spawn pl_unload_inf_follow_up_plan;
+                };
+
+            } forEach pl_draw_unload_inf_task_plan_icon_array;
+    "]; // "
+};
+
+[] call pl_draw_unload_inf_task_plan_icon;
+
+pl_task_plan_menu_unloaded_inf = [
+    ['Task Plan', true],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>", [4], '', -5, [['expression', '["defPos"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [6], '', -5, [['expression', '["mine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [7], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1']
+];
+
+
+pl_task_planer_unload_inf = {
+    // plan Task to be executed when reaching a Waypoint
+    params ["_taskType"];
+    private ["_group", "_wp", "_icon"];
+
+    // get _wp and _group
+    _group = (missionNamespace getVariable "pl_unload_inf_group_array")#0;
+    _cords = (missionNamespace getVariable "pl_unload_inf_group_array")#1;
     _wp = _group addWaypoint [_cords, 0];
 
+    sleep 0.2;
+
+    // set Variable
+    _group setVariable ["pl_task_planed", true];
+    _group setVariable ["pl_unload_task_planed", true];
+
+    // call task to be executed
+    switch (_taskType) do { 
+        case "assault" : {[_group, _wp] spawn pl_assault_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
+        case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "defPos" : {[_group, _wp] spawn pl_take_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "mine" : {[_group, _wp] spawn pl_lay_mine_field; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
+        default {}; 
+    };
+
+    // add indicator
     pl_draw_planed_task_array pushBack [_wp, _icon];
 
-    _fastAtk = false;
-    _tacticalAtk = false;
-    switch (_attackMode) do { 
-        case "normal" : {
-            (leader _group) limitSpeed 12;
-            {
-                _x disableAI "AUTOCOMBAT";
-                // _x disableAI "FSM";
-            } forEach (units _group);
-            // (leader _group) setDestination [_cords, "LEADER DIRECT", true];
-        }; 
-        case "tactical" : {_tacticalAtk = true;}; 
-        case "fast" : {_fastAtk = true; _group setSpeedMode "FULL";};
-        default {leader _group limitSpeed 12;}; 
-    };
-
-    _formation = formation _group;
-    _group setFormation "LINE";
-    _group setBehaviour "AWARE";
-    // _group setCombatMode "RED";
-    // _group setVariable ["pl_combat_mode", true];
-
-    // fast attack setup
-    if (_fastAtk) then {
-        _atkDir = (leader _group) getDir _cords;
-        _offset = pl_sweep_area_size - (pl_sweep_area_size * 1.5);
-        _increment = pl_sweep_area_size / (count (units _group));
-        {   
-            _rPos = [pl_sweep_area_size * (sin (_atkDir - 180)), pl_sweep_area_size * (cos (_atkDir - 180)), 0] vectorAdd _cords;
-            _pos = [_offset * (sin (_atkDir - 90)), _offset * (cos (_atkDir - 90)), 0] vectorAdd _rPos;
-            _pos = _pos findEmptyPosition [0, 15, typeOf _x];
-            _offset = _offset + _increment;
-            _x setUnitPos "UP";
-            // _group setCombatMode "RED";
-            // _group setVariable ["pl_combat_mode", true];
-            [_x, _pos, _cords, _atkDir, 45] spawn pl_bounding_move;
-        } forEach (units _group);
-    };
-
-    if (_tacticalAtk) then {
-        {
-            _pos = _cords findEmptyPosition [0, pl_sweep_area_size, typeOf _x];
-
-            [_x, _pos] spawn {
-                params ["_unit", "_pos"];
-                _unit limitSpeed 12;
-                _unit disableAI "AUTOCOMBAT";
-                // _unit forceSpeed 12;
-                _unit doMove _pos;
-                _unit setDestination [_pos, "FORMATION PLANNED", false];
-                _reachable = [_unit, _pos, 20] call pl_not_reachable_escape;
-                // _unit forceSpeed 12;
-                // waitUntil {!(alive _unit) or (unitReady _unit) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
-                // doStop _unit;
-            };
-        } forEach (units _group);
-    };
-
-
-    _area = pl_sweep_area_size;
-    
-    // waitUntil {(((leader _group) distance _cords) < (pl_sweep_area_size + 10)) or !(_group getVariable ["onTask", true])};
-    waitUntil {(({(_x distance _cords) < (_area + 10)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
-
-    // leader _group limitSpeed 200;
-    // _group setSpeedMode "NORMAL";
-
-    if (!(_group getVariable ["onTask", true])) exitWith {
-        deleteMarker _markerName;
-        deleteMarker _arrowMarkerName;
+    // waituntil wp reached then delete indicator
+    [_wp, _group, _icon] spawn {
+        params ["_wp", "_group", "_icon"];
+        waitUntil {sleep 1; !(_group getVariable ["pl_task_planed", true])};
         pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
-        {
-            _x setVariable ["pl_damage_reduction", false];
-        } forEach (units _group);
     };
+};
 
-    _targets = [];
-    _allMen = _cords nearObjects ["Man", _area];
+
+
+
+
+
+pl_reset = {
+    params ["_group", ["_isNotWp", true]];
+    // resets and stops Group
+
+    // reset individual units variables
     {
-        _targets pushBack _x;
-    } forEach (_allMen select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
-    _targets = [_targets, [], {(leader _group) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy;
-
-    [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
-    sleep 0.1;
-    for "_i" from count waypoints _group - 1 to 0 step -1 do {
-        deleteWaypoint [_group, _i];
-    };
-    
-    if ((count _targets) == 0) then {
-        {
-            _pos = [_cords, 1, _area, 0, 0, 0, 0] call BIS_fnc_findSafePos;
-            _x doMove _pos;
-            _x setDestination [_pos, "FORMATION PLANNED", false];
-        } forEach (units _group);
-        // _group setCombatMode "RED";
-        // _group setVariable ["pl_combat_mode", true];
-        _time = time + 20;
-        waitUntil {!(_group getVariable ["onTask", true]) or (time > _time)};
-        _group setCombatMode "YELLOW";
-        _group setVariable ["pl_combat_mode", false];
-    }
-    else
-    {
-        sleep 0.2;
-        missionNamespace setVariable [format ["targets_%1", _group], _targets];
-
-        {
-            _x enableAI "AUTOCOMBAT";
-            _x enableAI "FSM";
-            _x forceSpeed 12;
-            [_x, _group] spawn {
-                params ["_unit", "_group"];
-                private ["_movePos", "_target"];
-
-                while {(count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {
-                    _target = selectRandom (missionNamespace getVariable format ["targets_%1", _group]);
-                    if (alive _target) then {
-                        _pos = getPosATL _target;
-                        _movePos = _pos vectorAdd [0.5 - random 1, 0.5 - random 1, 0];
-                        _unit limitSpeed 15;
-                        _unit doMove _movePos;
-                        _unit setDestination [_movePos, "FORMATION PLANNED", false];
-                        _reachable = [_unit, _movePos, 20] call pl_not_reachable_escape;
-
-
-                        while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and _reachable} do {
-                            // _enemy = _unit findNearestEnemy _unit;
-                            // if ((_unit distance2D _enemy) < 7) then {
-                            //     _unit doTarget _enemy;
-                            //     _unit doFire _enemy;
-                            // };
-                            sleep 0.5;
-                        };
-                        if (!alive  _target) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
-                    };
-                    if ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) exitWith {};
-                };
-            };
-        } forEach (units _group);
-
-        waitUntil {!(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
-    };
-
-
-    deleteMarker _markerName;
-    deleteMarker _arrowMarkerName;
-    missionNamespace setVariable [format ["targets_%1", _group], nil];
-    _group setFormation _formation;
-
-    // remove Icon form wp
-    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
-    {
-        _x setVariable ["pl_damage_reduction", false];
-        _x limitSpeed 5000;
-        _x forceSpeed -1;
-    } forEach (units _group);
-    _group setCombatMode "YELLOW";
-    _group setVariable ["pl_combat_mode", false];
-    sleep 1;
-    if (_group getVariable ["onTask", true]) then {
-        [_group] call pl_reset;
-        playsound "beep";
-        (leader _group) sideChat format ["%1 Assault complete", (groupId _group)];
-        if (_tacticalAtk or _fastAtk) then {
-            {
-                [_x, getPos _x, getDir _x, 15, true] spawn pl_find_cover;
-            } forEach (units _group);
+        _unit = _x;
+        if ((currentCommand _unit) isEqualTo "SUPPORT") then {
+            [_unit] spawn pl_hard_reset;
         };
+        if !(_group getVariable ["pl_on_hold", false]) then {_unit enableAI "PATH"};
+        _unit enableAI "AUTOCOMBAT";
+        _unit enableAI "AUTOTARGET";
+        _unit enableAI "TARGET";
+        _unit enableAI "SUPPRESSION";
+        _unit enableAI "COVER";
+        _unit enableAI "ANIM";
+        _unit enableAI "FSM";
+        _unit setUnitPos "AUTO";
+        // sleep 0.5;
+        _unit limitSpeed 5000;
+        _unit forceSpeed -1;
+        _unit doWatch objNull;
+        if (vehicle _unit == _unit) then {
+            _unit doFollow (leader _group);
+        };
+    } forEach (units _group);
+    
+    // rejoin group hack
+    _leader = leader _group;
+    (units _group) joinSilent _group;
+    _group selectLeader _leader;
+
+    // if player group select player as leader
+    if (_group isEqualTo (group player)) then {
+        _group selectLeader player;
+    };
+
+    // reset Healing
+    // _group setVariable ["pl_healing_active", nil];
+
+    // if group is not leading a formation reset Task
+    if !(!(_isNotWp) and (_group getVariable ["pl_formation_leader", false])) then {
+
+        _group setVariable ["onTask", false];
+
+        // if group is not transporting Infantry reset special Icon
+        if !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa") then {
+            if !(_group getVariable ["pl_on_hold", false]) then {
+                _group setVariable ["setSpecial", false];
+            };
+        };
+    };
+
+    // reenable map info
+    // _group setVariable ["pl_show_info", true];
+    // reset convoc indicator
+    _group setVariable ["pl_draw_convoy", false];
+
+    // cancel planed Task
+    _group setVariable ["pl_task_planed", false];
+
+    if (vehicle (leader _group) != leader _group) then {
+        _vic = vehicle (leader _group);
+        _vic forceSpeed -1;
+        if (_vic getVariable ["pl_on_transport", false]) then {
+            _vic setVariable ["pl_on_transport", nil];
+            _group setVariable ["setSpecial", true];
+            _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+        };
+
+        // cancel planend tasks for loaded inf groups
+        _cargo = fullCrew [_vic, "cargo", false];
+        _cargoGroups = [];
+        {
+            _unit = _x select 0;
+            if !(_unit in (units _group)) then {
+                _cargoGroups pushBack (group (_x select 0));
+            };
+        } forEach _cargo;
+
+        {
+            [_x] spawn pl_reset;
+        } forEach _cargoGroups;
+
+    };
+
+    // stop suppression
+
+    if (_group getVariable ["pl_is_suppressing", false]) then {_group setVariable ["pl_is_suppressing", false]};
+
+    // only delete Waypoints when not called from Move or MoveAdd
+    if (_isNotWp) then {
+        _group setSpeedMode "NORMAL";
+        _group setBehaviour "AWARE";
+        [_group, (currentWaypoint _group)] setWaypointType "MOVE";
+        [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
+        sleep 0.1;
+        deleteWaypoint [_group, (currentWaypoint _group)];
+        for "_i" from count waypoints _group - 1 to 0 step -1 do {
+            deleteWaypoint [_group, _i];
+        };
+    };
+};
+
+
+pl_cancel_planed_task = {
+    // cancels planed Task
+
+    _logic = player getvariable "BIS_HC_scope";
+    _wp = _logic getvariable "WPover";
+    if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan cancel Task!"};
+    _group = _wp select 0;
+    _group setVariable ["pl_task_planed", false];
+
+
+    if (vehicle (leader _group) != leader _group) then {
+        _vic = vehicle (leader _group);
+        _cargo = fullCrew [_vic, "cargo", false];
+        _cargoGroups = [];
+        {
+            _unit = _x select 0;
+            if !(_unit in (units _group)) then {
+                _cargoGroups pushBack (group (_x select 0));
+            };
+        } forEach _cargo;
+
+        {
+            [_x] spawn pl_reset;
+        } forEach _cargoGroups;
     };
 };

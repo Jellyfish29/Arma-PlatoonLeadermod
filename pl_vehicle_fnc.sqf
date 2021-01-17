@@ -458,10 +458,13 @@ pl_getOut_vehicle = {
                                     _distanceBack = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition + 1));
                                     if (_distanceBack > 90) then {
                                         _vic forceSpeed 0;
-                                        if (speed (vehicle (leader (_convoyArray select (_convoyPosition + 1)))) == 0) then {
-                                            sleep 6;
-                                            if (speed (vehicle (leader (_convoyArray select (_convoyPosition + 1)))) == 0) then {
-                                                [_convoyArray select (_convoyPosition + 1)] call pl_vehicle_soft_unstuck;
+                                    }
+                                    else
+                                    {
+                                        if ((speed _vic) == 0) then {
+                                            sleep 5;
+                                            if ((speed _vic) == 0) then {
+                                                [_group] call pl_vehicle_soft_unstuck;
                                             };
                                         };
                                     };
@@ -480,17 +483,14 @@ pl_getOut_vehicle = {
                                 };
                                 if (_distance > 90) then {
                                     _vic forceSpeed 0;
-                                    if (speed (vehicle (leader (_convoyArray select 1))) == 0) then {
-                                        sleep 6;
-                                        if (speed (vehicle (leader (_convoyArray select 1))) == 0) then {
-                                            [_convoyArray select (_convoyPosition + 1)] call pl_vehicle_soft_unstuck;
-                                        };
-                                    };
-                                };
-                                if ((speed _vic) == 0) then {
-                                    sleep 5;
+                                }
+                                else
+                                {
                                     if ((speed _vic) == 0) then {
-                                        [_group] call pl_vehicle_soft_unstuck;
+                                        sleep 5;
+                                        if ((speed _vic) == 0) then {
+                                            [_group] call pl_vehicle_soft_unstuck;
+                                        };
                                     };
                                 };
                             };
@@ -519,7 +519,9 @@ pl_getOut_vehicle = {
                                         sleep 0.1;
                                         driver (vehicle (player)) doFollow player;
                                     };
-                                    player hcSetGroup [_x];
+                                    // player hcSetGroup [_x];
+                                    [_x] call pl_show_group_icon;
+                                    _x leaveVehicle _vic;
                                 } forEach _cargoGroups;
                             };
                         };
@@ -558,6 +560,8 @@ pl_getOut_vehicle = {
                         waitUntil {((leader _group) distance2D waypointPosition[(group _commander), currentWaypoint (group _commander)] < 30) or (!alive _vic)};
                         // remnove wp task icon
                         pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+
+                        deleteWaypoint [_group, _wp#1];
 
                         sleep 0.5;
                         if (_vic getVariable ["pl_on_transport", false]) then {
@@ -699,7 +703,28 @@ pl_getOut_vehicle = {
 pl_unload_at_position_planed = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
 
+    if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task!"};
+
+    _vic = vehicle (leader _group);
+    _driver = driver _vic;
+    _vicGroup = group _driver;
+    _cargo = fullCrew [_vic, "cargo", false];
+
+    _cargoGroups = [];
+    {
+        _unit = _x select 0;
+        if !(_unit in (units _vicGroup)) then {
+            _cargoGroups pushBack (group (_x select 0));
+        };
+    } forEach _cargo;
+
+    _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
+
+    if (_cargoGroups isEqualTo []) exitWith {hint "No Cargo to Unload"};
+
     if (count _taskPlanWp != 0) then {
+
+        pl_draw_unload_inf_task_plan_icon_array pushBack [_cargoGroups#0, waypointPosition _taskPlanWp];
 
         waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
 
@@ -711,30 +736,19 @@ pl_unload_at_position_planed = {
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
-    _vic = vehicle (leader _group);
-    _driver = driver _vic;
-    _vicGroup = group _driver;
     doStop _vic;
-    _cargo = fullCrew [_vic, "cargo", false];
-    _cargoGroups = [];
     {
         _unit = _x select 0;
         if !(_unit in (units _vicGroup)) then {
             unassignVehicle _unit;
             doGetOut _unit;
             [_unit] allowGetIn false;
-            _cargoGroups pushBack (group (_x select 0));
         };
     } forEach _cargo;
 
-    _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
     {
-        // _x leaveVehicle _vic;
-        // _x setVariable ["pl_show_info", true];
-        // player hcSetGroup [_x];
         [_x] call pl_show_group_icon;
         _x leaveVehicle _vic;
-        // _x addWaypoint [getPos _vic, 10];
     } forEach _cargoGroups;
 
     playSound "beep";
@@ -947,6 +961,20 @@ pl_leave_vehicle = {
 
     if (isNull _vic) exitWith {hint "Group is not crewing a Vehicle!"};
 
+    _cargo = fullCrew [_vic, "cargo", false];
+    _cargoGroups = [];
+    {
+        _unit = _x select 0;
+        if !(_unit in (units _group)) then {
+            _cargoGroups pushBackUnique (group (_x select 0));
+        };
+    } forEach _cargo;
+
+    {
+        [_x] call pl_show_group_icon;
+        _x leaveVehicle _vic;
+    } forEach _cargoGroups;
+
     if ((driver _vic) in (units _group)) then {
         pl_left_vehicles pushBack [_vic, _group];
         _group setVariable ["pl_group_left_vehicle", _vic];
@@ -1121,7 +1149,7 @@ player addEventHandler ["GetInMan", {
     if (_vicGroup != (group player)) then {
         // _group setVariable ["pl_show_info", false];
         [_group] call pl_hide_group_icon;
-        player hcRemoveGroup _group;
+        // player hcRemoveGroup _group;
     };
 }];
 

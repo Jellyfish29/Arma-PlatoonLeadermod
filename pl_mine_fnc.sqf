@@ -254,7 +254,7 @@ pl_lay_mine_field = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
     private ["_group", "_exSpecialist", "_cords", "_areaMarker", "_watchDir", "_mineMarkers", "_neededMines", "_minePositions", "_usedMines", "_mineType", "_origPos", "_availableMines", "_text"];
 
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry Only Task!"};
+    if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry Only Task!"};
 
     if !(visibleMap) exitWith {hint "Open Map to lay Mine field"};
     _exSpecialist = {
@@ -370,12 +370,12 @@ pl_lay_mine_field = {
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false])};
 
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
-        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true};
+        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
 
@@ -498,7 +498,7 @@ pl_place_charge = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
     private ["_cords", "_exSpecialist", "_availableMines"];
 
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry Only Task!"};
+    if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry Only Task!"};
 
     _exSpecialist = {
         if (_x getUnitTrait "explosiveSpecialist" and ((_x getVariable ["pl_virtual_mines", 0]) > 0)) exitWith {_x};
@@ -536,18 +536,18 @@ pl_place_charge = {
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
-
+    
     if (count _taskPlanWp != 0) then {
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false])};
 
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
-        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true};
+        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
 

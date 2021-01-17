@@ -303,6 +303,7 @@ pl_repair = {
                 else
                 {
                     _repairTarget setDamage 0;
+                    _repairTarget setFuel 1;
                     _group setVariable ["onTask", false];
                     _group setVariable ["setSpecial", false];
                     // _group setVariable ["MARTA_customIcon", nil];
