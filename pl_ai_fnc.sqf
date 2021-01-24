@@ -206,7 +206,7 @@ pl_auto_crouch = {
     params ["_unit"];
     while {alive _unit} do {
         if ((behaviour _unit) isEqualTo "AWARE") then {
-            if !((group _unit) getVariable ["onTask", false]) then {
+            if (_unit checkAIFeature "PATH") then {
                 if ((speed _unit) == 0) then {
                     _unit setUnitPos "MIDDLE";
                     waitUntil {sleep 1; (speed _unit) > 0 or !(alive _unit)};

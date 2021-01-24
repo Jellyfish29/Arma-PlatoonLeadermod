@@ -855,6 +855,7 @@ pl_assault_position = {
                             (group _unit) setVariable ["pl_combat_mode", true];
                             // _unit disableAI "AUTOCOMBAT";
                             _unit reveal [_target, 4];
+                            // _unit doMove (getPos _target);
                             _unit doTarget _target;
                             _unit doFire _target;
                             while {(alive _unit) and (alive _target) and (count (crew _target) > 0) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and !((secondaryWeaponMagazine _unit) isEqualTo [])} do {
@@ -886,6 +887,12 @@ pl_assault_position = {
                                 sleep 0.5;
                             };
                             if (!alive  _target) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
+                        }
+                        else
+                        {
+                            if (({_x isKindOf "Man"} count (missionNamespace getVariable format ["targets_%1", _group])) <= 0) then {
+                                waitUntil {!((group _unit) getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
+                            };
                         };
                     };
 
@@ -916,13 +923,16 @@ pl_assault_position = {
     sleep 1;
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
+        sleep 1;
         playsound "beep";
         (leader _group) sideChat format ["%1 Assault complete", (groupId _group)];
         if (_tacticalAtk or _fastAtk) then {
             {
-                [_x, getPos _x, getDir _x, 15, true] spawn pl_find_cover;
+                [_x, getPos (leader _group), 30] spawn pl_find_cover_allways;
             } forEach (units _group);
         };
     };
 };
+
+
 

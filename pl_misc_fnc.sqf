@@ -429,14 +429,20 @@ pl_angle_switcher = {
 pl_watch_dir = {
     // order group to watch direction and vehicles to turn in direction
 
-    params ["_group"];
-    private ["_watchPos"];
+    params ["_group", ["_dir", ""]];
+    private ["_watchDir", "_watchPos"];
 
 
-    playSound "beep";
-    _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-    _groupPos = getPos (leader _group);
-    _watchDir = [_cords, _groupPos] call BIS_fnc_dirTo;
+    if (_dir isEqualTo "") then {
+        playSound "beep";
+        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        _groupPos = getPos (leader _group);
+        _watchDir = [_cords, _groupPos] call BIS_fnc_dirTo;
+    }
+    else
+    {
+        _watchDir = parseNumber _dir;
+    };
 
     _leader = leader _group;
         if (_leader == vehicle _leader) then {

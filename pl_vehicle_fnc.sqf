@@ -178,7 +178,7 @@ pl_getIn_vehicle = {
 
 pl_getOut_vehicle = {
     params ["_group", "_convoyId", "_moveInConvoy", ["_atPosition", false]];
-    private ["_vic", "_commander", "_markerName", "_cargo", "_cargoGroups", "_vicTransport", "_transportedVic", "_inLandConvoy", "_convoyLeader", "_convoyArray", "_convoyPosition", "_watchPos"];
+    private ["_vic", "_commander", "_markerName", "_cargo", "_cargoGroups", "_vicTransport", "_transportedVic", "_inLandConvoy", "_convoyLeader", "_convoyArray", "_convoyPosition", "_watchPos", "_landigPad"];
 
     _leader = leader _group;
 
@@ -261,25 +261,32 @@ pl_getOut_vehicle = {
                     _c = [(missionNamespace getVariable _convoyId), [], {(leader _x) distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;
                     missionNamespace setVariable [_convoyId, _c];
 
-                    private _blacklistr1 = [];
-                    private _r2 = [_cords, 100,[]] call BIS_fnc_nearestRoad;
+                    if !(_vic isKindOf "Air") then {
+                        private _blacklistr1 = [];
+                        private _r2 = [_cords, 100,[]] call BIS_fnc_nearestRoad;
+                        {
+                            private _r1 = [(getPos (leader _x)), 100] call BIS_fnc_nearestRoad;
+                            if (_r1 in _blacklistr1) then {
+                                private _roads = getPos (leader _x) nearRoads 100;
+                                _roads = [_roads, [], {(getPos _x) distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;  
+                                _r1 = {
+                                    if !(_x in _blacklistr1) exitWith {_x};
+                                } forEach _roads;
+                            };
+                            _blacklistr1 pushback _r1;
+                            // player sideChat (str _r1);
+                            _pathCost = [_r1, _r2] call pl_convoy_parth_find;
+                            _x setVariable ["pl_path_cost", _pathCost];
+                            _x setVariable ["r1", _r1];
+                        } forEach (missionNamespace getVariable _convoyId);
+                        hint "Setting up Convoy...";
+                        playSound "beep";
+                    }
+                    else
                     {
-                        private _r1 = [(getPos (leader _x)), 100] call BIS_fnc_nearestRoad;
-                        if (_r1 in _blacklistr1) then {
-                            private _roads = getPos (leader _x) nearRoads 100;
-                            _roads = [_roads, [], {(getPos _x) distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;  
-                            _r1 = {
-                                if !(_x in _blacklistr1) exitWith {_x};
-                            } forEach _roads;
-                        };
-                        _blacklistr1 pushback _r1;
-                        // player sideChat (str _r1);
-                        _pathCost = [_r1, _r2] call pl_convoy_parth_find;
-                        _x setVariable ["pl_path_cost", _pathCost];
-                        _x setVariable ["r1", _r1];
-                    } forEach (missionNamespace getVariable _convoyId);
-                    hint "Setting up Convoy...";
-                    playSound "beep";
+                        hint "Setting up Flight...";
+                        playSound "beep";
+                    };
                 };
                 sleep 5;
                 hintSilent "";
@@ -355,6 +362,10 @@ pl_getOut_vehicle = {
 
             _wp = (group _commander) addWaypoint [_cords, 0];
             _wp setWaypointType "TR UNLOAD";
+            if (_vic isKindOf "Air") then {
+                _landigPad = "Land_HelipadEmpty_F" createVehicle _cords;
+                _landigPad setDir (_vic getDir _cords);
+            };
 
             // Create Destination Marker
             private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa";
@@ -392,20 +403,26 @@ pl_getOut_vehicle = {
                     // };
                     [_vic, 1] call pl_door_animation;
                     {
+                        // {
+                        //     _unit = _x;
+                        //     [_unit] orderGetIn false;
+                        //     [_unit] allowGetIn false;
+                        //     unassignVehicle _unit;
+                        // } forEach (units _x);
                         _x leaveVehicle _vic;
-                        player hcSetGroup [_x];
+                        // player hcSetGroup [_x];
                         // _x setVariable ["pl_show_info", true];
                         [_x] call pl_show_group_icon;
-                        _x leaveVehicle _vic;
                         if (_x != (group player)) then {
                             if ((_vic distance2D (_vic getVariable "pl_rtb_pos")) > 300) then {
-                                [_x, _vic] spawn pl_airassualt_security;
+                                // [_x, _vic] spawn pl_airassualt_security;
                             }
                             else
                             {
                                 _x addWaypoint [getPos _vic, 10];
                             };
                         };
+
                     } forEach _cargoGroups;
                 }
                 else
@@ -453,6 +470,7 @@ pl_getOut_vehicle = {
                                 };
                                 if (_distance < 20) then {
                                     _vic forceSpeed 0;
+                                    _vic limitSpeed 0;
                                 };
                                 if (_convoyPosition < ((count (_convoyArray)) - 1)) then {
                                     _distanceBack = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition + 1));
@@ -571,6 +589,7 @@ pl_getOut_vehicle = {
                                 if (_x select 1 isEqualTo "cargo") then {
                                     unassignVehicle _unit;
                                     doGetOut _unit;
+                                    (group _unit) leaveVehicle _vic;
                                     [_unit] allowGetIn false;
                                 };
                             } forEach _cargo;
@@ -634,6 +653,7 @@ pl_getOut_vehicle = {
 
             // Air Tranport Ariving
             if (_vic isKindOf "Air") then {
+                deleteVehicle _landigPad;
                 _rtbCords = _vic getVariable "pl_rtb_pos";
                 [_vic, 0] call pl_door_animation;
                 if ((_vic distance2D _rtbCords) < 300) exitWith {_vic engineOn false};
@@ -859,12 +879,6 @@ pl_door_animation = {
 
 pl_airassualt_security = {
     params ["_group", "_vic"];
-    _moveDir = [((getDir _vic) - 180)] call pl_angle_switcher;
-    _coverPos =  [65*(sin _moveDir), 65*(cos _moveDir), 0] vectorAdd (getPos (_vic));
-    _group addWaypoint [_coverPos, 7];
-    waitUntil {sleep 0.1; {_x in _vic} count (units _group) ==  0};
-    sleep 1;
-    [_group, 20] spawn pl_360_at_mappos;
 };
 
 pl_vehicle_speed_limit = {

@@ -298,7 +298,7 @@ pl_ccp = {
 
     // _group = hcSelected player select 0;
     // if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
-    if (pl_ccp_set) exitWith {hint "Only one CCP allowed!"};
+    if (pl_ccp_set and !(_isMedevac)) exitWith {hint "Only one CCP allowed!"};
 
     if (_group != (group player) and !(_isMedevac)) exitWith {
         // playSound "beep";
@@ -308,7 +308,10 @@ pl_ccp = {
 
     // _medic = ((units _group) select {(typeOf _x) in pl_medic_cls_names}) select 0;
     {
-        if (getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "attendant" ) isEqualTo 1) then {
+        // if (getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "attendant" ) isEqualTo 1) then {
+        //     _medic = _x;
+        // };
+        if (_x getUnitTrait "Medic") then {
             _medic = _x;
         };
     } forEach (units _group);

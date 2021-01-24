@@ -113,7 +113,7 @@ pl_crew_eject = {
     unassignVehicle (_unit);
     doGetOut (_unit);
     // group _unit setVariable ["pl_show_info", true];
-    [group _unit] call pl_show_group_icon;
+    if !(_group getVariable "pl_show_info") then {[group _unit] call pl_show_group_icon};
     group _unit setVariable ["onTask", false];
 };
 

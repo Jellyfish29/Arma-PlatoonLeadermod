@@ -84,12 +84,17 @@ pl_reworked_bis_unpack = {
 
     private _cfgBase = configFile >> "CfgVehicles" >> backpack _gunner >> "assembleInfo" >> "base";
     private _compatibleBases = if (isText _cfgBase) then {[getText _cfgBase]} else {getArray _cfgBase};
+    if (_compatibleBases isEqualTo [""]) then {_compatibleBases = []};
     private _assistant = 
     {   
-        private _xx = _x;
+        // private _xx = _x;
         
-        if ({unitBackpack _xx isKindOf _x} count _compatibleBases > 0) exitWith {_xx};
+        // if ({unitBackpack _xx isKindOf _x} count _compatibleBases > 0) exitWith {_xx};
         
+        // objNull
+        _cfgBaseAssistant = configFile >> "CfgVehicles" >> backpack _x >> "assembleInfo" >> "base";
+        _compatibleBasesAssistant = if (isText _cfgBaseAssistant) then {[getText _cfgBaseAssistant]} else {getArray _cfgBaseAssistant};
+        if ((backpack _x) in _compatibleBases || { (backpack _gunner) in _compatibleBasesAssistant}) exitWith {_x};
         objNull
     }
     forEach (_supportUnits - [_gunner]);
@@ -118,6 +123,7 @@ pl_reworked_bis_unpack = {
             _weapon setPosATL getPosATL _gunner;
 
         
+            [_gunner] allowGetIn true;
             _gunner assignAsGunner _weapon;
             _gunner moveInGunner _weapon;
             _gunner doWatch %3;

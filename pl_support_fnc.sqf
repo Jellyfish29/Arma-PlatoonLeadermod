@@ -118,7 +118,7 @@ pl_support_status = {
 
 pl_cas = {
     params ["_key"];
-    private ["_sortiesCost", "_cords", "_dir", "_support", "_type", "_plane", "_cs", "_markerName"];
+    private ["_sortiesCost", "_cords", "_dir", "_support", "_casType", "_plane", "_cs", "_markerName"];
 
     switch (_key) do { 
         case 1 : {_sortiesCost = 1}; 
@@ -159,8 +159,8 @@ pl_cas = {
         _cords = pl_cas_cords;
         _markerName = format ["cas%1", _key];
         createMarker [_markerName, _cords];
-        _markerName setMarkerType "mil_arrow";
-        _markerName setMarkerColor "colorBLUFOR";
+        _markerName setMarkerType "mil_arrow2";
+        _markerName setMarkerColor "colorRED";
         if (pl_cancel_strike) exitWith {};
 
         onMapSingleClick {
@@ -184,8 +184,8 @@ pl_cas = {
         _dir = player getDir _cords;
         _markerName = format ["cas%1", _key];
         createMarker [_markerName, _cords];
-        _markerName setMarkerType "mil_arrow";
-        _markerName setMarkerColor "colorBLUFOR";
+        _markerName setMarkerType "mil_arrow2";
+        _markerName setMarkerColor "colorRED";
         _markerName setMarkerDir _dir;
     };
 
@@ -193,10 +193,10 @@ pl_cas = {
     pl_sorties = pl_sorties - _sortiesCost;
 
     switch (_key) do { 
-        case 1 : {pl_gun_enabled = 0, _type = 0, _plane = pl_cas_plane_1, _cs = 'Viper 1'};
-        case 2 : {pl_gun_rocket_enabled = 0, _type = 2, _plane = pl_cas_plane_1, _cs = 'Viper 4'};
-        case 3 : {pl_cluster_enabled = 0,  _type = 3, _plane = pl_cas_plane_3, _cs = 'Black Knight 2'}; 
-        case 4 : {pl_jdam_enabled = 0,  _type = 3, _plane = pl_cas_plane_2, _cs = 'Stroke 3'};
+        case 1 : {pl_gun_enabled = 0, _casType = 0, _plane = pl_cas_plane_1, _cs = 'Viper 1'};
+        case 2 : {pl_gun_rocket_enabled = 0, _casType = 2, _plane = pl_cas_plane_1, _cs = 'Viper 4'};
+        case 3 : {pl_cluster_enabled = 0,  _casType = 3, _plane = pl_cas_plane_3, _cs = 'Black Knight 2'}; 
+        case 4 : {pl_jdam_enabled = 0,  _casType = 3, _plane = pl_cas_plane_2, _cs = 'Stroke 3'};
         default {sleep 0.1}; 
     };
     sleep 1;
@@ -204,7 +204,7 @@ pl_cas = {
     _support = _group createUnit ["ModuleCAS_F", _cords, [],0 , ""];
     
     _support setVariable ["vehicle", _plane];
-    _support setVariable ["type", _type];
+    _support setVariable ["type", _casType];
 
     playSound "beep";
     [playerSide, "HQ"] sideChat "Strike Aircraft on the Way!";
@@ -376,10 +376,10 @@ pl_fire_mortar = {
 
 
 pl_interdiction_cas = {
-    params ["_type"];
+    params ["_casType"];
     private ["_height", "_cd", "_dir", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
 
-    switch (_type) do { 
+    switch (_casType) do { 
         case 1 : {
             _height = 1500;
             _flyHeight = 200;
@@ -427,7 +427,7 @@ pl_interdiction_cas = {
             _groupId = "Angel 6";
             _evacHeight = 150;
             _onStationTime = 180;
-            _sadAreaSize = 200;
+            _sadAreaSize = 650;
             _wpType = "TR UNLOAD";
         };
         default {}; 
@@ -441,12 +441,12 @@ pl_interdiction_cas = {
         _message = "Select STRIKE Location <br /><br />
         <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
         hint parseText _message;
-        _areaMarkerName = format ["%1casarea", _type];
+        _areaMarkerName = format ["%1casarea", _casType];
         createMarker [_areaMarkerName, [0,0,0]];
         _areaMarkerName setMarkerShape "ELLIPSE";
-        _areaMarkerName setMarkerBrush "Vertical";
-        _areaMarkerName setMarkerColor "colorYellow";
-        _areaMarkerName setMarkerAlpha 0.5;
+        _areaMarkerName setMarkerBrush "SolidBorder";
+        _areaMarkerName setMarkerColor "ColorOrange";
+        _areaMarkerName setMarkerAlpha 0.4;
         _areaMarkerName setMarkerSize [_sadAreaSize, _sadAreaSize];
 
         onMapSingleClick {
@@ -469,10 +469,10 @@ pl_interdiction_cas = {
 
         sleep 0.1;
         _cords = pl_cas_cords;
-        _markerName = format ["cassad%1", _type];
+        _markerName = format ["cassad%1", _casType];
         createMarker [_markerName, _cords];
-        _markerName setMarkerType "mil_arrow";
-        _markerName setMarkerColor "colorBLUFOR";
+        _markerName setMarkerType "mil_arrow2";
+        _markerName setMarkerColor "colorRED";
 
         if (pl_cancel_strike) exitWith {};
         onMapSingleClick {
@@ -495,10 +495,10 @@ pl_interdiction_cas = {
     {
         _cords =  screenToWorld [0.5,0.5];
         _dir = player getDir _cords;
-        _markerName = format ["cassad%1", _type];
+        _markerName = format ["cassad%1", _casType];
         createMarker [_markerName, _cords];
-        _markerName setMarkerType "mil_arrow";
-        _markerName setMarkerColor "colorBLUFOR";
+        _markerName setMarkerType "mil_arrow2";
+        _markerName setMarkerColor "colorRED";
         _markerName setMarkerDir _dir;
     };
 
@@ -509,7 +509,7 @@ pl_interdiction_cas = {
 
     pl_sorties = pl_sorties - _sortiesCost;
 
-    switch (_type) do { 
+    switch (_casType) do { 
         case 1 : {pl_plane_sad_enabled = 0;}; 
         case 2 : {pl_helo_sad_enabled = 0;};
         case 3 : {pl_uav_sad_enabled = 0;};
@@ -524,7 +524,7 @@ pl_interdiction_cas = {
     _casGroup = createGroup playerside;
     _casGroup setGroupId [_groupId];
     _casGroup setVariable ["pl_not_addalbe", true];
-    if (_type == 3) then {
+    if (_casType == 3) then {
         _casGroup setCombatMode "BLUE";
         _casGroup setVariable ["pl_combat_mode", true];
         _casGroup setVariable ["pl_hold_fire", true];
@@ -551,7 +551,7 @@ pl_interdiction_cas = {
     _sadWp setWaypointType _wpType;
 
     _allVics = nearestObjects [_cords, ["Tank", "Car", "Truck"], _sadAreaSize, true];
-    if (_type == 3) then {
+    if (_casType == 3) then {
         _allVics = nearestObjects [_cords, ["Tank", "Car", "Truck", "Man"], _sadAreaSize, true];
     };
     sleep 3;
@@ -574,7 +574,7 @@ pl_interdiction_cas = {
         };
     };
 
-    if (_type != 4) then {
+    if (_casType != 4) then {
         waitUntil {(_plane distance2D _cords) < 3000};
     }
     else
@@ -583,14 +583,16 @@ pl_interdiction_cas = {
         sleep 3;
         waitUntil {(isTouchingGround _plane) or !alive _plane };
         if (alive _plane) then {
-            private _medic = _casGroup createUnit ["B_medic_F", [0,0,0], [], 0, "CAN_COLLIDE"];
+            private _gunner = gunner _plane;
+            private _medic = _casGroup createUnit [typeOf _gunner, [0,0,0], [], 0, "CAN_COLLIDE"];
+            _medic setUnitTrait ["Medic",true];
             _medic moveInCargo _plane;
             sleep 3;
-            private _gunner = gunner _plane;
             _ccpGroup = createGroup playerSide;
+            sleep 2;
             _ccpGroup setGroupId ["Angel 6 Medic"];
             _ccpGroup setVariable ["MARTA_customIcon", ["b_med"]];
-            _ccpGoup setVariable ["pl_not_addalbe", true];
+            _ccpGroup setVariable ["pl_not_addalbe", true];
             {
                 [_x] joinSilent _ccpGroup;
                 unassignVehicle _x;
@@ -612,6 +614,9 @@ pl_interdiction_cas = {
         };
     } forEach _allVics;
 
+    _plane setVariable ["pl_cas_casType", _casType];
+    pl_test_plane = _plane;
+
     sleep 40;
 
     deleteMarker _markerName;
@@ -620,7 +625,7 @@ pl_interdiction_cas = {
 
     deleteMarker _areaMarkerName;
 
-    switch (_type) do { 
+    switch (_plane getVariable "pl_cas_casType") do { 
         case 1 : {
             pl_plane_sad_cd = time + 300;
             _cd = pl_plane_sad_cd;
@@ -652,7 +657,7 @@ pl_interdiction_cas = {
             _x disableAI "AUTOTARGET";
         } forEach (units _casGroup);
 
-        if (_type == 4) then {
+        if ((_plane getVariable "pl_cas_casType") == 4) then {
             [_ccpGroup] call pl_reset;
 
             sleep 0.2;
@@ -668,7 +673,8 @@ pl_interdiction_cas = {
             _casGroup setGroupId [_groupId];
 
             sleep 2;
-            waitUntil {({_x in _plane} count (units _casGroup)) == (count (units _casGroup))};
+            _time = time + 40;
+            waitUntil {({_x in _plane} count (units _casGroup)) == (count (units _casGroup)) or time >= _time};
             sleep 1;
         };
 
@@ -691,7 +697,7 @@ pl_interdiction_cas = {
         deleteGroup _casGroup;
     };
     waitUntil {time > _cd};
-    switch (_type) do { 
+    switch (_plane getVariable "pl_cas_casType") do { 
         case 1 : {pl_plane_sad_enabled = 1;}; 
         case 2 : {pl_helo_sad_enabled = 1;};
         case 3 : {pl_uav_sad_enabled = 1;};
