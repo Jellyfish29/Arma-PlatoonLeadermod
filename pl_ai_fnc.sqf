@@ -428,6 +428,7 @@ pl_vehicle_setup = {
     if (_vic isKindOf "Air") exitWith {};
 
     _vic setUnloadInCombat [false, false];
+    _vic allowCrewInImmobile true;
     
     if (isNil {_vic getVariable "pl_vehicle_setup_complete"}) then {
         _vic limitSpeed 50;
@@ -651,7 +652,7 @@ pl_vehicle_soft_unstuck = {
     params ["_group"];
     private ["_vic"];
     _vic = vehicle (leader _group);
-    _pos = [1, 1, 0.1] vectorAdd (getPos _vic);
+    _pos = [0.25, 0.25, 0.1] vectorAdd (getPosVisual _vic);
     _vic setPos _pos;
 };
 
@@ -668,6 +669,7 @@ pl_reset_group = {
     _groupComp = _group getVariable "pl_group_comp";
     _newGroup = createGroup playerside;
     _newGroup setVariable ["pl_is_reset", true];
+    _newGroup setVariable ["pl_set_as_medical", _group getVariable ["pl_set_as_medical", false]];
 
     sleep 1.5;
 
@@ -797,48 +799,54 @@ pl_inf_trans_set_up = {
     {
         _x assignAsCargo _targetVic;
     } forEach (units _group);
-    [units _group] allowGetIn false;
+    [units _group] allowGetIn true; //false;
     [_group] call pl_hide_group_icon;
 };
 
 
-player addEventHandler ["GetInMan", {
-    params ["_vehicle", "_role", "_unit", "_turret"];
-    private ["_group"];
-    _group = group player;
-    _vicGroup = group (driver (vehicle player));
-    _vicGroup setVariable ["setSpecial", true];
-    _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
-    player setVariable ["pl_player_vicGroup", _vicGroup];
-    if (_vicGroup != (group player)) then {
-        [_group] call pl_hide_group_icon;
-    };
-}];
+// player addEventHandler ["GetInMan", {
+//     params ["_vehicle", "_role", "_unit", "_turret"];
+//     private ["_group"];
+//     _group = group player;
+//     _vicGroup = group (driver (vehicle player));
+//     _vicGroup setVariable ["setSpecial", true];
+//     _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+//     player setVariable ["pl_player_vicGroup", _vicGroup];
+//     if (_vicGroup != (group player)) then {
+//         [_group] call pl_hide_group_icon;
+//     };
+// }];
 
-player addEventHandler ["GetOutMan", {
-    params ["_vehicle", "_role", "_unit", "_turret"];
-    private ["_group"];
-    _group = group player;
-    _vicGroup = player getVariable ["pl_player_vicGroup", (group player)];
-    _group setVariable ["setSpecial", false];
-    _group setVariable ["onTask", false];
-    [_group] call pl_show_group_icon;
+// player addEventHandler ["GetOutMan", {
+//     params ["_vehicle", "_role", "_unit", "_turret"];
+//     private ["_group"];
+//     _group = group player;
+//     _vicGroup = player getVariable ["pl_player_vicGroup", (group player)];
+//     _group setVariable ["setSpecial", false];
+//     _group setVariable ["onTask", false];
+//     [_group] call pl_show_group_icon;
 
-    _cargo = fullCrew [(vehicle ((units _vicGroup)#0)), "cargo", false];
-    if (count _cargo == 0) exitWith {
-        _vicGroup setVariable ["setSpecial", false];
-    };
-    if (({(group (_x#0)) isEqualTo _group} count _cargo) > 0) then {
-        [_vicGroup, _cargo, _group] spawn {
-            params ["_vicGroup", "_cargo", "_group"];
-            waitUntil {sleep 1; (({(group (_x#0)) isEqualTo _group} count (fullCrew [(vehicle ((units _vicGroup)#0)), "cargo", false])) == 0)};
-            _vicGroup setVariable ["setSpecial", false];
-        };
-    };
-}];
+//     _cargo = fullCrew [(vehicle ((units _vicGroup)#0)), "cargo", false];
+//     if (count _cargo == 0) exitWith {
+//         _vicGroup setVariable ["setSpecial", false];
+//     };
+//     if (({(group (_x#0)) isEqualTo _group} count _cargo) > 0) then {
+//         [_vicGroup, _cargo, _group] spawn {
+//             params ["_vicGroup", "_cargo", "_group"];
+//             waitUntil {sleep 1; (({(group (_x#0)) isEqualTo _group} count (fullCrew [(vehicle ((units _vicGroup)#0)), "cargo", false])) == 0)};
+//             _vicGroup setVariable ["setSpecial", false];
+//         };
+//     };
+// }];
 
 
 // Start Set Up
+sleep 1;
+if ((vehicle player) != player) then {
+    _commander = leader (group driver (vehicle player));
+    (vehicle player) setEffectiveCommander _commander;
+};
+
 sleep 5;
 {
     _leader = leader _x;
@@ -847,6 +855,14 @@ sleep 5;
     if (_x getVariable ["pl_is_recon", false]) then {
         [_x, true] spawn pl_recon;
     };
+
+    if (_x getVariable ["pl_set_as_medical", false]) then {
+        [_x, "med"] call pl_change_group_icon;
+    };
+
+    // if !((_x getVariable ["pl_custom_icon", ""]) isEqualTo "") then {
+    //     [_x] call pl_show_group_icon;
+    // };
 
     sleep 0.1;
     if ((vehicle _leader) != _leader) then {

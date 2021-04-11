@@ -264,12 +264,12 @@ pl_change_icon_menu =
 
 pl_group_management = [
     ['Group Management',true],
-    ['Add Group', [2], '', -5, [['expression', '[] spawn pl_add_to_hc']], '1', '1'],
-    ['Add All Playerside Groups', [3], '', -5, [['expression', '[] call pl_add_all_groups']], '1', '1'],
-    ['Remove selected Groups', [4], '', -5, [['expression', '{[_x] call pl_remove_from_hc} forEach (hcSelected player)']], '1', 'HCNotEmpty'],
-    ['Split selected Groups', [5], '', -5, [['expression', '{[_x] call pl_split_hc_group} forEach (hcSelected player)']], '1', 'HCNotEmpty'],
-    ['Merge selected Groups', [6], '', -5, [['expression', '[] spawn pl_merge_hc_groups']], '1', 'HCNotEmpty'],
-    ['Reset Group', [7], '', -5, [['expression', '[(hcSelected player) select 0] spawn pl_reset_group']], '1', 'HCNotEmpty'],
-    ['Hard Unstuck Group', [8], '', -5, [['expression', '[(hcSelected player) select 0] call pl_hard_unstuck']], '1', 'HCNotEmpty'],
-    ['Change selected Group Icons', [9], '#USER:pl_change_icon_menu', -5, [['expression', '']], '1', 'HCNotEmpty']
+    ['Add', [2], '', -5, [['expression', '[] spawn pl_add_to_hc']], '1', '1'],
+    ['Add All', [3], '', -5, [['expression', '[] call pl_add_all_groups']], '1', '1'],
+    ['Remove', [4], '', -5, [['expression', '{[_x] call pl_remove_from_hc} forEach (hcSelected player)']], '1', 'HCNotEmpty'],
+    ['Split', [5], '', -5, [['expression', '{[_x] call pl_split_hc_group} forEach (hcSelected player)']], '1', 'HCNotEmpty'],
+    ['Merge', [6], '', -5, [['expression', '[] spawn pl_merge_hc_groups']], '1', 'HCNotEmpty'],
+    ['Reset', [7], '', -5, [['expression', '[(hcSelected player) select 0] spawn pl_reset_group']], '1', 'HCNotEmpty'],
+    ['Hard Unstuck', [8], '', -5, [['expression', '[(hcSelected player) select 0] call pl_hard_unstuck']], '1', 'HCNotEmpty'],
+    ['Change Icon', [9], '#USER:pl_change_icon_menu', -5, [['expression', '']], '1', 'HCNotEmpty']
 ];

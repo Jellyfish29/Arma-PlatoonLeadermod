@@ -26,7 +26,7 @@ pl_get_vic_health = {
         _healthState = [0.7,0,0,1];
     };
     if !(canMove _vic) then {
-        _healthState = [0.92,0.24,0.07,1];
+        _healthState = [0.49,0.06,0.8,1]; // 7E11CA
     };
     _healthState;
 };
@@ -865,6 +865,7 @@ addMissionEventHandler ["Loaded", {
     [] call pl_draw_unload_inf_task_plan_icon;
     [] call pl_draw_ccp_medic;
     [] call pl_draw_unit_group_lines;
+    [] call pl_damaged_vics;
 }];
 
 

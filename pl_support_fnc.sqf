@@ -272,6 +272,7 @@ pl_arty = {
         _markerName setMarkerBrush "BDiagonal";
         _markerName setMarkerAlpha 0.9;
         _markerName setMarkerSize [pl_arty_dispersion, pl_arty_dispersion];
+        pl_cancel_strike = false;
         onMapSingleClick {
             pl_arty_cords = _pos;
             pl_mapClicked = true;
@@ -332,7 +333,7 @@ pl_arty = {
 };
 
 pl_fire_mortar = {
-    private ["_cords"];
+    private ["_cords", "_ammoType"];
 
     if (visibleMap) then {
         _message = "Select STRIKE Location <br /><br />
@@ -364,22 +365,33 @@ pl_fire_mortar = {
     (gunner (pl_mortars#0)) sideChat "Fire Mission Confirmed, over";
 
     sleep 3,
-    {
-        _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
-        _x commandArtilleryFire [_cords, _ammoType, pl_mortar_rounds];
-        sleep 0.7;
-    } forEach pl_mortars;
+        
+    for "_i" from 1 to pl_mortar_rounds do {
+        {
+            _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
+            _firePos = [[[_cords, 50]],[]] call BIS_fnc_randomPos;
+            _x commandArtilleryFire [_firePos, _ammoType, 1];
+            sleep 1;
+        } forEach pl_mortars;
+        sleep 3.5;
+    };
+
     sleep 20;
     deleteMarker _markerName;
+
+    {
+        _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
+        _x addMagazineTurret [_ammoType, [-1]];
+    } forEach pl_mortars
 };
 
 
 
 pl_interdiction_cas = {
-    params ["_casType"];
-    private ["_height", "_cd", "_dir", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
+    params ["_casTypeSad"];
+    private ["_height", "_cd", "_cdType", "_dir", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
 
-    switch (_casType) do { 
+    switch (_casTypeSad) do { 
         case 1 : {
             _height = 1500;
             _flyHeight = 200;
@@ -441,7 +453,7 @@ pl_interdiction_cas = {
         _message = "Select STRIKE Location <br /><br />
         <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
         hint parseText _message;
-        _areaMarkerName = format ["%1casarea", _casType];
+        _areaMarkerName = format ["%1casarea", _casTypeSad];
         createMarker [_areaMarkerName, [0,0,0]];
         _areaMarkerName setMarkerShape "ELLIPSE";
         _areaMarkerName setMarkerBrush "SolidBorder";
@@ -469,7 +481,7 @@ pl_interdiction_cas = {
 
         sleep 0.1;
         _cords = pl_cas_cords;
-        _markerName = format ["cassad%1", _casType];
+        _markerName = format ["cassad%1", _casTypeSad];
         createMarker [_markerName, _cords];
         _markerName setMarkerType "mil_arrow2";
         _markerName setMarkerColor "colorRED";
@@ -495,7 +507,7 @@ pl_interdiction_cas = {
     {
         _cords =  screenToWorld [0.5,0.5];
         _dir = player getDir _cords;
-        _markerName = format ["cassad%1", _casType];
+        _markerName = format ["cassad%1", _casTypeSad];
         createMarker [_markerName, _cords];
         _markerName setMarkerType "mil_arrow2";
         _markerName setMarkerColor "colorRED";
@@ -509,7 +521,7 @@ pl_interdiction_cas = {
 
     pl_sorties = pl_sorties - _sortiesCost;
 
-    switch (_casType) do { 
+    switch (_casTypeSad) do { 
         case 1 : {pl_plane_sad_enabled = 0;}; 
         case 2 : {pl_helo_sad_enabled = 0;};
         case 3 : {pl_uav_sad_enabled = 0;};
@@ -524,7 +536,7 @@ pl_interdiction_cas = {
     _casGroup = createGroup playerside;
     _casGroup setGroupId [_groupId];
     _casGroup setVariable ["pl_not_addalbe", true];
-    if (_casType == 3) then {
+    if (_casTypeSad == 3) then {
         _casGroup setCombatMode "BLUE";
         _casGroup setVariable ["pl_combat_mode", true];
         _casGroup setVariable ["pl_hold_fire", true];
@@ -551,7 +563,7 @@ pl_interdiction_cas = {
     _sadWp setWaypointType _wpType;
 
     _allVics = nearestObjects [_cords, ["Tank", "Car", "Truck"], _sadAreaSize, true];
-    if (_casType == 3) then {
+    if (_casTypeSad == 3) then {
         _allVics = nearestObjects [_cords, ["Tank", "Car", "Truck", "Man"], _sadAreaSize, true];
     };
     sleep 3;
@@ -574,7 +586,7 @@ pl_interdiction_cas = {
         };
     };
 
-    if (_casType != 4) then {
+    if (_casTypeSad != 4) then {
         waitUntil {(_plane distance2D _cords) < 3000};
     }
     else
@@ -614,7 +626,6 @@ pl_interdiction_cas = {
         };
     } forEach _allVics;
 
-    _plane setVariable ["pl_cas_casType", _casType];
     pl_test_plane = _plane;
 
     sleep 40;
@@ -625,9 +636,9 @@ pl_interdiction_cas = {
 
     deleteMarker _areaMarkerName;
 
-    switch (_plane getVariable "pl_cas_casType") do { 
+    switch (_casTypeSad) do { 
         case 1 : {
-            pl_plane_sad_cd = time + 300;
+            pl_plane_sad_cd = time + 120;
             _cd = pl_plane_sad_cd;
         }; 
         case 2 : {
@@ -657,7 +668,7 @@ pl_interdiction_cas = {
             _x disableAI "AUTOTARGET";
         } forEach (units _casGroup);
 
-        if ((_plane getVariable "pl_cas_casType") == 4) then {
+        if (_casTypeSad == 4) then {
             [_ccpGroup] call pl_reset;
 
             sleep 0.2;
@@ -697,11 +708,11 @@ pl_interdiction_cas = {
         deleteGroup _casGroup;
     };
     waitUntil {time > _cd};
-    switch (_plane getVariable "pl_cas_casType") do { 
-        case 1 : {pl_plane_sad_enabled = 1;}; 
-        case 2 : {pl_helo_sad_enabled = 1;};
-        case 3 : {pl_uav_sad_enabled = 1;};
-        case 4 : {pl_medevac_sad_enabled = 1;}; 
+    switch (_casTypeSad) do { 
+        case 1 : {pl_plane_sad_enabled = 1}; 
+        case 2 : {pl_helo_sad_enabled = 1};
+        case 3 : {pl_uav_sad_enabled = 1};
+        case 4 : {pl_medevac_sad_enabled = 1}; 
         default {}; 
     };
 };

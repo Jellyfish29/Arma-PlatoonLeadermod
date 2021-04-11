@@ -110,7 +110,7 @@ class RscHCGroupRootMenu
             class Params
             {
                 expression=
-                    "{if ((count (waypoints _x)) == 0) then {[_x, false] call pl_reset}} forEach (hcSelected player); playSound 'beep'; if (count (hcSelected player) > 1 and (!pl_draw_formation_mouse)) then {[hcSelected player, true] spawn pl_move_as_formation}; if (count (hcSelected player) <= 1) then {['MOVE',_pos,_is3D,hcselected player,true] call BIS_HC_path_menu}";
+                    "{if ((count (waypoints _x)) == 0) then {[_x, false] spawn pl_reset}} forEach (hcSelected player); playSound 'beep'; if (count (hcSelected player) > 1 and (!pl_draw_formation_mouse)) then {[hcSelected player, true] spawn pl_move_as_formation}; if (count (hcSelected player) <= 1) then {['MOVE',_pos,_is3D,hcselected player,true] call BIS_HC_path_menu}";
             };
             show="HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * IsSelectedToAdd";
             enable="HCNotEmpty";
@@ -163,12 +163,12 @@ class RscHCGroupRootMenu
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=2;
         };
-        class Separator
-        {
-            title="";
-            shortcuts[]={0};
-            command=-1;
-        };
+        // class Separator
+        // {
+        //     title="";
+        //     shortcuts[]={0};
+        //     command=-1;
+        // };
         class Empty5
         {
             title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa'/><t> March</t>";
@@ -186,17 +186,19 @@ class RscHCGroupRootMenu
         };
         class Empty6
         {
-            title="Creep";
+            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
             shortcuts[]={};
             command=-5;
             class Params
             {
-                expression="{[_x] spawn pl_creep} forEach hcSelected player";
+                expression="[] spawn pl_bounding_squad";
             };
-            show="0";
+            // show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
+            show = "0";
             enable="HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
+            priority=3;
         };
         class Empty7: Empty1
         {
@@ -754,20 +756,20 @@ class RscHCGroupRootMenu
                 speechId=0;
             };
             
-            // class PlSeperator301
-            // {
-            //     title="";
-            //     shortcuts[]={};
-            //     submenu="";
-            //     command=-1;
-            //     class params
-            //     {
-            //         expression="";
-            //     };
-            //     show="1";
-            //     enable="1";
-            //     speechId=0;
-            // };
+            class PlSeperator301
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
             class PlAttachInf
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Follow Vehicle</t";

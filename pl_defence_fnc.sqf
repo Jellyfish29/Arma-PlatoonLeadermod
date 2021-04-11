@@ -1,4 +1,3 @@
-
 pl_covers = [];
 pl_defence_cords = [0,0,0];
 pl_mapClicked = false;
@@ -114,29 +113,35 @@ pl_find_cover = {
 pl_find_cover_allways = {
     params ["_unit", "_center", "_radius"];
 
-    _covers = nearestTerrainObjects [_center, pl_valid_covers, _radius, true, true];
-    if ((count _covers) > 0) then {
-        {
-            if !(_x in pl_covers) exitWith {
-                pl_covers pushBack _x;
-                _unit doMove (getPos _x);
-                sleep 1;
-                waitUntil {(unitReady _unit) or (!alive _unit)};
-                doStop _unit;
-                _unit setUnitPos "MIDDLE";
-                _unit disableAI "PATH";
-            };
-        } forEach _covers;
+    if ((_unit distance2D _center) < 25) then {
+        _covers = nearestTerrainObjects [getPos _unit, pl_valid_covers, _radius, true, true];
+        if ((count _covers) > 0) then {
+            {
+                if !(_x in pl_covers) exitWith {
+                    pl_covers pushBack _x;
+                    _unit doMove (getPos _x);
+                    sleep 1;
+                    waitUntil {(unitReady _unit) or (!alive _unit)};
+                    doStop _unit;
+                    _unit setUnitPos "MIDDLE";
+                    _unit disableAI "PATH";
+                };
+            } forEach _covers;
 
-        if ((unitPos _unit) == "Auto") then {
+            if ((unitPos _unit) == "Auto") then {
+                _unit setUnitPos "DOWN";
+            };
+        }
+        else
+        {
+            doStop _unit;
             _unit setUnitPos "DOWN";
+            _unit disableAI "PATH";
         };
     }
     else
     {
-        doStop _unit;
-        _unit setUnitPos "DOWN";
-        _unit disableAI "PATH";
+        _unit doFollow (leader (group _unit));
     };
     sleep 10;
     pl_covers = []
@@ -165,14 +170,17 @@ pl_rush = {
     if (_leader == vehicle _leader) then {
         // leader _group sideChat "Roger Falling Back, Over";
         // [leader _group, "SmokeShellMuzzle"] call BIS_fnc_fire;
+        _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa";
         _group setVariable ["onTask", true];
         _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa"];
-        _group addWaypoint [_cords, 0];
+        _group setVariable ["specialIcon", _icon];
+        _wp = _group addWaypoint [_cords, 0];
         _group setBehaviour "AWARE";
         _group setSpeedMode "FULL";
         _group setCombatMode "BLUE";
         _group setVariable ["pl_combat_mode", true];
+
+        pl_draw_planed_task_array pushBack [_wp, _icon];
 
         {
             _unit = _x;
@@ -210,6 +218,7 @@ pl_rush = {
         _group setVariable ["pl_combat_mode", false];
         _group setSpeedMode "NORMAL";
         _group setCombatMode "YELLOW";
+        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
         // leader _group sideChat "We reached Fall Back Position, Over";
     }
     else
@@ -219,11 +228,20 @@ pl_rush = {
         _group setVariable ["onTask", true];
         _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa"];
         _vic = vehicle _leader;
+        _vic limitSpeed 5000;
+        _vDir = (getDir _vic) - 180;
         [_vic, "SmokeLauncher"] call BIS_fnc_fire;
         _time = time + 45;
         waitUntil {sleep 0.1; (((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 25) or (time >= _time) or !(_group getVariable ["onTask", true])};
+
+        sleep 2;
+        [_group, str _vDir] call pl_watch_dir;
         _group setVariable ["setSpecial", false];
         _group setVariable ["onTask", false];
+        _vicSpeedLimit = _vic getVariable ["pl_speed_limit", "50"];
+        if !(_vicSpeedLimit isEqualTo "MAX") then {
+            _vic limitSpeed (parseNumber _vicSpeedLimit);
+        };
     };
 };
 
@@ -428,7 +446,10 @@ pl_take_position = {
         };
         // Cancel Task
         
-        if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
+        if (!(isNil "_medic") and pl_enabled_medical) then {
+
+            waitUntil {_group getVariable ["pl_healing_active", false] or !(_group getVariable ["onTask", true])};
+
             _medic setVariable ["pl_is_ccp_medic", true];
             while {(_group getVariable ["onTask", true])} do {
                 _time = time + 10;
@@ -444,15 +465,15 @@ pl_take_position = {
                         waitUntil {unitReady _medic or !alive _medic or !(_group getVariable ["onTask", true])};
                         [_medic, _medicPos, getDir _medic, 10, false] spawn pl_find_cover;
                     };
-                    if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
-                        _medic setUnitPos "MIDDLE";
-                        _medic enableAI "PATH";
-                        _h1 = [_medic, _x, _medicPos, "onTask"] spawn pl_medic_heal;
-                        waitUntil {scriptDone _h1 or !(_group getVariable ["onTask", true])};
-                        sleep 1;
-                        waitUntil {unitReady _medic or !alive _medic or !(_group getVariable ["onTask", true])};
-                        [_medic, _medicPos, getDir _medic, 10, false] spawn pl_find_cover;
-                    };
+                    // if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
+                    //     _medic setUnitPos "MIDDLE";
+                    //     _medic enableAI "PATH";
+                    //     _h1 = [_medic, _x, _medicPos, "onTask"] spawn pl_medic_heal;
+                    //     waitUntil {scriptDone _h1 or !(_group getVariable ["onTask", true])};
+                    //     sleep 1;
+                    //     waitUntil {unitReady _medic or !alive _medic or !(_group getVariable ["onTask", true])};
+                    //     [_medic, _medicPos, getDir _medic, 10, false] spawn pl_find_cover;
+                    // };
                 } forEach (units _group);
             };
             _medic setVariable ["pl_is_ccp_medic", false];
@@ -479,7 +500,7 @@ pl_take_position = {
 
 pl_full_cover = {
     params ["_group"];
-    private ["_crew"];
+    private ["_crew", "_isTransport"];
 
     [_group] call pl_reset;
 
@@ -487,11 +508,9 @@ pl_full_cover = {
     playsound "beep";
     leader _group groupRadio "SentCmdHide";
 
-    _group setVariable ["setSpecial", true];
-    _group setVariable ["onTask", true];
-    _group setVariable ["specialIcon", '\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'];
 
-    _crew = [units _group];
+    _crew = [];
+    _isTransport = false;
     if (vehicle (leader _group) != leader _group) then {
         // _group setCombatMode "GREEN";
         // _group setVariable ["pl_hold_fire", true];
@@ -501,6 +520,7 @@ pl_full_cover = {
             _x setVariable ["pl_damage_reduction", true];
             _x setUnitTrait ["camouflageCoef", 0.5, true];
             _x disableAI "PATH";
+            _crew pushBackUnique _x;
         } forEach (units _group);
         {
             _x setVariable ["pl_damage_reduction", true];
@@ -509,6 +529,9 @@ pl_full_cover = {
 
         _vic setUnitTrait ["camouflageCoef", 0.5, true];
         // _vic setVariable ["pl_damage_reduction", true]
+        if ((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa") then {
+            _isTransport = true;
+        };
     }
     else
     {
@@ -520,6 +543,10 @@ pl_full_cover = {
             _x setUnitTrait ["camouflageCoef", 0.5, true];
         } forEach (units _group);
     };
+
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["onTask", true];
+    _group setVariable ["specialIcon", '\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'];
 
     waitUntil {!(_group getVariable ["onTask", true])};
 
@@ -533,6 +560,9 @@ pl_full_cover = {
         // _group setCombatMode "YELLOW";
         // _group setVariable ["pl_hold_fire", false];
         _vic = vehicle (leader _group);
+
+        // hint str _crew;
+
         _group setVariable ["pl_combat_mode", false];
         {
             _x setVariable ["pl_damage_reduction", false];
@@ -541,6 +571,11 @@ pl_full_cover = {
 
         _vic setUnitTrait ["camouflageCoef", 1, true];
         // _vic setVariable ["pl_damage_reduction", false]
+        sleep 0.2;
+        if (_isTransport) then {
+            _group setVariable ["setSpecial", true];
+            _group setVariable ["specialIcon", '\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa'];
+        };
     };
 };
 
@@ -576,15 +611,19 @@ pl_defend_position = {
             onMapSingleClick "";
         };
 
+        player enableSimulation false;
+
         while {!pl_mapClicked} do {
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             _markerAreaName setMarkerPos _mPos;
-            if (inputAction "MoveForward" > 0) then {pl_garrison_area_size = pl_garrison_area_size + 5; sleep 0.1};
-            if (inputAction "MoveBack" > 0) then {pl_garrison_area_size = pl_garrison_area_size - 5; sleep 0.1};
+            if (inputAction "MoveForward" > 0) then {pl_garrison_area_size = pl_garrison_area_size + 5; sleep 0.05};
+            if (inputAction "MoveBack" > 0) then {pl_garrison_area_size = pl_garrison_area_size - 5; sleep 0.05};
             _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
             if (pl_garrison_area_size >= 55) then {pl_garrison_area_size = 55};
             if (pl_garrison_area_size <= 10) then {pl_garrison_area_size = 10};
         };
+
+        player enableSimulation true;
 
         pl_mapClicked = false;
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerAreaName};
@@ -595,6 +634,7 @@ pl_defend_position = {
 
         sleep 0.1;
         _cords = pl_defence_cords;
+        _markerAreaName setMarkerPos _cords;
         _markerDirName = format ["defenceAreaDir%1%2", _group, random 2];
         createMarker [_markerDirName, _cords];
         _markerDirName setMarkerPos _cords;
@@ -837,14 +877,27 @@ pl_defend_position = {
         };
         _pos = ATLToASL _pos;
         private _unitPos = "UP";
-        _checkPos = [7*(sin _watchDir), 7*(cos _watchDir), 1.7] vectorAdd _pos;
-        _crouchPos = [0, 0, 0.6] vectorAdd _pos;
-        if (([objNull, "VIEW"] checkVisibility [_crouchPos, _checkPos]) == 1) then {
+        _checkPos = [7*(sin _watchDir), 7*(cos _watchDir), 0.7] vectorAdd _pos;
+        _crouchPos = [0, 0, 0.7] vectorAdd _pos;
+        if (([_unit, "VIEW"] checkVisibility [_crouchPos, _checkPos]) >= 0.7) then {
             _unitPos = "MIDDLE";
         };
-        // if (([objNull, "VIEW"] checkVisibility [_pos, _checkPos]) == 1) then {
-        //     _unitPos = "DOWN";
-        // };
+        _checkPos = [7*(sin _watchDir), 7*(cos _watchDir), 0.1] vectorAdd _pos;
+        if (([_unit, "VIEW"] checkVisibility [_pos, _checkPos]) == 1) then {
+            _unitPos = "DOWN";
+        };
+
+        // _helper1 = createVehicle ["Sign_Sphere25cm_F", _crouchPos, [], 0, "none"];
+        // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+        // _helper1 setposASL _crouchPos;
+
+        // _helper2 = createVehicle ["Sign_Sphere25cm_F", _pos, [], 0, "none"];
+        // _helper2 setObjectTexture [0,'#(argb,8,8,3)color(0,0,1,1)'];
+        // _helper2 setposASL _pos;
+
+        // _helper3 = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
+        // _helper3 setObjectTexture [0,'#(argb,8,8,3)color(0,0,1,1)'];
+        // _helper3 setposASL _checkPos;
 
         _pos = ASLToATL _pos;
 
@@ -869,7 +922,8 @@ pl_defend_position = {
                     if !(_cover) then {
                         _unit doWatch _watchPos;
                         doStop _unit;
-                        _unit setUnitPosWeak _unitPos;
+                        // _unit setUnitPosWeak _unitPos;
+                        _unit setUnitPos _unitPos;
                         _unit disableAI "PATH";
                     }
                     else
@@ -883,7 +937,10 @@ pl_defend_position = {
 
     // hint (str _allPos);
 
-    if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
+    if (!(isNil "_medic") and pl_enabled_medical) then {
+
+        waitUntil {_group getVariable ["pl_healing_active", false] or !(_group getVariable ["onTask", true])};
+
         _medic setVariable ["pl_is_ccp_medic", true];
         while {(_group getVariable ["onTask", true])} do {
             _time = time + 10;
@@ -899,15 +956,15 @@ pl_defend_position = {
                     waitUntil {unitReady _medic or !alive _medic or !(_group getVariable ["onTask", true])};
                     [_medic, getPos _medic, getDir _medic, 10, false] spawn pl_find_cover;
                 };
-                if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
-                    _medic setUnitPos "MIDDLE";
-                    _medic enableAI "PATH";
-                    _h1 = [_medic, _x, getPos _medic, "onTask"] spawn pl_medic_heal;
-                    waitUntil {scriptDone _h1 or !(_group getVariable ["onTask", true])};
-                    sleep 1;
-                    waitUntil {unitReady _medic or !alive _medic or !(_group getVariable ["onTask", true])};
-                    [_medic, getPos _medic, getDir _medic, 10, false] spawn pl_find_cover;
-                };
+                // if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
+                //     _medic setUnitPos "MIDDLE";
+                //     _medic enableAI "PATH";
+                //     _h1 = [_medic, _x, getPos _medic, "onTask"] spawn pl_medic_heal;
+                //     waitUntil {scriptDone _h1 or !(_group getVariable ["onTask", true])};
+                //     sleep 1;
+                //     waitUntil {unitReady _medic or !alive _medic or !(_group getVariable ["onTask", true])};
+                //     [_medic, getPos _medic, getDir _medic, 10, false] spawn pl_find_cover;
+                // };
             } forEach (units _group);
         };
         _medic setVariable ["pl_is_ccp_medic", false];

@@ -165,17 +165,20 @@ pl_mine_clearing = {
 
     if (isNull _engineer) exitWith {hint "No mineclearing equipment"};
 
+    pl_mine_sweep_area_size = 35;
+
     _markerName = format ["%1mineSweeper", _group];
     createMarker [_markerName, [0,0,0]];
     _markerName setMarkerShape "ELLIPSE";
-    _markerName setMarkerBrush "Vertical";
-    _markerName setMarkerColor "colorYellow";
+    _markerName setMarkerBrush "SolidBorder";;
+    _markerName setMarkerColor "colorORANGE";
     _markerName setMarkerAlpha 0.5;
-    _markerName setMarkerSize [35, 35];
+    _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size];
 
     if (visibleMap) then {
         _message = "Select Search Area <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>
+        <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
         hint parseText _message;
         onMapSingleClick {
             pl_sweep_cords = _pos;
@@ -184,13 +187,26 @@ pl_mine_clearing = {
             hintSilent "";
             onMapSingleClick "";
         };
+
+        player enableSimulation false;
+
         while {!pl_mapClicked} do {
             // sleep 0.1;
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             _markerName setMarkerPos _mPos;
+            if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
+            if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
+            _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size];
+            if (pl_mine_sweep_area_size >= 80) then {pl_mine_sweep_area_size = 80};
+            if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
         };
+
+        player enableSimulation true;
+
         pl_mapClicked = false;
         _cords = pl_sweep_cords;
+        _markerName setMarkerPos _cords;
+        _markerName setMarkerAlpha 0.3;
     };
 
     [_group] call pl_reset;
@@ -210,7 +226,7 @@ pl_mine_clearing = {
         deleteWaypoint [_group, _i];
     };
 
-    _mines = allMines select {(_x distance2D _cords) < 35};
+    _mines = allMines select {(_x distance2D _cords) < pl_mine_sweep_area_size + 3};
     _mines = [_mines, [], { _engineer distance _x }, "ASCEND"] call BIS_fnc_sortBy;
 
     {
@@ -300,12 +316,14 @@ pl_lay_mine_field = {
         onMapSingleClick "";
     };
 
+    player enableSimulation false;
+
     while {!pl_mapClicked} do {
         _watchDir = getPos (leader _group) getDir ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
         _areaMarker setMarkerPos ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
         _areaMarker setMarkerDir _watchDir;
-        if (inputAction "MoveForward" > 0) then {pl_mine_field_size = pl_mine_field_size + _mineFieldSize; sleep 0.1};
-        if (inputAction "MoveBack" > 0) then {pl_mine_field_size = pl_mine_field_size - _mineFieldSize; sleep 0.1};
+        if (inputAction "MoveForward" > 0) then {pl_mine_field_size = pl_mine_field_size + _mineFieldSize; sleep 0.05};
+        if (inputAction "MoveBack" > 0) then {pl_mine_field_size = pl_mine_field_size - _mineFieldSize; sleep 0.05};
         _areaMarker setMarkerSize [pl_mine_field_size, 4];
         if (pl_mine_field_size >= _maxFieldSize) then {pl_mine_field_size = _maxFieldSize};
         if (pl_mine_field_size <= _mineFieldSize) then {pl_mine_field_size = _mineFieldSize};
@@ -316,6 +334,9 @@ pl_lay_mine_field = {
         };
         sleep 0.01;
     };
+
+    player enableSimulation true;
+
     pl_mapClicked = false;
     if (pl_cancel_strike) exitWith { 
         deleteMarker _areaMarker; 
@@ -338,11 +359,13 @@ pl_lay_mine_field = {
         onMapSingleClick "";
     };
 
+    player enableSimulation false;
+
     while {!pl_mapClicked} do {
         _watchDir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
         _areaMarker setMarkerDir _watchDir;
-        if (inputAction "MoveForward" > 0) then {pl_mine_field_size = pl_mine_field_size + _mineFieldSize; sleep 0.1};
-        if (inputAction "MoveBack" > 0) then {pl_mine_field_size = pl_mine_field_size - _mineFieldSize; sleep 0.1};
+        if (inputAction "MoveForward" > 0) then {pl_mine_field_size = pl_mine_field_size + _mineFieldSize; sleep 0.05};
+        if (inputAction "MoveBack" > 0) then {pl_mine_field_size = pl_mine_field_size - _mineFieldSize; sleep 0.05};
         _areaMarker setMarkerSize [pl_mine_field_size, 4];
         if (pl_mine_field_size >= _maxFieldSize) then {pl_mine_field_size = _maxFieldSize};
         if (pl_mine_field_size <= _mineFieldSize) then {pl_mine_field_size = _mineFieldSize};
@@ -353,6 +376,9 @@ pl_lay_mine_field = {
         };
         sleep 0.01;
     };
+
+    player enableSimulation true;
+
     _mineType = pl_mine_type;
     _areaMarker setMarkerAlpha 0.5;
     hintSilent "";

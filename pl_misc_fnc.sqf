@@ -101,9 +101,9 @@ pl_reset = {
     // reset individual units variables
     {
         _unit = _x;
-        if ((currentCommand _unit) isEqualTo "SUPPORT") then {
-            [_unit] spawn pl_hard_reset;
-        };
+        // if ((currentCommand _unit) isEqualTo "SUPPORT") then {
+        //     [_unit] spawn pl_hard_reset;
+        // };
         if !(_group getVariable ["pl_on_hold", false]) then {_unit enableAI "PATH"};
         _unit enableAI "AUTOCOMBAT";
         _unit enableAI "AUTOTARGET";
@@ -130,6 +130,10 @@ pl_reset = {
     // if player group select player as leader
     if (_group isEqualTo (group player)) then {
         _group selectLeader player;
+    };
+
+    if (_group getVariable ["pl_is_bounding", false]) then {
+        _group setVariable ["pl_is_bounding", false];
     };
 
     // reset Healing
@@ -176,8 +180,16 @@ pl_reset = {
         } forEach _cargo;
 
         {
-            [_x] spawn pl_reset;
+            // [_x] spawn pl_reset;
+            _x setVariable ["pl_task_planed", false];
             _x setVariable ["pl_unload_task_planed", false];
+            [_x, (currentWaypoint _x)] setWaypointType "MOVE";
+            [_x, (currentWaypoint _x)] setWaypointPosition [getPosASL (leader _x), -1];
+            sleep 0.1;
+            deleteWaypoint [_x, (currentWaypoint _x)];
+            for "_i" from count waypoints _x - 1 to 0 step -1 do {
+                deleteWaypoint [_x, _i];
+            };
         } forEach _cargoGroups;
 
     };
@@ -408,8 +420,15 @@ pl_cancel_planed_task = {
         } forEach _cargo;
 
         {
-            [_x] spawn pl_reset;
+            _x setVariable ["pl_task_planed", false];
             _x setVariable ["pl_unload_task_planed", false];
+            [_x, (currentWaypoint _x)] setWaypointType "MOVE";
+            [_x, (currentWaypoint _x)] setWaypointPosition [getPosASL (leader _x), -1];
+            sleep 0.1;
+            deleteWaypoint [_x, (currentWaypoint _x)];
+            for "_i" from count waypoints _x - 1 to 0 step -1 do {
+                deleteWaypoint [_x, _i];
+            };
         } forEach _cargoGroups;
     };
 };
@@ -821,10 +840,17 @@ pl_recon = {
                             _markerNameArrow setMarkerColor "COLOROPFOR";
 
                             createMarker [_markerNameGroup, getPos _leader];
-                            _markerType = "o_unknown";
+                            _markerType = "o_inf";
                             _markerSize = 0.4;
                             if (vehicle (leader _x) != leader _x) then {
-                                _markerType = "o_recon";
+                                _vic = vehicle (leader _x);
+                                if (_vic isKindOf "Tank") then {
+                                    _markerType = "o_armor";
+                                }
+                                else
+                                {
+                                    _markerType = "o_recon";
+                                };
                                 _markerSize = 0.5;
                             };
 
@@ -841,10 +867,17 @@ pl_recon = {
                     // 25 % chance to discover static groups
                     if ((random 1) < 0.35) then {
                         createMarker [_markerNameGroup, getPos (leader _x)];
-                        _markerType = "o_unknown";
+                        _markerType = "o_inf";
                         _markerSize = 0.4;
                         if (vehicle (leader _x) != leader _x) then {
-                            _markerType = "o_recon";
+                            _vic = vehicle (leader _x);
+                            if (_vic isKindOf "Tank") then {
+                                _markerType = "o_armor";
+                            }
+                            else
+                            {
+                                _markerType = "o_recon";
+                            };
                             _markerSize = 0.5;
                         };
                         _markerNameGroup setMarkerType _markerType;
@@ -865,7 +898,7 @@ pl_recon = {
 
         // intervall
         _time = time + _intelInterval;
-        waitUntil {time >= _time or !(_group getVariable ["pl_is_recon", false])};
+        waitUntil {sleep 1; time >= _time or !(_group getVariable ["pl_is_recon", false])};
         // cancel recon if leader dead
         // delete all markers after Intervall
         {

@@ -39,7 +39,8 @@ pl_getIn_vehicle = {
     };
     {
         if (vehicle (leader _group) == leader _group) then {
-            _cargoCap = _x emptyPositions "cargo"; 
+            _cargoCap = (_x emptyPositions "cargo") + (_x emptyPositions "gunner") + (_x emptyPositions "commander");
+
             if (_cargoCap >= _groupLen) then {
                 _targetVic = _x;
             };
@@ -161,10 +162,10 @@ pl_getIn_vehicle = {
                 _group setVariable ["onTask", false];
                 _group setVariable ["setSpecial", false];
                 // _group setVariable ["pl_show_info", false];
-                [_group] call pl_hide_group_icon;
-                // if !(_targetVic isKindOf "Air") then {
-                //     player hcRemoveGroup _group;
-                // };
+                if !(_targetVic isKindOf "Air") then {
+                    [_group] call pl_hide_group_icon;
+                    player hcRemoveGroup _group;
+                };
             };
         };
     }
@@ -412,7 +413,9 @@ pl_getOut_vehicle = {
                         _x leaveVehicle _vic;
                         // player hcSetGroup [_x];
                         // _x setVariable ["pl_show_info", true];
-                        [_x] call pl_show_group_icon;
+                        if !(_x getVariable ["pl_show_info", false]) then {
+                            [_x] call pl_show_group_icon;
+                        };
                         if (_x != (group player)) then {
                             if ((_vic distance2D (_vic getVariable "pl_rtb_pos")) > 300) then {
                                 // [_x, _vic] spawn pl_airassualt_security;
@@ -538,7 +541,9 @@ pl_getOut_vehicle = {
                                         driver (vehicle (player)) doFollow player;
                                     };
                                     // player hcSetGroup [_x];
-                                    [_x] call pl_show_group_icon;
+                                    if !(_x getVariable ["pl_show_info", false]) then {
+                                        [_x] call pl_show_group_icon;
+                                    };
                                     _x leaveVehicle _vic;
                                 } forEach _cargoGroups;
                             };
@@ -598,7 +603,9 @@ pl_getOut_vehicle = {
                     if (!_moveInConvoy and _vic getVariable ["pl_on_transport", false]) then {
                         {
                             // _x setVariable ["pl_show_info", true];
-                            [_x] call pl_show_group_icon;
+                            if !(_x getVariable ["pl_show_info", false]) then {
+                                [_x] call pl_show_group_icon;
+                            };
                             _x leaveVehicle _vic;
                             // _x addWaypoint [getPos _vic, 10];
                             player hcSetGroup [_x];
@@ -636,7 +643,9 @@ pl_getOut_vehicle = {
                 sleep 2;
                 waitUntil {isNull (isVehicleCargo _transportedVic) or (!alive _vic)};
                 // _group setVariable ["pl_show_info", true];
-                [_group] call pl_show_group_icon;
+                if !(_group getVariable ["pl_show_info", false]) then {
+                    [_group] call pl_show_group_icon;
+                };
                 // _group leaveVehicle _vic;
             };
 
@@ -703,7 +712,9 @@ pl_getOut_vehicle = {
                 // _x leaveVehicle _vic;
                 // _x setVariable ["pl_show_info", true];
                 // player hcSetGroup [_x];
-                [_x] call pl_show_group_icon;
+                if !(_x getVariable ["pl_show_info", false]) then {
+                    [_x] call pl_show_group_icon;
+                };
                 _x leaveVehicle _vic;
                 // _x addWaypoint [getPos _vic, 10];
             } forEach _cargoGroups;
@@ -719,6 +730,32 @@ pl_getOut_vehicle = {
         };
     };
 };
+
+pl_dismount_cargo = {
+    params [["_group", (hcSelected player) select 0]];
+
+    playSound "beep";
+
+    _vic = vehicle (leader _group);
+    _driver = driver _vic;
+    _vicGroup = group _driver;
+    doStop _vic;
+    _cargo = fullCrew [_vic, "cargo", false];
+    {
+        _unit = _x select 0;
+        if (_unit in (units _vicGroup)) then {
+            _unit = _x select 0;
+            doGetOut _unit;
+            [_unit] allowGetIn false;
+        };
+    } forEach _cargo;
+
+    {
+        _x doFollow (leader _group);
+    } forEach (units _group);
+};
+
+// [] spawn pl_dismount_cargo;
 
 pl_unload_at_position_planed = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
@@ -767,7 +804,9 @@ pl_unload_at_position_planed = {
     } forEach _cargo;
 
     {
-        [_x] call pl_show_group_icon;
+        if !(_x getVariable ["pl_show_info", false]) then {
+            [_x] call pl_show_group_icon;
+        };
         _x leaveVehicle _vic;
     } forEach _cargoGroups;
 
@@ -985,7 +1024,9 @@ pl_leave_vehicle = {
     } forEach _cargo;
 
     {
-        [_x] call pl_show_group_icon;
+        if !(_x getVariable ["pl_show_info", false]) then {
+            [_x] call pl_show_group_icon;
+        };
         _x leaveVehicle _vic;
     } forEach _cargoGroups;
 
@@ -1003,6 +1044,9 @@ pl_spawn_leave_vehicle = {
         [_x] spawn pl_leave_vehicle;
     } forEach hcSelected player;  
 };
+
+pl_follow_array_other_setup = [];
+pl_follow_array_other = [];
 
 pl_attach_inf = {
     private ["_group", "_vic", "_vicGroup", "_attachForm", "_leader"];
@@ -1157,10 +1201,10 @@ player addEventHandler ["GetInMan", {
     private ["_group"];
     _group = group player;
     _vicGroup = group (driver (vehicle player));
-    _vicGroup setVariable ["setSpecial", true];
-    _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
-    player setVariable ["pl_player_vicGroup", _vicGroup];
     if (_vicGroup != (group player)) then {
+        player setVariable ["pl_player_vicGroup", _vicGroup];
+        _vicGroup setVariable ["setSpecial", true];
+        _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
         // _group setVariable ["pl_show_info", false];
         [_group] call pl_hide_group_icon;
         // player hcRemoveGroup _group;
@@ -1175,7 +1219,9 @@ player addEventHandler ["GetOutMan", {
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];
     // _group setVariable ["pl_show_info", true];
-    [_group, "hq"] call pl_show_group_icon;
+    if !(_group getVariable ["pl_show_info", false]) then {
+        [_group, "hq"] call pl_show_group_icon;
+    };
     // player hcSetGroup [_group];
 
     _cargo = fullCrew [(vehicle ((units _vicGroup)#0)), "cargo", false];

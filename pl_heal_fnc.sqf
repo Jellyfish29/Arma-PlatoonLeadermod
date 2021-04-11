@@ -99,7 +99,8 @@ pl_heal_group = {
 
     // _medic = ((units _group) select {(typeOf _x) in pl_medic_cls_names}) select 0;
     {
-        if (getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "attendant" ) isEqualTo 1) then {
+        // if (getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "attendant" ) isEqualTo 1) then {
+        if (_x getUnitTrait "Medic") then {
             _medic = _x;
         };
     } forEach (units _group);
@@ -297,10 +298,10 @@ pl_ccp = {
     private ["_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP"];
 
     // _group = hcSelected player select 0;
-    // if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
     if (pl_ccp_set and !(_isMedevac)) exitWith {hint "Only one CCP allowed!"};
 
-    if (_group != (group player) and !(_isMedevac)) exitWith {
+    if (_group != (group player) and !(_isMedevac) and !(_group getVariable ["pl_set_as_medical", false])) exitWith {
         // playSound "beep";
         hint "Only the Player Group or a Medical Vehicle can set up the CCP";
     };
