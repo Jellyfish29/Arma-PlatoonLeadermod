@@ -179,7 +179,7 @@ pl_getIn_vehicle = {
 
 pl_getOut_vehicle = {
     params ["_group", "_convoyId", "_moveInConvoy", ["_atPosition", false]];
-    private ["_vic", "_commander", "_markerName", "_cargo", "_cargoGroups", "_vicTransport", "_transportedVic", "_inLandConvoy", "_convoyLeader", "_convoyArray", "_convoyPosition", "_watchPos", "_landigPad"];
+    private ["_vic", "_commander", "_markerName", "_cargo", "_cargoGroups", "_vicTransport", "_transportedVic", "_inLandConvoy", "_convoyLeader", "_convoyArray", "_convoyPosition", "_watchPos", "_landigPad", "_distanceBack"];
 
     _leader = leader _group;
 
@@ -438,6 +438,7 @@ pl_getOut_vehicle = {
                         };
 
                         _vic setVariable ["pl_speed_limit", "CON"];
+                        [_group] call pl_vehicle_soft_unstuck;
                         // _vic forceFollowRoad true;
 
                         while {
@@ -452,66 +453,64 @@ pl_getOut_vehicle = {
                                 case "MAX" : {_convoyLeaderSpeed = 70}; 
                                 default {_convoyLeaderSpeed = parseNumber _convoyLeaderSpeed}; 
                             };
-                            if ((group _commander) != _convoyLeader) then {
+                            private _convoyLeaderVic = vehicle (leader _convoyLeader);
+                            if ((group _commander) == _convoyLeader) then {
+                                _distance = _vic distance2d vehicle (leader (_convoyArray select 1));
+                                _vic forceSpeed -1;
+                                _vic limitSpeed _convoyLeaderSpeed;
+                                if (_distance < 70) then {
+                                    _vic limitSpeed _convoyLeaderSpeed;
+                                };
+                                if (_distance > 70) then {
+                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
+                                };
+                                if (_distance > 90) then {
+                                    _vic forceSpeed 0;
+                                };
+                                if ((speed _vic) == 0) then {
+                                    _timeout = time + 7;
+                                    waitUntil {(speed _vic) > 0 or time >= _timeout};
+                                    if ((speed _vic) == 0) then {
+                                        [_group] call pl_vehicle_soft_unstuck;
+                                    };
+                                };
+                            }
+                            else
+                            {
                                 _leaderBehavior = behaviour (leader _convoyLeader);
                                 _group setBehaviour _leaderBehavior;
                                 if ((speed (vehicle (leader (_convoyArray select (_convoyPosition - 1))))) < 4) then {
                                     _vic forceSpeed 0;
                                 };
                                 _distance = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition - 1));
+                                _vic forceSpeed -1;
+                                _vic limitSpeed _convoyLeaderSpeed;
                                 if (_distance > 60) then {
-                                    _vic forceSpeed -1;
                                     _vic limitSpeed (_convoyLeaderSpeed + 8);
                                 };
                                 if (_distance < 60) then {
-                                    _vic forceSpeed -1;
                                     _vic limitSpeed _convoyLeaderSpeed;
                                 };
-                                if (_distance < 30) then {
-                                    _vic forceSpeed -1;
+                                if (_distance < 40) then {
                                     _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
                                 };
-                                if (_distance < 20) then {
+                                if (_distance < 30) then {
                                     _vic forceSpeed 0;
                                     _vic limitSpeed 0;
                                 };
+                                _distanceBack = 0;
                                 if (_convoyPosition < ((count (_convoyArray)) - 1)) then {
                                     _distanceBack = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition + 1));
                                     if (_distanceBack > 90) then {
                                         _vic forceSpeed 0;
-                                    }
-                                    else
-                                    {
-                                        if ((speed _vic) == 0) then {
-                                            sleep 5;
-                                            if ((speed _vic) == 0) then {
-                                                [_group] call pl_vehicle_soft_unstuck;
-                                            };
-                                        };
-                                    };
+                                        _convoyLeaderVic limitSpeed ((_convoyLeaderSpeed / 2) - 8);
+                                    },
                                 };
-                            }
-                            else
-                            {
-                                _distance = _vic distance2d vehicle (leader (_convoyArray select 1));
-                                if (_distance < 70) then {
-                                    _vic forceSpeed -1;
-                                    _vic limitSpeed _convoyLeaderSpeed;
-                                };
-                                if (_distance > 70) then {
-                                    _vic forceSpeed -1;
-                                    _vic limitSpeed _convoyLeaderSpeed - (_convoyLeaderSpeed / 2);
-                                };
-                                if (_distance > 90) then {
-                                    _vic forceSpeed 0;
-                                }
-                                else
-                                {
+                                if ((speed _vic) == 0) then {
+                                    _timeout = time + 7;
+                                    waitUntil {(speed _vic) > 0 or time >= _timeout};
                                     if ((speed _vic) == 0) then {
-                                        sleep 5;
-                                        if ((speed _vic) == 0) then {
-                                            [_group] call pl_vehicle_soft_unstuck;
-                                        };
+                                        [_group] call pl_vehicle_soft_unstuck;
                                     };
                                 };
                             };

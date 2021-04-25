@@ -369,7 +369,7 @@ pl_fire_mortar = {
     for "_i" from 1 to pl_mortar_rounds do {
         {
             _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
-            _firePos = [[[_cords, 50]],[]] call BIS_fnc_randomPos;
+            _firePos = [[[_cords, 100]],[]] call BIS_fnc_randomPos;
             _x commandArtilleryFire [_firePos, _ammoType, 1];
             sleep 1;
         } forEach pl_mortars;

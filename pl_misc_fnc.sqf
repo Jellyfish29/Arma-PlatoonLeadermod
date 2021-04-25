@@ -112,7 +112,9 @@ pl_reset = {
         _unit enableAI "COVER";
         _unit enableAI "ANIM";
         _unit enableAI "FSM";
+        _unit enableAi "AIMINGERROR";
         _unit setUnitPos "AUTO";
+        _unit setUnitTrait ["camouflageCoef", 1, true];
         // sleep 0.5;
         _unit limitSpeed 5000;
         _unit forceSpeed -1;
@@ -695,6 +697,7 @@ pl_march = {
 
 pl_recon_active = false;
 pl_recon_group = grpNull;
+pl_recon_area_size_default = 800;
 
 pl_recon_count = 0;
 
@@ -725,7 +728,7 @@ pl_recon = {
     // sealth, holdfire, recon icon
     // _group setBehaviour "STEALTH";
     [_group, "recon"] call pl_change_group_icon;
-    _group setVariable ["pl_recon_area_size", 600];
+    _group setVariable ["pl_recon_area_size", pl_recon_area_size_default];
 
     // _group setCombatMode "GREEN";
     // _group setVariable ["pl_hold_fire", true];
@@ -744,7 +747,7 @@ pl_recon = {
     _markerName setMarkerShape "ELLIPSE";
     _markerName setMarkerBrush "Border";
     _markerName setMarkerAlpha 0.3;
-    _markerName setMarkerSize [600, 600];
+    _markerName setMarkerSize [pl_recon_area_size_default, pl_recon_area_size_default];
 
     sleep 1;
 
@@ -756,15 +759,9 @@ pl_recon = {
 
         while {_group getVariable ["pl_is_recon", false]} do {
             _bonus = 0;
-            // _group setBehaviour "STEALTH";
-            if (behaviour (leader _group) == "STEALTH") then {_bonus = 250};
             _markerName setMarkerPos (getPos (leader _group));
-            if (((currentWaypoint _group) < count (waypoints _group))) then {
-                _group setVariable ["pl_recon_area_size", 500 + _bonus];
-                _markerName setMarkerSize [500 + _bonus, 500 + _bonus];
-            }
-            else
-            {
+            if !(((currentWaypoint _group) < count (waypoints _group))) then {
+                _bonus = 200;
                 // Get height of Group and compare to average sorrounding Height to get Bounus Vision Range
                 _height = getTerrainHeightASL (getPos (leader _group));
                 _interval = 12;
@@ -783,13 +780,16 @@ pl_recon = {
                 if (_reconHeight <= 0) then {_reconHeight = 0};
 
                 // Set Bonus Range
-                _group setVariable ["pl_recon_area_size", 700 + (_reconHeight * 20) + _bonus];
-                _h = _group getVariable "pl_recon_area_size";
-                _markerName setMarkerSize [_h + _bonus, _h + _bonus];
+                _group setVariable ["pl_recon_area_size", pl_recon_area_size_default + (_reconHeight * 20) + _bonus];
+            }
+            else
+            {
+                _group setVariable ["pl_recon_area_size", pl_recon_area_size_default];
             };
+            _h = _group getVariable "pl_recon_area_size";
+            _markerName setMarkerSize [_h, _h];
             sleep 1;
         };
-        _group setBehaviour "AWARE";
         _group setVariable ["pl_recon_area_size", nil];
     };
 

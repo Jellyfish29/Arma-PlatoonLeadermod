@@ -79,7 +79,7 @@ pl_find_cover = {
                 };
             };
         } forEach _covers;
-        if ((unitPos _unit) == "Auto") then {
+        if ((unitPos _unit) == "Auto" and ((group _unit) getVariable ["onTask", false])) then {
             _unit setUnitPos "DOWN";
             doStop _unit;
             _unit doWatch _watchPos;
@@ -89,7 +89,7 @@ pl_find_cover = {
     else
     {
         _unit setUnitPos "DOWN";
-        if (_moveBehind) then {
+        if (_moveBehind and ((group _unit) getVariable ["onTask", false])) then {
             _checkPos = [20 *(sin _watchDir), 20 *(cos _watchDir), 0.25] vectorAdd (getPosASL _unit);
 
             // // _helper = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
@@ -112,36 +112,30 @@ pl_find_cover = {
 
 pl_find_cover_allways = {
     params ["_unit", "_center", "_radius"];
+    private ["_movePos"];
 
-    if ((_unit distance2D _center) < 25) then {
-        _covers = nearestTerrainObjects [getPos _unit, pl_valid_covers, _radius, true, true];
-        if ((count _covers) > 0) then {
-            {
-                if !(_x in pl_covers) exitWith {
-                    pl_covers pushBack _x;
-                    _unit doMove (getPos _x);
-                    sleep 1;
-                    waitUntil {(unitReady _unit) or (!alive _unit)};
-                    doStop _unit;
-                    _unit setUnitPos "MIDDLE";
-                    _unit disableAI "PATH";
-                };
-            } forEach _covers;
-
-            if ((unitPos _unit) == "Auto") then {
-                _unit setUnitPos "DOWN";
-            };
-        }
-        else
+    _covers = nearestTerrainObjects [_center, pl_valid_covers, _radius, true, true];
+    if ((count _covers) > 0) then {
         {
-            doStop _unit;
-            _unit setUnitPos "DOWN";
-            _unit disableAI "PATH";
-        };
+            if !(_x in pl_covers) exitWith {
+                pl_covers pushBack _x;
+                _movePos = getPos _x;
+            };
+        } forEach _covers;
     }
     else
     {
-        _unit doFollow (leader (group _unit));
+        _movePos = [[[_center, _radius]],[]] call BIS_fnc_randomPos;
+    };
+    sleep 0.5;
+    _unit doMove _movePos;
+    sleep 0.5;
+    _reachable = [_unit, _movePos, 20] call pl_not_reachable_escape;
+    waitUntil {(unitReady _unit) or (!alive _unit) or ((group _unit) getVariable ["onTask", false]) or (count (waypoints (group _unit)) > 0)};
+    if (!((group _unit) getVariable ["onTask", true]) and (count (waypoints (group _unit)) <= 0)) then {
+        doStop _unit;
+        _unit setUnitPos "MIDDLE";
+        _unit disableAI "PATH";
     };
     sleep 10;
     pl_covers = []
@@ -301,11 +295,12 @@ pl_take_position = {
         <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>DEPLOY static weapon</t> <br />";
         hint parseText _message;
 
+        _markerAreaName setMarkerPos pl_defence_cords;
+        _markerName setMarkerPos pl_defence_cords;
+
         sleep 0.1;
         _cords = pl_defence_cords;
 
-        _markerAreaName setMarkerPos _cords;
-        _markerName setMarkerPos _cords;
 
         onMapSingleClick {
             pl_mortar_cords = _pos;
@@ -632,14 +627,15 @@ pl_defend_position = {
         <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>360° Security</t>";
         hint parseText _message;
 
-        sleep 0.1;
-        _cords = pl_defence_cords;
-        _markerAreaName setMarkerPos _cords;
+        _markerAreaName setMarkerPos pl_defence_cords;
         _markerDirName = format ["defenceAreaDir%1%2", _group, random 2];
-        createMarker [_markerDirName, _cords];
-        _markerDirName setMarkerPos _cords;
+        createMarker [_markerDirName, pl_defence_cords];
+        _markerDirName setMarkerPos pl_defence_cords;
         _markerDirName setMarkerType "marker_afp";
         _markerDirName setMarkerColor "colorBLUFOR";
+        
+        sleep 0.1;
+        _cords = pl_defence_cords;
 
         onMapSingleClick {
             pl_mapClicked = true;

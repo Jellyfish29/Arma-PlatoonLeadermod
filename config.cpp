@@ -480,7 +480,7 @@ class RscHCGroupRootMenu
                 {
                     expression = "'CANCELALLWP' call BIS_HC_path_menu";
                 };
-                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Cancel All Waypoint</t>";
+                title = "<img color='#e5e500' image='\A3\3den\data\Attributes\default_ca.paa'/><t> Cancel All Waypoint</t>";
                 shortcutsAction = "CommandingMenu3";
                 command = -5;
                 show = "";
@@ -1835,7 +1835,7 @@ class RscHCWPRootMenu
                 {
                     expression = "[] call pl_cancel_planed_task; 'WP_CANCELWP' call BIS_HC_path_menu";
                 };
-                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Cancel Waypoint</t>";
+                title = "<img color='#b20000' image='\A3\3den\data\Attributes\default_ca.paa'/><t> Cancel Waypoint</t>";
                 shortcutsAction = "CommandingMenu3";
                 command = -5;
                 show = "1";
@@ -2326,27 +2326,31 @@ class RscMapControl {
 
 };
 
-class pl_map_gui {
-    idd = 10000;
-    enableSimulation = 1;
-    MovingEnabled = 1;
-    name = "pl_map_test";
-    onLoad = "";
-    onUnload = "";
-    class controls { 
 
-        class pl_map_test: RscMapControl {
-            idc = 10001;
-            x = 0.2375 * safezoneW + safezoneX;
-            y = 0.15 * safezoneH + safezoneY;
-            w = 0.525 * safezoneW;
-            h = 0.532 * safezoneH;
-            class Controls
-            {
-            };
-        };
-    };           // our elements
-};  
+// class CfgGroups
+// {
+//     class Empty
+//     {
+//         class Plmod
+//         {
+//             name = "Platoon Leader";
+//             class fortifications // Catégorie de classement (possible d'en ajouter d'autres)
+//             {
+//                 name = "Dortifications"; // Nom de la catégorie  
+//                 class Raodblock
+//                 {
+//                     name = "Raodblock";
+//                     side = 8;
+//                     icon = "\a3\Ui_f\data\Map\VehicleIcons\iconVehicle_ca.paa";
+//                     class Object0  {side = 8; vehicle = ""Land_Razorwire_F""; rank = """"; position[] = {-1.69824,0.341309,0.00115967}; dir = 9.0426;};
+//                     class Object1  {side = 8; vehicle = ""Land_BagFence_Long_F""; rank = """"; position[] = {-1.69727,-1.35352,6.10352e-005}; dir = 6.1329;};
+//                     class Object2  {side = 8; vehicle = ""Land_BagFence_Long_F""; rank = """"; position[] = {1.25488,-1.63037,7.62939e-005}; dir = 6.1329;};
+                    
+//                 };
+//             };
+//         };
+//     };
+// };
 
 
 

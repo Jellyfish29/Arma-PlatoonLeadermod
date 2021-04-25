@@ -98,6 +98,8 @@ pl_str_detonate = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTask
 pl_str_lay_mine_field = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>';
 pl_str_mine_field_spacing = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa"/><t> Set Mine Field Spacing</t>';
 pl_str_clear_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mines</t>';
+pl_str_des_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Demolish Bridge</t>';
+pl_str_rpr_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Repair Bridge</t>';
 
 pl_show_egineer_menu = {
     call compile format ["
@@ -108,8 +110,11 @@ pl_show_egineer_menu = {
         ['', [], '', -1, [['expression', '']], '%2', '1'],
         [parseText '%4', [4], '', -5, [['expression', '[] spawn pl_lay_mine_field']], '%1', 'HCNotEmpty'],
         [parseText '%5', [5], '#USER:pl_mine_spacing_menu', -5, [['expression', '']], '%1', '1'],
-        [parseText '%6', [6], '', -5, [['expression', '[] spawn pl_mine_clearing']], '1', 'HCNotEmpty']
-    ];", pl_virtual_mines_enabled, pl_str_charge, pl_str_detonate, pl_str_lay_mine_field, pl_str_mine_field_spacing, pl_str_clear_mine];
+        [parseText '%6', [6], '', -5, [['expression', '[] spawn pl_mine_clearing']], '1', 'HCNotEmpty'],
+        ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%7', [7], '', -5, [['expression', '[] spawn pl_destroy_bridge']], '%1', 'HCNotEmpty'],
+        [parseText '%8', [8], '', -5, [['expression', '[] spawn pl_repair_bridge']], '%1', 'HCNotEmpty']
+    ];", pl_virtual_mines_enabled, pl_str_charge, pl_str_detonate, pl_str_lay_mine_field, pl_str_mine_field_spacing, pl_str_clear_mine, pl_str_des_bridge, pl_str_rpr_bridge];
 };
 
 [] call pl_show_egineer_menu;

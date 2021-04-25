@@ -1,6 +1,7 @@
 pl_bounding_cords = [0,0,0];
 pl_bounding_mode = "full";
 pl_bounding_draw_array = [];
+pl_draw_tank_hunt_array = [];
 pl_suppress_area_size = 20;
 pl_suppress_cords = [0,0,0];
 pl_supppress_continuous = false;
@@ -773,6 +774,9 @@ pl_assault_position = {
     _tacticalAtk = false;
     _machinegunner = objNull;
 
+    _formation = formation _group;  
+    _group setBehaviour "AWARE";
+
     switch (_attackMode) do { 
         case "normal" : {
             (leader _group) limitSpeed 12;
@@ -781,7 +785,7 @@ pl_assault_position = {
                 // _x disableAI "FSM";
             } forEach (units _group);
             // (leader _group) setDestination [_cords, "LEADER DIRECT", true];
-
+            _group setFormation "LINE";
             if (_group getVariable ["pl_pos_taken", false]) then {
 
             };
@@ -791,9 +795,6 @@ pl_assault_position = {
         default {leader _group limitSpeed 12;}; 
     };
 
-    _formation = formation _group;
-    _group setFormation "LINE";
-    _group setBehaviour "AWARE";
     // _group setCombatMode "RED";
     // _group setVariable ["pl_combat_mode", true];
 
@@ -899,13 +900,14 @@ pl_assault_position = {
     {
         sleep 0.2;
         missionNamespace setVariable [format ["targets_%1", _group], _targets];
+        private _time = time + 120;
 
         {
             _x enableAI "AUTOCOMBAT";
             _x enableAI "FSM";
             _x forceSpeed 12;
-            [_x, _group] spawn {
-                params ["_unit", "_group"];
+            [_x, _group, _area, _cords] spawn {
+                params ["_unit", "_group", "_area", "_cords"];
                 private ["_movePos", "_target"];
 
                 while {(count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {
@@ -915,20 +917,42 @@ pl_assault_position = {
                             objNull
                         } forEach (missionNamespace getVariable format ["targets_%1", _group]);
                         if !(isNull _target) then {
-                            (group _unit) enableAttack true;
-                            (group _unit) setVariable ["pl_combat_mode", true];
-                            // _unit disableAI "AUTOCOMBAT";
+                            private _posArray = [];
+                            _targetPos = getPosASL _target;
+                            for "_i" from 0 to 360 step 2 do {
+                                _p = [_area * (sin _i), _area * (cos _i), 0] vectorAdd _targetPos;
+
+                                _p = ASLToATL _p;
+                                _p = [_p#0, _p#1, 1.5];
+                                _p = ATLToASL _p;
+                                // _helper1 = createVehicle ["Sign_Sphere25cm_F", _p, [], 0, "none"];
+                                // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+                                // _helper1 setposASL _p;
+
+                                _vis = lineIntersectsSurfaces [_p, aimPos _target, _target, vehicle _target, true, 1, "FIRE"];
+                                if (_vis isEqualTo []) then {
+                                    // _m = createMarker [str (random 1), _p];
+                                    // _m setMarkerType "mil_dot";
+                                    _posArray pushBack _p;
+                                };
+                            };
+                            _unit setUnitTrait ["camouflageCoef", 0.2, true];
+                            _movePos = ([_posArray, [], {_target distance2D _x}, "ASCEND"] call BIS_fnc_sortBy) select 0;
+                            _unit doMove _movePos;
+                            _unit disableAi "AIMINGERROR";
+                            sleep 1;
+
+                            waitUntil {unitReady _unit or !alive _unit or !alive _target or (count (crew _target) == 0) or !((group _unit) getVariable ["onTask", true])};
+
                             _unit reveal [_target, 4];
-                            // _unit doMove (getPos _target);
                             _unit doTarget _target;
                             _unit doFire _target;
                             while {(alive _unit) and (alive _target) and (count (crew _target) > 0) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and !((secondaryWeaponMagazine _unit) isEqualTo [])} do {
-                                sleep 0.5;
+                                sleep 0.1;
                             };
+                            _unit setUnitTrait ["camouflageCoef", 1, true];
+                            _unit enableAi "AIMINGERROR";
                             if (!alive _target or (count (crew _target) <= 0)) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
-                            (group _unit) enableAttack false;
-                            (group _unit) setVariable ["pl_combat_mode", false];
-                            _unit enableAI "AUTOCOMBAT";
                         };
                     };
 
@@ -941,8 +965,9 @@ pl_assault_position = {
                             _unit doMove _movePos;
                             _unit setDestination [_movePos, "FORMATION PLANNED", false];
                             _reachable = [_unit, _movePos, 20] call pl_not_reachable_escape;
+                            _unreachableTimeOut = time + 35;
 
-                            while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and _reachable} do {
+                            while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and _reachable and (_unreachableTimeOut >= time)} do {
                                 // _enemy = _unit findNearestEnemy _unit;
                                 // if ((_unit distance2D _enemy) < 7) then {
                                 //     _unit doTarget _enemy;
@@ -950,14 +975,17 @@ pl_assault_position = {
                                 // };
                                 sleep 0.5;
                             };
+                            if (_unreachableTimeOut <= time) then {
+                                _target enableAI "PATH";
+                                _target doMove ((getPos _target) findEmptyPosition [10, 100, typeOf _target]);
+                            };
                             if (!alive  _target) then {(missionNamespace getVariable format ["targets_%1", _group]) deleteAt ((missionNamespace getVariable format ["targets_%1", _group]) find _target)};
                         }
                         else
                         {
-                            if (({_x isKindOf "Man"} count (missionNamespace getVariable format ["targets_%1", _group])) <= 0) then {
-                                waitUntil {!((group _unit) getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
-                            };
-                        };
+                            doStop _unit;
+                            if (alive _unit) exitWith {};
+                        }
                     };
 
                     if ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) exitWith {};
@@ -965,7 +993,7 @@ pl_assault_position = {
             };
         } forEach (units _group);
 
-        waitUntil {!(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
+        waitUntil {time > _time or !(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
     };
 
 
@@ -993,7 +1021,7 @@ pl_assault_position = {
         (leader _group) sideChat format ["%1 Assault complete", (groupId _group)];
         if (_tacticalAtk or _fastAtk) then {
             {
-                [_x, getPos (leader _group), 8] spawn pl_find_cover_allways;
+                [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
             } forEach (units _group);
         };
     };

@@ -655,3 +655,123 @@ pl_detonate_charges = {
     pl_groups_with_charges = pl_groups_with_charges - [_group];
 };
 
+pl_destroy_bridge = {
+    params [["_group", (hcSelected player) #0]];
+    private ["_cords", "_exSpecialist", "_bridges", "_bridgeMarkers", "_wp", "_charge"];
+
+    _exSpecialist = {
+        if (_x getUnitTrait "explosiveSpecialist" and ((_x getVariable ["pl_virtual_mines", 0]) > 0)) exitWith {_x};
+        objNull
+    } forEach (units _group);
+
+    if (isNull _exSpecialist) exitWith {hint format ["%1 has no Engineer!", groupId _group]};
+
+    if (visibleMap) then {
+
+        hint "Select on MAP";
+        onMapSingleClick {
+            pl_repair_cords = _pos;
+            pl_mapClicked = true;
+            pl_show_dead_vehicles = false;
+            pl_show_damaged_vehicles = false;
+            hint "";
+            onMapSingleClick "";
+        };
+        while {!pl_mapClicked} do {sleep 0.1;};
+
+        pl_mapClicked = false;
+        _cords = pl_repair_cords;
+    }
+    else
+    {
+        _cords = screenToWorld [0.5, 0.5];
+    };
+
+    _roads = _cords nearRoads 30;
+    _bridges = [];
+    _bridgeMarkers = [];
+
+    {
+        _info = getRoadInfo _x;
+        if (_info#8) then {
+            if ((getDammage _x) < 1) then {
+                _bridges pushBackUnique _x;
+            };
+        };
+    } forEach _roads;
+
+    if ((count _bridges) <= 0) exitWith {hint format ["No Bridges in Area", groupId _group]};
+
+    [_group] call pl_reset;
+    playSound "beep";
+
+    sleep 0.2;
+
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
+    _group setVariable ["onTask", true];
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", _icon];
+
+    _origPos = getPosASL (leader _group);
+
+    {
+        _x disableAI "AUTOCOMBAT";
+        // _x disableAI "FSM";
+    } forEach (units _group);
+
+    _wp = _group addWaypoint [_cords, 0];
+    sleep 1;
+    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 35)};
+
+    [_group, (currentWaypoint _group)] setWaypointType "MOVE";
+    [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
+    sleep 0.1;
+    deleteWaypoint [_group, (currentWaypoint _group)];
+    for "_i" from count waypoints _group - 1 to 0 step -1 do {
+        deleteWaypoint [_group, _i];
+    };
+
+    {
+        _x enableAI "AUTOCOMBAT";
+        _x enableAI "FSM";
+    } forEach (units _group);
+
+    sleep 5;
+
+    _charges = _group getVariable ["pl_placed_charges", []];
+    if (_group getVariable ["onTask", true] and alive _exSpecialist and !(_exSpecialist getVariable ["pl_wia", false])) then {
+        _exSpecialist setUnitPos "Middle";
+        _exSpecialist playAction "PutDown";
+        sleep 3;
+        _bPos = getPosASL (_bridges#0);
+        _charge = createMine ["SatchelCharge_F", ASLToATL _bPos, [], 0];
+        _charges pushBack _charge;
+        _exSpecialist setUnitPos "Auto";
+        _exSpecialist enableAI "AUTOCOMBAT";
+        _exSpecialist setVariable ["pl_virtual_mines", (_exSpecialist getVariable "pl_virtual_mines") - 1];
+        _group setVariable ["pl_placed_charges", _charges];
+        pl_groups_with_charges pushBackUnique _group;
+    };
+
+    if (_group getVariable ["onTask", true]) then {
+        sleep 1;
+        _wp = _group addWaypoint [_origPos, 0];
+    };
+
+    sleep 1;
+    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 11)};
+
+    if (_group getVariable ["onTask", true]) then {
+        _charge setDamage 1;
+        pl_groups_with_charges = pl_groups_with_charges - [_group];
+
+        {
+            _x setDamage 1;
+        } forEach _bridges;
+
+        playSound "beep";
+        (leader _group) sideChat format ["%1: Bridge Destroyed", (groupId _group)];
+        [_group] call pl_reset;
+    };
+};
+
