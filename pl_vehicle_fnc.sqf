@@ -826,6 +826,7 @@ pl_spawn_getOut_vehicle = {
     {
         if (vehicle (leader _x) != leader _x) then {
             _vic = vehicle (leader _x);
+            _vic engineOn true;
             _group = group (driver _vic);
             _convoyArray pushBack _group;
         };

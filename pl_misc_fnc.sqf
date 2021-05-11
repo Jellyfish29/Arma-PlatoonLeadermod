@@ -199,6 +199,7 @@ pl_reset = {
     // stop suppression
 
     if (_group getVariable ["pl_is_suppressing", false]) then {_group setVariable ["pl_is_suppressing", false]};
+    if (_group getVariable ["pl_fof_set", false]) then {_group setVariable ["pl_fof_set", false]};
 
     // only delete Waypoints when not called from Move or MoveAdd
     if (_isNotWp) then {

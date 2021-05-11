@@ -233,10 +233,32 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "pl_enable_hc_default",
+    "CHECKBOX",
+    ["Enable High Command by Default","High Command will be enabled by default (All Playerside Groups will be subordinate to the Player)"],
+    "Platoon Leader: General",
+    [true],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_enable_zeus_default",
+    "CHECKBOX",
+    ["Enable Zeus by Default","Player will be set as Zeus by default"],
+    "Platoon Leader: General",
+    [false],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
     "pl_enable_3d_icons",
     "CHECKBOX",
     ["Enable 3D Icons","Enable Extra 3D Icons when selecting or hovering over a group"],
-    "Platoon Leader: UI",
+    "Platoon Leader: General",
     [true],
     nil,
     {},
@@ -247,7 +269,7 @@
     "pl_enable_map_icons",
     "CHECKBOX",
     ["Enable Map Icons","Enable Map Icons for all player side groups"],
-    "Platoon Leader: UI",
+    "Platoon Leader: General",
     [true],
     nil,
     {},
@@ -278,9 +300,33 @@
 // ] call CBA_fnc_addSetting;
 
 
+
 ["Platoon Leader","Select HC Group", "Selects the HCGroup of the Unit the player aims at", {_this spawn pl_select_group}, "", [DIK_T, [false, false, false]]] call CBA_fnc_addKeybind;
 ["Platoon Leader","hcSquadIn_key", "Remote View Leader of HC Group", {_this spawn pl_spawn_cam }, "", [DIK_HOME, [false, false, false]]] call CBA_fnc_addKeybind;
 ["Platoon Leader","hcSquadOut_key", "Release Remote View", {_this spawn pl_remote_camera_out}, "", [DIK_END, [false, false, false]]] call CBA_fnc_addKeybind;
 
 
+sleep 1;
+if (pl_enable_hc_default) then {
+    _hcc = allMissionObjects "HighCommand";
+
+    if (_hcc isEqualTo []) then {
+        _newHcc = (createGroup (sideLogic)) createUnit ["HighCommand", [0, 0, 0], [], 0, "NONE"];
+        player synchronizeObjectsAdd [_newHcc];
+
+    };
+    hcShowBar true;
+};
+
+
+sleep 1;
+if (pl_enable_zeus_default) then {
+    _Zeus = allMissionObjects "ModuleCurator_F";
+
+    if (_Zeus isEqualTo []) then {
+        _newZeus = (createGroup (sideLogic)) createUnit ["ModuleCurator_F", [0, 0, 0], [], 0, "NONE"];
+        player synchronizeObjectsAdd [_newZeus];
+
+    };
+};
 
