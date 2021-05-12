@@ -1229,6 +1229,10 @@ pl_field_of_fire = {
         waitUntil {time >= _time or !(_group getVariable ["pl_fof_set", false])};
     };
 
+    {
+      _x doWatch objNull;
+    } forEach (units _group);
+
     deleteMarker _markerName;
 
     pl_draw_suppression_array = pl_draw_suppression_array - [[_cords, _leader, false, _icon]];
