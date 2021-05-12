@@ -32,7 +32,7 @@ pl_advance = {
     [_group] call pl_reset;
 
     sleep 0.2;
-    playsound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     // limit to speed (no sprinting)
     (leader _group) limitSpeed 15;
@@ -108,7 +108,7 @@ pl_advance = {
 };
 
 pl_suppressive_fire_position = {
-    private ["_markerName", "_cords", "_targets", "_pos", "_units", "_leader"];
+    private ["_markerName", "_cords", "_targets", "_pos", "_units", "_leader", "_area"];
 
     _group = (hcSelected player) select 0;
 
@@ -117,7 +117,7 @@ pl_suppressive_fire_position = {
     if (({(currentCommand _x) isEqualTo "Suppress"} count (units _group)) > 0) exitWith {};
 
 
-    pl_suppress_area_size = 25;
+    pl_suppress_area_size = 50;
     pl_supppress_continuous = false;
 
     _markerName = format ["%1suppress%2", _group, random 1];
@@ -126,6 +126,18 @@ pl_suppressive_fire_position = {
     _markerName setMarkerBrush "SolidBorder";
     _markerName setMarkerColor "colorRED";
     _markerName setMarkerAlpha 0.2;
+
+    private _rangelimiter = 500;
+    if (vehicle (leader _group) != (leader _group)) then { _rangelimiter = 1000};
+
+    _markerBorderName = str (random 2);
+    createMarker [_markerBorderName, getPos (leader _group)];
+    _markerBorderName setMarkerShape "ELLIPSE";
+    _markerBorderName setMarkerBrush "Border";
+    _markerBorderName setMarkerColor "colorRED";
+    _markerBorderName setMarkerAlpha 0.8;
+    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
     _markerName setMarkerSize [pl_suppress_area_size, pl_suppress_area_size];
     if (visibleMap) then {
         _message = "Select Position <br /><br />
@@ -148,19 +160,23 @@ pl_suppressive_fire_position = {
         while {!pl_mapClicked} do {
             // sleep 0.1;
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            _markerName setMarkerPos _mPos;
+            if ((_mPos distance2D (leader _group)) <= _rangelimiter) then {
+                _markerName setMarkerPos _mPos;
+            };
+            // _markerName setMarkerPos _mPos;
             if (inputAction "MoveForward" > 0) then {pl_suppress_area_size = pl_suppress_area_size + 5; sleep 0.05};
             if (inputAction "MoveBack" > 0) then {pl_suppress_area_size = pl_suppress_area_size - 5; sleep 0.05};
             _markerName setMarkerSize [pl_suppress_area_size, pl_suppress_area_size];
-            if (pl_suppress_area_size >= 80) then {pl_suppress_area_size = 80};
-            if (pl_suppress_area_size <= 5) then {pl_suppress_area_size = 5};
+            if (pl_suppress_area_size >= 150) then {pl_suppress_area_size = 150};
+            if (pl_suppress_area_size <= 10) then {pl_suppress_area_size = 10};
         };
 
         player enableSimulation true;
 
         pl_mapClicked = false;
-        _cords = pl_suppress_cords;
-        _markerName setMarkerPos _cords; 
+        _cords = getMarkerPos _markerName;
+        _area = pl_suppress_area_size;
+        deleteMarker _markerBorderName;
     }
     else
     {
@@ -179,13 +195,13 @@ pl_suppressive_fire_position = {
     _targetsPos = [];
 
     // check if enemy in Area
-    _allTargets = nearestObjects [_cords, ["Man", "Car", "Truck", "Tank"], pl_suppress_area_size, true];
+    _allTargets = nearestObjects [_cords, ["Man", "Car", "Truck", "Tank"], _area, true];
     {
         _targetsPos pushBack (getPosATL _x);
     } forEach (_allTargets select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
 
     // if no enemy target buildings;
-    _buildings = nearestObjects [_cords, ["house"], pl_suppress_area_size];
+    _buildings = nearestObjects [_cords, ["house"], _area];
     if !((count _buildings) == 0) then {
         {
             _bPos = [0,0,2] vectorAdd (getPosATL _x);
@@ -194,11 +210,11 @@ pl_suppressive_fire_position = {
     };
 
     // add Random Possitions
-    private _posAmount = 2;
-    if (_targetsPos isEqualTo []) then {_posAmount = 6};
-    for "_i" from 0 to _posAmount do {
-        _rPos = [[[_cords, pl_suppress_area_size]], nil] call BIS_fnc_randomPos;
-        _targetsPos pushBack _rPos;
+    if (_targetsPos isEqualTo []) then {
+        for "_i" from 0 to 5 do {
+            _rPos = [[[_cords, _area]], nil] call BIS_fnc_randomPos;
+            _targetsPos pushBack _rPos;
+        };
     };
 
     // adjust Position and Fire;
@@ -225,6 +241,10 @@ pl_suppressive_fire_position = {
     
     pl_draw_suppression_array pushBack [_cords, _leader, _continous, _icon];
 
+    if (leader _group != vehicle (leader _group)) then {
+        [vehicle (leader _group)] call pl_load_he;
+    };
+
     {
         _unit = _x;
         _pos = selectRandom _targetsPos;
@@ -240,21 +260,39 @@ pl_suppressive_fire_position = {
             _unit doSuppressiveFire _pos;
 
             if (_continous) then {
-                [_unit, _targetsPos, _group] spawn {
-                    params ["_unit", "_targetsPos", "_group"];
+                _allMen = nearestObjects [_cords, ["Man"], _area, true];
+                private _infTargets = [];
+                {
+                    _infTargets pushBack _x;
+                } forEach (_allMen select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
+
+                [_unit, _targetsPos, _group, _infTargets] spawn {
+                    params ["_unit", "_targetsPos", "_group", "_infTargets"];
 
                     while {(_group getVariable ["pl_is_suppressing", true])} do {
 
-                        if !((currentCommand _unit) isEqualTo "Suppress") then {
-                            _pos = selectRandom _targetsPos;
-                            _pos = ATLToASL _pos;
-                            _vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1];
-                            if !(_vis isEqualTo []) then {
-                                _pos = (_vis select 0) select 0;
+                        if ((leader _group != vehicle (leader _group)) or ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun")) then {
+                            // if !((currentCommand _unit) isEqualTo "Suppress") then {
+                                _pos = selectRandom _targetsPos;
+                                _pos = ATLToASL _pos;
+                                _vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1];
+                                if !(_vis isEqualTo []) then {
+                                    _pos = (_vis select 0) select 0;
+                                };
+                                _unit doSuppressiveFire _pos;
+                            // };
+                        }
+                        else
+                        {
+                            if !(_infTargets isEqualTo []) then {
+                                _target = selectRandom _infTargets;
+                                _unit reveal [_target, 2];
+                                if (random 1 >= 0.5) then {
+                                    _unit doSuppressiveFire _target;
+                                };
                             };
-                            _unit doSuppressiveFire _pos;
                         };
-                        sleep 1;
+                        sleep 10;
                     };
                 };
             };
@@ -265,6 +303,10 @@ pl_suppressive_fire_position = {
     sleep 2;
 
     waitUntil {(({(currentCommand _x) isEqualTo "Suppress"} count (units _group)) <= 0 and !(_group getVariable ["pl_is_suppressing", false])) or !alive (leader _group)};
+
+    if (leader _group != vehicle (leader _group)) then {
+        [vehicle (leader _group)] call pl_load_ap;
+    };
 
     deleteMarker _markerName;
 
@@ -363,7 +405,7 @@ pl_friendly_check = {
 
 //     sleep 0.2;
 
-//     playSound "beep";
+//     if (pl_enable_beep_sound) then {playSound "beep"};
 
 //     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
 //     _group setVariable ["onTask", true];
@@ -458,7 +500,7 @@ pl_bounding_squad = {
     [_group] call pl_reset;
     sleep 0.2;
 
-    playsound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa";
     // _group setVariable ["onTask", true];
@@ -750,7 +792,7 @@ pl_assault_position = {
     [_group] call pl_reset;
     sleep 0.2;
     
-    playsound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
@@ -1017,8 +1059,9 @@ pl_assault_position = {
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
         sleep 1;
-        playsound "beep";
-        (leader _group) sideChat format ["%1 Assault complete", (groupId _group)];
+        if (pl_enable_beep_sound) then {playSound "beep"};
+        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1 Assault complete", (groupId _group)]);
+        if (pl_enable_map_radio) then ([_group, "...Assault Complete!", 20] call pl_map_radio_callout);
         if (_tacticalAtk or _fastAtk) then {
             {
                 [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;

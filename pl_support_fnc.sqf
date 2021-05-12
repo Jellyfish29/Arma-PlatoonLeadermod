@@ -206,7 +206,7 @@ pl_cas = {
     _support setVariable ["vehicle", _plane];
     _support setVariable ["type", _casType];
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [playerSide, "HQ"] sideChat "Strike Aircraft on the Way!";
     sleep 1;
     _support setDir _dir;
@@ -221,35 +221,35 @@ pl_cas = {
     switch (_key) do {
         case 1 : {
         pl_cas_gun_cd = time + 120;
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 2 MINUTES, over", _cs];
         waitUntil {sleep 1; time > pl_cas_gun_cd};
         pl_gun_enabled = 1;
      }; 
         case 2 : {
         pl_cas_gun_rocket_cd = time + 240;
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 4 MINUTES, over", _cs];
         waitUntil {sleep 1; time > pl_cas_gun_rocket_cd};
         pl_gun_rocket_enabled = 1;
      }; 
         case 3 : {
         pl_cas_cluster_cd = time + 480;
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 8 MINUTES, over", _cs];
         waitUntil {sleep 1; time > pl_cas_cluster_cd};
         pl_cluster_enabled = 1;
     };
         case 4 : {
         pl_cas_jdam_cd = time + 720;
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 12 MINUTES, over", _cs];
         waitUntil {sleep 1; time > pl_cas_jdam_cd};
         pl_jdam_enabled = 1;
     };
         default {pl_cas_cd = time + 240;}; 
     };
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [playerSide, "HQ"] sideChat format ["%1, is back on Station", _cs];
 };
 
@@ -257,7 +257,7 @@ pl_arty = {
     private ["_salvos", "_markerName"];
 
     if (pl_arty_ammo < pl_arty_rounds) exitWith {
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         hint "Not enough ammunition left!";
     };
     if (visibleMap) then {
@@ -299,10 +299,10 @@ pl_arty = {
     "pl_arty_center" setMarkerText format ["%1 R / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay];
 
     pl_arty_ammo = pl_arty_ammo - pl_arty_rounds;
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [playerSide, "HQ"] sideChat format ["Fire Mission Confirmend // ETA 40 Seconds"];
     sleep 40;
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [playerSide, "HQ"] sideChat format ["Splash"];
 
     _artyGroup = createGroup east;
@@ -361,8 +361,9 @@ pl_fire_mortar = {
     _markerName setMarkerType "mil_destroy";
     _markerName setMarkerText format ["%1 R", pl_mortar_rounds];
 
-    playSound "beep";
-    (gunner (pl_mortars#0)) sideChat "Fire Mission Confirmed, over";
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    (gunner (pl_mortars#0)) sideChat "Fire Mission Confirmed";
+    if (pl_enable_map_radio) then ([group (gunner (pl_mortars#0)), "...Fire Mission Confirmed", 25] call pl_map_radio_callout);
 
     sleep 3,
         
@@ -516,7 +517,7 @@ pl_interdiction_cas = {
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _areaMarkerName;};
         
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [playerSide, "HQ"] sideChat "Strike Aircraft on the Way!";
 
     pl_sorties = pl_sorties - _sortiesCost;
@@ -660,8 +661,9 @@ pl_interdiction_cas = {
         // _targets = (driver _plane) targetsQuery [objNull, sideUnknown, "", [], 0];
         [_casGroup] call pl_reset;
         sleep 0.2;
-        playsound "beep";
+        if (pl_enable_beep_sound) then {playSound "beep"};
         (driver _plane) sideChat format ["%1: RTB", _groupId];
+        if (pl_enable_map_radio) then ([group (driver _plane), "...RTB!", 25] call pl_map_radio_callout);
         {
             _x disableAI "AUTOCOMBAT";
             _x disableAI "TARGET";

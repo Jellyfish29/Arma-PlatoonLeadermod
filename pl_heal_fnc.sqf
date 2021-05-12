@@ -93,7 +93,7 @@ pl_heal_group = {
 
     _group = (hcSelected player) select 0;
 
-    if (_group getVariable ["pl_healing_active", false]) exitWith {playSound "beep"; _group setVariable ["pl_healing_active", false]};
+    if (_group getVariable ["pl_healing_active", false]) exitWith {if (pl_enable_beep_sound) then {playSound "beep"}; _group setVariable ["pl_healing_active", false]};
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
@@ -108,7 +108,7 @@ pl_heal_group = {
     if !(isNil "_medic") then {
         if !(_medic getVariable "pl_wia") then {
 
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
 
             _group setVariable ["pl_healing_active", true];
             // _medic setVariable ["pl_is_ccp_medic", true];
@@ -157,13 +157,13 @@ pl_heal_group = {
         }
         else
         {
-            // playSound "beep";
+            // if (pl_enable_beep_sound) then {playSound "beep"};
             hint "Medic is wounded!";
         };
     }
     else
     {
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         hint "Medic is Kia!";
     };
 };
@@ -184,8 +184,9 @@ pl_wia_callout = {
         _unit setVariable ["pl_wia_calledout", false];
         _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _unit >> "displayName");
         // leader (group _unit) sideChat format ["%1 is W.I.A, requesting Medic, over", _unitMos];
-        playSound "beep";
-        leader (group _unit) sideChat format ["%1: %2 WOUNDED", groupId (group _unit), _unitMos];
+        if (pl_enable_beep_sound) then {playSound "beep"};
+        if (pl_enable_chat_radio) then (leader (group _unit) sideChat format ["%1: %2 WOUNDED", groupId (group _unit), _unitMos]);
+        if (pl_enable_map_radio) then ([group _unit, format ["...%1 is hit!", _unitMos], 20] call pl_map_radio_callout);
     };
 };
 
@@ -302,7 +303,7 @@ pl_ccp = {
     if (pl_ccp_set and !(_isMedevac)) exitWith {hint "Only one CCP allowed!"};
 
     if (_group != (group player) and !(_isMedevac) and !(_group getVariable ["pl_set_as_medical", false])) exitWith {
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         hint "Only the Player Group or a Medical Vehicle can set up the CCP";
     };
     
@@ -354,7 +355,7 @@ pl_ccp = {
             [_group] call pl_reset;
             sleep 0.2;
 
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
 
             pl_ccp_set = true;
             if (count (units _group) > 2) then {
@@ -466,13 +467,13 @@ pl_ccp = {
         }
         else
         {
-            // playSound "beep";
+            // if (pl_enable_beep_sound) then {playSound "beep"};
             hint "Medic is wounded!";
         };
     }
     else
     {
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         hint "Medic is KIA";
     };
 };
@@ -505,7 +506,7 @@ pl_transfer_medic = {
     if (!(_destMedic isEqualTo objNull) and !(_destMedic getVariable "pl_wia")) exitWith {hint "Group already has a Medic"};
 
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [_srcMedic] joinSilent _destGroup;   
 };
 

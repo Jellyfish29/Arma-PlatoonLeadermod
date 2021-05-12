@@ -25,7 +25,7 @@ pl_getIn_vehicle = {
         onMapSingleClick {
             pl_mapClicked = true;
             _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank", "Air"], 10, true];
+            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank", "Air"], 50, true];
             hintSilent "";
             onMapSingleClick "";
         };
@@ -38,10 +38,10 @@ pl_getIn_vehicle = {
         pl_vics = [cursorTarget];
     };
     {
+        pl_vics = [pl_vics, [], {_x distance2D (leader _group)}, "ASCEND"] call BIS_fnc_sortBy;
         if (vehicle (leader _group) == leader _group) then {
             _cargoCap = (_x emptyPositions "cargo") + (_x emptyPositions "gunner") + (_x emptyPositions "commander");
-
-            if (_cargoCap >= _groupLen) then {
+            if (_cargoCap >= _groupLen) exitWith {
                 _targetVic = _x;
             };
         }
@@ -56,7 +56,7 @@ pl_getIn_vehicle = {
                     _groupLen = _groupLen + 1;
                 };
             } forEach (units _group);
-            if (_cargoCap >= _groupLen) then {
+            if (_cargoCap >= _groupLen) exitWith {
                 _targetVic = _x;
             };
         };
@@ -73,13 +73,16 @@ pl_getIn_vehicle = {
             group (driver _targetVic) addWaypoint [getPos (leader _group), 0];
             (group (driver _targetVic)) setVariable ["setSpecial", true];
             (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\takeoff_ca.paa"];
-            playSound "beep";
-            driver _targetVic sideChat format ["%1: Moving to to rendez-vous location", groupId (group (driver _targetVic))];
+            if (pl_enable_beep_sound) then {playSound "beep"};
+            driver _targetVic sideChat format ["%1: Moving to LZ", groupId (group (driver _targetVic))];
+            if (pl_enable_map_radio) then ([group (driver _targetVic), "...Moving to LZ", 25] call pl_map_radio_callout);
             sleep 20;
             waitUntil {sleep 0.1; unitReady _targetVic or !alive _targetVic};
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
             driver _targetVic sideChat format ["%1: Beginning landing", groupId (group (driver _targetVic))];
+            if (pl_enable_map_radio) then ([group (driver _targetVic), "...Beginning Landing", 25] call pl_map_radio_callout);
             _targetVic land "GET IN";
+            // _targetVic land "LAND";
             sleep 10;
             waitUntil {sleep 0.1; (isTouchingGround _targetVic) or !alive _targetVic};
             sleep 1;
@@ -94,8 +97,9 @@ pl_getIn_vehicle = {
             if ((_targetVic canVehicleCargo _vic) select 0) then {
                 _targetVic animateDoor ["Door_1_source", 1];
                 _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
-                playSound "beep";
-                leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName];
+                if (pl_enable_beep_sound) then {playSound "beep"};
+                if (pl_enable_chat_radio) then (leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName]);
+                if (pl_enable_map_radio) then ([_group, format ["...Getting in %1", _vicName], 15] call pl_map_radio_callout);
                 // _group setVariable ["pl_show_info", false];
 
                 [_group] call pl_hide_group_icon;
@@ -112,7 +116,7 @@ pl_getIn_vehicle = {
             }
             else
             {
-                playSound "beep";
+                if (pl_enable_beep_sound) then {playSound "beep"};
                 hint "No avaiable Transport";
             };
         }
@@ -129,7 +133,8 @@ pl_getIn_vehicle = {
                 deleteWaypoint [_group, _i];
             };
             _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
-            leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName];
+            if (pl_enable_chat_radio) then (leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName]);
+            if (pl_enable_map_radio) then ([_group, format ["...Getting in %1", _vicName], 15] call pl_map_radio_callout);
             (group (driver _targetVic)) setVariable ["setSpecial", true];
             (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
             _group setVariable ["setSpecial", true];
@@ -161,17 +166,17 @@ pl_getIn_vehicle = {
             {
                 _group setVariable ["onTask", false];
                 _group setVariable ["setSpecial", false];
+                [_group] call pl_hide_group_icon;
+                player hcRemoveGroup _group;
                 // _group setVariable ["pl_show_info", false];
-                if !(_targetVic isKindOf "Air") then {
-                    [_group] call pl_hide_group_icon;
-                    player hcRemoveGroup _group;
-                };
+                // if !(_targetVic isKindOf "Air") then {
+                // };
             };
         };
     }
     else
     {
-        // playSound "beep";
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         hint "No avaiable Transport";
     };
 };
@@ -179,7 +184,7 @@ pl_getIn_vehicle = {
 
 pl_getOut_vehicle = {
     params ["_group", "_convoyId", "_moveInConvoy", ["_atPosition", false]];
-    private ["_vic", "_commander", "_markerName", "_cargo", "_cargoGroups", "_vicTransport", "_transportedVic", "_inLandConvoy", "_convoyLeader", "_convoyArray", "_convoyPosition", "_watchPos", "_landigPad", "_distanceBack"];
+    private ["_vic", "_commander", "_markerName", "_cargo", "_cargoGroups", "_vicTransport", "_transportedVic", "_inLandConvoy", "_convoyLeader", "_convoyArray", "_convoyPosition", "_watchPos", "_landigPad", "_distanceBack", "_landCords"];
 
     _leader = leader _group;
 
@@ -197,7 +202,7 @@ pl_getOut_vehicle = {
                 player hcRemoveGroup _group;
             };
             if ((missionNamespace getVariable (_convoyId + "time")) > time) then {
-                playSound "beep";
+                if (pl_enable_beep_sound) then {playSound "beep"};
                 hint format ["%1 is already on a mission!", groupId (group (driver _vic))];
             };
         };
@@ -245,12 +250,13 @@ pl_getOut_vehicle = {
             };
 
             if ((_cords distance2D (_vic getVariable "pl_rtb_pos")) > 200) then {
-                // playSound "beep";
+                // if (pl_enable_beep_sound) then {playSound "beep"};
                 // _commander sideChat "Roger, Moving to Insertion Point, over";
             }
             else
             {
                 _commander sideChat format ["%1: RTB", groupId (group _commander)];
+                if (pl_enable_map_radio) then ([group _commander, "...RTB", 25] call pl_map_radio_callout);
             };
 
             _convoyArray = [];
@@ -281,12 +287,12 @@ pl_getOut_vehicle = {
                             _x setVariable ["r1", _r1];
                         } forEach (missionNamespace getVariable _convoyId);
                         hint "Setting up Convoy...";
-                        playSound "beep";
+                        if (pl_enable_beep_sound) then {playSound "beep"};
                     }
                     else
                     {
                         hint "Setting up Flight...";
-                        playSound "beep";
+                        if (pl_enable_beep_sound) then {playSound "beep"};
                     };
                 };
                 sleep 5;
@@ -322,7 +328,8 @@ pl_getOut_vehicle = {
                     if ((group _commander) != _convoyLeader) then {
                         _dir = [_cords, _vic getVariable "pl_rtb_pos"] call BIS_fnc_dirTo;
                         _moveDir = [(_dir - 90)] call pl_angle_switcher;
-                        _cords =  [45*(sin _moveDir),45*(cos _moveDir), 0] vectorAdd [pl_lz_cords select 0, pl_lz_cords select 1, 0];
+                        _cords =  [25*(sin _moveDir),25*(cos _moveDir), 0] vectorAdd [pl_lz_cords select 0, pl_lz_cords select 1, 0];
+
                         pl_lz_cords = _cords;
                     };
                     _t = time + 10;
@@ -364,14 +371,19 @@ pl_getOut_vehicle = {
             _wp = (group _commander) addWaypoint [_cords, 0];
             _wp setWaypointType "TR UNLOAD";
             if (_vic isKindOf "Air") then {
-                _landigPad = "Land_HelipadEmpty_F" createVehicle _cords;
-                _landigPad setDir (_vic getDir _cords);
+                _landCords = _cords findEmptyPosition [0, 100, "Land_HelipadEmpty_F"];
+                if (_landCords isEqualTo []) then {_landCords = _cords};
+                _landigPad = "Land_HelipadEmpty_F" createVehicle _landCords;
+                _landigPad setDir (_vic getDir _landCords);
+
+                // _m = createMarker [str (random 2), _landCords];
+                // _m setMarkerType "mil_dot";
             };
 
             // Create Destination Marker
             private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa";
             if (_moveInConvoy) then {_icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"};
-            pl_draw_planed_task_array pushBack [_wp, _icon];
+            // pl_draw_planed_task_array pushBack [_wp, _icon];
 
             if ((group driver (_vic)) == (group player)) then {
                 (driver _vic) commandMove _cords;
@@ -650,7 +662,7 @@ pl_getOut_vehicle = {
 
             if !(_moveInConvoy) then {
                 waitUntil {((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
-                // playSound "beep";
+                // if (pl_enable_beep_sound) then {playSound "beep"};
                 // _commander sideChat format ["%1 finished unloading, over", groupId _group];
                 player hcSetGroup [_group];
                 sleep 2;
@@ -670,8 +682,9 @@ pl_getOut_vehicle = {
                     _x disableAI "AUTOCOMBAT";
                 } forEach (crew _vic);
                 sleep 2;
-                playSound "beep";
+                if (pl_enable_beep_sound) then {playSound "beep"};
                 _commander sideChat format ["%1: RTB", groupId (group _commander)];
+                if (pl_enable_map_radio) then ([group _commander, "...RTB", 25] call pl_map_radio_callout);
                 waitUntil {sleep 0.1; (unitReady _vic) or (!alive _vic)};
                 {
                     _x enableAI "AUTOCOMBAT";
@@ -718,10 +731,10 @@ pl_getOut_vehicle = {
                 // _x addWaypoint [getPos _vic, 10];
             } forEach _cargoGroups;
 
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
             // _commander sideChat format ["Roger, %1 beginning unloading, over", groupId _group];
             waitUntil {sleep 0.1; ((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
             // _commander sideChat format ["%1 finished unloading, over", groupId _group];
             _vic setVariable ["pl_on_transport", nil];
             (group _commander) setVariable ["setSpecial", false];
@@ -733,7 +746,7 @@ pl_getOut_vehicle = {
 pl_dismount_cargo = {
     params [["_group", (hcSelected player) select 0]];
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     _vic = vehicle (leader _group);
     _driver = driver _vic;
@@ -809,10 +822,10 @@ pl_unload_at_position_planed = {
         _x leaveVehicle _vic;
     } forEach _cargoGroups;
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     // _commander sideChat format ["Roger, %1 beginning unloading, over", groupId _group];
     waitUntil {sleep 0.1; ((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     // _commander sideChat format ["%1 finished unloading, over", groupId _group];
     _vic setVariable ["pl_on_transport", nil];
     (group (driver _vic)) setVariable ["setSpecial", false];
@@ -821,7 +834,7 @@ pl_unload_at_position_planed = {
 
 pl_spawn_getOut_vehicle = {
     params [["_moveInConvoy", false]];
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     private _convoyArray = [];
     {
         if (vehicle (leader _x) != leader _x) then {
@@ -936,7 +949,7 @@ pl_vehicle_speed_limit = {
 pl_spawn_vic_speed = {
     params ["_speed"];
 
-    playsound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     {  
        [_x, _speed] spawn pl_vehicle_speed_limit; 
@@ -982,7 +995,8 @@ pl_crew_vehicle = {
             [_x] allowGetIn true;
             [_x] orderGetIn true;
         } forEach (units _group);
-        (leader _group) sideChat format ["%1: Crewing %2", groupId _group, getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")]
+        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Crewing %2", groupId _group, getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")]);
+        if (pl_enable_map_radio) then ([_group, format ["Crewing %1", getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")], 25] call pl_map_radio_callout);
     }
     else
     {

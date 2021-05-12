@@ -11,7 +11,7 @@ addMissionEventHandler ["GroupIconClick", {
     private ["_vic", "_vicGroup"];
 
     if (side _group == playerSide) then {
-        playsound "beep";
+        if (pl_enable_beep_sound) then {playSound "beep"};
         // if ((vehicle (leader _group)) != (leader _group)) then {
         //     _vic = vehicle (leader _group);
         //     // player sideChat str _vic;
@@ -59,6 +59,7 @@ addMissionEventHandler ["EntityKilled",{
             _killed setVariable ["pl_wia", false];
             [_killed] spawn pl_draw_kia;
             _group = group _killed;
+            if (pl_enable_map_radio) then ([_group, format ["...%1 KIA", _unitMos], 15] call pl_map_radio_callout);
             _mags = _group getVariable "magCountAllDefault";
             _mag = _group getVariable "magCountSoloDefault";
             _mags = _mags - _mag;
@@ -71,7 +72,7 @@ addMissionEventHandler ["EntityKilled",{
             // _killedUnits pushBack [_type, _loadout];
             // _group setVariable ["pl_killed_units", _killedUnits];
 
-            // playSound "beep";
+            // if (pl_enable_beep_sound) then {playSound "beep"};
             // _leader sideChat format ["%1: %2 K.I.A", groupId _group, _unitMos];
         };
 
@@ -165,6 +166,7 @@ pl_reset = {
     if (vehicle (leader _group) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic forceSpeed -1;
+        _vic call pl_load_ap;
         if (_vic getVariable ["pl_on_transport", false]) then {
             _vic setVariable ["pl_on_transport", nil];
             _group setVariable ["setSpecial", true];
@@ -225,7 +227,7 @@ pl_hold = {
     // disables pathfinding on group
 
     params ["_group"];
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     // set Variable
     _group setVariable ["pl_on_hold", true];
@@ -253,7 +255,7 @@ pl_spawn_hold = {
 
 pl_execute = {
     params ["_group"];
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     _group setVariable ["pl_on_hold", false];
 
     // if icon == "wait" disable icon
@@ -456,7 +458,7 @@ pl_watch_dir = {
 
 
     if (_dir isEqualTo "") then {
-        playSound "beep";
+        if (pl_enable_beep_sound) then {playSound "beep"};
         _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
         _groupPos = getPos (leader _group);
         _watchDir = [_cords, _groupPos] call BIS_fnc_dirTo;
@@ -521,7 +523,7 @@ pl_set_unit_pos = {
 pl_hold_fire = {
     params ["_group"];
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     _group setCombatMode "GREEN";
     _group setVariable ["pl_hold_fire", true];
@@ -531,7 +533,7 @@ pl_hold_fire = {
 pl_open_fire = {
     params ["_group"];
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     _group setCombatMode "YELLOW";
     _group setVariable ["pl_hold_fire", false];
@@ -553,7 +555,7 @@ pl_follow = {
             _x setVariable ["onTask", true];
             _x setVariable ["setSpecial", true];
             _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"];
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
             // leader _x sideChat format ["%1 is forming up on %2, over",(groupId _x), (groupId (group player))];
             _pos1 = getPos (leader _x);
             _pos2 = getPos player;
@@ -656,7 +658,7 @@ pl_march = {
         [_group] call pl_reset;
         sleep 0.2;
 
-        playSound "beep";
+        if (pl_enable_beep_sound) then {playSound "beep"};
 
         _group setVariable ["onTask", true];
         _group setVariable ["setSpecial", true];
@@ -721,7 +723,7 @@ pl_recon = {
     // pl_recon_group = _group;
 
     _group setVariable ["pl_is_recon", true];
-    if !(_preSet) then {pl_recon_count = pl_recon_count + 1; playSound "beep"};
+    if !(_preSet) then {pl_recon_count = pl_recon_count + 1; if (pl_enable_beep_sound) then {playSound "beep"}};
 
     // [_group] call pl_reset;
     // sleep 0.2;

@@ -255,7 +255,8 @@ pl_mine_clearing = {
     };
 
     if (_group getVariable ["onTask", true]) then {
-        (leader _group) sideChat format ["%1: Mine Sweep complete", groupId _group];
+        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Mine Sweep complete", groupId _group]);
+        if (pl_enable_map_radio) then ([_group, "...Mine Sweep Complete", 20] call pl_map_radio_callout);
         [_group] call pl_reset;
     };
     deleteMarker _markerName
@@ -288,7 +289,8 @@ pl_lay_mine_field = {
 
     if (_availableMines <= 0) exitWith {hint "No Mines Left!"};
 
-    (leader _group) sideChat format ["%1: %2 Mines Available",groupId _group, _availableMines];
+    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: %2 Mines Available",groupId _group, _availableMines]);
+    if (pl_enable_map_radio) then ([_group, format ["...%1 Mines Available",_availableMines], 15] call pl_map_radio_callout);
 
     hintSilent "";
     pl_mine_field_size = 16;
@@ -411,7 +413,7 @@ pl_lay_mine_field = {
     };
 
     [_group] call pl_reset;
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     sleep 0.2;
 
@@ -428,7 +430,9 @@ pl_lay_mine_field = {
     _mineTypeTxt = "AT";
     if (_mineType isEqualTo "APERSBoundingMine") then {_mineTypeTxt = "AP"};
 
-    (leader _group) sideChat format ["%1: Laying %2 %3 Mines with %4m Spacing",groupId _group, _neededMines, _mineTypeTxt, pl_mine_spacing];
+    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Laying %2 %3 Mines with %4m Spacing",groupId _group, _neededMines, _mineTypeTxt, pl_mine_spacing]);
+    if (pl_enable_map_radio) then ([_group, format ["...Laying %1 %2 Mines with %3m Spacing", _neededMines, _mineTypeTxt, pl_mine_spacing], 20] call pl_map_radio_callout);
+
     _usedMines = 0; 
     _offSet = pl_mine_field_size * 2;
     _startPos = [((_offSet / 2) - (pl_mine_spacing / 2)) *(sin (_watchDir - 90)), ((_offSet / 2) - (pl_mine_spacing / 2)) *(cos (_watchDir - 90)), 0] vectorAdd _cords;
@@ -581,7 +585,7 @@ pl_place_charge = {
 
 
     [_group] call pl_reset;
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     sleep 0.2;
 
@@ -645,7 +649,7 @@ pl_detonate_charges = {
     _charges = _group getVariable ["pl_placed_charges", []];
 
     if (_charges isEqualTo []) exitWith {hint "Group has no placed Charges"};
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     {
         _x setDamage 1;
@@ -703,7 +707,7 @@ pl_destroy_bridge = {
     if ((count _bridges) <= 0) exitWith {hint format ["No Bridges in Area", groupId _group]};
 
     [_group] call pl_reset;
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     sleep 0.2;
 
@@ -769,8 +773,9 @@ pl_destroy_bridge = {
             _x setDamage 1;
         } forEach _bridges;
 
-        playSound "beep";
-        (leader _group) sideChat format ["%1: Bridge Destroyed", (groupId _group)];
+        if (pl_enable_beep_sound) then {playSound "beep"};
+        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Bridge Destroyed", (groupId _group)]);
+        if (pl_enable_map_radio) then ([_group, "...Bridge Destroyed", 20] call pl_map_radio_callout);
         [_group] call pl_reset;
     };
 };

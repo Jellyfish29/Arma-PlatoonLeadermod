@@ -132,13 +132,15 @@ pl_contact_report = {
                 if (((group _unit) getVariable "PlContactTime") < time) then {
                         _callsign = groupId (group _unit);
                         if ((vehicle _unit) isKindOf "Air") then {
-                            playSound "beep";
-                            _unit sideChat format ["%1: Engaging Ground Targets", _callsign];
+                            if (pl_enable_beep_sound) then {playSound "beep"};
+                            if (pl_enable_chat_radio) then (_unit sideChat format ["%1: Engaging Ground Targets", _callsign]);
+                                if (pl_enable_map_radio) then ([group _unit, "...Engaging Ground Targets!", 15] call pl_map_radio_callout);
                         }
                         else
                         {
-                            playSound "beep";
-                            _unit sideChat format ["%1: Engaging Enemies", _callsign];
+                            if (pl_enable_beep_sound) then {playSound "beep"};
+                            if (pl_enable_chat_radio) then (_unit sideChat format ["%1: Engaging Enemies", _callsign]);
+                            if (pl_enable_map_radio) then ([group _unit, "...Contact!", 15] call pl_map_radio_callout);
                         };
                         [_unit] spawn pl_contact_info_share;
                         (group _unit) setVariable ['inContact', true];
@@ -149,7 +151,8 @@ pl_contact_report = {
                     if (pl_At_fire_report_cd < time) then {
                         pl_At_fire_report_cd = time + 5;
                         _callsign = groupId (group _unit);
-                        _unit sideChat format ["%1: Engaging Vehicles with AT", _callsign];
+                        if (pl_enable_chat_radio) then (_unit sideChat format ["%1: Engaging Vehicles with AT", _callsign]);
+                        if (pl_enable_map_radio) then ([group _unit, "...Engaging Vehicle!", 15] call pl_map_radio_callout);
                     };
                 };
             };
@@ -163,7 +166,7 @@ pl_contact_report = {
 
 
 pl_player_report = {
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     // player sideChat "to all Elements, stand by for SPOTREP, over";
     _targets = [];
     {
@@ -196,8 +199,9 @@ pl_enemy_destroyed_report = {
         if (isNil {_group getVariable "pl_death_reported"}) then {
             _gridPos = mapGridPosition _unit;
             _group setVariable ["pl_death_reported", true];
-            playSound "beep";
-            _killer sideChat format ["%1 destroyed enemy %2", groupId (group _killer), _typeStr];
+            if (pl_enable_beep_sound) then {playSound "beep"};
+            if (pl_enable_chat_radio) then (_killer sideChat format ["%1 destroyed enemy %2", groupId (group _killer), _typeStr]);
+            if (pl_enable_map_radio) then ([group _killer, format ["...destroyed enemy %1", _typeStr], 15] call pl_map_radio_callout);
         };
     };
 };
@@ -341,6 +345,9 @@ pl_set_up_ai = {
     if ((vehicle (leader _group)) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic setVariable ["pl_rtb_pos", getPos _vic];
+        if (_vic isKindOf "Air" and pl_enable_auto_air_remove) then {
+            player hcRemoveGroup _group;
+        };
     };
     _group setVariable ["aiSetUp", true];
     _group setVariable ["onTask", false];
@@ -350,6 +357,10 @@ pl_set_up_ai = {
     _group setVariable ["pl_hold_fire", false];
     _group setVariable ["pl_killed_units", []];
     _groupComposition = [];
+
+    if (pl_enable_map_radio) then {
+        [_group] spawn pl_reset_group_radio_setup;
+    };
 
     if !(_group getVariable ["pl_is_reset", false]) then {
         {
@@ -559,7 +570,7 @@ pl_vehicle_setup = {
 };
 
 pl_ai_setUp_loop = {
-    while {true} do {
+    while {pl_hc_active} do {
         {
             if (side _x isEqualTo playerSide) then {
                 [_x]spawn pl_vehicle_setup;
@@ -613,7 +624,25 @@ pl_ai_setUp_loop = {
     };
 };
 
-[] spawn pl_ai_setUp_loop;
+pl_map_radio_callout = {
+    params ["_group", "_text", "_cdTime"];
+
+    _group setVariable ["pl_radio_time", time + _cdTime];
+    _group setVariable ["pl_radio_text", _text];
+};
+
+pl_reset_group_radio_setup = {
+    params ["_group"];
+
+    while {!(isNull _group)} do {
+        _radioTime = _group getVariable ["pl_radio_time", time + 0];
+        sleep 0.1;
+        if (time > _radioTime) then {
+            _group setVariable ["pl_radio_text", ""];
+        };
+        sleep 1;
+    };
+};
 
 pl_auto_unstuck = {
     params ["_unit"];
@@ -768,11 +797,6 @@ pl_reset_vehicle = {
     _vic = vehicle (leader _group);
 };
 
-sleep 1;
-
-[group player] call pl_set_up_ai;
-
-
 pl_viv_trans_set_up = {
     params ["_group"];
     _vic = vehicle (leader _group);
@@ -840,44 +864,74 @@ pl_inf_trans_set_up = {
 // }];
 
 
-// Start Set Up
+/////////////////// Start Set Up ///////////////////////////
 sleep 1;
+
+_hcc = allMissionObjects "HighCommand";
+pl_hc_active = false;
+if (_hcc isEqualTo []) then {
+    if (pl_enable_hc_default) then {
+        _newHcc = (createGroup (sideLogic)) createUnit ["HighCommand", [0, 0, 0], [], 0, "NONE"];
+        player synchronizeObjectsAdd [_newHcc];
+        pl_hc_active = true;
+        hcShowBar true;
+        sleep 1;
+    };
+}
+else
+{
+    pl_hc_active = true;
+    hcShowBar true;
+};
+
 if ((vehicle player) != player) then {
     _commander = leader (group driver (vehicle player));
     (vehicle player) setEffectiveCommander _commander;
 };
 
-sleep 5;
-{
-    _leader = leader _x;
-    // private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
-    // if (isNil{_hcs}) exitWith {};
-    if (_x getVariable ["pl_is_recon", false]) then {
-        [_x, true] spawn pl_recon;
-    };
+sleep 2;
 
-    if (_x getVariable ["pl_set_as_medical", false]) then {
-        [_x, "med"] call pl_change_group_icon;
-    };
+if (pl_hc_active) then {
 
-    // if !((_x getVariable ["pl_custom_icon", ""]) isEqualTo "") then {
-    //     [_x] call pl_show_group_icon;
-    // };
+    [group player] call pl_set_up_ai;
+    [] spawn pl_ai_setUp_loop;
 
-    sleep 0.1;
-    if ((vehicle _leader) != _leader) then {
-        if (((assignedVehicleRole _leader) select 0) isEqualTo "cargo") then {
-            [_x] call pl_inf_trans_set_up;
-            // [_x, true] spawn pl_contact_report;
+    sleep 2;
+
+    {
+        _leader = leader _x;
+        // private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
+        // if (isNil{_hcs}) exitWith {};
+        if (_x getVariable ["pl_is_recon", false]) then {
+            [_x, true] spawn pl_recon;
         };
-        if !(isNull (isVehicleCargo (vehicle _leader))) then {
-            [_x] call pl_viv_trans_set_up;
-            // [_x, true] spawn pl_contact_report;
+
+        if (_x getVariable ["pl_set_as_medical", false]) then {
+            [_x, "med"] call pl_change_group_icon;
         };
-    };
+
+        // if !((_x getVariable ["pl_custom_icon", ""]) isEqualTo "") then {
+        //     [_x] call pl_show_group_icon;
+        // };
+
+        sleep 0.1;
+        if ((vehicle _leader) != _leader) then {
+            if (((assignedVehicleRole _leader) select 0) isEqualTo "cargo") then {
+                [_x] call pl_inf_trans_set_up;
+                // [_x, true] spawn pl_contact_report;
+            };
+            if !(isNull (isVehicleCargo (vehicle _leader))) then {
+                [_x] call pl_viv_trans_set_up;
+                // [_x, true] spawn pl_contact_report;
+            };
+            if ((vehicle _leader) isKindOf "Air" and pl_enable_auto_air_remove) then {
+                player hcRemoveGroup _x;
+            };
+        };
 
 
-} forEach (allGroups select {side _x isEqualTo playerSide});
+    } forEach (allGroups select {side _x isEqualTo playerSide});
+};
 
 
 

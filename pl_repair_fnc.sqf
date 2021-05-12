@@ -18,8 +18,9 @@ addMissionEventHandler ["EntityKilled",{
         if (_killed getVariable ["pl_repair_lifes", 0] > 0) then {
 
             _groupId = groupId group driver _killed;
-            playSound "beep";
-            driver _killed sideChat format ["%1 has been disabled!", _groupId];
+            if (pl_enable_beep_sound) then {playSound "beep"};
+            if (pl_enable_chat_radio) then (driver _killed sideChat format ["%1 has been disabled!", _groupId]);
+            if (pl_enable_map_radio) then ([group (driver _killed), "...We are hit!", 15] call pl_map_radio_callout);
 
             _crew = crew _killed;
 
@@ -63,8 +64,9 @@ addMissionEventHandler ["EntityKilled",{
         else
         {
             _groupId = groupId group driver _killed;
-            playSound "beep";
-            player sideChat format ["%1 has been destroyed", _groupId];
+            if (pl_enable_beep_sound) then {playSound "beep"};
+            if (pl_enable_chat_radio) then (player sideChat format ["%1 has been destroyed", _groupId]);
+            if (pl_enable_map_radio) then ([group (driver _killed), "...Ahhh", 10] call pl_map_radio_callout);
         };
     };
 }];
@@ -210,7 +212,11 @@ pl_repair = {
                 } forEach _vics;
             };
 
-            if (isNil "_repairTarget") exitWith {leader _group sideChat "No damaged Vehicles found"; playSound "beep"};
+            if (isNil "_repairTarget") exitWith {
+                if (pl_enable_chat_radio) then (leader _group sideChat "No damaged Vehicles found");
+                if (pl_enable_map_radio) then ([_group, "...No damaged Vehicles found", 20] call pl_map_radio_callout);
+                if (pl_enable_beep_sound) then {playSound "beep"};
+            };
 
             _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa";
 
@@ -253,7 +259,7 @@ pl_repair = {
             [_group, "maint"] call pl_change_group_icon;
             // add Task Icon to wp
             pl_draw_planed_task_array pushBack [_wp, _icon];
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
             // leader _group sideChat format ["%1 is moving to damaged vehicle, over", (groupId _group)];
             sleep 4;
             waitUntil {sleep 0.1; !alive _engVic or (unitReady _engVic) or !(_group getVariable ["onTask", true])};
@@ -298,8 +304,9 @@ pl_repair = {
                     player hcSetGroup [_vicGroup];
                     [_vicGroup] spawn pl_reset;
                     sleep 1;
-                    playsound "beep";
-                    (leader _vicGroup) sideChat format ["%1 is back up and fully operational, over", (groupId _vicGroup)];
+                    if (pl_enable_beep_sound) then {playSound "beep"};
+                    if (pl_enable_chat_radio) then ((leader _vicGroup) sideChat format ["%1 is back up and fully operational", (groupId _vicGroup)]);
+                    if (pl_enable_map_radio) then ([_vicGroup, format "...We are back up!", (groupId _vicGroup), 20] call pl_map_radio_callout);
 
                     _group setVariable ["onTask", false];
                     _group setVariable ["setSpecial", false];
@@ -313,7 +320,8 @@ pl_repair = {
                     _group setVariable ["onTask", false];
                     _group setVariable ["setSpecial", false];
                     // _group setVariable ["MARTA_customIcon", nil];
-                    (leader _group) sideChat format ["%1: Repairs completeted", (groupId _group)];
+                    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Repairs Completeted", (groupId _group)]);
+                    if (pl_enable_map_radio) then ([_group, "...Repairs Completeted", 20] call pl_map_radio_callout);
                     _repairCargo = _repairCargo - 1;
                 };
                 
@@ -378,7 +386,7 @@ pl_repair_bridge = {
     if ((count _bridges) <= 0) exitWith {hint format ["No damaged Bridges in Area", groupId _group]};
 
     [_group] call pl_reset;
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     sleep 0.2;
 
@@ -413,8 +421,9 @@ pl_repair_bridge = {
     {
         deleteMarker _x;
     } forEach _bridgeMarkers;
-    playSound "beep";
-    (leader _group) sideChat format ["%1: Bridge Repairs completeted", (groupId _group)];
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Bridge Repairs completeted", (groupId _group)]);
+    if (pl_enable_map_radio) then ([_group, "...Bridge Repairs completeted", 20] call pl_map_radio_callout);
     [_group] call pl_reset;
 };
 

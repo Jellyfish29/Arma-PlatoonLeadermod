@@ -17,6 +17,7 @@ execVM "Plmod\pl_menus_fnc.sqf";
 execVM "Plmod\pl_3d_icon_fnc.sqf";
 execVM "Plmod\pl_disable_hc_elements.sqf";
 execVM "Plmod\pl_mine_fnc.sqf";
+execVM "Plmod\pl_util.sqf";
 
 // setGroupIconsVisible [true,true]; 
 

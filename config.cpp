@@ -684,21 +684,21 @@ class RscHCGroupRootMenu
                 speechId=0;
                 cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
             };
-            class PlFieldOfFire
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\rifle_ca.paa'/><t> Set Field of Fire</t>";
-                shortcuts[]={6};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_field_of_fire";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-                cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
-            };
+            // class PlFieldOfFire
+            // {
+            //     title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\rifle_ca.paa'/><t> Set Field of Fire</t>";
+            //     shortcuts[]={6};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_field_of_fire";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            //     cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
+            // };
             class PlSeperator21
             {
                 title="";
@@ -716,7 +716,7 @@ class RscHCGroupRootMenu
             class PlTakeCover
             {
                 title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover/Button Up</t>";
-                shortcuts[]={7};
+                shortcuts[]={6};
                 submenu="";
                 command=-5;
                 class params
@@ -759,7 +759,7 @@ class RscHCGroupRootMenu
             class PlBoundingSquad
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
-                shortcuts[]={8};
+                shortcuts[]={7};
                 submenu="";
                 command=-5;
                 class params
@@ -788,7 +788,7 @@ class RscHCGroupRootMenu
             class PlAttachInf
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Follow Vehicle</t";
-                shortcuts[]={9};
+                shortcuts[]={8};
                 submenu="";
                 command=-5;
                 class params

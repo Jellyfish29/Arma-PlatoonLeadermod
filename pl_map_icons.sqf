@@ -93,7 +93,7 @@ pl_draw_group_info = {
                     _callsignText,
                     0,
                     0.03,
-                    'TahomaB',
+                    'EtelkaMonospacePro',
                     'right'
                     ];
 
@@ -110,7 +110,7 @@ pl_draw_group_info = {
                     _strengthText,
                     1,
                     0.03,
-                    'TahomaB',
+                    'EtelkaMonospacePro',
                     'left'
                 ];
 
@@ -119,11 +119,11 @@ pl_draw_group_info = {
                 _contactPos = [(_pos select 0) - pl_map_scale_x, (_pos select 1) - pl_map_scale_y];
                 _contactColor = [0.4,1,0.2,1];
                 _x setVariable ['inContact', false];
-                _time = (_x getVariable 'PlContactTime') - 30;
+                _contactTime = (_x getVariable 'PlContactTime') - 30;
                 if (_x getVariable ['pl_hold_fire', false]) then {
                     _contactColor = [0.1,0.1,0.6,1];
                 };
-                if (_time > time) then {
+                if (_contactTime > time) then {
                     _contactColor = [0.7,0,0,1];
                     _x setVariable ['inContact', true];
                 };
@@ -272,12 +272,40 @@ pl_draw_group_info = {
                     ];
                 };
 
-                
+                if (pl_enable_map_radio) then {
+                    _radioIcon = '\A3\modules_f_curator\data\portraitRadioChannelCreate_ca.paa';
+                    _radioPos = [(_pos select 0), (_pos select 1) + pl_map_scale_y * ([1.9, 2] call BIS_fnc_randomNum)];
+                    _radioText = _x getVariable ['pl_radio_text',''];
+                    if !(_radioText isEqualTo '') then {
+                        _display drawIcon [
+                            _radioIcon,
+                            [0.9,0.9,0,1],
+                            _radioPos,
+                            16,
+                            16,
+                            0,
+                            '',
+                            2
+                        ];
+                        _display drawIcon [
+                            '#(rgb,4,1,1)color(1,1,1,0)',
+                            [0.9,0.9,0,1],
+                            _radioPos,
+                            14,
+                            14,
+                            0,
+                            _radioText,
+                            2,
+                            0.02,
+                            'EtelkaMonospacePro',
+                            'right'
+                        ];
+                    };
+                }; 
             };
         } forEach (allGroups select {side _x isEqualTo playerSide});
     "]; // "
 };
-
 
 [] call pl_draw_group_info;
 

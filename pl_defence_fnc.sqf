@@ -158,7 +158,7 @@ pl_rush = {
 
     sleep 0.2;
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     _leader = leader _group;
     if (_leader == vehicle _leader) then {
@@ -383,13 +383,13 @@ pl_take_position = {
             _staticMarkerName setMarkerColor "colorBLUFOR";
             _staticMarkerName setMarkerDir _watchDir;
             (leader _group) addWeapon "Binocular";
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
             // leader _group sideChat format ["Roger, %1 will deploy static Weapon at designated coordinates, over",(groupId _group)];
             _offSet = 9;
         }
         else
         {
-            playSound "beep";
+            if (pl_enable_beep_sound) then {playSound "beep"};
             // leader _group sideChat format ["Roger, %1 will defend the Position, over",(groupId _group)];
             _offSet = 0;
         };
@@ -500,7 +500,7 @@ pl_full_cover = {
     [_group] call pl_reset;
 
     sleep 0.2;
-    playsound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
     leader _group groupRadio "SentCmdHide";
 
 
@@ -702,7 +702,7 @@ pl_defend_position = {
 
     sleep 0.2;
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     if (pl_360_area) then {_icon = "\A3\ui_f\data\map\markers\military\circle_CA.paa"};
     if ((count _validBuildings) > 0) then {_icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};

@@ -45,7 +45,7 @@ pl_rearm = {
 
     sleep 0.2;
 
-    playSound "beep";
+    if (pl_enable_beep_sound) then {playSound "beep"};
 
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
@@ -57,7 +57,8 @@ pl_rearm = {
     _markerName setMarkerColor "colorYellow";
 
     _boxName = getText (configFile >> "CfgVehicles" >> typeOf _targetBox >> "displayName");
-    (leader _group) sideChat format ["%1: Resupplying at %2", (groupId _group), _boxName];
+    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Resupplying at %2", (groupId _group), _boxName]);
+    if (pl_enable_map_radio) then ([_group, format ["...Resupplying at %1", _boxName], 15] call pl_map_radio_callout);
     {    
         [_x, _targetBox] spawn {
             params ["_unit", "_targetBox"];
@@ -138,7 +139,8 @@ pl_supply_point = {
     _ammoCargo = _vic getVariable ["pl_supplies", 0];
     // if no Ammo Left send message
     if (_ammoCargo <= 0) then {
-        (leader _group) sideChat format ["%1: No Ammo left!", groupId _group];
+        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: No Ammo left!", groupId _group]);
+        if (pl_enable_map_radio) then ([_group, "...No Ammo left", 15] call pl_map_radio_callout);
     };
 
 
