@@ -67,6 +67,19 @@
     true
 ] call CBA_fnc_addSetting;
 
+
+[
+    "pl_suppression_min_distance", 
+    "SLIDER", 
+    ["Minimum Suppression Distance", 
+    "..."],
+    ["Platoon Leader","AI"], 
+    [0, 100, 15, 0], 
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
 [
     "pl_enabled_medical",
     "CHECKBOX",

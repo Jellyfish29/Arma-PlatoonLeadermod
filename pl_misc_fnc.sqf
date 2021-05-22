@@ -169,8 +169,8 @@ pl_reset = {
         _vic call pl_load_ap;
         if (_vic getVariable ["pl_on_transport", false]) then {
             _vic setVariable ["pl_on_transport", nil];
-            _group setVariable ["setSpecial", true];
-            _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+            // _group setVariable ["setSpecial", true];
+            // _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
         };
 
         // cancel planend tasks for loaded inf groups
@@ -196,6 +196,9 @@ pl_reset = {
             };
         } forEach _cargoGroups;
 
+        if ((count _cargo) == 0) then {
+            _group setVariable ["pl_has_cargo", false];
+        };
     };
 
     // stop suppression

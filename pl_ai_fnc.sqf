@@ -341,7 +341,7 @@ pl_special_forces_skills = {
 
 pl_set_up_ai = {
     params ["_group"];
-    private ["_magCountAll", "_magCountSolo"];
+    private ["_magCountAll", "_magCountSolo", "_mag"];
     if ((vehicle (leader _group)) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic setVariable ["pl_rtb_pos", getPos _vic];
@@ -802,8 +802,9 @@ pl_viv_trans_set_up = {
     _vic = vehicle (leader _group);
     _targetVic = isVehicleCargo _vic;
     _group setVariable ["pl_show_info", false];
-    (group (driver _targetVic)) setVariable ["setSpecial", true];
-    (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+    // (group (driver _targetVic)) setVariable ["setSpecial", true];
+    // (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+    (group (driver _targetVic)) setVariable ["pl_has_cargo", true];
     {
         // player hcRemoveGroup (group (_x select 0));
         [group (_x select 0)] call pl_hide_group_icon;
@@ -813,8 +814,9 @@ pl_viv_trans_set_up = {
 pl_inf_trans_set_up = {
     params ["_group"];
     _targetVic = vehicle (leader _group);
-    (group (driver _targetVic)) setVariable ["setSpecial", true];
-    (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+    // (group (driver _targetVic)) setVariable ["setSpecial", true];
+    // (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+    (group (driver _targetVic)) setVariable ["pl_has_cargo", true];
     _group setVariable ["onTask", false];
     _group setVariable ["setSpecial", false];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
@@ -917,7 +919,9 @@ if (pl_hc_active) then {
         sleep 0.1;
         if ((vehicle _leader) != _leader) then {
             if (((assignedVehicleRole _leader) select 0) isEqualTo "cargo") then {
-                [_x] call pl_inf_trans_set_up;
+                if (group (driver (vehicle _leader)) != _x) then {
+                    [_x] call pl_inf_trans_set_up;
+                };
                 // [_x, true] spawn pl_contact_report;
             };
             if !(isNull (isVehicleCargo (vehicle _leader))) then {

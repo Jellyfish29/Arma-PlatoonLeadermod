@@ -13,7 +13,7 @@ pl_convoy_path_marker = [];
 
 
 pl_getIn_vehicle = {
-    private ["_vics", "_targetVic", "_groupLen", "_group"];
+    private ["_vics", "_targetVic", "_groupLen", "_group", "_cords"];
 
     _group = hcSelected player select 0;
     _groupLen = count (units _group);
@@ -24,21 +24,23 @@ pl_getIn_vehicle = {
         hint "Select TRANSPORT on Map";
         onMapSingleClick {
             pl_mapClicked = true;
-            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank", "Air"], 50, true];
+            pl_vic_pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            pl_vics = nearestObjects [pl_vic_pos, ["Car", "Truck", "Tank", "Air"], 50, true];
             hintSilent "";
             onMapSingleClick "";
         };
         while {!pl_mapClicked} do {sleep 0.1};
         pl_show_vehicles = false;
         pl_mapClicked = false;
+        _cords = pl_vic_pos;
     }
     else
     {
         pl_vics = [cursorTarget];
+        _cords = getPos cursorTarget;
     };
+    pl_vics = [pl_vics, [], {_x distance2D _cords}, "DESCEND"] call BIS_fnc_sortBy;
     {
-        pl_vics = [pl_vics, [], {_x distance2D (leader _group)}, "ASCEND"] call BIS_fnc_sortBy;
         if (vehicle (leader _group) == leader _group) then {
             _cargoCap = (_x emptyPositions "cargo") + (_x emptyPositions "gunner") + (_x emptyPositions "commander");
             if (_cargoCap >= _groupLen) exitWith {
@@ -70,7 +72,12 @@ pl_getIn_vehicle = {
                 _x disableAI "TARGET";
                 _x disableAI "AUTOTARGET";
             } forEach (units (group (driver _targetVic)));
-            group (driver _targetVic) addWaypoint [getPos (leader _group), 0];
+            _landCords = (getPos (leader _group)) findEmptyPosition [0, 100, "Land_HelipadEmpty_F"];
+            if (_landCords isEqualTo []) then {_landCords = getPos (leader _group)};
+            _landigPad = "Land_HelipadEmpty_F" createVehicle _landCords;
+            _landigPad setDir (_targetVic getDir _landCords);
+            group (driver _targetVic) addWaypoint [_landCords, 0];
+            _targetVic flyInHeight 60;
             (group (driver _targetVic)) setVariable ["setSpecial", true];
             (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\takeoff_ca.paa"];
             if (pl_enable_beep_sound) then {playSound "beep"};
@@ -86,6 +93,7 @@ pl_getIn_vehicle = {
             sleep 10;
             waitUntil {sleep 0.1; (isTouchingGround _targetVic) or !alive _targetVic};
             sleep 1;
+            deleteVehicle _landigPad;
         };
 
         [_group] call pl_reset;
@@ -103,8 +111,8 @@ pl_getIn_vehicle = {
                 // _group setVariable ["pl_show_info", false];
 
                 [_group] call pl_hide_group_icon;
-                (group (driver _targetVic)) setVariable ["setSpecial", true];
-                (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+                // (group (driver _targetVic)) setVariable ["setSpecial", true];
+                // (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
                 
                 _wp = _group addWaypoint [getPosASL _targetVic, 0];
                 _wp setWaypointType "VEHICLEINVEHICLEGETIN";
@@ -135,10 +143,12 @@ pl_getIn_vehicle = {
             _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
             if (pl_enable_chat_radio) then (leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName]);
             if (pl_enable_map_radio) then ([_group, format ["...Getting in %1", _vicName], 15] call pl_map_radio_callout);
-            (group (driver _targetVic)) setVariable ["setSpecial", true];
-            (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
-            _group setVariable ["setSpecial", true];
-            _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+
+
+            // (group (driver _targetVic)) setVariable ["setSpecial", true];
+            // (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+            // _group setVariable ["setSpecial", true];
+            // _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
             {
                 if !(_x in (crew _targetVic)) then {
                     _x assignAsCargo _targetVic;
@@ -159,13 +169,14 @@ pl_getIn_vehicle = {
                     doGetOut _x;
                 } forEach (units _group);
                 [units _group] allowGetIn false;
-                (group (driver _targetVic)) setVariable ["setSpecial", false];
+                // (group (driver _targetVic)) setVariable ["setSpecial", false];
 
             }
             else
             {
                 _group setVariable ["onTask", false];
-                _group setVariable ["setSpecial", false];
+                // _group setVariable ["setSpecial", false];
+                (group (driver _targetVic)) setVariable ["pl_has_cargo", true];
                 [_group] call pl_hide_group_icon;
                 player hcRemoveGroup _group;
                 // _group setVariable ["pl_show_info", false];
@@ -371,6 +382,7 @@ pl_getOut_vehicle = {
             _wp = (group _commander) addWaypoint [_cords, 0];
             _wp setWaypointType "TR UNLOAD";
             if (_vic isKindOf "Air") then {
+                _vic flyInHeight 60;
                 _landCords = _cords findEmptyPosition [0, 100, "Land_HelipadEmpty_F"];
                 if (_landCords isEqualTo []) then {_landCords = _cords};
                 _landigPad = "Land_HelipadEmpty_F" createVehicle _landCords;
@@ -572,11 +584,11 @@ pl_getOut_vehicle = {
                         // if (_group == _convoyLeader) then {
                             // _convoyLeader setGroupId [_convoyLeaderGroupId];
                         _cVic = vehicle (leader _convoyLeader);
-                        _cCargo = fullCrew [_cvic, "cargo", false];
-                        if ((count _cCargo) > 0) then {
-                            _convoyLeader setVariable ["setSpecial", true];
-                            _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
-                        };
+                        // _cCargo = fullCrew [_cvic, "cargo", false];
+                        // if ((count _cCargo) > 0) then {
+                        //     _convoyLeader setVariable ["setSpecial", true];
+                        //     _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+                        // };
                         // };
                         // check if convoyLeader has cargo --> set icon
 
@@ -596,6 +608,7 @@ pl_getOut_vehicle = {
                         pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
 
                         deleteWaypoint [_group, _wp#1];
+                        doStop _vic;
 
                         sleep 0.5;
                         if (_vic getVariable ["pl_on_transport", false]) then {
@@ -667,6 +680,7 @@ pl_getOut_vehicle = {
                 player hcSetGroup [_group];
                 sleep 2;
                 (group _commander) setVariable ["setSpecial", false];
+                (group _commander) setVariable ["pl_has_cargo", false];
             };
             _vic setVariable ["pl_on_transport", nil];
             sleep 10;
@@ -737,7 +751,8 @@ pl_getOut_vehicle = {
             if (pl_enable_beep_sound) then {playSound "beep"};
             // _commander sideChat format ["%1 finished unloading, over", groupId _group];
             _vic setVariable ["pl_on_transport", nil];
-            (group _commander) setVariable ["setSpecial", false];
+            // (group _commander) setVariable ["setSpecial", false];
+            (group _commander) setVariable ["pl_has_cargo", false];
             _vic doFollow _vic;
         };
     };
@@ -782,7 +797,7 @@ pl_unload_at_position_planed = {
     _cargoGroups = [];
     {
         _unit = _x select 0;
-        if !(_unit in (units _vicGroup)) then {
+        if (!(_unit in (units _vicGroup)) and !(_unit in (units (group player)))) then {
             _cargoGroups pushBack (group (_x select 0));
         };
     } forEach _cargo;
@@ -793,13 +808,19 @@ pl_unload_at_position_planed = {
 
     if (count _taskPlanWp != 0) then {
 
-        pl_draw_unload_inf_task_plan_icon_array pushBack [_cargoGroups#0, waypointPosition _taskPlanWp];
+        private _cargoGroup = _cargoGroups#0;
+        private _wpPos = waypointPosition _taskPlanWp;
+
+        pl_draw_unload_inf_task_plan_icon_array pushBack [_cargoGroup, _wpPos];
 
         waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
 
         deleteWaypoint [_group, _taskPlanWp#1];
 
-        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+        if !(_group getVariable ["pl_task_planed", false]) then {
+            pl_cancel_strike = true;
+            pl_draw_unload_inf_task_plan_icon_array = pl_draw_unload_inf_task_plan_icon_array - [[_cargoGroup, _wpPos]];
+        }; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
 
@@ -824,11 +845,20 @@ pl_unload_at_position_planed = {
 
     if (pl_enable_beep_sound) then {playSound "beep"};
     // _commander sideChat format ["Roger, %1 beginning unloading, over", groupId _group];
-    waitUntil {sleep 0.1; ((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
+    private _cargoPers = [];
+    {
+        _unit = _x#0;
+        if ((group _unit) !=_vicGroup) then {
+            _cargoPers pushBack _unit;
+        };
+    } forEach (fullCrew [_vic, "cargo", false]);
+
+    waitUntil {sleep 0.1; (({vehicle _x != _x} count _cargoPers) == 0) or (!alive _vic)};
     if (pl_enable_beep_sound) then {playSound "beep"};
     // _commander sideChat format ["%1 finished unloading, over", groupId _group];
     _vic setVariable ["pl_on_transport", nil];
-    (group (driver _vic)) setVariable ["setSpecial", false];
+    // (group (driver _vic)) setVariable ["setSpecial", false];
+    _vicGroup setVariable ["pl_has_cargo", false];
     _vic doFollow _vic;
 };
 
@@ -1049,6 +1079,7 @@ pl_leave_vehicle = {
         _group setVariable ["pl_group_left_vehicle", _vic];
     };
     _group leaveVehicle _vic;
+    _group setVariable ["pl_has_cargo", false];
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];
 };
@@ -1210,6 +1241,7 @@ pl_attach_inf = {
 //     };
 // } forEach (allGroups select {side _x isEqualTo playerSide});
 
+
 player addEventHandler ["GetInMan", {
     params ["_unit", "_role", "_vehicle", "_turret"];
     private ["_group"];
@@ -1217,8 +1249,9 @@ player addEventHandler ["GetInMan", {
     _vicGroup = group (driver (vehicle player));
     if (_vicGroup != (group player)) then {
         player setVariable ["pl_player_vicGroup", _vicGroup];
-        _vicGroup setVariable ["setSpecial", true];
-        _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+        // _vicGroup setVariable ["setSpecial", true];
+        // _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+        _vicGroup setVariable ["pl_has_cargo", true];
         // _group setVariable ["pl_show_info", false];
         [_group] call pl_hide_group_icon;
         // player hcRemoveGroup _group;
@@ -1240,13 +1273,15 @@ player addEventHandler ["GetOutMan", {
 
     _cargo = fullCrew [(vehicle ((units _vicGroup)#0)), "cargo", false];
     if ((count _cargo == 0)) exitWith {
-        _vicGroup setVariable ["setSpecial", false];
+        // _vicGroup setVariable ["setSpecial", false];
+        _vicGroup setVariable ["pl_has_cargo", false];
     };
     if (({(group (_x#0)) isEqualTo _group} count _cargo) > 0) then {
         [_vicGroup, _cargo, _group] spawn {
             params ["_vicGroup", "_cargo", "_group"];
             waitUntil {sleep 1; (({(group (_x#0)) isEqualTo _group} count (fullCrew [(vehicle ((units _vicGroup)#0)), "cargo", false])) == 0)};
-            _vicGroup setVariable ["setSpecial", false];
+            // _vicGroup setVariable ["setSpecial", false];
+            _vicGroup setVariable ["pl_has_cargo", false];
         };
     };
 }];

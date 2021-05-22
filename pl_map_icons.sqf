@@ -92,7 +92,7 @@ pl_draw_group_info = {
                     0,
                     _callsignText,
                     0,
-                    0.03,
+                    0.025,
                     'EtelkaMonospacePro',
                     'right'
                     ];
@@ -239,6 +239,21 @@ pl_draw_group_info = {
                         '',
                         2
                     ];
+
+                    if (_x getVariable ['pl_has_cargo', false]) then {
+                        _cargoPos = [(_pos select 0) - (pl_map_scale_x * 2), _pos select 1];
+                        _color = [0.9,0.9,0,1];
+                        _display drawIcon [
+                            '\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa',
+                            _color,
+                            _cargoPos,
+                            10,
+                            10,
+                            0,
+                            '',
+                            2
+                        ];
+                    };
                 }
                 else
                 {

@@ -212,7 +212,11 @@ pl_cas = {
     _support setDir _dir;
     sleep 5;
     _vicGroup = group (driver (_support getVariable "plane"));
-    if (isNil "_vicGroup") exitWith {deleteVehicle _support; hint "Defined Plane Class not supported!"};
+    if (isNil "_vicGroup") exitWith {
+        deleteVehicle _support;
+        hint "Defined Plane Class not supported!";
+        deleteMarker _markerName;
+    };
     _vicGroup setGroupId [_cs];
     _vicGroup setVariable ["pl_not_addalbe", true];
     waitUntil {sleep 0.1; _support isEqualTo objNull};
@@ -544,7 +548,13 @@ pl_interdiction_cas = {
     };
 
     _p = [_spawnPos, _dir, _planeType, _casGroup] call BIS_fnc_spawnVehicle;
+    sleep 1;
     _plane = _p#0;
+    if (isNil "_plane") exitWith {
+        deleteMarker _markerName;
+        deleteMarker _areaMarkerName;
+        hint "Defined Plane Class not supported!";
+    }; 
     [_plane, _height] call BIS_fnc_setHeight;
     _plane forceSpeed 140;
     _plane flyInHeight _flyHeight;
