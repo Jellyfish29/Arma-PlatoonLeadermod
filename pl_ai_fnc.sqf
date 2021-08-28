@@ -8,6 +8,7 @@ pl_max_reinforcement_per_vic = parseNumber pl_max_reinforcement_per_vic;
 pl_max_repair_supplies_per_vic = parseNumber pl_max_repair_supplies_per_vic;
 pl_max_mines_per_explo = parseNumber pl_max_mines_per_explo;
 pl_abandoned_markers = [];
+pl_at_targets_indicator = [];
 
 pl_share_info = {
 
@@ -153,6 +154,40 @@ pl_contact_report = {
                         _callsign = groupId (group _unit);
                         if (pl_enable_chat_radio) then (_unit sideChat format ["%1: Engaging Vehicles with AT", _callsign]);
                         if (pl_enable_map_radio) then ([group _unit, "...Engaging Vehicle!", 15] call pl_map_radio_callout);
+                    };
+
+                    if (pl_fire_indicator_enabled) then {
+                        _target = assignedTarget _firer;
+                        if !(isNull _target) then {
+                            [_firer, _target] spawn {
+                                params ["_firer", "_target"];
+                                _firerPos = getPos _firer;
+                                _targetPos = getPos _target;
+                                pl_at_targets_indicator pushBack [_firerPos, _targetPos];
+
+                                sleep 5;
+
+                                pl_at_targets_indicator = pl_at_targets_indicator - [[_firerPos, _targetPos]];
+                            };
+                        };
+                    };
+                };
+
+                if (pl_fire_indicator_enabled and ((vehicle _firer) isKindOf "Tank" or (vehicle _firer) isKindOf "Car")) then {
+                    _target = assignedTarget _firer;
+                    if (!(isNull _target) and !(_firer getVariable ["pl_fire_indicator_on", false])) then {
+                        [_firer, _target] spawn {
+                            params ["_firer", "_target"];
+                            _firerPos = getPos _firer;
+                            _targetPos = getPos _target;
+                            pl_at_targets_indicator pushBack [_firerPos, _targetPos];
+                            _firer setVariable ["pl_fire_indicator_on", true];
+
+                            sleep 3;
+
+                            pl_at_targets_indicator = pl_at_targets_indicator - [[_firerPos, _targetPos]];
+                            _firer setVariable ["pl_fire_indicator_on", false];
+                        };
                     };
                 };
             };
@@ -339,15 +374,33 @@ pl_special_forces_skills = {
     };
 };
 
+pl_add_unit_fire_indicator = {
+    params ["_unit"];
+
+    _unit addEventHandler ["FiredMan", {
+        params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_vehicle"];
+
+        [_unit] spawn {
+            params ["_unit"];
+
+            _unit setVariable ["pl_firing", true];
+
+            sleep 0.1;
+
+            _unit setVariable ["pl_firing", false];
+        };
+    }];
+};
+
 pl_set_up_ai = {
     params ["_group"];
     private ["_magCountAll", "_magCountSolo", "_mag"];
     if ((vehicle (leader _group)) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic setVariable ["pl_rtb_pos", getPos _vic];
-        if (_vic isKindOf "Air" and pl_enable_auto_air_remove) then {
-            player hcRemoveGroup _group;
-        };
+        // if (_vic isKindOf "Air" and pl_enable_auto_air_remove) then {
+        //     player hcRemoveGroup _group;
+        // };
     };
     _group setVariable ["aiSetUp", true];
     _group setVariable ["onTask", false];
@@ -413,7 +466,14 @@ pl_set_up_ai = {
             _x setVariable ["pl_sec_weapon", [_launcher, _missile]];
         };
         
-        [_x] spawn pl_auto_crouch;
+        if (pl_auto_crouch_enabled) then {
+            [_x] spawn pl_auto_crouch;
+        };
+
+        if (pl_fire_indicator_enabled) then {
+            [_x] call pl_add_unit_fire_indicator;
+        };
+
         if (pl_enabled_medical) then {
             [_x] call pl_medical_setup; 
         };
@@ -677,12 +737,15 @@ pl_vehicle_unstuck = {
         } forEach (units _group);
     };
 };
+
 pl_vehicle_soft_unstuck = {
     params ["_group"];
     private ["_vic"];
     _vic = vehicle (leader _group);
-    _pos = [0.25, 0.25, 0.1] vectorAdd (getPosVisual _vic);
-    _vic setPos _pos;
+    // _pos = [0.2, 0.2, 0.2] vectorAdd (getPosVisual _vic);
+    // _vic setPos _pos;
+    _vic setVelocityModelSpace [0, 1, 0];
+    _vic setPos (getPosVisual _vic);
 };
 
 pl_reset_group = {
@@ -928,9 +991,9 @@ if (pl_hc_active) then {
                 [_x] call pl_viv_trans_set_up;
                 // [_x, true] spawn pl_contact_report;
             };
-            if ((vehicle _leader) isKindOf "Air" and pl_enable_auto_air_remove) then {
-                player hcRemoveGroup _x;
-            };
+            // if ((vehicle _leader) isKindOf "Air" and pl_enable_auto_air_remove) then {
+            //     player hcRemoveGroup _x;
+            // };
         };
 
 

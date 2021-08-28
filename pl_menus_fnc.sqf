@@ -276,5 +276,11 @@ pl_group_management = [
     ['Merge', [6], '', -5, [['expression', '[] spawn pl_merge_hc_groups']], '1', 'HCNotEmpty'],
     ['Reset', [7], '', -5, [['expression', '[(hcSelected player) select 0] spawn pl_reset_group']], '1', 'HCNotEmpty'],
     ['Hard Unstuck', [8], '', -5, [['expression', '[(hcSelected player) select 0] call pl_hard_unstuck']], '1', 'HCNotEmpty'],
-    ['Change Icon', [9], '#USER:pl_change_icon_menu', -5, [['expression', '']], '1', 'HCNotEmpty']
+    ['Change Icon', [9], '#USER:pl_change_icon_menu', -5, [['expression', '']], '1', 'HCNotEmpty'],
+    ['Delete', [7], '#USER:pl_confirm_delete', -5, [['expression', '']], '1', 'HCNotEmpty']
+];
+
+pl_confirm_delete = [
+    ['Confirm Deletion',true],
+    ['Confirm', [2], '', -5, [['expression', '{[_x] call pl_delete_group} forEach (hcSelected player)']], '1', 'HCNotEmpty']
 ];

@@ -42,7 +42,7 @@ pl_split_hc_group = {
     params ["_group"];
     {
         if (_x != (leader _group)) then {
-            _newGroup = createGroup [west, true];
+            _newGroup = createGroup [playerSide, true];
             [_x] joinSilent _newGroup;
             player hcSetGroup [_newGroup]
         };
@@ -173,6 +173,15 @@ pl_show_group_icon = {
     {
         _group addGroupIcon [format ["%1_%2", _prefix, _type]]; 
     };
+};
+
+pl_delete_group = {
+    params ["_group"];
+
+    {
+        deleteVehicle _x;
+    } forEach (units _group);
+    deleteGroup _group;
 };
 
 pl_select_group = {

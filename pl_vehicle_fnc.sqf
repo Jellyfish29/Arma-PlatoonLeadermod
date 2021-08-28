@@ -367,7 +367,7 @@ pl_getOut_vehicle = {
                     // _vic setDriveOnPath _points;
 
                     _convoyPosition = (missionNamespace getVariable (_convoyId + "pos"));
-                    _t = time + 4;
+                    _t = time + 2;
                     missionNamespace setVariable [_convoyId + "time", _t];
                     _p  = (missionNamespace getVariable (_convoyId + "pos"));
                     _p = _p + 1;
@@ -464,6 +464,7 @@ pl_getOut_vehicle = {
                         _vic setVariable ["pl_speed_limit", "CON"];
                         [_group] call pl_vehicle_soft_unstuck;
                         // _vic forceFollowRoad true;
+                        _vic setConvoySeparation 1;
 
                         while {
                         (alive (vehicle (leader _convoyLeader))) and
@@ -473,8 +474,8 @@ pl_getOut_vehicle = {
                         } do {
                             private _convoyLeaderSpeed = (vehicle (leader _convoyLeader)) getVariable "pl_speed_limit";
                             switch (_convoyLeaderSpeed) do { 
-                                case "CON" : {_convoyLeaderSpeed = 50}; 
-                                case "MAX" : {_convoyLeaderSpeed = 70}; 
+                                case "CON" : {_convoyLeaderSpeed = 35}; 
+                                case "MAX" : {_convoyLeaderSpeed = 60}; 
                                 default {_convoyLeaderSpeed = parseNumber _convoyLeaderSpeed}; 
                             };
                             private _convoyLeaderVic = vehicle (leader _convoyLeader);
@@ -482,12 +483,12 @@ pl_getOut_vehicle = {
                                 _distance = _vic distance2d vehicle (leader (_convoyArray select 1));
                                 _vic forceSpeed -1;
                                 _vic limitSpeed _convoyLeaderSpeed;
-                                if (_distance < 70) then {
+                                if (_distance < 60) then {
                                     _vic limitSpeed _convoyLeaderSpeed;
                                 };
-                                if (_distance > 70) then {
-                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
-                                };
+                                // if (_distance > 70) then {
+                                //     _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
+                                // };
                                 if (_distance > 90) then {
                                     _vic forceSpeed 0;
                                 };
@@ -495,7 +496,7 @@ pl_getOut_vehicle = {
                                     _timeout = time + 7;
                                     waitUntil {(speed _vic) > 0 or time >= _timeout};
                                     if ((speed _vic) == 0) then {
-                                        [_group] call pl_vehicle_soft_unstuck;
+                                        // [_group] call pl_vehicle_soft_unstuck;
                                     };
                                 };
                             }
@@ -515,17 +516,17 @@ pl_getOut_vehicle = {
                                 if (_distance < 60) then {
                                     _vic limitSpeed _convoyLeaderSpeed;
                                 };
-                                if (_distance < 40) then {
-                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
-                                };
-                                if (_distance < 30) then {
+                                // if (_distance < 40) then {
+                                //     _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
+                                // };
+                                if (_distance < 20) then {
                                     _vic forceSpeed 0;
                                     _vic limitSpeed 0;
                                 };
                                 _distanceBack = 0;
                                 if (_convoyPosition < ((count (_convoyArray)) - 1)) then {
                                     _distanceBack = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition + 1));
-                                    if (_distanceBack > 90) then {
+                                    if (_distanceBack > 70) then {
                                         _vic forceSpeed 0;
                                         _convoyLeaderVic limitSpeed ((_convoyLeaderSpeed / 2) - 8);
                                     },
@@ -534,7 +535,7 @@ pl_getOut_vehicle = {
                                     _timeout = time + 7;
                                     waitUntil {(speed _vic) > 0 or time >= _timeout};
                                     if ((speed _vic) == 0) then {
-                                        [_group] call pl_vehicle_soft_unstuck;
+                                        // [_group] call pl_vehicle_soft_unstuck;
                                     };
                                 };
                             };
@@ -1171,6 +1172,7 @@ pl_attach_inf = {
 
     while {_group getVariable ["onTask", true] and (alive _vic)} do {
 
+        _group setFormDir (getDir _vic);
         if (speed _vic > 0) then {
             _group setBehaviour "AWARE";
             _leader = leader _group;
@@ -1180,15 +1182,14 @@ pl_attach_inf = {
             {
                 _x doFollow _leader;
             } forEach ((units _group) - [_leader]);
-            _group setFormDir (getDir _vic);
         };
 
-        if ((_leader distance2D _vic) > 22) then {_vic forceSpeed 0} else {_vic forceSpeed -1; _vic limitSpeed 15};
+        if ((_leader distance2D _vic) > 22) then {_vic forceSpeed 0} else {_vic forceSpeed -1; _vic limitSpeed 14};
         _vic setVariable ["pl_speed_limit", "CON"];
 
         // sleep 2;
         _time = time + 2;
-        waitUntil {time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
+        waitUntil {sleep 0.1; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
     };
 
     pl_follow_array_other = pl_follow_array_other - [[_vicGroup, _group]];

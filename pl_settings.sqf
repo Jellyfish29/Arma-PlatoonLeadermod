@@ -22,16 +22,16 @@
     true
 ] call CBA_fnc_addSetting;
 
-[
-    "pl_enable_auto_air_remove",
-    "CHECKBOX",
-    ["No HC Air Units","Makes Air Units no selectable by Commander"],
-    ["Platoon Leader", "General"],
-    [true],
-    nil,
-    {},
-    true
-] call CBA_fnc_addSetting;
+// [
+//     "pl_enable_auto_air_remove",
+//     "CHECKBOX",
+//     ["No HC Air Units","Makes Air Units no selectable by Commander"],
+//     ["Platoon Leader", "General"],
+//     [true],
+//     nil,
+//     {},
+//     true
+// ] call CBA_fnc_addSetting;
 
 [
     "pl_ai_skill",
@@ -75,6 +75,17 @@
     "..."],
     ["Platoon Leader","AI"], 
     [0, 100, 15, 0], 
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_auto_crouch_enabled",
+    "CHECKBOX",
+    ["Enable friendly AI Auto Crouch","Friendly Ai will crouch when aware and not moving"],
+    ["Platoon Leader","AI"],
+    true,
     nil,
     {},
     true
@@ -293,6 +304,17 @@
     "pl_enable_map_icons",
     "CHECKBOX",
     ["Enable Map Icons","Enable Map Icons for all player side groups"],
+    ["Platoon Leader", "UI"],
+    [true],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_fire_indicator_enabled",
+    "CHECKBOX",
+    ["Enable Unit Fire Indicator","When a unit is firing, its map icon will flash orange"],
     ["Platoon Leader", "UI"],
     [true],
     nil,

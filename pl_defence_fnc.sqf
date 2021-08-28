@@ -243,7 +243,7 @@ pl_deploy_static = false;
 
 pl_take_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_markerName", "_isStatic", "_staticMarkerName", "_cords", "_watchDir", "_watchPos", "_offSet", "_moveDir", "_medic", "_medicPos", "_icon"];
+    private ["_markerName", "_markerAreaName", "_isStatic", "_staticMarkerName", "_cords", "_watchDir", "_watchPos", "_offSet", "_moveDir", "_medic", "_medicPos", "_icon"];
     // _group = hcSelected player select 0;
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
@@ -259,13 +259,14 @@ pl_take_position = {
         _markerName setMarkerType "marker_sfp";
         _markerName setMarkerColor "colorBLUFOR";
 
+        pl_take_position_size = 30;
         _markerAreaName = format ["%1defArea%2", _group, random 2];
         createMarker [_markerAreaName, [0,0,0]];
         _markerAreaName setMarkerShape "RECTANGLE";
         _markerAreaName setMarkerBrush "SolidBorder";
         _markerAreaName setMarkerColor "colorYellow";
         _markerAreaName setMarkerAlpha 0.15;
-        _markerAreaName setMarkerSize [35, 4];
+        _markerAreaName setMarkerSize [pl_take_position_size, 2];
 
         onMapSingleClick {
             pl_defence_cords = _pos;
@@ -276,14 +277,38 @@ pl_take_position = {
             onMapSingleClick "";
         };
 
+        // while {!pl_mapClicked} do {
+        //     _watchDir = getPos (leader _group) getDir ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
+        //     _markerAreaName setMarkerPos ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
+        //     _markerAreaName setMarkerDir _watchDir;
+        //     _markerName setMarkerPos ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
+        //     _markerName setMarkerDir _watchDir;
+        //     sleep 0.01;
+        // };
+
+
+        _maxLine_size = 100;
+        _minLine_size = 10;
+
+        player enableSimulation false;
+
         while {!pl_mapClicked} do {
             _watchDir = getPos (leader _group) getDir ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
             _markerAreaName setMarkerPos ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
             _markerAreaName setMarkerDir _watchDir;
             _markerName setMarkerPos ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
             _markerName setMarkerDir _watchDir;
-            sleep 0.01;
+            if (inputAction "MoveForward" > 0) then {pl_take_position_size = pl_take_position_size + 5; sleep 0.05};
+            if (inputAction "MoveBack" > 0) then {pl_take_position_size = pl_take_position_size - 5; sleep 0.05};
+            _markerAreaName setMarkerSize [pl_take_position_size, 2];
+            if (pl_take_position_size >= _maxLine_size) then {pl_take_position_size = _maxLine_size};
+            if (pl_take_position_size <= _minLine_size) then {pl_take_position_size = _minLine_size};
         };
+        sleep 0.01;
+
+    player enableSimulation true;
+
+
         pl_mapClicked = false;
         if (pl_cancel_strike) exitWith { 
             deleteMarker _markerName; 
@@ -393,16 +418,24 @@ pl_take_position = {
             // leader _group sideChat format ["Roger, %1 will defend the Position, over",(groupId _group)];
             _offSet = 0;
         };
+
+        _lineSpacing = (pl_take_position_size / (count (units _group))) * 2;
+        _startPos = [(_lineSpacing / 2) *(sin (_watchDir + 90)), (_lineSpacing / 2) *(cos (_watchDir + 90)), 0] vectorAdd _cords;
         for "_i" from 0 to ((count (units _group))- 1) do {
-            if ((_i % 2) == 0) then {
-                _offSet = _offSet + 9;
+            if ((_i % 2) != 0) then {
+                _offSet = _offSet + _lineSpacing;
                 _moveDir = _watchDir - 90;
             }
             else
             {
                 _moveDir = _watchDir + 90;
             };
-            _movePos = [_offSet*(sin _moveDir), _offSet*(cos _moveDir), 0] vectorAdd _cords;
+            _movePos = [_offSet*(sin _moveDir), _offSet*(cos _moveDir), 0] vectorAdd _startPos;
+
+            // debug
+            // _m = createMarker [str (random 1), _movePos];
+            // _m setMarkerType "mil_dot";
+
             _unit = (units _group) select _i;
             if !(_unit in (_isStatic#1)) then {
                 private _isLeader = false;
@@ -492,7 +525,6 @@ pl_take_position = {
         deleteMarker _markerAreaName;
     };
 };
-
 pl_full_cover = {
     params ["_group"];
     private ["_crew", "_isTransport"];
@@ -531,7 +563,7 @@ pl_full_cover = {
     else
     {
         {
-            [_x, getPos _x, getDir _x, 5, false, true] spawn pl_find_cover;
+            [_x, getPos _x, getDir _x, 7, false, false] spawn pl_find_cover;
             // _x setUnitPos "DOWN";
             // _x disableAI "PATH";
             _x setVariable ["pl_damage_reduction", true];
@@ -541,7 +573,7 @@ pl_full_cover = {
 
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
-    _group setVariable ["specialIcon", '\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa'];
+    _group setVariable ["specialIcon", '\A3\3den\data\Attributes\Stance\down_ca.paa'];
 
     waitUntil {!(_group getVariable ["onTask", true])};
 

@@ -66,21 +66,21 @@ class RscHCGroupRootMenu
             show="(1 - HCIsLeader)";
             enable="0";
         };
-        // class Attack
-        // {
-        //     title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Suppress</t>";
-        //     shortcuts[]={0};
-        //     command=-5;
-        //     class Params
-        //     {
-        //         expression="[] call pl_spawn_suppression";
-        //     };
-        //     show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
-        //     enable="HCNotEmpty";
-        //     speechId=0;
-        //     cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
-        //     priority=2;
-        // };
+        class Attack
+        {
+            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
+            shortcuts[]={0};
+            command=-5;
+            class Params
+            {
+                expression="[] spawn pl_bounding_squad";
+            };
+            show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
+            enable="HCNotEmpty";
+            speechId=0;
+            cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
+            priority=2;
+        };
         class EmptyBlank2: Empty1
         {
             title="command 3";
@@ -94,7 +94,7 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="{[_x, false] call pl_reset;} forEach (hcSelected player); playSound 'beep'; ['MOVE',_pos,_is3D,hcselected player,false] call BIS_HC_path_menu";
+                expression="{[_x, false] spawn pl_reset;} forEach (hcSelected player); playSound 'beep'; ['MOVE',_pos,_is3D,hcselected player,false] call BIS_HC_path_menu";
             };
             show="HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -148,6 +148,21 @@ class RscHCGroupRootMenu
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=1;
         };
+        class Empty6
+        {
+            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
+            shortcuts[]={};
+            command=-5;
+            class Params
+            {
+                expression="[] spawn pl_bounding_squad";
+            };
+            show="0";
+            enable="HCNotEmpty";
+            speechId=0;
+            cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
+            priority=3;
+        };
         class Empty4
         {
             title="<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Advance</t>";
@@ -183,22 +198,6 @@ class RscHCGroupRootMenu
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=4;
-        };
-        class Empty6
-        {
-            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
-            shortcuts[]={};
-            command=-5;
-            class Params
-            {
-                expression="[] spawn pl_bounding_squad";
-            };
-            // show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
-            show = "0";
-            enable="HCNotEmpty";
-            speechId=0;
-            cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
-            priority=3;
         };
         class Empty7: Empty1
         {

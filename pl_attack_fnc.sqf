@@ -181,6 +181,7 @@ pl_suppressive_fire_position = {
     else
     {
         _cords = screenToWorld [0.5,0.5];
+        _area = 25;
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
@@ -287,8 +288,18 @@ pl_suppressive_fire_position = {
                             if !(_infTargets isEqualTo []) then {
                                 _target = selectRandom _infTargets;
                                 _unit reveal [_target, 2];
-                                if (random 1 >= 0.5) then {
-                                    _unit doSuppressiveFire _target;
+                                _unit doSuppressiveFire _target;
+                            }
+                            else
+                            {
+                                if (random 1 >= 0.6) then {
+                                    _pos = selectRandom _targetsPos;
+                                    _pos = ATLToASL _pos;
+                                    _vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1];
+                                    if !(_vis isEqualTo []) then {
+                                        _pos = (_vis select 0) select 0;
+                                    };
+                                    _unit doSuppressiveFire _pos;
                                 };
                             };
                         };
@@ -461,39 +472,19 @@ pl_friendly_check = {
 pl_bounding_squad = {
     private ["_cords", "_group", "_moveDir", "_movePos", "_tactic", "_offSet", "_groupLen", "_units", "_team1", "_team2", "_moveRange", "_wp"];
 
-    if !(visibleMap) exitWith {hint "Open Map for bounding OW"};
+    // if !(visibleMap) exitWith {hint "Open Map for bounding OW"};
 
     _group = hcSelected player select 0;
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
-    hint "Select location on MAP (LMB = MOVE, SHIFT + LMB = CANCEL)";
-    _message = "Select location <br /><br />
-    <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>MOVE</t> <br />
-    <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
-    hint parseText _message;
-    onMapSingleClick {
-        pl_bounding_cords = _pos;
-        pl_mapClicked = true;
-        pl_bounding_mode = "move";
-        // if (_alt) then {pl_bounding_mode = "attack"};
-        if (_shift) then {pl_cancel_strike = true};
-        hintSilent "";
-        onMapSingleClick "";
+
+    if (visibleMap) then {
+        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    }
+    else
+    {
+        _cords = screenToWorld [0.5,0.5];
     };
-    while {!pl_mapClicked} do {sleep 0.2;};
-    pl_mapClicked = false;
-
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
-        
-    _cords = pl_bounding_cords;
-
-    // if (visibleMap) then {
-    //     _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-    // }
-    // else
-    // {
-    //     _cords = screenToWorld [0.5,0.5];
-    // };
     
     _moveDir = (leader _group) getDir _cords;
 
@@ -507,6 +498,7 @@ pl_bounding_squad = {
     _group setVariable ["pl_is_bounding", true];
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
+    _group setVariable ["pl_combat_mode", true];
 
     _wp = _group addWaypoint [_cords, 0];
     pl_draw_planed_task_array pushBack [_wp, _icon];
@@ -538,7 +530,9 @@ pl_bounding_squad = {
             };
         }
     };
-    _units = _team1 + _team2;
+    _group setVariable ["_team1", _team1];
+    _group setVariable ["_team2", _team2];
+
     _leaderPos = getPos (leader _group);
     _offSet = 10;
 
@@ -557,8 +551,8 @@ pl_bounding_squad = {
         waitUntil {(unitReady _unit) or ((_unit distance2D _movePos) < 1.5) or (!alive _unit) or ( _unit getVariable["pl_wia", false]) or !((group _unit) getVariable ["pl_is_bounding", true])};
         _unit enableAI "AUTOCOMBAT";
         if ((group _unit) getVariable ["pl_is_bounding", true]) then {
-            [_unit, _movePos, _moveDir, 3, false] spawn pl_find_cover;
-            sleep 1;
+            [_unit, _movePos, _moveDir, 3, false] call pl_find_cover;
+            sleep 0.1;
             _unit setVariable ["pl_bounding_set", true];
         };
     };
@@ -567,13 +561,13 @@ pl_bounding_squad = {
         _movePos = [_offSet*(sin (_moveDir - 90)), _offSet*(cos (_moveDir - 90)), 0] vectorAdd _leaderPos;
         _offSet = _offSet + 6;
         [_x, _movePos, _moveDir] spawn _arrive_pos_fn;
-    } forEach _team1;
+    } forEach (_group getVariable "_team1");
     _offSet = 10;
     {
         _movePos = [_offSet*(sin (_moveDir + 90)), _offSet*(cos (_moveDir + 90)), 0] vectorAdd _leaderPos;
         _offSet = _offSet + 6;
         [_x, _movePos, _moveDir] spawn _arrive_pos_fn;
-    } forEach _team2;
+    } forEach (_group getVariable "_team2");
 
     waitUntil {sleep 0.1; (({_x getVariable ["pl_bounding_set", false]} count _units) == (count _units)) or !(_group getVariable ["pl_is_bounding", true])};
 
@@ -592,40 +586,40 @@ pl_bounding_squad = {
     _moveRange = 30;
     while {_group getVariable ["pl_is_bounding", true]} do {
         _moveDir = (leader _group) getDir (waypointPosition _wp);
-        _movePos = [_moveRange*(sin _moveDir), _moveRange*(cos _moveDir), 0] vectorAdd (getPos (_team1#0));
+        _movePos = [_moveRange*(sin _moveDir), _moveRange*(cos _moveDir), 0] vectorAdd (getPos ((_group getVariable "_team1")#0));
         _offSet = 0;
-        (_team1#0) groupRadio "SentConfirmMove";
+        ((_group getVariable "_team1")#0) groupRadio "SentConfirmMove";
         {
-            if (_x getVariable ["pl_wia", false] or !alive _x) then {_team1 = _team1 - [_x]};
+            if (_x getVariable ["pl_wia", false] or !alive _x) then {_group setVariable ["_team1", (_group getVariable "_team1") - [_x]]};
             _x setUnitPos "UP";
             _x enableAI "PATH";
             _pos = [_offSet*(sin (_moveDir - 90)), _offSet*(cos (_moveDir - 90)), 0] vectorAdd _movePos;
             _pos = _pos findEmptyPosition [0, 15, typeOf _x];
             _offSet = _offSet + 6;
             [_x, _pos, _cords, _moveDir, 1.5, "pl_bounding_set"] spawn pl_bounding_move;
-        } forEach _team1;
-        waitUntil {sleep 0.1; !(_group getVariable ["pl_is_bounding", true]) or (({!(_x getVariable ["pl_bounding_set", false])} count _team1) < 1)};
+        } forEach (_group getVariable "_team1");
+        waitUntil {sleep 0.1; !(_group getVariable ["pl_is_bounding", true]) or (({!(_x getVariable ["pl_bounding_set", false])} count (_group getVariable "_team1")) < 1)};
 
         if !(_group getVariable ["pl_is_bounding", true]) exitWith {};
-        (_team1#0) groupRadio "sentCovering";
+        ((_group getVariable "_team1")#0) groupRadio "sentCovering";
         sleep 2;
-        _moveRange = [(_team1 + _team2), _wp] call _get_move_range_fn;
-        _movePos = [_moveRange*(sin _moveDir), _moveRange*(cos _moveDir), 0] vectorAdd (getPos (_team2#0));
+        _moveRange = [((_group getVariable "_team1") + (_group getVariable "_team2")), _wp] call _get_move_range_fn;
+        _movePos = [_moveRange*(sin _moveDir), _moveRange*(cos _moveDir), 0] vectorAdd (getPos ((_group getVariable "_team2")#0));
         _offSet = 0;
-        (_team2#0) groupRadio "SentConfirmMove";
+        ((_group getVariable "_team2")#0) groupRadio "SentConfirmMove";
         {
-            if (_x getVariable ["pl_wia", false] or !alive _x) then {_team2 = _team2 - [_x]};
+            if (_x getVariable ["pl_wia", false] or !alive _x) then {_group setVariable ["_team2", (_group getVariable "_team2") - [_x]]};
             _x setUnitPos "UP";
             _x enableAI "PATH";
             _pos = [_offSet*(sin (_moveDir + 90)), _offSet*(cos (_moveDir + 90)), 0] vectorAdd _movePos;
             _pos = _pos findEmptyPosition [0, 15, typeOf _x];
             _offSet = _offSet + 6;
             [_x, _pos, _cords, _moveDir, 1.5, "pl_bounding_set"] spawn pl_bounding_move;
-        } forEach _team2;
-        waitUntil {sleep 0.1; !(_group getVariable ["pl_is_bounding", true]) or (({!(_x getVariable ["pl_bounding_set", false])} count _team2) < 1)};
+        } forEach (_group getVariable "_team2");
+        waitUntil {sleep 0.1; !(_group getVariable ["pl_is_bounding", true]) or (({!(_x getVariable ["pl_bounding_set", false])} count (_group getVariable "_team2")) < 1)};
 
         if (!(_group getVariable ["pl_is_bounding", true]) or _moveRange == 30) exitWith {};
-        (_team2#0) groupRadio "sentCovering";
+        ((_group getVariable "_team2")#0) groupRadio "sentCovering";
         sleep 2;
     };
 
@@ -634,7 +628,10 @@ pl_bounding_squad = {
     // [_group] call pl_reset;
     _wp setWaypointPosition [getPos (leader _group), 0];
     _group setVariable ["pl_is_bounding", nil];
+    _group setVariable ["_team1", nil];
+    _group setVariable ["_team2", nil];
     _group setVariable ["setSpecial", false];
+    _group setVariable ["pl_combat_mode", false];
     {
         _x setVariable ["pl_bounding_set", nil];
         _x setUnitPos "Auto";
@@ -643,15 +640,6 @@ pl_bounding_squad = {
     } forEach _units;
 
     pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
-    // if !(_group getVariable ["onTask", true]) exitWith {};
-
-    // if (_tactic isEqualTo "attack") then { 
-    //     [_group, _cords] spawn pl_attack
-    // }
-    // else
-    // {
-    // [_group] spawn pl_take_cover; 
-    // };
 };
 
 pl_bounding_move = {
@@ -661,6 +649,7 @@ pl_bounding_move = {
     _unit disableAI "COVER";
     _unit disableAI "TARGET";
     _unit disableAI "AUTOTARGET";
+    _unit setUnitCombatMode "BLUE";
     // _unit disableAI "FSM";
     _unit setVariable ["pl_bounding_set", false];
     _unit doMove _pos;
@@ -677,10 +666,11 @@ pl_bounding_move = {
     _unit enableAI "COVER";
     _unit enableAI "FSM";
     _unit setUnitPos "UP";
+    _unit setUnitCombatMode "YELLOW";
     sleep 0.1;
     if ((group _unit) getVariable [_waitVar, true] and (_atkRange == 1.5)) then {
         _unit setVariable ["pl_bounding_set", true];
-        [_unit, _cords, _moveDir, 3, false] spawn pl_find_cover;
+        [_unit, _cords, _moveDir, 3, false] call pl_find_cover;
     };
 };
 
@@ -1062,7 +1052,7 @@ pl_assault_position = {
         if (pl_enable_beep_sound) then {playSound "beep"};
         if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1 Assault complete", (groupId _group)]);
         if (pl_enable_map_radio) then ([_group, "...Assault Complete!", 20] call pl_map_radio_callout);
-        if (_tacticalAtk or _fastAtk) then {
+        if (_tacticalAtk) then {
             {
                 [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
             } forEach (units _group);

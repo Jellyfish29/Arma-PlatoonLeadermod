@@ -15,6 +15,21 @@ pl_get_group_health = {
     _healthState;
 };
 
+pl_get_unit_color = {
+    params ["_unit"];
+    private _unitColor = [0,0.3,0.6,0.65];
+    if (_unit getVariable 'pl_is_ccp_medic' and (alive _unit)) then {
+        _unitColor = [0.4,1,0.2,0.65];
+    };
+    if (_unit getVariable ['pl_firing', false]) then {
+        _unitColor = [0.92,0.24,0.07,1];
+    };
+    if (_unit getVariable 'pl_wia') then {
+        _unitColor = [0.7,0,0,0.65];
+    };
+    _unitColor
+};
+
 pl_get_vic_health = {
     params ["_vic"];
     private ["_healthState"];
@@ -51,13 +66,7 @@ pl_draw_group_info = {
                     _unit = _x;
                     _icon = getText (configfile >> 'CfgVehicles' >> typeof _unit >> 'icon');
                     _size = 15;
-                    _unitColor = [0,0.3,0.6,0.65];
-                    if (_unit getVariable 'pl_is_ccp_medic' and (alive _unit)) then {
-                        _unitColor = [0.4,1,0.2,0.65];
-                    };
-                    if (_unit getVariable 'pl_wia') then {
-                        _unitColor = [0.7,0,0,0.65];
-                    };
+                    _unitColor = [_unit] call pl_get_unit_color;
                     if (vehicle _unit == _unit and (alive _unit)) then {
                         _display drawIcon [
                             _icon,
@@ -886,6 +895,36 @@ pl_draw_unit_group_lines = {
 
 [] call pl_draw_unit_group_lines;
 
+
+pl_draw_at_targets_indicator = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                    _pos1 = _x#0;
+                    _pos2 = _x#1;
+                    _display drawIcon [
+                        '\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa',
+                        [0.92,0.24,0.07,1],
+                        _pos2,
+                        15,
+                        15,
+                        0,
+                        '',
+                        2
+                    ];
+
+                    _display drawLine [
+                        _pos1,
+                        _pos2,
+                        [0.92,0.24,0.07,1]
+                    ];
+
+            } forEach pl_at_targets_indicator;
+    "]; // "
+};
+
+[] call pl_draw_at_targets_indicator;
+
 addMissionEventHandler ["Loaded", {
     params ["_saveType"];
     [] call pl_draw_group_info;
@@ -909,6 +948,7 @@ addMissionEventHandler ["Loaded", {
     [] call pl_draw_ccp_medic;
     [] call pl_draw_unit_group_lines;
     [] call pl_damaged_vics;
+    [] call pl_draw_at_targets_indicator;
 }];
 
 
