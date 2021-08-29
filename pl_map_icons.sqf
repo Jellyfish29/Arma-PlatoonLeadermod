@@ -902,17 +902,6 @@ pl_draw_at_targets_indicator = {
             {
                     _pos1 = _x#0;
                     _pos2 = _x#1;
-                    _display drawIcon [
-                        '\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa',
-                        [0.92,0.24,0.07,1],
-                        _pos2,
-                        15,
-                        15,
-                        0,
-                        '',
-                        2
-                    ];
-
                     _display drawLine [
                         _pos1,
                         _pos2,
@@ -922,6 +911,17 @@ pl_draw_at_targets_indicator = {
             } forEach pl_at_targets_indicator;
     "]; // "
 };
+
+// _display drawIcon [
+//     '\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa',
+//     [0.92,0.24,0.07,1],
+//     _pos2,
+//     15,
+//     15,
+//     0,
+//     '',
+//     2
+// ];
 
 [] call pl_draw_at_targets_indicator;
 
