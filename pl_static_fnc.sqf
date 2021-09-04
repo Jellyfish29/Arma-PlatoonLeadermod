@@ -77,8 +77,7 @@ pl_reworked_bis_unpack = {
         if (unitBackpack _x isKindOf "Weapon_Bag_Base") exitWith {_x};
         
         objNull
-    } 
-    forEach _supportUnits;
+    } forEach _supportUnits;
 
     if (isNull _gunner) exitWith {[false, []]}; // changed by Jellyfish
 

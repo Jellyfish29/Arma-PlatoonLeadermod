@@ -87,7 +87,7 @@ pl_create_new_vic = {
     _newVic setVehicleLock "LOCKED";
 
     {
-        _newVic animateSource [_x#0, _x#1];
+        _newVic animateSource [_x#0, _x#1, true];
     } forEach _appereance;
 
     [_loadout, _newVic] call pl_set_vic_laodout;
@@ -225,7 +225,7 @@ pl_repair = {
                 // add Arrow indicator
                 pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-                waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
+                waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
 
                 // remove Arrow indicator
                 pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];

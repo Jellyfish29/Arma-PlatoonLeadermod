@@ -902,7 +902,7 @@ pl_draw_at_targets_indicator = {
             {
                     _pos1 = _x#0;
                     _pos2 = _x#1;
-                    _display drawLine [
+                    _display drawArrow [
                         _pos1,
                         _pos2,
                         [0.92,0.24,0.07,1]

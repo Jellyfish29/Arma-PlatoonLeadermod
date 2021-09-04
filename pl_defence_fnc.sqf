@@ -56,7 +56,7 @@ pl_find_cover = {
                     };
                     if (_moveBehind) then {
                         _moveDir = [(_watchDir - 180)] call pl_angle_switcher;
-                        _coverPos =  [2*(sin _moveDir), 2*(cos _moveDir), 0] vectorAdd (getPos _unit);
+                        _coverPos =  (getPos _unit) getPos [1, _moveDir];
                         _unit doMove _coverPos;
                         waitUntil {(unitReady _unit) or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
                         if ((group _unit) getVariable ["onTask", true]) then {
@@ -140,6 +140,7 @@ pl_find_cover_allways = {
     sleep 10;
     pl_covers = []
 };
+
 
 pl_rush = {
 
@@ -352,7 +353,8 @@ pl_take_position = {
             // add Arrow indicator
             pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+            _group setVariable ["pl_disembark_finished", nil];
 
             // remove Arrow indicator
             pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
@@ -525,6 +527,8 @@ pl_take_position = {
         deleteMarker _markerAreaName;
     };
 };
+
+
 pl_full_cover = {
     params ["_group"];
     private ["_crew", "_isTransport"];
@@ -692,7 +696,8 @@ pl_defend_position = {
             // add Arrow indicator
             pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+            _group setVariable ["pl_disembark_finished", nil];
 
             // remove Arrow indicator
             pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];

@@ -83,3 +83,77 @@ pl_load_ap = {
         };
     };
 };
+
+pl_bounding_move_team = {
+    params ["_team", "_movePosArray", "_wpPos", "_group", "_unitPos"];
+
+    for "_i" from 0 to (count _team) - 1 do {
+        _unit = _team#_i;
+        _movePos = _movePosArray#_i;
+        if ((_unit distance2D _movePos) > 3) then {
+            if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
+                doStop _unit;
+                [_unit, true] call pl_enable_force_move;
+                _unit setUnitPos "UP";
+                _unit doMove _movePos;
+            };
+        }
+        else
+        {
+            doStop _unit;
+            [_unit, false] call pl_enable_force_move;
+            _unit disableAI "PATH";
+            _unit setUnitPos _unitPos;
+        };
+    };
+    if (({currentCommand _x isEqualTo "MOVE"} count (_team select {alive _x and !(_x getVariable ["pl_wia", false])})) == 0 or ({(_x distance2D _wpPos) < 15} count _team > 0) or (waypoints _group isEqualTo [])) exitWith {true};
+    false
+};
+
+pl_quick_suppress = {
+    params ["_unit", "_targetPos"];
+
+    _vis = lineIntersectsSurfaces [eyePos _unit, _targetPos, _unit, vehicle _unit, true, 1];
+
+    if !(_vis isEqualTo []) then {
+        _targetPos = (_vis select 0) select 0;
+    };
+    
+    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_targetPos] call pl_friendly_check)) then {
+        _unit doSuppressiveFire _targetPos;
+    };
+
+};
+
+pl_enable_force_move = {
+    params ["_unit", "_state"];
+    if (_state) then {
+        _unit enableAI "PATH";
+        _unit disableAI "COVER";
+        _unit disableAI "AUTOTARGET";
+        _unit disableAI "TARGET";
+        _unit disableAI "SUPPRESSION";
+        _unit disableAI "WEAPONAIM";
+        _unit setUnitCombatMode "BLUE";
+    }
+    else
+    {
+        _unit enableAI "COVER";
+        _unit enableAI "AUTOTARGET";
+        _unit enableAI "TARGET";
+        _unit enableAI "SUPPRESSION";
+        _unit enableAI "WEAPONAIM";
+        _unit setUnitCombatMode "YELLOW";
+    };
+};
+
+pl_position_reached_check = {
+    params ["_unit", "_movePos"];
+
+    if (speed _unit == 0 and (_unit distance2D _movePos) > 2) exitWith {
+        _unit doMove ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd _movePos);
+        false
+    };
+    if (((!alive _unit) or (unitReady _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) and (_unit distance2D _movePos) < 3) exitWith {true};
+    false
+};

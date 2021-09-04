@@ -408,7 +408,7 @@ pl_interdiction_cas = {
             _evacHeight = 2000;
             _cd = 300;
             _onStationTime = 110;
-            _sadAreaSize = 600;
+            _sadAreaSize = 1300;
             _wpType = "SAD";
         }; 
         case 2 : {
@@ -461,9 +461,9 @@ pl_interdiction_cas = {
         _areaMarkerName = format ["%1casarea", _casTypeSad];
         createMarker [_areaMarkerName, [0,0,0]];
         _areaMarkerName setMarkerShape "ELLIPSE";
-        _areaMarkerName setMarkerBrush "SolidBorder";
+        _areaMarkerName setMarkerBrush "Border";
         _areaMarkerName setMarkerColor "ColorOrange";
-        _areaMarkerName setMarkerAlpha 0.4;
+        // _areaMarkerName setMarkerAlpha 0.7;
         _areaMarkerName setMarkerSize [_sadAreaSize, _sadAreaSize];
 
         onMapSingleClick {
@@ -559,12 +559,12 @@ pl_interdiction_cas = {
     _plane forceSpeed 140;
     _plane flyInHeight _flyHeight;
     sleep 0.1;
-    {
-        _plane removeWeaponTurret [_x, [-1]];
-    } forEach ["Gatling_30mm_Plane_CAS_01_F", "Rocket_04_HE_Plane_CAS_01_F", "Rocket_04_AP_Plane_CAS_01_F"];
-    {
-        _plane removeMagazinesTurret [_x, [-1]];
-    } forEach ["1000Rnd_Gatling_30mm_Plane_CAS_01_F", "7Rnd_Rocket_04_HE_F", "7Rnd_Rocket_04_AP_F"];
+    // {
+    //     _plane removeWeaponTurret [_x, [-1]];
+    // } forEach ["Gatling_30mm_Plane_CAS_01_F", "Rocket_04_HE_Plane_CAS_01_F", "Rocket_04_AP_Plane_CAS_01_F"];
+    // {
+    //     _plane removeMagazinesTurret [_x, [-1]];
+    // } forEach ["1000Rnd_Gatling_30mm_Plane_CAS_01_F", "7Rnd_Rocket_04_HE_F", "7Rnd_Rocket_04_AP_F"];
 
     {
         _x setSkill 1;
@@ -580,22 +580,22 @@ pl_interdiction_cas = {
     sleep 3;
     _casGroup setBehaviour "COMBAT";
 
-    [_plane, _cords, _casGroup, _sadAreaSize] spawn {
-        params ["_plane", "_cords", "_casGroup", "_sadAreaSize"];
+    // [_plane, _cords, _casGroup, _sadAreaSize] spawn {
+    //     params ["_plane", "_cords", "_casGroup", "_sadAreaSize"];
 
-        while {alive _plane} do {
+    //     while {alive _plane} do {
 
-            // hintSilent str (magazines _plane);
+    //         // hintSilent str (magazines _plane);
 
-            _targets = (driver _plane) targetsQuery [objNull, sideUnknown, "", [], 0];
-            {
-                // hintSilent str _targets;
-                if (((_x select 1) distance2D _cords) > _sadAreaSize) then {
-                    _casGroup forgetTarget (_x#1);
-                };
-            } forEach _targets;
-        };
-    };
+    //         _targets = (driver _plane) targetsQuery [objNull, sideUnknown, "", [], 0];
+    //         {
+    //             // hintSilent str _targets;
+    //             if (((_x select 1) distance2D _cords) > _sadAreaSize) then {
+    //                 _casGroup forgetTarget (_x#1);
+    //             };
+    //         } forEach _targets;
+    //     };
+    // };
 
     if (_casTypeSad != 4) then {
         waitUntil {(_plane distance2D _cords) < 3000};

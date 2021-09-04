@@ -486,9 +486,9 @@ pl_getOut_vehicle = {
                                 if (_distance < 60) then {
                                     _vic limitSpeed _convoyLeaderSpeed;
                                 };
-                                // if (_distance > 70) then {
-                                //     _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
-                                // };
+                                if (_distance > 70) then {
+                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
+                                };
                                 if (_distance > 90) then {
                                     _vic forceSpeed 0;
                                 };
@@ -516,20 +516,24 @@ pl_getOut_vehicle = {
                                 if (_distance < 60) then {
                                     _vic limitSpeed _convoyLeaderSpeed;
                                 };
-                                // if (_distance < 40) then {
-                                //     _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
-                                // };
-                                if (_distance < 20) then {
+                                if (_distance < 40) then {
+                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
+                                };
+                                if (_distance < 25) then {
                                     _vic forceSpeed 0;
                                     _vic limitSpeed 0;
                                 };
                                 _distanceBack = 0;
                                 if (_convoyPosition < ((count (_convoyArray)) - 1)) then {
                                     _distanceBack = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition + 1));
-                                    if (_distanceBack > 70) then {
+                                    if (_distanceBack > 60) then {
+                                        _vic limitSpeed ((_convoyLeaderSpeed - (_convoyLeaderSpeed / 2)) - 10);
+                                        _convoyLeaderVic limitSpeed (_convoyLeaderSpeed / 2);
+                                    };
+                                    if (_distanceBack > 100) then {
                                         _vic forceSpeed 0;
                                         _convoyLeaderVic limitSpeed ((_convoyLeaderSpeed / 2) - 8);
-                                    },
+                                    };
                                 };
                                 if ((speed _vic) == 0) then {
                                     _timeout = time + 7;
@@ -787,6 +791,7 @@ pl_dismount_cargo = {
 
 pl_unload_at_position_planed = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_wpPos"];
 
     if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task!"};
 
@@ -810,7 +815,8 @@ pl_unload_at_position_planed = {
     if (count _taskPlanWp != 0) then {
 
         private _cargoGroup = _cargoGroups#0;
-        private _wpPos = waypointPosition _taskPlanWp;
+        _wpPos = waypointPosition _taskPlanWp;
+        _wpPos = +_wpPos;
 
         pl_draw_unload_inf_task_plan_icon_array pushBack [_cargoGroup, _wpPos];
 
@@ -855,12 +861,14 @@ pl_unload_at_position_planed = {
     } forEach (fullCrew [_vic, "cargo", false]);
 
     waitUntil {sleep 0.1; (({vehicle _x != _x} count _cargoPers) == 0) or (!alive _vic)};
-    if (pl_enable_beep_sound) then {playSound "beep"};
-    // _commander sideChat format ["%1 finished unloading, over", groupId _group];
+    // if (pl_enable_beep_sound) then {playSound "beep"};
     _vic setVariable ["pl_on_transport", nil];
-    // (group (driver _vic)) setVariable ["setSpecial", false];
     _vicGroup setVariable ["pl_has_cargo", false];
     _vic doFollow _vic;
+    sleep 10;
+    {
+        _x setVariable ["pl_disembark_finished", true];
+    } forEach _cargoGroups;
 };
 
 pl_spawn_getOut_vehicle = {

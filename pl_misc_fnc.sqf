@@ -113,7 +113,8 @@ pl_reset = {
         _unit enableAI "COVER";
         _unit enableAI "ANIM";
         _unit enableAI "FSM";
-        _unit enableAi "AIMINGERROR";
+        _unit enableAI "AIMINGERROR";
+        _unit enableAI "WEAPONAIM";
         _unit setUnitPos "AUTO";
         _unit setUnitTrait ["camouflageCoef", 1, true];
         // sleep 0.5;
@@ -218,6 +219,7 @@ pl_reset = {
             deleteWaypoint [_group, _i];
         };
     };
+    _group setVariable ["pl_on_march", nil];
 };
 
 pl_spawn_reset = {
@@ -401,7 +403,7 @@ pl_task_planer_unload_inf = {
     // waituntil wp reached then delete indicator
     [_wp, _group, _icon] spawn {
         params ["_wp", "_group", "_icon"];
-        waitUntil {sleep 1; !(_group getVariable ["pl_task_planed", true])};
+        waitUntil {!(_group getVariable ["pl_task_planed", true])};
         pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
     };
 };
@@ -663,9 +665,9 @@ pl_march = {
 
         if (pl_enable_beep_sound) then {playSound "beep"};
 
-        _group setVariable ["onTask", true];
+        // _group setVariable ["onTask", true];
         _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"];
+        _group setVariable ["specialIcon", "\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"];
         _group setVariable ["pl_on_march", true];
 
         {
@@ -685,12 +687,16 @@ pl_march = {
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
 
-        sleep 3;
-        waitUntil {!(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11)};
+        sleep 1;
+        waitUntil {(((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setFormation _f;
         _group setVariable ["pl_on_march", nil];
+        {
+            _x disableAI "AUTOCOMBAT";
+        } forEach (units _group);
+        (leader _group) limitSpeed 5000;
 
-        if (_group getVariable ["onTask", true] and !(_group getVariable ["pl_task_planed", false])) then {[_group] call pl_reset;};
+        // if (_group getVariable ["onTask", true] and !(_group getVariable ["pl_task_planed", false])) then {[_group] call pl_reset;};
         
     }
     else
@@ -1046,6 +1052,13 @@ pl_move_as_formation = {
     pl_draw_formation_mouse = false;
 };
 
+
+pl_sync_wp = {
+    _logic = player getvariable "BIS_HC_scope";
+    _wp = _logic getvariable "WPover";
+    if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan Task!"};
+    _group = _wp select 0;  
+};
 
 
 
