@@ -906,7 +906,7 @@ pl_recon = {
             //     _group reveal [leader _x, 3.5];
             // };
 
-        } forEach (allGroups select {side _x != playerSide});
+        } forEach (allGroups select {side _x != playerSide and !(_x getVariable ["pl_not_recon_able", true])});
 
         // intervall
         _time = time + _intelInterval;
