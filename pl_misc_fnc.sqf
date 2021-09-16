@@ -59,7 +59,7 @@ addMissionEventHandler ["EntityKilled",{
             _killed setVariable ["pl_wia", false];
             [_killed] spawn pl_draw_kia;
             _group = group _killed;
-            if (pl_enable_map_radio) then ([_group, format ["...%1 KIA", _unitMos], 15] call pl_map_radio_callout);
+            if (pl_enable_map_radio) then {[_group, format ["...%1 KIA", _unitMos], 15] call pl_map_radio_callout};
             _mags = _group getVariable "magCountAllDefault";
             _mag = _group getVariable "magCountSoloDefault";
             _mags = _mags - _mag;
@@ -89,7 +89,9 @@ addMissionEventHandler ["EntityKilled",{
     else
     {
         if (_killed isEqualTo (leader (group _killed))) then {
-            [_killed, _killer, (group _killed)] spawn pl_enemy_destroyed_report;
+            if !((getNumber (configFile >> "CfgVehicles" >> typeOf (vehicle _killer) >> "artilleryScanner")) == 1) then {
+                [_killed, _killer, (group _killed)] spawn pl_enemy_destroyed_report;
+            };
         };
     };
 }];
@@ -677,12 +679,10 @@ pl_march = {
         _f = formation _group;
         // _group setFormation "FILE";
         _group setBehaviour "AWARE";
-        if ((vehicle (leader _group)) != (leader _group)) then {
-            _group setBehaviour "SAFE";
-            // if (((count (hcSelected player)) > 1) and (_group isEqualTo ((hcSelected player) select 0))) then {
-            //     [true] call pl_spawn_getOut_vehicle;
-            // };
-        };
+        // if ((vehicle (leader _group)) != (leader _group)) then {
+            
+
+        // };
 
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
@@ -691,8 +691,10 @@ pl_march = {
         waitUntil {(((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setFormation _f;
         _group setVariable ["pl_on_march", nil];
+        _group setVariable ["setSpecial", false];
         {
-            _x disableAI "AUTOCOMBAT";
+            _x enableAI "AUTOCOMBAT";
+            _x enableAI "FSM";
         } forEach (units _group);
         (leader _group) limitSpeed 5000;
 
@@ -805,6 +807,8 @@ pl_recon = {
         _group setVariable ["pl_recon_area_size", nil];
     };
 
+    _reconGrpLeader = leader _group;
+
     // short delay
     sleep 5;
 
@@ -812,22 +816,23 @@ pl_recon = {
     while {_group getVariable ["pl_is_recon", false]} do {
         
         {
-            // check if group has active WP and within reconarea
-            if (((leader _x) distance2D (leader _group) < (_group getVariable ["pl_recon_area_size", 1400])) and alive (leader _x)) then {
+            _opfGrp = _x;
+            _markerNameArrow = format ["intelMarkerArrow%1", random 3];
+            _markerNameGroup = format ["intelMarkerGroup%1", random 3];
+            _markerNameStrength = format ["intelMarkerStrength%1", random 3];
+            _leader = leader _opfGrp;
 
-                _markerNameArrow = format ["intelMarkerArrow%1", _x];
-                _markerNameGroup = format ["intelMarkerGroup%1", _x];
+            if (_leader distance2D _reconGrpLeader < (_group getVariable ["pl_recon_area_size", 1400])) then {
 
-                if ((currentWaypoint _x) < count (waypoints _x)) then {
-                    _wp = waypointPosition ((waypoints _x) select (currentWaypoint _x));
-                    _leader = leader _x;
+                if ((currentWaypoint _opfGrp) < count (waypoints _opfGrp)) then {
+                    _wp = waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp));
                     _distance = _wp distance2D _leader;
 
                     // if distance to wp > 100 create Markers
                     if (_distance > 100) then {
 
                         _dir = _leader getDir _wp;
-                        _pos = [(_distance * 0.1)*(sin _dir), (_distance * 0.1)*(cos _dir), 0] vectorAdd (getPos _leader);
+                        _pos = (getPos _leader) getPos [45, _dir];//[(_distance * 0.1)*(sin _dir), (_distance * 0.1)*(cos _dir), 0] vectorAdd (getPos _leader);
 
                         // check if marker already exists at pos --> avoid clutter
                         _posOccupied = false;
@@ -837,87 +842,181 @@ pl_recon = {
                         else
                         {
                             _posOccupied = {
-                                if ((_pos distance2D (markerPos (_x#0))) < 100) exitWith {true};
+                                if ((_pos distance2D (markerPos (_x#1))) < 100) exitWith {true};
                                 false
                             } forEach _intelMarkers;
                         };
 
-                        // 60 % chance to create Marker
-                        if (!_posOccupied and (random 1) > 0.4) then {
+                        // 50 % chance to create Marker
+                        if (!_posOccupied and ((random 1) < 0.5 or (_reconGrpLeader knowsAbout (vehicle _leader)) >= 3)) then {
                             createMarker [_markerNameArrow, _pos];
                             _markerNameArrow setMarkerDir _dir;
-                            _markerNameArrow setMarkerType "mil_arrow2";
-                            _markerNameArrow setMarkerSize [0.3, 0.3];
+                            _markerNameArrow setMarkerType "hd_arrow";
+                            _markerNameArrow setMarkerSize [0.35, 0.35];
                             _markerNameArrow setMarkerAlpha 0.7;
                             _markerNameArrow setMarkerColor "COLOROPFOR";
 
                             createMarker [_markerNameGroup, getPos _leader];
-                            _markerType = "o_inf";
+                            // _markerType = "o_inf";
                             _markerSize = 0.4;
-                            if (vehicle (leader _x) != leader _x) then {
-                                _vic = vehicle (leader _x);
-                                if (_vic isKindOf "Tank") then {
-                                    _markerType = "o_armor";
-                                }
-                                else
-                                {
-                                    _markerType = "o_recon";
-                                };
-                                _markerSize = 0.5;
+                            // if (vehicle (leader _opfGrp) != leader _opfGrp) then {
+                            //     _vic = vehicle (leader _opfGrp);
+                            //     if (_vic isKindOf "Tank") then {
+                            //         _markerType = "o_armor";
+                            //     }
+                            //     else
+                            //     {
+                            //         _markerType = "o_recon";
+                            //     };
+                            //     _markerSize = 0.5;
+                            // };
+
+                            _unitText = getText (configFile >> "CfgVehicles" >> typeOf (vehicle (leader _opfGrp)) >> "textSingular");
+
+                            _markerType = "b_inf";
+                            switch (_unitText) do {
+                                case "truck" : {_markerType = "b_support"; _markerSize = 0.5};
+                                case "car" : {_markerType = "b_motor_inf"; _markerSize = 0.5}; 
+                                case "tank" : {_markerType = "b_armor"; _markerSize = 0.5}; 
+                                case "specop" : {_markerType = "b_recon"}; 
+                                case "APC" : {_markerType = "b_mech_inf"; _markerSize = 0.5};
+                                default {_markerType = "b_inf";};
                             };
 
                             _markerNameGroup setMarkerType _markerType;
                             _markerNameGroup setMarkerSize [_markerSize, _markerSize];
                             _markerNameGroup setMarkerAlpha 0.7;
+                            _markerNameGroup setMarkerColor "colorOpfor";
 
-                            _intelMarkers pushBack [_markerNameArrow , _markerNameGroup];
+                            _markerType = "group_2";
+                            // _strengthPos = (getPos (leader _opfGrp)) getPos [2, 0];
+                            _strengthPos = getPos _leader;
+                            if (count (units _opfGrp) < 4) then {_markerType = "group_1"};
+                            if (count (units _opfGrp) > 12) then {_markerType = "group_3"};
+                            if (vehicle (leader _opfGrp) != leader _opfGrp) then {_markerType = "group_0"};
+
+                            createMarker [_markerNameStrength, _strengthPos];
+                            _markerNameStrength setMarkerType _markerType;
+                            _markerNameStrength setMarkerSize [1, 1];
+                            _markerNameStrength setMarkerAlpha 0.7;
+
+                            if ((_opfGrp getVariable ["pl_active_recon_markers", []]) isNotEqualTo []) then {
+                                {
+                                    deleteMarker _x;
+                                } forEach (_opfGrp getVariable "pl_active_recon_markers");
+                            };
+                            _opfGrp setVariable ["pl_active_recon_markers", [_markerNameArrow , _markerNameGroup, _markerNameStrength]];
+                            _intelMarkers pushBack [_opfGrp, _markerNameArrow , _markerNameGroup, _markerNameStrength];
+                        }
+                        else
+                        {
+                            if ((_opfGrp getVariable ["pl_active_recon_markers", []]) isNotEqualTo []) then {
+                                {
+                                    _x setMarkerAlpha 0.6;
+                                    _x setMarkerColor "colorGrey";
+                                } forEach (_opfGrp getVariable "pl_active_recon_markers");
+                            };
                         };
                     };
                 }
                 else
                 {
-                    // 25 % chance to discover static groups
-                    if ((random 1) < 0.35) then {
-                        createMarker [_markerNameGroup, getPos (leader _x)];
-                        _markerType = "o_inf";
+                    // 15 % chance to discover static groups
+                    if ((random 1) < 0.15 or (_reconGrpLeader knowsAbout (vehicle _leader)) >= 3) then {
+                        createMarker [_markerNameGroup, getPos _leader];
+                        // _markerType = "o_inf";
                         _markerSize = 0.4;
-                        if (vehicle (leader _x) != leader _x) then {
-                            _vic = vehicle (leader _x);
-                            if (_vic isKindOf "Tank") then {
-                                _markerType = "o_armor";
-                            }
-                            else
-                            {
-                                _markerType = "o_recon";
-                            };
-                            _markerSize = 0.5;
+                        // if (vehicle (leader _opfGrp) != leader _opfGrp) then {
+                        //     _vic = vehicle (leader _opfGrp);
+                        //     if (_vic isKindOf "Tank") then {
+                        //         _markerType = "o_armor";
+                        //     }
+                        //     else
+                        //     {
+                        //         _markerType = "o_motor_inf";
+                        //     };
+                        //     _markerSize = 0.5;
+                        // };
+
+                         _unitText = getText (configFile >> "CfgVehicles" >> typeOf (vehicle (leader _opfGrp)) >> "textSingular");
+
+                        _markerType = "b_inf";
+                        switch (_unitText) do {
+                            case "truck" : {_markerType = "b_support"; _markerSize = 0.5};
+                            case "car" : {_markerType = "b_motor_inf"; _markerSize = 0.5}; 
+                            case "tank" : {_markerType = "b_armor"; _markerSize = 0.5}; 
+                            case "specop" : {_markerType = "b_recon"}; 
+                            case "APC" : {_markerType = "b_mech_inf"; _markerSize = 0.5};
+                            default {_markerType = "b_inf"};
                         };
+
                         _markerNameGroup setMarkerType _markerType;
                         _markerNameGroup setMarkerSize [_markerSize, _markerSize];
                         _markerNameGroup setMarkerAlpha 0.7;
+                        _markerNameGroup setMarkerColor "colorOpfor";
 
-                        _intelMarkers pushBack ["" , _markerNameGroup];
+                        _markerType = "group_2";
+                        // _strengthPos = (getPos (leader _opfGrp)) getPos [2, 0];
+                        _strengthPos = getPos _leader;
+                        if (count (units _opfGrp) < 4) then {_markerType = "group_1"};
+                        if (count (units _opfGrp) > 12) then {_markerType = "group_3"};
+                        if (vehicle (leader _opfGrp) != leader _opfGrp) then {_markerType = "group_0"};
+
+                        createMarker [_markerNameStrength, _strengthPos];
+                        _markerNameStrength setMarkerType _markerType;
+                        _markerNameStrength setMarkerSize [1, 1];
+                        _markerNameStrength setMarkerAlpha 0.7;
+
+                        if ((_opfGrp getVariable ["pl_active_recon_markers", []]) isNotEqualTo []) then {
+                            {
+                                deleteMarker _x;
+                            } forEach (_opfGrp getVariable "pl_active_recon_markers");
+                        };
+                        _opfGrp setVariable ["pl_active_recon_markers", ["", _markerNameGroup, _markerNameStrength]];
+                        _intelMarkers pushBack [_opfGrp, "" , _markerNameGroup, _markerNameStrength];
+                    }
+                    else
+                    {
+                        if ((_opfGrp getVariable ["pl_active_recon_markers", []]) isNotEqualTo []) then {
+                            {
+                                _x setMarkerAlpha 0.6;
+                                _x setMarkerColor "colorGrey";
+                            } forEach (_opfGrp getVariable "pl_active_recon_markers");
+                        };
                     };
                 };
+            }
+            else
+            {
+                if ((_opfGrp getVariable ["pl_active_recon_markers", []]) isNotEqualTo []) then {
+                    {
+                        _x setMarkerAlpha 0.6;
+                        _x setMarkerColor "colorGrey";
+                    } forEach (_opfGrp getVariable "pl_active_recon_markers");
+                };
             };
-
-            // if enemy closer then 350 m --> reveal enemy
-            // if ((leader _x) distance2D (leader _group) < 350) then {
-            //     _group reveal [leader _x, 3.5];
-            // };
-
-        } forEach (allGroups select {side _x != playerSide and !(_x getVariable ["pl_not_recon_able", true])});
+        } forEach (allGroups select {([(side _x), playerside] call BIS_fnc_sideIsEnemy) and !(_x getVariable ["pl_not_recon_able", false]) and alive (leader _x)});
 
         // intervall
         _time = time + _intelInterval;
         waitUntil {sleep 1; time >= _time or !(_group getVariable ["pl_is_recon", false])};
         // cancel recon if leader dead
-        // delete all markers after Intervall
+        // delete all markers of dead groups
         {
-            deleteMarker (_x#0);
-            deleteMarker (_x#1);
+            if (isNull (_x#0)) then {
+                {
+                    deleteMarker _x;
+                } forEach (_x - [_x#0]);
+            }
+            else
+            {
+                if ({alive _x} count (units(_x#0)) < 1) then {
+                    {
+                        deleteMarker _x;
+                    } forEach (_x - [_x#0]);
+                };
+            }
         } forEach _intelMarkers;
-        _intelMarkers = [];
 
         if !(alive (leader _group)) exitWith {_group setVariable ["pl_is_recon", false]; pl_recon_count = pl_recon_count - 1;};
 

@@ -912,18 +912,34 @@ pl_draw_at_targets_indicator = {
     "]; // "
 };
 
-// _display drawIcon [
-//     '\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa',
-//     [0.92,0.24,0.07,1],
-//     _pos2,
-//     15,
-//     15,
-//     0,
-//     '',
-//     2
-// ];
-
 [] call pl_draw_at_targets_indicator;
+
+pl_mark_obstacles = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (pl_show_obstacles) then {
+            {
+                _obstacle = _x;
+                _icon = '\A3\ui_f\data\map\mapControl\bunker_ca.paa';
+                _size = 15;
+                if (_x isKindOf 'Tank' or _x isKindOf 'Car') then {
+                    _icon = getText (configfile >> 'CfgVehicles' >> typeof _x >> 'icon');
+                    _size = 30;
+                };
+                _display drawIcon [
+                    _icon,
+                    [0.92,0.24,0.07,1],
+                    getPosVisual _obstacle,
+                    _size,
+                    _size,
+                    getDirVisual _obstacle
+                ]
+            } forEach ((pl_show_obstacles_pos nearObjects 180) select {['fence', typeOf _x] call BIS_fnc_inString or ['barrier', typeOf _x] call BIS_fnc_inString or ['wall', typeOf _x] call BIS_fnc_inString or ['sand', typeOf _x] call BIS_fnc_inString or ['bunker', typeOf _x] call BIS_fnc_inString or ['wire', typeOf _x] call BIS_fnc_inString}) + (allDead - allDeadMen);
+        };
+    "]; // "
+};
+
+[] call pl_mark_obstacles;
 
 addMissionEventHandler ["Loaded", {
     params ["_saveType"];
@@ -949,6 +965,7 @@ addMissionEventHandler ["Loaded", {
     [] call pl_draw_unit_group_lines;
     [] call pl_damaged_vics;
     [] call pl_draw_at_targets_indicator;
+    [] call pl_mark_obstacles;
 }];
 
 
@@ -958,25 +975,36 @@ pl_mark_targets_on_map = {
     params ["_targets"];
     _markers = [];
     _markerTargets = [];
-    _time = time + 60;
+    // _time = time + 20;
     {
         if !(_x in pl_marker_targets) then {
             if (alive _x and (side _x) != civilian) then {
                 if (_x isKindOf "Man" or _x isKindOf "Tank" or _x isKindOf "Car" or _x isKindOf "Truck") then {
-                    _pos = getPos _x;
-                    _markerName = str _x;
-                    _markerSize = 0.3;
+                    _pos = [[[getPos _x, 10]],[]] call BIS_fnc_randomPos;
+                    private _markerName = str _x;
+                    _markerSize = 0.15;
                     _marker = createMarker [_markerName, _pos];
                     _markerName setMarkerType "o_unknown";
-                    if (_x isKindOf "Tank") then {
-                        _markerName setMarkerType "o_armor";
-                        _markerSize = 0.8;
+                    // if (_x isKindOf "Tank") then {
+                    //     _markerName setMarkerType "o_armor";
+                    //     _markerSize = 0.4;
+                    // };
+                    // if (_x isKindOf "Car") then {
+                    //     _markerName setMarkerType "o_motor_inf";
+                    //     _markerSize = 0.4;
+                    // };
+                    _unitText = getText (configFile >> "CfgVehicles" >> typeOf _x >> "textSingular");
+
+                    switch (_unitText) do {
+                        case "truck" : {_markerName setMarkerType "o_support"; _markerSize = 0.3};
+                        case "car" : {_markerName setMarkerType "o_motor_inf"; _markerSize = 0.3}; 
+                        case "tank" : {_markerName setMarkerType "o_armor"; _markerSize = 0.3}; 
+                        case "specop" : {_markerName setMarkerType "o_recon"}; 
+                        case "APC" : {_markerName setMarkerType "o_mech_inf"; _markerSize = 0.3};
+                        default {_markerName setMarkerType "o_inf";};
                     };
-                    if (_x isKindOf "Car") then {
-                        _markerName setMarkerType "o_motor_inf";
-                        _markerSize = 0.5;
-                    };
-                    _markerName setMarkerColor "ColorRed";
+
+                    _markerName setMarkerColor "colorOpfor";
                     _markerName setMarkerSize [_markerSize, _markerSize];
                     // _markerName setMarkerText str (parseText _markerText);
                     _markers pushBack _markerName;
@@ -987,11 +1015,32 @@ pl_mark_targets_on_map = {
         };
     } forEach _targets;
 
-    waitUntil {time >= _time};
+    // waitUntil {time >= _time};
+    sleep 20;
     {
         deleteMarker _x;
     } forEach _markers;
     pl_marker_targets = pl_marker_targets - _markerTargets; 
+};
+
+pl_map_radio_callout = {
+    params ["_group", "_text", "_cdTime"];
+
+    _group setVariable ["pl_radio_time", time + _cdTime];
+    _group setVariable ["pl_radio_text", _text];
+};
+
+pl_reset_group_radio_setup = {
+    params ["_group"];
+
+    while {!(isNull _group)} do {
+        _radioTime = _group getVariable ["pl_radio_time", time + 0];
+        sleep 0.1;
+        if (time > _radioTime) then {
+            _group setVariable ["pl_radio_text", ""];
+        };
+        sleep 1;
+    };
 };
 
 pl_draw_kia = {

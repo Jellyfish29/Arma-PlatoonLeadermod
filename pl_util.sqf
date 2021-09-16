@@ -1,24 +1,24 @@
-pl_substr = {
-    private ["_find", "_string", "_find_len", "_str", "_found", "_pos"];
-    _find = _this select 0;
-    _string = toArray (_this select 1);
-    _find_len = count toArray _find;
-    _str = [] + _string;
-    _str resize _find_len;
-    _found = false;
-    _pos = 0;
-    for "_i" from _find_len to count _string do {
-        if (toString _str == _find) exitWith {_found = true};
-        _str set [_find_len, _string select _i];
-        _str set [0, "x"];
-        _str = _str - ["x"];
-        _pos = _pos + 1;
-    };
-    if (!_found) then {
-        _pos = -1;
-    };
-    _pos
-};
+// pl_substr = {
+//     private ["_find", "_string", "_find_len", "_str", "_found", "_pos"];
+//     _find = _this select 0;
+//     _string = toArray (_this select 1);
+//     _find_len = count toArray _find;
+//     _str = [] + _string;
+//     _str resize _find_len;
+//     _found = false;
+//     _pos = 0;
+//     for "_i" from _find_len to count _string do {
+//         if (toString _str == _find) exitWith {_found = true};
+//         _str set [_find_len, _string select _i];
+//         _str set [0, "x"];
+//         _str = _str - ["x"];
+//         _pos = _pos + 1;
+//     };
+//     if (!_found) then {
+//         _pos = -1;
+//     };
+//     _pos
+// };
 
 // How much ammo a magazine has
 // Params:
@@ -59,7 +59,7 @@ pl_load_he = {
     private ["_he_round"];
     _he_round = "";
     {
-      if ((["HE_", _x] call pl_substr) >= 0) then {_he_round = _x};
+      if (["he", _x] call BIS_fnc_inString) then {_he_round = _x};
     } foreach (magazines _unit);
     if !(_he_round isEqualTo "") then {
         if ([_unit, _he_round] call pl_has_ammo > 0) then {
@@ -73,8 +73,8 @@ pl_load_ap = {
     private ["_ap_round"];
     _ap_round = "";
     {
-      if ((["AP", _x] call pl_substr) >= 0) then {_ap_round = _x};
-      if ((["SABOT", _x] call pl_substr) >= 0) then {_ap_round = _x};
+      if (["ap", _x] call BIS_fnc_inString) then {_ap_round = _x};
+      if (["sabot", _x] call BIS_fnc_inString) then {_ap_round = _x};
     } foreach (magazines _unit);
 
     if !(_ap_round isEqualTo "") then {
@@ -148,12 +148,20 @@ pl_enable_force_move = {
 };
 
 pl_position_reached_check = {
-    params ["_unit", "_movePos"];
+    params ["_unit", "_movePos", ["_randomise", true]];
 
-    if (speed _unit == 0 and (_unit distance2D _movePos) > 2) exitWith {
-        _unit doMove ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd _movePos);
-        false
-    };
-    if (((!alive _unit) or (unitReady _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) and (_unit distance2D _movePos) < 3) exitWith {true};
+        if ((_unit distance2D _movePos) > 2) then {
+            if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
+                doStop _unit;
+                _unit setUnitPosWeak "UP";
+                if (_randomise) then {
+                    _movePos = [-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd _movePos;
+                };
+                _unit doMove _movePos;
+            };
+        };
+
+    if ((_unit distance2D _movePos) < 2 and currentCommand _unit isNotEqualTo "MOVE") exitWith {true};
     false
 };
+

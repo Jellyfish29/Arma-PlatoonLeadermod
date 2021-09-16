@@ -44,8 +44,9 @@ pl_find_cover = {
 
             if (!(_x in pl_covers) and _valid) exitWith {
                 pl_covers pushBack _x;
-                _unit doMove (getPos _x);
-                waitUntil {(unitReady _unit) or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
+                _coverPos = getPos _x;
+                _unit doMove _coverPos;
+                waitUntil {sleep 0.5; (!alive _unit) or !((group _unit) getVariable ["onTask", true]) or ([_unit, _coverPos] call pl_position_reached_check)};
                 if ((group _unit) getVariable ["onTask", true]) then {
                     if (_fullCover) then {
                         _unit setUnitPos "DOWN";
@@ -58,7 +59,7 @@ pl_find_cover = {
                         _moveDir = [(_watchDir - 180)] call pl_angle_switcher;
                         _coverPos =  (getPos _unit) getPos [1, _moveDir];
                         _unit doMove _coverPos;
-                        waitUntil {(unitReady _unit) or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
+                        waitUntil {sleep 0.5; (!alive _unit) or !((group _unit) getVariable ["onTask", true]) or ([_unit, _coverPos] call pl_position_reached_check)};
                         if ((group _unit) getVariable ["onTask", true]) then {
                             doStop _unit;
                             _unit doWatch _watchPos;
@@ -266,7 +267,7 @@ pl_take_position = {
         _markerAreaName setMarkerShape "RECTANGLE";
         _markerAreaName setMarkerBrush "SolidBorder";
         _markerAreaName setMarkerColor "colorYellow";
-        _markerAreaName setMarkerAlpha 0.15;
+        _markerAreaName setMarkerAlpha 0.35;
         _markerAreaName setMarkerSize [pl_take_position_size, 2];
 
         onMapSingleClick {
@@ -458,9 +459,8 @@ pl_take_position = {
                     // _unit disableAI "FSM";
                     _unit doMove _pos;
                     _unit setDestination [_pos, "FORMATION PLANNED", false];
-                    _reachable = [_unit, _pos, 20] call pl_not_reachable_escape;
                     sleep 0.5;
-                    waitUntil {(!alive _unit) or (unitReady _unit) or !(_group getVariable ["onTask", true])};
+                    waitUntil {sleep 0.5; (!alive _unit) or !(_group getVariable ["onTask", true]) or [_unit, _pos] call pl_position_reached_check};
                     _unit enableAI "AUTOCOMBAT";
                     _unit enableAI "AUTOTARGET";
                     _unit enableAI "TARGET";
@@ -623,7 +623,7 @@ pl_defend_position = {
     _markerAreaName setMarkerShape "ELLIPSE";
     _markerAreaName setMarkerBrush "SolidBorder";
     _markerAreaName setMarkerColor "colorYellow";
-    _markerAreaName setMarkerAlpha 0.15;
+    _markerAreaName setMarkerAlpha 0.35;
     _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
 
     if (visibleMap) then {
@@ -943,11 +943,11 @@ pl_defend_position = {
                 _unit doMove _pos;
                 // _unit setDestination [_pos, "LEADER DIRECT", false];
                 _unit setDestination [_pos, "LEADER PLANNED", true];
-                if !([_unit, _pos, pl_garrison_area_size] call pl_not_reachable_escape) then {_cover = true};
+                // if !([_unit, _pos, pl_garrison_area_size] call pl_not_reachable_escape) then {_cover = true};
 
                 sleep 0.2;
 
-                waitUntil {(unitReady _unit) or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
+                waitUntil {sleep 0.5; (!alive _unit) or !((group _unit) getVariable ["onTask", true]) or [_unit, _pos] call pl_position_reached_check};
                 _unit enableAI "AUTOCOMBAT";
                 _unit enableAI "TARGET";
                 _unit enableAI "AUTOTARGET";

@@ -9,14 +9,15 @@ pl_max_repair_supplies_per_vic = parseNumber pl_max_repair_supplies_per_vic;
 pl_max_mines_per_explo = parseNumber pl_max_mines_per_explo;
 pl_abandoned_markers = [];
 pl_at_targets_indicator = [];
+pl_bleedout_time = 1000;
 
 pl_share_info = {
 
     params ["_group"];
     _group setVariable ["spotRepEnabled", true];
 
-    while {true} do {
-        waitUntil {(behaviour (leader _group)) isEqualto "COMBAT"};
+    while {!(isNull _group)} do {
+        waitUntil {sleep 1; (behaviour (leader _group)) isEqualto "COMBAT"};
 
         _targets = [];
 
@@ -24,6 +25,7 @@ pl_share_info = {
 
         _targets = [(leader _group)] call pl_get_targets;
         [_targets, (leader _group)] call pl_reveal_targets;
+        [_targets] spawn pl_mark_targets_on_map;
 
         sleep 20;
     };
@@ -134,14 +136,14 @@ pl_contact_report = {
                         _callsign = groupId (group _unit);
                         if ((vehicle _unit) isKindOf "Air") then {
                             if (pl_enable_beep_sound) then {playSound "beep"};
-                            if (pl_enable_chat_radio) then (_unit sideChat format ["%1: Engaging Ground Targets", _callsign]);
-                                if (pl_enable_map_radio) then ([group _unit, "...Engaging Ground Targets!", 15] call pl_map_radio_callout);
+                            if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Engaging Ground Targets", _callsign]};
+                                if (pl_enable_map_radio) then {[group _unit, "...Engaging Ground Targets!", 15] call pl_map_radio_callout};
                         }
                         else
                         {
                             if (pl_enable_beep_sound) then {playSound "beep"};
-                            if (pl_enable_chat_radio) then (_unit sideChat format ["%1: Engaging Enemies", _callsign]);
-                            if (pl_enable_map_radio) then ([group _unit, "...Contact!", 15] call pl_map_radio_callout);
+                            if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Engaging Enemies", _callsign]};
+                            if (pl_enable_map_radio) then {[group _unit, "...Contact!", 15] call pl_map_radio_callout};
                         };
                         [_unit] spawn pl_contact_info_share;
                         (group _unit) setVariable ['inContact', true];
@@ -152,8 +154,8 @@ pl_contact_report = {
                     if (pl_At_fire_report_cd < time) then {
                         pl_At_fire_report_cd = time + 5;
                         _callsign = groupId (group _unit);
-                        if (pl_enable_chat_radio) then (_unit sideChat format ["%1: Engaging Vehicles with AT", _callsign]);
-                        if (pl_enable_map_radio) then ([group _unit, "...Engaging Vehicle!", 15] call pl_map_radio_callout);
+                        if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Engaging Vehicles with AT", _callsign]};
+                        if (pl_enable_map_radio) then {[group _unit, "...Engaging Vehicle!", 15] call pl_map_radio_callout};
                     };
 
                     if (pl_fire_indicator_enabled) then {
@@ -235,8 +237,8 @@ pl_enemy_destroyed_report = {
             _gridPos = mapGridPosition _unit;
             _group setVariable ["pl_death_reported", true];
             if (pl_enable_beep_sound) then {playSound "beep"};
-            if (pl_enable_chat_radio) then (_killer sideChat format ["%1 destroyed enemy %2", groupId (group _killer), _typeStr]);
-            if (pl_enable_map_radio) then ([group _killer, format ["...destroyed enemy %1", _typeStr], 15] call pl_map_radio_callout);
+            if (pl_enable_chat_radio) then {_killer sideChat format ["%1 destroyed enemy %2", groupId (group _killer), _typeStr]};
+            if (pl_enable_map_radio) then {[group _killer, format ["...destroyed enemy %1", _typeStr], 15] call pl_map_radio_callout};
         };
     };
 };
@@ -264,7 +266,7 @@ pl_medical_setup = {
     _unit setVariable ["pl_beeing_treatet", false];
     _unit setVariable ["pl_wia_calledout", false];
     _unit setVariable ["pl_injured", false];
-    _unit setVariable ["pl_bleedout_time", 700];
+    _unit setVariable ["pl_bleedout_time", pl_bleedout_time];
     _unit setVariable ["pl_bleedout_set", false];
     _unit setVariable ["pl_damage_reduction", false];
     _unit addEventHandler ['HandleDamage', {
@@ -391,6 +393,13 @@ pl_add_unit_fire_indicator = {
         };
     }];
 };
+        _primary = primaryWeapon _x;
+        _magCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})} count magazines _x) + 1;
+
+        _secondary = secondaryWeapon _x;
+        if !(_secondary isEqualTo "") then {
+            _missileCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _secondary >> "magazines") apply {toUpper _x})} count magazines _x) + 1;
+        };
 
 pl_set_up_ai = {
     params ["_group"];
@@ -398,6 +407,7 @@ pl_set_up_ai = {
     if ((vehicle (leader _group)) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic setVariable ["pl_rtb_pos", getPos _vic];
+        [_group] call pl_hc_mech_inf_icon_changer;
         // if (_vic isKindOf "Air" and pl_enable_auto_air_remove) then {
         //     player hcRemoveGroup _group;
         // };
@@ -439,18 +449,25 @@ pl_set_up_ai = {
         if (_x getVariable ["pl_special_force", false]) then {
             [_x] spawn pl_special_forces_skills;
         };
-        _mags = magazines _x;
-        _mag = "";
-        if ((primaryWeapon _x) != "") then {
-            _mag = (getArray (configFile >> "CfgWeapons" >> (primaryWeapon _x) >> "magazines")) select 0;
-        };
-        _magCount = 0;
-        {
-            if ((_mag isEqualto _x)) then {
-                _magCount = _magCount + 1;
-            };
-        }forEach _mags;
-        _magCountAll = _magCountAll + _magCount;
+        // _mags = magazines _x;
+        // _mag = [];
+        // if ((primaryWeapon _x) != "") then {
+        //     _mag = getArray (configFile >> "CfgWeapons" >> (primaryWeapon _x) >> "magazines");
+        // };
+        _primary = primaryWeapon _x;
+        _standartMagAmount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})} count magazines _x) + 1;
+        // if !(_mag isEqualto []) then {
+        //     private _magCount = 0;
+        //     {
+        //         _m = _x;
+        //         {
+        //             if ((_m isEqualto _x)) then {
+        //                 _magCount = _magCount + 1;
+        //             };
+        //         } forEach _mag;
+        //     } forEach _mags;
+        // };
+        _magCountAll = _magCountAll + _standartMagAmount;
         _x setVariable ["pl_wia", false];
         _x setVariable ["pl_unstuck_cd", 0];
         _laodout = getUnitLoadout _x;
@@ -479,7 +496,6 @@ pl_set_up_ai = {
         };
     } forEach (units _group);
 
-    _group setVariable ["magCountAllDefault", _magCountAll];
     if ((count (units _group)) > 1) then {
         _magCountSolo = round (_magCountAll / (count (units _group)));
     }
@@ -534,6 +550,8 @@ pl_vehicle_setup = {
         //         };
         //     }];
         // } forEach (crew _vic);
+
+        [_vic] spawn pl_vehicle_tree_stuck_fix;
 
         if (isNil {_vic getVariable "pl_repair_lifes"}) then {
             if (_vic isKindOf "Tank") then {
@@ -633,7 +651,7 @@ pl_ai_setUp_loop = {
     while {pl_hc_active} do {
         {
             if (side _x isEqualTo playerSide) then {
-                [_x]spawn pl_vehicle_setup;
+                [_x] spawn pl_vehicle_setup;
 
             }
             else
@@ -656,7 +674,7 @@ pl_ai_setUp_loop = {
                 };
                 // unit Reset loop
                 {
-                    if !(lifeState _x isEqualTo "INCAPACITATED") then {
+                    if (!((lifeState _x) isEqualTo "INCAPACITATED") and alive _x) then {
                         [_x] call pl_auto_unstuck;
                         if (_x getVariable "pl_wia") then {
                             _x setVariable ["pl_wia", false];
@@ -671,6 +689,9 @@ pl_ai_setUp_loop = {
                         [_x] spawn pl_share_info_opfor;
                     };
                 };
+                if (pl_enable_nato_icons_enemy) then {
+                    [_x] call pl_hide_group_icon;
+                };
             };
 
             if(_x != (group player)) then {
@@ -684,38 +705,29 @@ pl_ai_setUp_loop = {
     };
 };
 
-pl_map_radio_callout = {
-    params ["_group", "_text", "_cdTime"];
 
-    _group setVariable ["pl_radio_time", time + _cdTime];
-    _group setVariable ["pl_radio_text", _text];
-};
-
-pl_reset_group_radio_setup = {
-    params ["_group"];
-
-    while {!(isNull _group)} do {
-        _radioTime = _group getVariable ["pl_radio_time", time + 0];
-        sleep 0.1;
-        if (time > _radioTime) then {
-            _group setVariable ["pl_radio_text", ""];
-        };
-        sleep 1;
-    };
-};
 
 pl_auto_unstuck = {
     params ["_unit"];
-    if (group _unit != group player and (time >= _unit getVariable "pl_unstuck_cd") and !(group _unit getVariable ["pl_combat_mode", true])) then {
-        _distance = _unit distance2D leader (group _unit);
-        if (_distance > 150) then {
-            // [_unit] spawn pl_hard_reset;
-            _unit setVariable ["pl_unstuck_cd", time + 90];
-            _type = typeOf _unit;
-            _pos = (getPos _unit) findEmptyPosition [0, 50, _type];
-            _unit setPos _pos;
-            _unit doFollow leader (group _unit);
+    _distance = _unit distance2D leader (group _unit);
+    if (_distance > 100 and _unit checkAIFeature "PATH") then {
+        doStop _unit;
+        _pos = (getPos _unit) findEmptyPosition [0, 50, typeOf _unit];
+        _unit setPos _pos;
+        _unit doFollow leader (group _unit);
+    };
+};
+
+pl_vehicle_tree_stuck_fix = {
+    params ["_vic"];
+
+    while {alive _vic} do {
+        if (currentCommand _vic isEqualTo "MOVE" and (speed _vic) < 2) then {
+            {
+                _x setDamage 1;
+            } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
         };
+        sleep 10;
     };
 };
 
@@ -792,6 +804,7 @@ pl_hard_reset = {
     _speaker = speaker _unit ;
     _loadout = getUnitLoadout _unit ;
     _unitWia = _unit getVariable "pl_wia";
+    _bleedoutTime = _unit getVariable ["pl_bleedout_time", pl_bleedout_time];
     // _wpnCargo = getWeaponCargo (_pos nearestObject "weaponHolderSimulated");
     deleteVehicle _unit;
 
@@ -814,11 +827,11 @@ pl_hard_reset = {
     if (pl_enabled_medical) then {
         [_newUnit] call pl_medical_setup; 
         if (_unitWia) then {
-            [_newUnit] spawn {
-                params ["_newUnit"];
+            [_newUnit, _bleedoutTime] spawn {
+                params ["_newUnit", "_bleedoutTime"];
                 sleep 0.1;
                 _newUnit setUnconscious true;
-                _newUnit setVariable ["pl_bleedout_time", 300];
+                _newUnit setVariable ["pl_bleedout_time", _bleedoutTime];
                 sleep 2;
                 _newUnit setVariable ["pl_wia", true];
                 sleep 1;
@@ -930,13 +943,14 @@ pl_inf_trans_set_up = {
 
 
 /////////////////// Start Set Up ///////////////////////////
-sleep 1;
+sleep 5;
 
 _hcc = allMissionObjects "HighCommand";
+_plHcc = allMissionObjects "Pl_HighCommand";
 pl_hc_active = false;
-if (_hcc isEqualTo []) then {
+if (_plHcc isEqualto []) then {
     if (pl_enable_hc_default) then {
-        _newHcc = (createGroup (sideLogic)) createUnit ["HighCommand", [0, 0, 0], [], 0, "NONE"];
+        _newHcc = (createGroup (sideLogic)) createUnit ["Pl_HighCommand", [0, 0, 0], [], 0, "NONE"];
         player synchronizeObjectsAdd [_newHcc];
         pl_hc_active = true;
         hcShowBar true;

@@ -337,7 +337,7 @@ pl_arty = {
 };
 
 pl_fire_mortar = {
-    private ["_cords", "_ammoType"];
+    private ["_cords", "_ammoType", "_eh"];
 
     if (visibleMap) then {
         _message = "Select STRIKE Location <br /><br />
@@ -367,7 +367,7 @@ pl_fire_mortar = {
 
     if (pl_enable_beep_sound) then {playSound "beep"};
     (gunner (pl_mortars#0)) sideChat "Fire Mission Confirmed";
-    if (pl_enable_map_radio) then ([group (gunner (pl_mortars#0)), "...Fire Mission Confirmed", 25] call pl_map_radio_callout);
+    if (pl_enable_map_radio) then {[group (gunner (pl_mortars#0)), "...Fire Mission Confirmed", 25] call pl_map_radio_callout};
 
     sleep 3,
         
@@ -376,9 +376,17 @@ pl_fire_mortar = {
             _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
             _firePos = [[[_cords, 100]],[]] call BIS_fnc_randomPos;
             _x commandArtilleryFire [_firePos, _ammoType, 1];
+            _x setVariable ["pl_waiting_for_fired", true];
+            _eh = _x addEventHandler ["Fired", {
+                params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_gunner"];
+                _unit setVariable ["pl_waiting_for_fired", false];
+            }];
             sleep 1;
         } forEach pl_mortars;
-        sleep 3.5;
+        sleep 1;
+        _time = time + 20;
+        waitUntil {{_x getVariable ["pl_waiting_for_fired", true]} count pl_mortars == 0 or time >= _time};
+        sleep 2;
     };
 
     sleep 20;
@@ -387,6 +395,7 @@ pl_fire_mortar = {
     {
         _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
         _x addMagazineTurret [_ammoType, [-1]];
+        _x removeEventHandler ["Fired", _eh];
     } forEach pl_mortars
 };
 
@@ -673,7 +682,7 @@ pl_interdiction_cas = {
         sleep 0.2;
         if (pl_enable_beep_sound) then {playSound "beep"};
         (driver _plane) sideChat format ["%1: RTB", _groupId];
-        if (pl_enable_map_radio) then ([group (driver _plane), "...RTB!", 25] call pl_map_radio_callout);
+        if {pl_enable_map_radio) then {[group (driver _plane), "...RTB!", 25] call pl_map_radio_callout};
         {
             _x disableAI "AUTOCOMBAT";
             _x disableAI "TARGET";

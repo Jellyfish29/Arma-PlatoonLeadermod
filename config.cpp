@@ -11,6 +11,26 @@ class cfgFunctions
             };
         };
     };
+    class A3
+    {
+        class Misc
+        {
+            class createmenu
+            {
+                file="Plmod\functions\fn_createMenu.sqf";
+            };
+        };
+    };
+    class A2
+    {
+        class Misc
+        {
+            class createmenu
+            {
+                file="Plmod\functions\fn_createMenu.sqf";
+            };
+        };
+    };
 };
 
 class CfgPatches
@@ -75,8 +95,8 @@ class RscHCGroupRootMenu
             {
                 expression="['buddy'] spawn pl_bounding_squad";
             };
-            show="HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
-            enable="1";
+            show="0"//"HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
+            enable="0";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=1;
@@ -2323,7 +2343,6 @@ class RscMapControl {
         };
 
 };
-
 
 // class CfgGroups
 // {

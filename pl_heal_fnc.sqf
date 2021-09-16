@@ -9,6 +9,7 @@ pl_medic_cls_names = ["B_medic_F", "B_recon_medic_F", "B_T_Recon_medic_F", "B_W_
 pl_ccp_heal_range = 50;
 pl_ccp_revive_range = 200;
 pl_ccp_draw_array = [];
+pl_bleedout_time = 500;
 
 pl_medic_heal = {
     params ["_medic", "_target", "_ccpPos", "_waitVar"];
@@ -185,8 +186,8 @@ pl_wia_callout = {
         _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _unit >> "displayName");
         // leader (group _unit) sideChat format ["%1 is W.I.A, requesting Medic, over", _unitMos];
         if (pl_enable_beep_sound) then {playSound "beep"};
-        if (pl_enable_chat_radio) then (leader (group _unit) sideChat format ["%1: %2 WOUNDED", groupId (group _unit), _unitMos]);
-        if (pl_enable_map_radio) then ([group _unit, format ["...%1 is hit!", _unitMos], 20] call pl_map_radio_callout);
+        if (pl_enable_chat_radio) then {leader (group _unit) sideChat format ["%1: %2 WOUNDED", groupId (group _unit), _unitMos]};
+        if (pl_enable_map_radio) then {[group _unit, format ["...%1 is hit!", _unitMos], 20] call pl_map_radio_callout};
     };
 };
 
@@ -195,14 +196,14 @@ pl_bleedout = {
     sleep 5;
     if (alive _unit and !(_unit getVariable "pl_bleedout_set")) then {
         _unit setVariable ["pl_bleedout_set", true];
-        _time = _unit getVariable ["pl_bleedout_time", 300];
+        _time = _unit getVariable ["pl_bleedout_time", pl_bleedout_time];
         _deathTime = time + _time;
         waitUntil {sleep 1; time > _deathTime};
         if (_unit getVariable "pl_wia") then {
             _unit setDamage 1;
         };
         if (alive _unit) then {
-            _unit setVariable ["pl_bleedout_time", 300];
+            _unit setVariable ["pl_bleedout_time", pl_bleedout_time];
         };
     };
 };

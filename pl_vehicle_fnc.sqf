@@ -82,12 +82,12 @@ pl_getIn_vehicle = {
             (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\takeoff_ca.paa"];
             if (pl_enable_beep_sound) then {playSound "beep"};
             driver _targetVic sideChat format ["%1: Moving to LZ", groupId (group (driver _targetVic))];
-            if (pl_enable_map_radio) then ([group (driver _targetVic), "...Moving to LZ", 25] call pl_map_radio_callout);
+            if (pl_enable_map_radio) then {[group (driver _targetVic), "...Moving to LZ", 25] call pl_map_radio_callout};
             sleep 20;
             waitUntil {sleep 0.1; unitReady _targetVic or !alive _targetVic};
             if (pl_enable_beep_sound) then {playSound "beep"};
             driver _targetVic sideChat format ["%1: Beginning landing", groupId (group (driver _targetVic))];
-            if (pl_enable_map_radio) then ([group (driver _targetVic), "...Beginning Landing", 25] call pl_map_radio_callout);
+            if (pl_enable_map_radio) then {[group (driver _targetVic), "...Beginning Landing", 25] call pl_map_radio_callout};
             _targetVic land "GET IN";
             // _targetVic land "LAND";
             sleep 10;
@@ -106,8 +106,8 @@ pl_getIn_vehicle = {
                 _targetVic animateDoor ["Door_1_source", 1];
                 _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
                 if (pl_enable_beep_sound) then {playSound "beep"};
-                if (pl_enable_chat_radio) then (leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName]);
-                if (pl_enable_map_radio) then ([_group, format ["...Getting in %1", _vicName], 15] call pl_map_radio_callout);
+                if (pl_enable_chat_radio) then {leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName]};
+                if (pl_enable_map_radio) then {[_group, format ["...Getting in %1", _vicName], 15] call pl_map_radio_callout};
                 // _group setVariable ["pl_show_info", false];
 
                 [_group] call pl_hide_group_icon;
@@ -141,8 +141,8 @@ pl_getIn_vehicle = {
                 deleteWaypoint [_group, _i];
             };
             _vicName = getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName");
-            if (pl_enable_chat_radio) then (leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName]);
-            if (pl_enable_map_radio) then ([_group, format ["...Getting in %1", _vicName], 15] call pl_map_radio_callout);
+            if (pl_enable_chat_radio) then {leader _group sideChat format ["%1: Getting in %2", (groupId _group), _vicName]};
+            if (pl_enable_map_radio) then {[_group, format ["...Getting in %1", _vicName], 15] call pl_map_radio_callout};
 
 
             // (group (driver _targetVic)) setVariable ["setSpecial", true];
@@ -267,7 +267,7 @@ pl_getOut_vehicle = {
             else
             {
                 _commander sideChat format ["%1: RTB", groupId (group _commander)];
-                if (pl_enable_map_radio) then ([group _commander, "...RTB", 25] call pl_map_radio_callout);
+                if (pl_enable_map_radio) then {[group _commander, "...RTB", 25] call pl_map_radio_callout};
             };
 
             _convoyArray = [];
@@ -492,11 +492,13 @@ pl_getOut_vehicle = {
                                 if (_distance > 90) then {
                                     _vic forceSpeed 0;
                                 };
-                                if ((speed _vic) == 0) then {
+                                if ((speed _vic) < 2) then {
                                     _timeout = time + 7;
                                     waitUntil {(speed _vic) > 0 or time >= _timeout};
-                                    if ((speed _vic) == 0) then {
-                                        // [_group] call pl_vehicle_soft_unstuck;
+                                    if ((speed _vic) < 2) then {
+                                        {
+                                            _x setDamage 1;
+                                        } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
                                     };
                                 };
                             }
@@ -535,11 +537,13 @@ pl_getOut_vehicle = {
                                         _convoyLeaderVic limitSpeed ((_convoyLeaderSpeed / 2) - 8);
                                     };
                                 };
-                                if ((speed _vic) == 0) then {
+                                if ((speed _vic) < 2) then {
                                     _timeout = time + 7;
                                     waitUntil {(speed _vic) > 0 or time >= _timeout};
-                                    if ((speed _vic) == 0) then {
-                                        // [_group] call pl_vehicle_soft_unstuck;
+                                    if ((speed _vic) < 2) then {
+                                        {
+                                            _x setDamage 1;
+                                        } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
                                     };
                                 };
                             };
@@ -703,7 +707,7 @@ pl_getOut_vehicle = {
                 sleep 2;
                 if (pl_enable_beep_sound) then {playSound "beep"};
                 _commander sideChat format ["%1: RTB", groupId (group _commander)];
-                if (pl_enable_map_radio) then ([group _commander, "...RTB", 25] call pl_map_radio_callout);
+                if (pl_enable_map_radio) then {[group _commander, "...RTB", 25] call pl_map_radio_callout};
                 waitUntil {sleep 0.1; (unitReady _vic) or (!alive _vic)};
                 {
                     _x enableAI "AUTOCOMBAT";
@@ -753,7 +757,13 @@ pl_getOut_vehicle = {
             if (pl_enable_beep_sound) then {playSound "beep"};
             // _commander sideChat format ["Roger, %1 beginning unloading, over", groupId _group];
             waitUntil {sleep 0.1; ((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
-            if (pl_enable_beep_sound) then {playSound "beep"};
+            // {
+            //     {
+            //         doStop _x;
+            //         _x doFollow leader _x;
+            //     } forEach (units _x);
+            // } forEach _cargoGroups;
+            // if (pl_enable_beep_sound) then {playSound "beep"};
             // _commander sideChat format ["%1 finished unloading, over", groupId _group];
             _vic setVariable ["pl_on_transport", nil];
             // (group _commander) setVariable ["setSpecial", false];
@@ -773,6 +783,7 @@ pl_dismount_cargo = {
     _vicGroup = group _driver;
     doStop _vic;
     _cargo = fullCrew [_vic, "cargo", false];
+    if (_cargo isEqualTo []) exitWith {hint "No Cargo to Unload"};
     {
         _unit = _x select 0;
         if (_unit in (units _vicGroup)) then {
@@ -810,7 +821,7 @@ pl_unload_at_position_planed = {
 
     _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
 
-    if (_cargoGroups isEqualTo []) exitWith {hint "No Cargo to Unload"};
+    if (_cargoGroups isEqualTo []) exitWith {[_vicGroup] call pl_dismount_cargo};
 
     if (count _taskPlanWp != 0) then {
 
@@ -840,6 +851,7 @@ pl_unload_at_position_planed = {
             unassignVehicle _unit;
             doGetOut _unit;
             [_unit] allowGetIn false;
+            // doStop _unit;
         };
     } forEach _cargo;
 
@@ -869,6 +881,14 @@ pl_unload_at_position_planed = {
     {
         _x setVariable ["pl_disembark_finished", true];
     } forEach _cargoGroups;
+
+    [_cargoGroups] spawn {
+        params ["_cargoGroups"],
+        sleep 2;
+        {
+            _x setVariable ["pl_disembark_finished", nil];
+        } forEach _cargoGroups;
+    };
 };
 
 pl_spawn_getOut_vehicle = {
@@ -1034,8 +1054,8 @@ pl_crew_vehicle = {
             [_x] allowGetIn true;
             [_x] orderGetIn true;
         } forEach (units _group);
-        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Crewing %2", groupId _group, getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")]);
-        if (pl_enable_map_radio) then ([_group, format ["Crewing %1", getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")], 25] call pl_map_radio_callout);
+        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Crewing %2", groupId _group, getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")]};
+        if (pl_enable_map_radio) then {[_group, format ["Crewing %1", getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")], 25] call pl_map_radio_callout};
     }
     else
     {

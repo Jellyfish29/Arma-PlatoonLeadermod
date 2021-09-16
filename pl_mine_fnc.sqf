@@ -255,8 +255,8 @@ pl_mine_clearing = {
     };
 
     if (_group getVariable ["onTask", true]) then {
-        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Mine Sweep complete", groupId _group]);
-        if (pl_enable_map_radio) then ([_group, "...Mine Sweep Complete", 20] call pl_map_radio_callout);
+        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Mine Sweep complete", groupId _group]};
+        if (pl_enable_map_radio) then {[_group, "...Mine Sweep Complete", 20] call pl_map_radio_callout};
         [_group] call pl_reset;
     };
     deleteMarker _markerName
@@ -289,8 +289,8 @@ pl_lay_mine_field = {
 
     if (_availableMines <= 0) exitWith {hint "No Mines Left!"};
 
-    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: %2 Mines Available",groupId _group, _availableMines]);
-    if (pl_enable_map_radio) then ([_group, format ["...%1 Mines Available",_availableMines], 15] call pl_map_radio_callout);
+    if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: %2 Mines Available",groupId _group, _availableMines]};
+    if (pl_enable_map_radio) then {[_group, format ["...%1 Mines Available",_availableMines], 15] call pl_map_radio_callout};
 
     hintSilent "";
     pl_mine_field_size = 16;
@@ -430,8 +430,8 @@ pl_lay_mine_field = {
     _mineTypeTxt = "AT";
     if (_mineType isEqualTo "APERSBoundingMine") then {_mineTypeTxt = "AP"};
 
-    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Laying %2 %3 Mines with %4m Spacing",groupId _group, _neededMines, _mineTypeTxt, pl_mine_spacing]);
-    if (pl_enable_map_radio) then ([_group, format ["...Laying %1 %2 Mines with %3m Spacing", _neededMines, _mineTypeTxt, pl_mine_spacing], 20] call pl_map_radio_callout);
+    if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Laying %2 %3 Mines with %4m Spacing",groupId _group, _neededMines, _mineTypeTxt, pl_mine_spacing]};
+    if (pl_enable_map_radio) then {[_group, format ["...Laying %1 %2 Mines with %3m Spacing", _neededMines, _mineTypeTxt, pl_mine_spacing], 20] call pl_map_radio_callout};
 
     _usedMines = 0; 
     _offSet = pl_mine_field_size * 2;
@@ -542,6 +542,8 @@ pl_place_charge = {
     if (visibleMap) then {
         hintSilent "";
         hint "Select MINE position on MAP (SHIFT + LMB to cancel)";
+        pl_show_obstacles = true;
+        pl_show_obstacles_pos = getPos (leader _group);
 
         onMapSingleClick {
             pl_mine_cords = _pos;
@@ -553,10 +555,13 @@ pl_place_charge = {
 
         while {!pl_mapClicked} do {sleep 0.1;};
         pl_mapClicked = false;
-        if (pl_cancel_strike) exitWith {};
+        if (pl_cancel_strike) exitWith {
+            pl_show_obstacles = false;
+            pl_mapClicked = false;
+        };
 
         _cords = pl_mine_cords;
-
+        pl_show_obstacles = false;
         pl_mapClicked = false;
     }
     else
@@ -652,12 +657,42 @@ pl_detonate_charges = {
     if (pl_enable_beep_sound) then {playSound "beep"};
 
     {
-        _x setDamage 1;
+        _charge = _x;
+        // remove Vehicle wrec
+        {
+            if ((_x distance2D _charge) < 25) then {
+                    deleteVehicle _x;
+                };
+        } forEach (allDead - allDeadMen);
+        // remove Fences
+        {
+            deleteVehicle _x;
+        } forEach (((getPos _charge) nearObjects 25) select {["fence", typeOf _x] call BIS_fnc_inString or ["barrier", typeOf _x] call BIS_fnc_inString or ["wall", typeOf _x] call BIS_fnc_inString or ["sand", typeOf _x] call BIS_fnc_inString});
+        // remove Bunkers
+        {
+            deleteVehicle _x;;
+        } forEach (((getPos _charge) nearObjects 25) select {["bunker", typeOf _x] call BIS_fnc_inString});
+        // remove wire
+        {
+            deleteVehicle _x;
+        } forEach (((getPos _charge) nearObjects 25) select {["wire", typeOf _x] call BIS_fnc_inString});
+        // kill trees
+        [_charge] spawn {
+            params ["_charge"];
+            {
+                _x setDamage 1;
+                sleep 0.15;
+            } forEach (nearestTerrainObjects [getPos _charge, ["TREE", "SMALL TREE", "BUSH"], 20, false, true]);
+        };
+
+        _charge setDamage 1;
         sleep 0.25;
     } forEach _charges;
+
     _group setVariable ["pl_placed_charges", nil];
     pl_groups_with_charges = pl_groups_with_charges - [_group];
 };
+
 
 pl_destroy_bridge = {
     params [["_group", (hcSelected player) #0]];
@@ -774,9 +809,13 @@ pl_destroy_bridge = {
         } forEach _bridges;
 
         if (pl_enable_beep_sound) then {playSound "beep"};
-        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Bridge Destroyed", (groupId _group)]);
-        if (pl_enable_map_radio) then ([_group, "...Bridge Destroyed", 20] call pl_map_radio_callout);
+        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Bridge Destroyed", (groupId _group)]};
+        if (pl_enable_map_radio) then {[_group, "...Bridge Destroyed", 20] call pl_map_radio_callout};
         [_group] call pl_reset;
     };
+};
+
+pl_remove_obstacle = {
+    
 };
 

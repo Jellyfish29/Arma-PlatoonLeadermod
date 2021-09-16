@@ -334,140 +334,6 @@ pl_friendly_check = {
     _return
 };
 
-// pl_tank_hunt = {
-//     private ["_cords", "_movePos", "_moveCords"];
-    
-//     _group = (hcSelected player) select 0;
-
-//     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
-
-//     pl_tankHunt_area_size = 50;
-
-//     _markerName = format ["%1tankHunt", _group];
-//     createMarker [_markerName, [0,0,0]];
-//     _markerName setMarkerShape "ELLIPSE";
-//     _markerName setMarkerBrush "SolidBorder";
-//     _markerName setMarkerColor "colorRED";
-//     _markerName setMarkerAlpha 0.2;
-//     _markerName setMarkerSize [pl_tankHunt_area_size, pl_tankHunt_area_size];
-//     if (visibleMap) then {
-//         _message = "Select Targets Position <br /><br />
-//             <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>30 Seconds</t> <br />
-//             <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />
-//             <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>Cancel</t> <br />";
-//         hint parseText _message;
-//         onMapSingleClick {
-//             pl_tank_hunt_cords = _pos;
-//             if (_shift) then {pl_cancel_strike = true};
-//             pl_mapClicked = true;
-//             hintSilent "";
-//             onMapSingleClick "";
-//         };
-//         while {!pl_mapClicked} do {
-//             // sleep 0.1;
-//             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-//             _markerName setMarkerPos _mPos;
-//             if (inputAction "MoveForward" > 0) then {pl_tankHunt_area_size = pl_tankHunt_area_size + 10; sleep 0.1};
-//             if (inputAction "MoveBack" > 0) then {pl_tankHunt_area_size = pl_tankHunt_area_size - 10; sleep 0.1};
-//             _markerName setMarkerSize [pl_tankHunt_area_size, pl_tankHunt_area_size];
-//             if (pl_tankHunt_area_size >= 120) then {pl_tankHunt_area_size = 120};
-//             if (pl_tankHunt_area_size <= 20) then {pl_tankHunt_area_size = 20};
-//         };
-//         pl_mapClicked = false;
-//         _cords = pl_tank_hunt_cords;
-//         pl_draw_tank_hunt_array pushBack _cords;
-
-//         onMapSingleClick {
-//             pl_tank_hunt_cords_2 = _pos;
-//             if (_shift) then {pl_cancel_strike = true};
-//             pl_mapClicked = true;
-//             hintSilent "";
-//             onMapSingleClick "";
-//         };
-//         while {!pl_mapClicked} do {};
-//         _moveCords = pl_tank_hunt_cords_2;
-//         pl_draw_tank_hunt_array = pl_draw_tank_hunt_array - [_cords];
-//     }
-//     else
-//     {
-//         _cords = screenToWorld [0.5,0.5];
-//     };
-
-//     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
-
-//     // Only within 800 m Range
-//     if ((_cords distance2D (leader _group)) > 800) exitWith {hint "Targets need to be within 1000m of group!"};
-
-//     // get AT Soldier
-//     _antitank = {
-//         if ((secondaryWeapon _x) != "") exitWith {_x};
-//         objNull;
-//     } forEach (units _group);
-//     _missile = (getArray (configFile >> "CfgWeapons" >> (secondaryWeapon _antitank) >> "magazines")) select 0;
-//     _escort = selectRandom ((units _group) - [_antitank, leader _group]);
-
-//     // If no At exit
-//     if (isNull _antitank) exitWith {leader _group sideChat format["%1: No AT Weapons", groupId _group]};
-
-//     // If no At Ammo left exit
-//     if ((secondaryWeaponMagazine _antitank) isEqualTo []) exitWith {leader _group sideChat format["%1: Out of AT Weapons", groupId _group]};
-
-//     [_group] call pl_reset;
-
-//     sleep 0.2;
-
-//     if (pl_enable_beep_sound) then {playSound "beep"};
-
-//     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
-//     _group setVariable ["onTask", true];
-//     _group setVariable ["setSpecial", true];
-//     _group setVariable ["specialIcon", _icon];
-//     _group setVariable ["pl_combat_mode", true];
-//     _group setCombatMode "RED";
-
-//     pl_draw_suppression_array pushBack [_cords, _antitank, true, _icon];
-//     ATLToASL _moveCords;
-    
-
-//     _antitank disableAI "AUTOCOMBAT";
-//     _escort disableAI "AUTOCOMBAT";
-
-//     {
-//         [_x, getPos _antitank, 0, 10, false] spawn pl_find_cover;
-//     } forEach ((units _group) - [_antitank, _escort]);
-
-
-//     _escort doFollow _antitank;
-//     _antitank doMove _moveCords;
-//     _escort doFollow _antitank;
-//     waitUntil {unitReady _antitank or !(_group getVariable ["onTask", true])};
-//     while {_group getVariable ["onTask", false] and alive _antitank} do {
-//         _vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], pl_tankHunt_area_size, true];
-
-//         // check for closed Object from target blocking view --> antitank movePos
-//         _vics = [_vics, [], {(getPos _x) distance2D (leader _group)}, "DESCEND"] call BIS_fnc_sortBy;
-//         {
-//             _vic = _x;
-//             _antitank reveal [_vic, 4];
-//             _antitank doTarget _vic;
-//             _antitank doFire _vic;
-//             _time = time + 60;
-//             _escort doFollow _antitank;
-//             waitUntil {time > _time or !alive _vic or !alive _antitank or !(_group getVariable ["onTask", true])};
-//         } forEach _vics;
-//         _antitank doFollow (leader _group);
-//         _escort doFollow (leader _group);
-//         sleep 1;
-//         if ((secondaryWeaponMagazine _antitank) isEqualTo []) exitWith {leader _group sideChat format["%1: Out of AT Weapons", groupId _group]};
-//     };
-
-//     [_group] call pl_reset;
-//     _group setVariable ["pl_combat_mode", false];
-//     _group setCombatMode "YELLOW";
-//     pl_draw_suppression_array = pl_draw_suppression_array - [[_cords, _antitank, true, _icon]];
-    
-//     deleteMarker _markerName;
-// };
 
 pl_bounding_squad = {
     params ["_mode"];
@@ -613,7 +479,7 @@ pl_assault_position = {
     _markerName setMarkerShape "ELLIPSE";
     _markerName setMarkerBrush "SolidBorder";
     _markerName setMarkerColor "colorYellow";
-    _markerName setMarkerAlpha 0.2;
+    _markerName setMarkerAlpha 0.35;
     _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
     if (visibleMap) then {
         _message = "Select Assault Location <br /><br />
@@ -922,16 +788,13 @@ pl_assault_position = {
                             _movePos = _pos vectorAdd [0.5 - (random 1), 0.5 - (random 1), 0];
                             _unit limitSpeed 15;
                             _unit doMove _movePos;
+                            _unit lookAt _target;
                             _unit setDestination [_movePos, "FORMATION PLANNED", false];
                             _reachable = [_unit, _movePos, 20] call pl_not_reachable_escape;
                             _unreachableTimeOut = time + 35;
 
                             while {(alive _unit) and (alive _target) and !(_unit getVariable ["pl_wia", false]) and ((group _unit) getVariable ["onTask", true]) and _reachable and (_unreachableTimeOut >= time)} do {
-                                // _enemy = _unit findNearestEnemy _unit;
-                                // if ((_unit distance2D _enemy) < 7) then {
-                                //     _unit doTarget _enemy;
-                                //     _unit doFire _enemy;
-                                // };
+                                _unit forceSpeed 3;
                                 sleep 0.5;
                             };
                             if (_unreachableTimeOut <= time) then {
@@ -956,8 +819,6 @@ pl_assault_position = {
     };
 
 
-    deleteMarker _markerName;
-    deleteMarker _arrowMarkerName;
     missionNamespace setVariable [format ["targets_%1", _group], nil];
     _group setFormation _formation;
     _group setVariable ["pl_is_attacking", false];
@@ -972,13 +833,15 @@ pl_assault_position = {
     _group setCombatMode "YELLOW";
     _group setVariable ["pl_combat_mode", false];
     _group enableAttack false;
-    sleep 1;
+    // sleep 8;
+    deleteMarker _markerName;
+    deleteMarker _arrowMarkerName;
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
         sleep 1;
         if (pl_enable_beep_sound) then {playSound "beep"};
-        if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1 Assault complete", (groupId _group)]);
-        if (pl_enable_map_radio) then ([_group, "...Assault Complete!", 20] call pl_map_radio_callout);
+        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Assault complete", (groupId _group)]};
+        if (pl_enable_map_radio) then {[_group, "...Assault Complete!", 20] call pl_map_radio_callout};
         if (_tacticalAtk) then {
             {
                 [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
@@ -986,175 +849,3 @@ pl_assault_position = {
         };
     };
 };
-
-pl_field_of_fire = {
-    private ["_markerName", "_cords", "_targets", "_pos", "_units", "_leader", "_area"];
-
-    _group = (hcSelected player) select 0;
-
-    if ((_group getVariable ["pl_fof_set", false])) exitWith {_group setVariable ["pl_fof_set", false]};
-
-    pl_suppress_area_size = 100;
-    pl_supppress_continuous = false;
-
-    _markerName = format ["%1fof%2", _group, random 1];
-    createMarker [_markerName, [0,0,0]];
-    _markerName setMarkerShape "ELLIPSE";
-    _markerName setMarkerBrush "SolidBorder";
-    _markerName setMarkerColor "colorORANGE";
-    _markerName setMarkerAlpha 0.2;
-    _markerName setMarkerSize [pl_suppress_area_size, pl_suppress_area_size];
-
-    private _rangelimiter = 300;
-    if (vehicle (leader _group) != (leader _group)) then { _rangelimiter = 700};
-
-    _markerBorderName = str (random 2);
-    createMarker [_markerBorderName, getPos (leader _group)];
-    _markerBorderName setMarkerShape "ELLIPSE";
-    _markerBorderName setMarkerBrush "Border";
-    _markerBorderName setMarkerColor "colorORANGE";
-    _markerBorderName setMarkerAlpha 0.8;
-    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
-
-    if (visibleMap) then {
-        _message = "Select Position <br /><br />
-            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>30 Seconds</t> <br />
-            <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />
-            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>Cancel</t> <br />";
-        hint parseText _message;
-        onMapSingleClick {
-            pl_suppress_cords = _pos;
-            if (_shift) then {pl_cancel_strike = true};
-            pl_mapClicked = true;
-            hintSilent "";
-            onMapSingleClick "";
-        };
-
-        player enableSimulation false;
-
-        while {!pl_mapClicked} do {
-            // sleep 0.1;
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            if ((_mPos distance2D (leader _group)) <= _rangelimiter) then {
-                _markerName setMarkerPos _mPos;
-            };
-            if (inputAction "MoveForward" > 0) then {pl_suppress_area_size = pl_suppress_area_size + 10; sleep 0.05};
-            if (inputAction "MoveBack" > 0) then {pl_suppress_area_size = pl_suppress_area_size - 10; sleep 0.05};
-            _markerName setMarkerSize [pl_suppress_area_size, pl_suppress_area_size];
-            if (pl_suppress_area_size >= 180) then {pl_suppress_area_size = 180};
-            if (pl_suppress_area_size <= 20) then {pl_suppress_area_size = 20};
-        };
-
-        player enableSimulation true;
-
-        pl_mapClicked = false;
-        _cords = getMarkerPos _markerName;
-        _area = pl_suppress_area_size;
-        deleteMarker _markerBorderName;
-        // _markerName setMarkerPos _cords; 
-    }
-    else
-    {
-        _cords = screenToWorld [0.5,0.5];
-    };
-
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
-
-    _group setVariable ["pl_fof_set", true];
-    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rifle_ca.paa";
-    _leader = leader _group;
-    pl_draw_suppression_array pushBack [_cords, _leader, false, _icon];
-
-    while {_group getVariable ["pl_fof_set", false]} do {
-        _allMen = nearestObjects [_cords, ["Man"], _area, true];
-        private _infTargets = [];
-        {
-            _infTargets pushBack _x;
-        } forEach (_allMen select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
-
-        _allVics = nearestObjects [_cords, ["Car", "Truck", "Tank"], _area, true];
-        private _vicTargets = [];
-        {
-            _vicTargets pushBack _x;
-        } forEach (_allVics select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
-
-        if (vehicle (leader _group) != (leader _group)) then {
-            _vic = vehicle (leader _group);
-            private _target = objNull;
-            if !(_vicTargets isEqualTo []) then {
-                _vicTargets = [_vicTargets, [], {_x distance2D _vic}, "ASCEND"] call BIS_fnc_sortBy;
-                _target = _vicTargets#0;
-            }
-            else
-            {
-                if !(_infTargets isEqualTo []) then {
-                    _infTargets = [_infTargets, [], {_x distance2D _vic}, "ASCEND"] call BIS_fnc_sortBy;
-                    _target =_infTargets#0;
-                };
-            };
-            if !(isNull _target) then {
-                {
-                    _x reveal [_target, 3];
-                    _x doTarget _target;
-                    _x doFire _target;
-                } forEach (units _group);
-            };
-        }
-        else
-        {
-            {
-                private _target = objNull;
-                _unit = _x;
-                if !(_infTargets isEqualTo []) then {
-                    _infTargets = [_infTargets, [], {_x distance2D _unit}, "ASCEND"] call BIS_fnc_sortBy;
-                    _target =_infTargets#([0, 3] call BIS_fnc_randomInt);
-                };
-                if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
-                    if !(_vicTargets isEqualTo []) then {
-                        _vicTargets = [_vicTargets, [], {_x distance2D _unit}, "ASCEND"] call BIS_fnc_sortBy;
-                        _target = _vicTargets#0;
-                    }
-                };
-                if !(isNull _target) then {
-                    if (_target distance2D _unit <= 450) then {
-                        if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun") then {
-                            _pos = getPosASL _target;
-                            _vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1];
-                            if !(_vis isEqualTo []) then {
-                                _pos = (_vis select 0) select 0;
-                            };
-                            _unit doSuppressiveFire _pos;
-                        }
-                        else
-                        {
-                            _unit reveal [_target, 4];
-                            if (random 1 >= 0.3) then {
-                                _unit doTarget _target;
-                                _unit doFire _target;
-                            } 
-                            else
-                            {
-                                _unit doSuppressiveFire _target;
-                            };
-                        };
-                    };
-                };
-            } forEach (units _group);
-        };    
-
-        _time = time + 10;
-        waitUntil {time >= _time or !(_group getVariable ["pl_fof_set", false])};
-    };
-
-    {
-      _x doWatch objNull;
-    } forEach (units _group);
-
-    deleteMarker _markerName;
-
-    pl_draw_suppression_array = pl_draw_suppression_array - [[_cords, _leader, false, _icon]];
-
-};
-
-
-

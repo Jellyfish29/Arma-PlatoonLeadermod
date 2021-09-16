@@ -19,15 +19,17 @@ addMissionEventHandler ["EntityKilled",{
 
             _groupId = groupId group driver _killed;
             if (pl_enable_beep_sound) then {playSound "beep"};
-            if (pl_enable_chat_radio) then (driver _killed sideChat format ["%1 has been disabled!", _groupId]);
-            if (pl_enable_map_radio) then ([group (driver _killed), "...We are hit!", 15] call pl_map_radio_callout);
+            if (pl_enable_chat_radio) then {driver _killed sideChat format ["%1 has been disabled!", _groupId]};
+            if (pl_enable_map_radio) then {[group (driver _killed), "...We are hit!", 15] call pl_map_radio_callout};
 
             _crew = crew _killed;
 
             _crewClassName = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "crew");
+            _unitText = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "textSingular");
             private _cargoGroups = [];
             {
-                if (typeOf _x isEqualTo _crewClassName and !(((_killed call BIS_fnc_objectType) select 1) isEqualTo "Car")) then {
+                // if (typeOf _x isEqualTo _crewClassName and !(((_killed call BIS_fnc_objectType) select 1) isEqualTo "Car")) then {
+                if (_killed isKindOf "Tank" or _unitText isEqualTo "APC") then {
                     deleteVehicle _x;
                 }
                 else
@@ -65,8 +67,8 @@ addMissionEventHandler ["EntityKilled",{
         {
             _groupId = groupId group driver _killed;
             if (pl_enable_beep_sound) then {playSound "beep"};
-            if (pl_enable_chat_radio) then (player sideChat format ["%1 has been destroyed", _groupId]);
-            if (pl_enable_map_radio) then ([group (driver _killed), "...Ahhh", 10] call pl_map_radio_callout);
+            if (pl_enable_chat_radio) then {player sideChat format ["%1 has been destroyed", _groupId]};
+            if (pl_enable_map_radio) then {[group (driver _killed), "...Ahhh", 10] call pl_map_radio_callout};
         };
     };
 }];
@@ -213,8 +215,8 @@ pl_repair = {
             };
 
             if (isNil "_repairTarget") exitWith {
-                if (pl_enable_chat_radio) then (leader _group sideChat "No damaged Vehicles found");
-                if (pl_enable_map_radio) then ([_group, "...No damaged Vehicles found", 20] call pl_map_radio_callout);
+                if (pl_enable_chat_radio) then {leader _group sideChat "No damaged Vehicles found"};
+                if (pl_enable_map_radio) then {[_group, "...No damaged Vehicles found", 20] call pl_map_radio_callout};
                 if (pl_enable_beep_sound) then {playSound "beep"};
             };
 
@@ -293,7 +295,8 @@ pl_repair = {
                         // deleteVehicle ((_x getVariable "effectLight") select 0);
                     } forEach (units _smokeGroup);
                     sleep 0.1;
-                    if !(((_toRepairVic call BIS_fnc_objectType) select 1) isEqualTo "Car") then {
+                    _unitText = getText (configFile >> "CfgVehicles" >> typeOf _toRepairVic>> "textSingular");
+                    if (_toRepairVic isKindOf "Tank" or _unitText isEqualTo "APC") then {
                         _vicGroup = createVehicleCrew _toRepairVic;
                     };
                     sleep 0.1;
@@ -305,8 +308,8 @@ pl_repair = {
                     [_vicGroup] spawn pl_reset;
                     sleep 1;
                     if (pl_enable_beep_sound) then {playSound "beep"};
-                    if (pl_enable_chat_radio) then ((leader _vicGroup) sideChat format ["%1 is back up and fully operational", (groupId _vicGroup)]);
-                    if (pl_enable_map_radio) then ([_vicGroup, format "...We are back up!", (groupId _vicGroup), 20] call pl_map_radio_callout);
+                    if (pl_enable_chat_radio) then {(leader _vicGroup) sideChat format ["%1 is back up and fully operational", (groupId _vicGroup)]};
+                    if (pl_enable_map_radio) then {[_vicGroup, "...We are back up!", 20] call pl_map_radio_callout};
 
                     _group setVariable ["onTask", false];
                     _group setVariable ["setSpecial", false];
@@ -320,8 +323,8 @@ pl_repair = {
                     _group setVariable ["onTask", false];
                     _group setVariable ["setSpecial", false];
                     // _group setVariable ["MARTA_customIcon", nil];
-                    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Repairs Completeted", (groupId _group)]);
-                    if (pl_enable_map_radio) then ([_group, "...Repairs Completeted", 20] call pl_map_radio_callout);
+                    if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Repairs Completeted", (groupId _group)]};
+                    if (pl_enable_map_radio) then {[_group, "...Repairs Completeted", 20] call pl_map_radio_callout};
                     _repairCargo = _repairCargo - 1;
                 };
                 
@@ -397,16 +400,18 @@ pl_repair_bridge = {
 
     {
         _x disableAI "AUTOCOMBAT";
-        // _x disableAI "FSM";
     } forEach (units _group);
 
-    _wp = _group addWaypoint [_cords, 0];
+    _dir = _cords getDir (leader _group);
+    _wpPos = _cords getPos [35, _dir];
+    _wp = _group addWaypoint [_wpPos, 0];
     sleep 1;
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 35)};
+    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 11)};
+    if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Starting Repairs", (groupId _group)]};
+    if (pl_enable_map_radio) then {[_group, "...Starting Repairs", 20] call pl_map_radio_callout};
 
     {
         _x enableAI "AUTOCOMBAT";
-        _x enableAI "FSM";
         [_x, getPos _x, _x getDir _cords, 15, true] spawn pl_find_cover; 
     } forEach (units _group);
 
@@ -414,16 +419,18 @@ pl_repair_bridge = {
 
     waitUntil {time >= _repairTime or !(_group getVariable ["onTask", true]) or !alive _engineer or _engineer getVariable ["pl_wia", false]};
 
-    {
-        _x setDamage 0;
-    } forEach _bridges;
+    if ((_group getVariable ["onTask", false]) and alive _engineer and !(_engineer getVariable ["pl_wia", false])) then {
+        {
+            _x setDamage 0;
+        } forEach _bridges;
+    };
 
     {
         deleteMarker _x;
     } forEach _bridgeMarkers;
     if (pl_enable_beep_sound) then {playSound "beep"};
-    if (pl_enable_chat_radio) then ((leader _group) sideChat format ["%1: Bridge Repairs completeted", (groupId _group)]);
-    if (pl_enable_map_radio) then ([_group, "...Bridge Repairs completeted", 20] call pl_map_radio_callout);
+    if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Bridge Repairs completeted", (groupId _group)]};
+    if (pl_enable_map_radio) then {[_group, "...Bridge Repairs completeted", 20] call pl_map_radio_callout};
     [_group] call pl_reset;
 };
 

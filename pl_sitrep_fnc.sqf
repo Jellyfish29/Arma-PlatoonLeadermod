@@ -17,29 +17,25 @@ pl_get_ammo_group_state = {
     params ["_group"];
     private ["_ammoState"];
     _ammoState = ["Green", "#66ff33"];
-    _magsDefault = _group getVariable "magCountAllDefault";
+    _magsDefault = 0;
+    _magsDefaultSolo = _group getVariable "magCountSoloDefault";
     _magCountAll = 0;
+
+
     {
-        _mags = magazines _x;
-        _mag = "";
-        if ((primaryWeapon _x) != "") then {
-            _mag = (getArray (configFile >> "CfgWeapons" >> (primaryWeapon _x) >> "magazines")) select 0;
-        };
-        _magCount = 0;
-        {
-            if ((_mag isEqualto _x)) then {
-                _magCount = _magCount + 1;
-            };
-        }forEach _mags;
-        _magCountAll = _magCountAll + _magCount;
+        _primary = primaryWeapon _x;
+        _standartMagAmount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})} count magazines _x) + 1;
+        _magCountAll = _magCountAll + _standartMagAmount;
+        _magsDefault = _magsDefault + _magsDefaultSolo;
     } forEach (units _group);
+
     if (_magCountAll < (_magsDefault * 0.6)) then {
         _ammoState = ["Yellow", "#e5e500"];
     };
     if (_magCountAll < (_magsDefault * 0.25)) then {
         _ammoState = ["Red", "#b20000"];
     };
-    _ammoState;
+    _ammoState
 };
 
 pl_sitrep_solo = {
@@ -87,24 +83,18 @@ pl_sitrep_solo = {
         _magCount = 0;
         _missileCount = 0;
 
-        if ((primaryWeapon _x) != "") then {
-            _mag = (getArray (configFile >> "CfgWeapons" >> (primaryWeapon _x) >> "magazines")) select 0;
-        };
-        if ((secondaryWeapon _x) != "") then {
-            _missile = (getArray (configFile >> "CfgWeapons" >> (secondaryWeapon _x) >> "magazines")) select 0;
+
+        _primary = primaryWeapon _x;
+        _magCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})} count magazines _x);
+
+        _secondary = secondaryWeapon _x;
+        if !(_secondary isEqualTo "") then {
+            _missileCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _secondary >> "magazines") apply {toUpper _x})} count magazines _x);
         };
 
-        {
-            if ((_mag isEqualto _x)) then {
-                _magCount = _magCount + 1;
-            };
-            if ((_missile isEqualto _x)) then {
-                _missileCount = _missileCount + 1;
-            };
-        } forEach _mags;
 
-        if (_mag in (primaryWeaponMagazine _x)) then {_magCount = _magCount + 1};
-        if (_missile in (secondaryWeaponMagazine _x)) then {_missileCount = _missileCount + 1};
+        if (toUpper ((primaryWeaponMagazine _x)#0) in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})) then {_magCount = _magCount + 1};
+        if (toUpper ((secondaryWeaponMagazine _x)#0) in (getArray (configFile >> "CfgWeapons" >> _secondary >> "magazines") apply {toUpper _x})) then {_missileCount = _missileCount + 1};
 
         _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName");
         _unitDamage = getDammage _x;
@@ -160,7 +150,7 @@ pl_sitrep_solo = {
     if ((count _targets) > 0) then {
         
         if ((_group getVariable "sitrepCd") < time) then {
-            [_targets] spawn pl_mark_targets_on_map;
+            // [_targets] spawn pl_mark_targets_on_map;
             [_targets, (leader _group)] call pl_reveal_targets;
             _group setVariable ["sitrepCd", time + 30];
         };
@@ -216,7 +206,7 @@ pl_sitrep_multi = {
         _ammoState = [_group] call pl_get_ammo_group_state;
 
         _taskIcon = "";
-        _onTask = _group getVariable "onTask";
+        _onTask = _group getVariable ["onTask", false];
         if (_onTask) then {
             _taskIcon = _group getVariable 'specialIcon';
         };
@@ -254,7 +244,7 @@ pl_sitrep_multi = {
     _targetsAll = _targetsAll arrayIntersect _targetsAll;
 
     if (pl_sitrep_multi_cd < time) then {
-        [_targetsAll] spawn pl_mark_targets_on_map;
+        // [_targetsAll] spawn pl_mark_targets_on_map;
         [_targetsAll, player] call pl_reveal_targets;
         pl_sitrep_multi_cd = time + 30;
     };

@@ -15,9 +15,10 @@ execVM "Plmod\pl_repair_fnc.sqf";
 execVM "Plmod\pl_static_fnc.sqf";
 execVM "Plmod\pl_menus_fnc.sqf";
 execVM "Plmod\pl_3d_icon_fnc.sqf";
-execVM "Plmod\pl_disable_hc_elements.sqf";
+// execVM "Plmod\pl_disable_hc_elements.sqf";
 execVM "Plmod\pl_mine_fnc.sqf";
 execVM "Plmod\pl_util.sqf";
+// execVM "Plmod\pl_marta_overwrite.sqf";
 
 // setGroupIconsVisible [true,true]; 
 
