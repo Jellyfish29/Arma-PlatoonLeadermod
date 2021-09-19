@@ -13,25 +13,30 @@ if (pl_virtual_mines_enabled) then {pl_show_virtual_mines = 1} else {pl_show_vir
 pl_mortar_names = ["B_Mortar_01_F", "B_T_Mortar_01_F", "O_Mortar_01_F", "O_T_Mortar_01_F", "I_Mortar_01_F"];
 pl_mortars = [];
 
-pl_on_map_mortar = {
+pl_get_on_map_arty = {
     private ["_mortars"];
 
-    pl_mortars = [];
-    _mortars = [];
+    pl_arty_groups = [];
     {
         if ((getNumber (configFile >> "CfgVehicles" >> typeOf _x >> "artilleryScanner")) == 1) then {
-            _mortars pushBack _x;
-        };
-    } forEach (vehicles select {side _x isEqualTo playerSide});
+            _grp = group (gunner _x);
 
-    if (count _mortars == 0) exitWith {0};
-    pl_mortars append _mortars;
+            _grpGuns = _grp getVariable ["pl_active_arty_guns", []];
+            _grpGuns pushBackUnique _x;
+            _grp setVariable ["pl_active_arty_guns", _grpGuns];
+
+            pl_arty_groups pushBackUnique _grp;
+        };
+    } forEach (vehicles select {(side _x) isEqualTo playerSide});
+
+    if (count pl_arty_groups == 0) exitWith {0};
+    pl_active_arty_group_idx = 0;
     1
 };
 
 pl_str_cas = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\plane_ca.paa"/><t> Air Support</t>';
-pl_str_arty = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Artillery Strike</t>';
-pl_str_mortar = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Platoon Mortar</t>';
+pl_str_arty = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Off Map Artillery</t>';
+pl_str_mortar = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> On Map Artillery</t>';
 pl_str_status = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa"/><t> STATUS</t>';
 
 pl_show_fire_support_menu = {
@@ -41,10 +46,10 @@ pl_show_fire_support_menu = {
         [parseText '%4', [2], '', -5, [['expression', '[] spawn pl_show_cas_menu']], '1', '%1'],
         [parseText '%5', [3], '', -5, [['expression', '[] spawn pl_show_arty_menu']], '1', '%2'],
         ['', [], '', -1, [['expression', '']], '1', '1'],
-        [parseText '%6', [4], '', -5, [['expression', '[] spawn pl_show_mortar_menu']], '1', '%3'],
+        [parseText '%6', [4], '', -5, [['expression', '[] spawn pl_show_on_map_arty_menu']], '1', '%3'],
         ['', [], '', -1, [['expression', '']], '1', '1'],
         [parseText '%7', [5], '', -5, [['expression', '[] spawn pl_support_status']], '1', '1']
-    ];", pl_cas_enabled, pl_arty_enabled, [] call pl_on_map_mortar, pl_str_cas, pl_str_arty, pl_str_mortar, pl_str_status];
+    ];", pl_cas_enabled, pl_arty_enabled, [] call pl_get_on_map_arty, pl_str_cas, pl_str_arty, pl_str_mortar, pl_str_status];
     // showCommandingMenu "#USER:pl_mortar_menu";
 };
 [] call pl_show_fire_support_menu;
@@ -203,24 +208,38 @@ pl_arty_delay_menu = [
 
 
 
-pl_show_mortar_menu = {
-    call compile format ["
-    pl_mortar_menu = [
-        ['Platoon Mortar',true],
-        ['Call Strike', [2], '', -5, [['expression', 'pl_arty_delay = 1; [] spawn pl_fire_mortar']], '1', '1'],
-        ['', [], '', -5, [['expression', '']], '1', '0'],
-        ['Rounds:           %1', [3], '#USER:pl_mortar_round_menu', -5, [['expression', '']], '1', '1']
-    ];", pl_mortar_rounds];
-    showCommandingMenu "#USER:pl_mortar_menu";
+pl_show_on_map_arty_menu = {
+call compile format ["
+pl_on_map_arty_menu = [
+    ['Artillery',true],
+    ['Call Artillery Strike', [2], '', -5, [['expression', '[] spawn pl_fire_on_map_arty']], '1', '1'],
+    ['', [], '', -5, [['expression', '']], '1', '0'],
+    ['Choose Battery:   %5', [3], '', -5, [['expression', '[] spawn pl_show_battery_menu']], '1', '1'],
+    ['', [], '', -5, [['expression', '']], '1', '0'],
+    ['Rounds:               %1', [4], '#USER:pl_arty_round_menu', -5, [['expression', '']], '1', '1'],
+    ['Dispersion:       %2 m', [5], '#USER:pl_arty_dispersion_menu', -5, [['expression', '']], '1', '1'],
+    ['Min Delay:               %3 s', [6], '#USER:pl_arty_delay_menu', -5, [['expression', '']], '1', '1'],
+    ['', [], '', -5, [['expression', '']], '1', '0']
+];", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, pl_arty_enabled, groupId (pl_arty_groups#pl_active_arty_group_idx)];
+showCommandingMenu "#USER:pl_on_map_arty_menu";
 };
 
-pl_mortar_round_menu = 
-[
-    ['Rounds',true],
-    ['4', [2], '', -5, [['expression', 'pl_mortar_rounds = 4; [] spawn pl_show_mortar_menu']], '1', '1'],
-    ['8', [3], '', -5, [['expression', 'pl_mortar_rounds = 8; [] spawn pl_show_mortar_menu']], '1', '1']
+pl_show_battery_menu = {
+    private ["_menuScript"];
+    _menuScript = "pl_arty_group_menu = [['Artillery Batteries',true],";
 
-];
+    _n = 0;
+    {
+        _callsign = groupId _x;
+        _menuScript = _menuScript + format ["[parseText '%1', [%2], '', -5, [['expression', 'pl_active_arty_group_idx = %3; [] spawn pl_show_on_map_arty_menu']], '1', '1'],", _callsign, _n + 2, _n];
+        _n = _n + 1;
+    } forEach pl_arty_groups;
+    _menuScript = _menuScript + "['', [], '', -5, [['expression', '']], '0', '0']]";
+
+    call compile _menuScript;
+    showCommandingMenu "#USER:pl_arty_group_menu";
+};
+
 
 //    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"/><t> Set Up Aid Station</t>', [5], '', -5, [['expression', '["aid"] call pl_task_planer']], '1', '1'],
 pl_task_plan_menu = [

@@ -99,6 +99,8 @@ pl_getIn_vehicle = {
         [_group] call pl_reset;
         sleep 0.2;
 
+        if (_group getVariable ["pl_healing_active", false]) then {_group setVariable ["pl_healing_active", false]};
+
         // Vehicle Transport
         if ((vehicle (leader _group)) != leader _group) then {
             _vic = vehicle (leader _group);

@@ -393,13 +393,6 @@ pl_add_unit_fire_indicator = {
         };
     }];
 };
-        _primary = primaryWeapon _x;
-        _magCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})} count magazines _x) + 1;
-
-        _secondary = secondaryWeapon _x;
-        if !(_secondary isEqualTo "") then {
-            _missileCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _secondary >> "magazines") apply {toUpper _x})} count magazines _x) + 1;
-        };
 
 pl_set_up_ai = {
     params ["_group"];

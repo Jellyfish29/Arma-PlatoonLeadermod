@@ -116,7 +116,7 @@ pl_heal_group = {
             // _medic disableAI "FSM";
             // _medic disableAI "AUTOCOMBAT";
             sleep 2;
-            while {(_group getVariable "pl_healing_active")} do {
+            while {(_group getVariable "pl_healing_active") and alive _medic and !(_medic getVariable ["pl_wia", false])} do {
                 // if (_group isEqualTo grpNull) exitWith {};
                 // _reviveTargets = (getPos leader _group) nearObjects ["Man", 50];
 
@@ -305,7 +305,7 @@ pl_ccp = {
 
     if (_group != (group player) and !(_isMedevac) and !(_group getVariable ["pl_set_as_medical", false])) exitWith {
         // if (pl_enable_beep_sound) then {playSound "beep"};
-        hint "Only the Player Group or a Medical Vehicle can set up the CCP";
+        hint "Only the Player Group or a Medical Group can set up the CCP";
     };
     
 

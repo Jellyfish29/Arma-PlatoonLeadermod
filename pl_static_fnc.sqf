@@ -182,6 +182,8 @@ pl_reworked_bis_unpack = {
         
         _assistant doWatch _targetPos;
         _assistant doMove _assistantPos;
+
+        sleep 1;
         
         waitUntil {unitReady _assistant};
         
@@ -204,6 +206,8 @@ pl_reworked_bis_unpack = {
         _gunner doWatch _targetPos;
         _gunner doMove _gunnerPos;
 
+        sleep 1;
+
         waitUntil {unitReady _gunner};
         
         if (!alive _gunner || fleeing _gunner) exitWith {_gunner removeAllEventHandlers "WeaponAssembled"};
@@ -224,7 +228,7 @@ pl_reworked_bis_unpack = {
         _gunner action ["Assemble", _weaponBase];
         sleep 2;
         _weapon = vehicle _gunner;
-        [] call pl_show_fire_support_menu;
+        // [] call pl_show_fire_support_menu;
         _pos = getPosASL _weapon;
         _pos = [_pos#0, _pos#1, _pos#2 + 1.5];
         _weapon setPosASL _pos;
