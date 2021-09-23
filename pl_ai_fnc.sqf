@@ -744,13 +744,9 @@ pl_vehicle_unstuck = {
 };
 
 pl_vehicle_soft_unstuck = {
-    params ["_group"];
-    private ["_vic"];
-    _vic = vehicle (leader _group);
-    // _pos = [0.2, 0.2, 0.2] vectorAdd (getPosVisual _vic);
-    // _vic setPos _pos;
-    _vic setVelocityModelSpace [0, 1, 0];
-    _vic setPos (getPosVisual _vic);
+    params ["_vic"];
+    _pos = (getPos _vic) getPos [0.2, getDir _vic];
+    _vic setVehiclePosition [_pos, [], 0, "CAN_COLLIDE"];
 };
 
 pl_reset_group = {

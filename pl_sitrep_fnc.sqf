@@ -15,8 +15,8 @@ pl_get_group_health_hex = {
 
 pl_get_ammo_group_state = {
     params ["_group"];
-    private ["_ammoState"];
-    _ammoState = ["Green", "#66ff33"];
+    private ["_ammoState", "_magsDefault", "_magsDefaultSolo"];
+    _ammoState = ["Green", "#66ff33", [0.4,1,0.2,1]];
     _magsDefault = 0;
     _magsDefaultSolo = _group getVariable "magCountSoloDefault";
     _magCountAll = 0;
@@ -30,10 +30,10 @@ pl_get_ammo_group_state = {
     } forEach (units _group);
 
     if (_magCountAll < (_magsDefault * 0.6)) then {
-        _ammoState = ["Yellow", "#e5e500"];
+        _ammoState = ["Yellow", "#e5e500", [0.9,0.9,0,1]];
     };
     if (_magCountAll < (_magsDefault * 0.25)) then {
-        _ammoState = ["Red", "#b20000"];
+        _ammoState = ["Red", "#b20000", [0.7,0,0,1]];
     };
     _ammoState
 };

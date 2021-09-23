@@ -200,7 +200,7 @@ pl_cas = {
         default {sleep 0.1}; 
     };
     sleep 1;
-    _group = createGroup playerSide;
+    _group = createGroup [playerSide, true];
     _support = _group createUnit ["ModuleCAS_F", _cords, [],0 , ""];
     
     _support setVariable ["vehicle", _plane];

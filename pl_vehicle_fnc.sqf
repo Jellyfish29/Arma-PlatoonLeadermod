@@ -369,7 +369,7 @@ pl_getOut_vehicle = {
                     // _vic setDriveOnPath _points;
 
                     _convoyPosition = (missionNamespace getVariable (_convoyId + "pos"));
-                    _t = time + 2;
+                    _t = time + 3;
                     missionNamespace setVariable [_convoyId + "time", _t];
                     _p  = (missionNamespace getVariable (_convoyId + "pos"));
                     _p = _p + 1;
@@ -464,7 +464,6 @@ pl_getOut_vehicle = {
                         };
 
                         _vic setVariable ["pl_speed_limit", "CON"];
-                        [_group] call pl_vehicle_soft_unstuck;
                         // _vic forceFollowRoad true;
                         _vic setConvoySeparation 1;
 
@@ -489,18 +488,19 @@ pl_getOut_vehicle = {
                                     _vic limitSpeed _convoyLeaderSpeed;
                                 };
                                 if (_distance > 70) then {
-                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
+                                    _vic limitSpeed (_convoyLeaderSpeed * 0.5);;
                                 };
                                 if (_distance > 90) then {
                                     _vic forceSpeed 0;
                                 };
                                 if ((speed _vic) < 2) then {
-                                    _timeout = time + 7;
+                                    _timeout = time + 10;
                                     waitUntil {(speed _vic) > 0 or time >= _timeout};
                                     if ((speed _vic) < 2) then {
                                         {
                                             _x setDamage 1;
                                         } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
+                                        [_group] call pl_vehicle_unstuck;
                                     };
                                 };
                             }
@@ -515,13 +515,13 @@ pl_getOut_vehicle = {
                                 _vic forceSpeed -1;
                                 _vic limitSpeed _convoyLeaderSpeed;
                                 if (_distance > 60) then {
-                                    _vic limitSpeed (_convoyLeaderSpeed + 8);
+                                    _vic limitSpeed (_convoyLeaderSpeed * 1.4);;
                                 };
                                 if (_distance < 60) then {
                                     _vic limitSpeed _convoyLeaderSpeed;
                                 };
                                 if (_distance < 40) then {
-                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
+                                    _vic limitSpeed (_convoyLeaderSpeed * 0.5);;
                                 };
                                 if (_distance < 25) then {
                                     _vic forceSpeed 0;
@@ -530,22 +530,27 @@ pl_getOut_vehicle = {
                                 _distanceBack = 0;
                                 if (_convoyPosition < ((count (_convoyArray)) - 1)) then {
                                     _distanceBack = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition + 1));
+                                    if (_distanceBack > 40) then {
+                                        _vic limitSpeed (_convoyLeaderSpeed * 0.75);
+                                        // _convoyLeaderVic limitSpeed ((_convoyLeaderSpeed - (_convoyLeaderSpeed  - 6));
+                                    };
                                     if (_distanceBack > 60) then {
-                                        _vic limitSpeed ((_convoyLeaderSpeed - (_convoyLeaderSpeed / 2)) - 10);
-                                        _convoyLeaderVic limitSpeed (_convoyLeaderSpeed / 2);
+                                        _vic limitSpeed (_convoyLeaderSpeed * 0.5);
+                                        _convoyLeaderVic limitSpeed (_convoyLeaderSpeed * 0.65);
                                     };
                                     if (_distanceBack > 100) then {
                                         _vic forceSpeed 0;
-                                        _convoyLeaderVic limitSpeed ((_convoyLeaderSpeed / 2) - 8);
+                                        _convoyLeaderVic limitSpeed (_convoyLeaderSpeed * 0.15);
                                     };
                                 };
                                 if ((speed _vic) < 2) then {
-                                    _timeout = time + 7;
-                                    waitUntil {(speed _vic) > 0 or time >= _timeout};
+                                    _timeout = time + 10;
+                                    waitUntil {(speed _vic) > 2 or time >= _timeout};
                                     if ((speed _vic) < 2) then {
                                         {
                                             _x setDamage 1;
                                         } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
+                                        [_group] call pl_vehicle_unstuck;
                                     };
                                 };
                             };
