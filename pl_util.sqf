@@ -119,7 +119,7 @@ pl_quick_suppress = {
         _targetPos = (_vis select 0) select 0;
     };
     
-    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_targetPos] call pl_friendly_check)) then {
+    if ((_targetPos distance2D _unit) > 25 and !([_targetPos] call pl_friendly_check)) then {
         _unit doSuppressiveFire _targetPos;
     };
 

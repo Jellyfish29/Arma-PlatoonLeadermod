@@ -326,7 +326,7 @@ pl_suppressive_fire_position = {
 
 pl_friendly_check = {
     params ["_pos"];
-    _entities = _pos nearEntities ["Man", 15];
+    _entities = _pos nearEntities ["Man", 20];
     private _return = false;
     {
         if ((side _x) isEqualTo playerSide) exitWith {_return = true};
@@ -392,6 +392,7 @@ pl_bounding_squad = {
         doStop _x;
         _x disableAI "PATH";
         _x disableAI "AUTOCOMBAT";
+        _x setUnitPosWeak "Middle";
     } forEach _units;
 
     _group setBehaviour "AWARE";
@@ -400,7 +401,7 @@ pl_bounding_squad = {
         params ["_team", "_wpPos", "_dirOffset", "_distanceOffset", "_MoveDistance"];
         _teamLeaderPos = getPos (_team#0);
         _moveDir = _teamLeaderPos getDir _wpPos;
-        _teamLeaderMovePos = _teamLeaderPos getPos [_MoveDistance, _moveDir];
+        _teamLeaderMovePos = _teamLeaderPos getPos [_MoveDistance, _moveDir + (_dirOffset * 0.15)];
         _return = [_teamLeaderMovePos];
         for "_i" from 1 to (count _team) - 1 do {
             _p = _teamLeaderMovePos getPos [_distanceOffset * _i, _moveDir + _dirOffset];
@@ -426,7 +427,7 @@ pl_bounding_squad = {
 
         (_team1#0) groupRadio "sentCovering";
         _targets = (_team1#0) targets [true, 400, [], 0, waypointPosition _wp];
-        if (count _targets > 0) then {{[_x, getPosASL (selectRandom _targets)] call pl_quick_suppress} forEach _team1};
+        if (count _targets > 0 and _mode isEqualTo "team") then {{[_x, getPosASL (selectRandom _targets)] call pl_quick_suppress} forEach _team1};
 
         sleep 1;
 
@@ -443,7 +444,7 @@ pl_bounding_squad = {
         
         (_team2#0) groupRadio "sentCovering";
         _targets = (_team2#0) targets [true, 400, [], 0, waypointPosition _wp];
-        if (count _targets > 0) then {{[_x, getPosASL (selectRandom _targets)] call pl_quick_suppress} forEach _team2};
+        if (count _targets > 0 and _mode isEqualTo "team") then {{[_x, getPosASL (selectRandom _targets)] call pl_quick_suppress} forEach _team2};
 
         sleep 1;
     };

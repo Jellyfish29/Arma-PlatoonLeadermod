@@ -185,7 +185,7 @@ pl_arty_round_menu =
 
 pl_arty_dispersion_menu = 
 [
-    ['Dispersion',false],
+    ['Dispersion',true],
     ['50 m', [2], '', -5, [['expression', 'pl_arty_dispersion = 50; [] spawn pl_show_arty_menu']], '1', '1'],
     ['75 m', [3], '', -5, [['expression', 'pl_arty_dispersion = 75; [] spawn pl_show_arty_menu']], '1', '1'],
     ['100 m', [4], '', -5, [['expression', 'pl_arty_dispersion = 100; [] spawn pl_show_arty_menu']], '1', '1'],
@@ -193,7 +193,9 @@ pl_arty_dispersion_menu =
     ['150 m', [6], '', -5, [['expression', 'pl_arty_dispersion = 150; [] spawn pl_show_arty_menu']], '1', '1'],
     ['200 m', [7], '', -5, [['expression', 'pl_arty_dispersion = 200; [] spawn pl_show_arty_menu']], '1', '1'],
     ['250 m', [8], '', -5, [['expression', 'pl_arty_dispersion = 250; [] spawn pl_show_arty_menu']], '1', '1'],
-    ['300 m', [9], '', -5, [['expression', 'pl_arty_dispersion = 300; [] spawn pl_show_arty_menu']], '1', '1']
+    ['300 m', [9], '', -5, [['expression', 'pl_arty_dispersion = 300; [] spawn pl_show_arty_menu']], '1', '1'],
+    ['400 m', [10], '', -5, [['expression', 'pl_arty_dispersion = 400; [] spawn pl_show_arty_menu']], '1', '1'],
+    ['600 m', [11], '', -5, [['expression', 'pl_arty_dispersion = 600; [] spawn pl_show_arty_menu']], '1', '1']
 ];
 
 pl_arty_delay_menu = [
@@ -206,6 +208,45 @@ pl_arty_delay_menu = [
     ['30 s', [7], '', -5, [['expression', 'pl_arty_delay = 30; [] spawn pl_show_arty_menu']], '1', '1']
 ];
 
+pl_arty_round_menu_on_map = 
+[
+    ['Rounds',true],
+    ['1', [2], '', -5, [['expression', 'pl_arty_rounds = 1; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['3', [3], '', -5, [['expression', 'pl_arty_rounds = 3; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['6', [4], '', -5, [['expression', 'pl_arty_rounds = 6; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['9', [5], '', -5, [['expression', 'pl_arty_rounds = 9; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['12', [6], '', -5, [['expression', 'pl_arty_rounds = 12; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['15', [7], '', -5, [['expression', 'pl_arty_rounds = 15; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['18', [8], '', -5, [['expression', 'pl_arty_rounds = 18; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['21', [9], '', -5, [['expression', 'pl_arty_rounds = 21; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['24', [10], '', -5, [['expression', 'pl_arty_rounds = 24; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+];
+
+pl_arty_dispersion_menu_on_map = 
+[
+    ['Dispersion',true],
+    ['50 m', [2], '', -5, [['expression', 'pl_arty_dispersion = 50; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['75 m', [3], '', -5, [['expression', 'pl_arty_dispersion = 75; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['100 m', [4], '', -5, [['expression', 'pl_arty_dispersion = 100; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['125 m', [5], '', -5, [['expression', 'pl_arty_dispersion = 125; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['150 m', [6], '', -5, [['expression', 'pl_arty_dispersion = 150; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['200 m', [7], '', -5, [['expression', 'pl_arty_dispersion = 200; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['250 m', [8], '', -5, [['expression', 'pl_arty_dispersion = 250; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['300 m', [9], '', -5, [['expression', 'pl_arty_dispersion = 300; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['400 m', [10], '', -5, [['expression', 'pl_arty_dispersion = 400; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['600 m', [11], '', -5, [['expression', 'pl_arty_dispersion = 600; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+];
+
+pl_arty_delay_menu_on_map = [
+    ['Delay',true],
+    ['1 s', [2], '', -5, [['expression', 'pl_arty_delay = 1; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['5 s', [3], '', -5, [['expression', 'pl_arty_delay = 5; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['10 s', [4], '', -5, [['expression', 'pl_arty_delay = 10; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['15 s', [5], '', -5, [['expression', 'pl_arty_delay = 15; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['20 s', [6], '', -5, [['expression', 'pl_arty_delay = 20; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['30 s', [7], '', -5, [['expression', 'pl_arty_delay = 30; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+];
+
 
 
 pl_show_on_map_arty_menu = {
@@ -216,9 +257,9 @@ pl_on_map_arty_menu = [
     ['', [], '', -5, [['expression', '']], '1', '0'],
     ['Choose Battery:   %5', [3], '', -5, [['expression', '[] spawn pl_show_battery_menu']], '1', '1'],
     ['', [], '', -5, [['expression', '']], '1', '0'],
-    ['Rounds:               %1', [4], '#USER:pl_arty_round_menu', -5, [['expression', '']], '1', '1'],
-    ['Dispersion:       %2 m', [5], '#USER:pl_arty_dispersion_menu', -5, [['expression', '']], '1', '1'],
-    ['Min Delay:               %3 s', [6], '#USER:pl_arty_delay_menu', -5, [['expression', '']], '1', '1'],
+    ['Rounds:               %1', [4], '#USER:pl_arty_round_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Dispersion:       %2 m', [5], '#USER:pl_arty_dispersion_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Min Delay:               %3 s', [6], '#USER:pl_arty_delay_menu_on_map', -5, [['expression', '']], '1', '1'],
     ['', [], '', -5, [['expression', '']], '1', '0']
 ];", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, pl_arty_enabled, groupId (pl_arty_groups#pl_active_arty_group_idx)];
 showCommandingMenu "#USER:pl_on_map_arty_menu";

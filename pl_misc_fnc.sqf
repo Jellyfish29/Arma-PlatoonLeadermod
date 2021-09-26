@@ -1086,7 +1086,7 @@ pl_move_as_formation = {
     // draw Indicator and wait for mouseclick;
     pl_draw_formation_mouse = true;
 
-    if (_firstCall) then {sleep 0.4};
+    if (_firstCall) then {showCommandingMenu ""; sleep 0.4};
 
     waitUntil {inputAction "defaultAction" > 0 or inputAction "zoomTemp" > 0};
 

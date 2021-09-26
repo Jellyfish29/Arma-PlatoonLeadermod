@@ -369,7 +369,7 @@ pl_getOut_vehicle = {
                     // _vic setDriveOnPath _points;
 
                     _convoyPosition = (missionNamespace getVariable (_convoyId + "pos"));
-                    _t = time + 3;
+                    _t = time + 2;
                     missionNamespace setVariable [_convoyId + "time", _t];
                     _p  = (missionNamespace getVariable (_convoyId + "pos"));
                     _p = _p + 1;
@@ -494,13 +494,13 @@ pl_getOut_vehicle = {
                                     _vic forceSpeed 0;
                                 };
                                 if ((speed _vic) < 2) then {
-                                    _timeout = time + 10;
+                                    _timeout = time + 8;
                                     waitUntil {(speed _vic) > 0 or time >= _timeout};
                                     if ((speed _vic) < 2) then {
                                         {
                                             _x setDamage 1;
                                         } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
-                                        [_group] call pl_vehicle_unstuck;
+                                        // [_group] call pl_vehicle_unstuck;
                                     };
                                 };
                             }
@@ -544,13 +544,13 @@ pl_getOut_vehicle = {
                                     };
                                 };
                                 if ((speed _vic) < 2) then {
-                                    _timeout = time + 10;
+                                    _timeout = time + 8;
                                     waitUntil {(speed _vic) > 2 or time >= _timeout};
                                     if ((speed _vic) < 2) then {
                                         {
                                             _x setDamage 1;
                                         } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
-                                        [_group] call pl_vehicle_unstuck;
+                                        // [_group] call pl_vehicle_unstuck;
                                     };
                                 };
                             };

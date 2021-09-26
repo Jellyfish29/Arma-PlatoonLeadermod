@@ -297,12 +297,11 @@ pl_draw_group_info = {
                 };
 
                 if (pl_enable_map_radio) then {
-                    _radioIcon = '\A3\modules_f_curator\data\portraitRadioChannelCreate_ca.paa';
-                    _radioPos = [(_pos select 0), (_pos select 1) + pl_map_scale_y * ([1.9, 2] call BIS_fnc_randomNum)];
                     _radioText = _x getVariable ['pl_radio_text',''];
                     if !(_radioText isEqualTo '') then {
+                        _radioPos = [(_pos select 0), (_pos select 1) + pl_map_scale_y * ([1.9, 2] call BIS_fnc_randomNum)];
                         _display drawIcon [
-                            _radioIcon,
+                            '\A3\modules_f_curator\data\portraitRadioChannelCreate_ca.paa',
                             [0.9,0.9,0,1],
                             _radioPos,
                             16,
