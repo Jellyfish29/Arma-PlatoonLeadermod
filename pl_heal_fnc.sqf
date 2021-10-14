@@ -300,7 +300,7 @@ pl_ccp = {
     private ["_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP"];
 
     // _group = hcSelected player select 0;
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    // if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
     if (pl_ccp_set and !(_isMedevac)) exitWith {hint "Only one CCP allowed!"};
 
     if (_group != (group player) and !(_isMedevac) and !(_group getVariable ["pl_set_as_medical", false])) exitWith {
@@ -314,7 +314,7 @@ pl_ccp = {
         // if (getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "attendant" ) isEqualTo 1) then {
         //     _medic = _x;
         // };
-        if (_x getUnitTrait "Medic") then {
+        if (_x getUnitTrait "Medic" and alive _x and !(_x getVariable ["pl_wia", false])) then {
             _medic = _x;
         };
     } forEach (units _group);
@@ -400,15 +400,35 @@ pl_ccp = {
             _markerNameInner setMarkerAlpha 0.10;
             _markerNameInner setMarkerSize [_healRange, _healRange];
 
-            sleep 0.5;
-            _ambPos = [random 2, random 2] vectorAdd _ccpPos;
-            _medKit = "Item_Medikit" createVehicle _ambPos;
-            sleep 0.5;
-            _medGarbage = "MedicalGarbage_01_3x3_v1_F" createVehicle _ambPos;
+            if (vehicle (leader _group) != leader _group and _group != (group player)) then {
+                _ccpWp = _group addWaypoint [_ccpPos, 0];
+                sleep 1;
+                waitUntil {!(_group getVariable ["onTask", true]) or !(alive _medic) or (_medic getVariable ["pl_wia", false]) or (vehicle (leader _group) distance2D (waypointPosition _ccpWp)) < 20 or unitReady (vehicle (leader _group))};
+                if ((_group getVariable ["onTask", true]) and (alive _medic) and !(_medic getVariable ["pl_wia", false])) then {
+                    doStop (vehicle (leader _group));
+                    unassignVehicle _medic;
+                    doGetOut _medic;
+                    [_medic] allowGetIn false;
+                    if !(isNil "_escort") then {
+                        unassignVehicle _escort;
+                        doGetOut _escort;
+                        [_escort] allowGetIn false;
+                    };
+                };
+                sleep 5;
+            }
+            else
+            {
+                sleep 0.5;
+                _ambPos = [random 2, random 2] vectorAdd _ccpPos;
+                _medKit = "Item_Medikit" createVehicle _ambPos;
+                sleep 0.5;
+                _medGarbage = "MedicalGarbage_01_3x3_v1_F" createVehicle _ambPos;
+                sleep 1;
+                _medic doMove _ccpPos;
+                _medic setDestination [_ccpPos, "LEADER DIRECT", true];
+            };
 
-            sleep 1;
-            _medic doMove _ccpPos;
-            _medic setDestination [_ccpPos, "LEADER DIRECT", true];
             if !(isNil "_escort") then {
                 _escort doMove _ccpPos;
             };
@@ -462,9 +482,15 @@ pl_ccp = {
             deleteMarker _markerNameCCP;
             deleteMarker _markerNameOuter;
             deleteMarker _markerNameInner;
-            deleteVehicle _medKit;
-            deleteVehicle _medGarbage;
+            if !(isNil "_medKit") then {
+                deleteVehicle _medKit;
+                deleteVehicle _medGarbage;
+            };
             pl_ccp_set = false;
+
+            if (vehicle (leader _group) != leader _group and _group != (group player)) then {
+                [_group, vehicle (leader _group)] spawn pl_crew_vehicle_now;
+            };
         }
         else
         {

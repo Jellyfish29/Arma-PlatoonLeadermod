@@ -64,6 +64,7 @@ pl_str_repair = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\
 pl_str_maintenance = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Set up Maintenance Point</t>';
 pl_str_recon = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa"/><t> Designate as Recon</t>';
 pl_str_ce_menu = '<img color="#e5e500" image="\Plmod\gfx\b_engineer.paa"/><t> Combat Engineering Tasks</t>';
+pl_rearm_point_str = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Distribute Supplies</t>';
 
 //        [parseText '%13', [4], '', -5, [['expression', '[] spawn pl_vehicle_ccp_aid_station']], '%1', 'HCNotEmpty'],
 
@@ -76,14 +77,15 @@ pl_show_css_menu = {
         [parseText '%5', [4], '', -5, [['expression', '[] spawn pl_transfer_medic']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%1', '1'],
         [parseText '%6', [5], '', -5, [['expression', '[] spawn pl_rearm']], '1', 'HCNotEmpty'],
-        [parseText '%10', [6], '', -5, [['expression', '[] spawn pl_supply_point']], '1', 'HCNotEmpty'],
+        [parseText '%12', [6], '', -5, [['expression', '[] spawn pl_rearm_point']], '1', 'HCNotEmpty'],
+        [parseText '%10', [7], '', -5, [['expression', '[] spawn pl_supply_point']], '1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%7', [7], '', -5, [['expression', '[] spawn pl_repair']], '%2', 'HCNotEmpty'],
+        [parseText '%7', [8], '', -5, [['expression', '[] spawn pl_repair']], '%2', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%11', [8], '#USER:pl_combat_engineer', -5, [['expression', '']], '%2', '1'],
+        [parseText '%11', [9], '#USER:pl_combat_engineer', -5, [['expression', '']], '%2', '1'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%9', [9], '', -5, [['expression', '[] spawn pl_recon']], '1', 'HCNotEmpty']
-    ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance, pl_str_recon, pl_str_supply_point, pl_str_ce_menu];
+        [parseText '%9', [10], '', -5, [['expression', '[] spawn pl_recon']], '1', 'HCNotEmpty']
+    ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance, pl_str_recon, pl_str_supply_point, pl_str_ce_menu, pl_rearm_point_str];
     // showCommandingMenu "#USER:pl_mortar_menu";
 };
 
@@ -247,7 +249,27 @@ pl_arty_delay_menu_on_map = [
     ['30 s', [7], '', -5, [['expression', 'pl_arty_delay = 30; [] spawn pl_show_on_map_arty_menu']], '1', '1']
 ];
 
+pl_arty_round_type = 1;
+pl_arty_round_type_menu_on_map = 
+[
+    ['Type',true],
+    ['HE', [2], '', -5, [['expression', 'pl_arty_round_type = 1; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['SMOKE', [3], '', -5, [['expression', 'pl_arty_round_type = 2; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['ILLUM', [4], '', -5, [['expression', 'pl_arty_round_type = 3; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+];
 
+pl_get_type_str = {
+    params ["_type"];
+
+    private _return = "";
+    switch (_type) do { 
+          case 1 : {_return = "HE"}; 
+          case 2 : {_return = "SMOKE"}; 
+          case 3 : {_return = "ILLUM"};
+          default {};
+      };
+    _return
+};
 
 pl_show_on_map_arty_menu = {
 call compile format ["
@@ -257,11 +279,12 @@ pl_on_map_arty_menu = [
     ['', [], '', -5, [['expression', '']], '1', '0'],
     ['Choose Battery:   %5', [3], '', -5, [['expression', '[] spawn pl_show_battery_menu']], '1', '1'],
     ['', [], '', -5, [['expression', '']], '1', '0'],
-    ['Rounds:               %1', [4], '#USER:pl_arty_round_menu_on_map', -5, [['expression', '']], '1', '1'],
-    ['Dispersion:       %2 m', [5], '#USER:pl_arty_dispersion_menu_on_map', -5, [['expression', '']], '1', '1'],
-    ['Min Delay:               %3 s', [6], '#USER:pl_arty_delay_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Type:          %6', [4], '#USER:pl_arty_round_type_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Rounds:        %1', [4], '#USER:pl_arty_round_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Dispersion:    %2 m', [5], '#USER:pl_arty_dispersion_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Min Delay:     %3 s', [6], '#USER:pl_arty_delay_menu_on_map', -5, [['expression', '']], '1', '1'],
     ['', [], '', -5, [['expression', '']], '1', '0']
-];", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, pl_arty_enabled, groupId (pl_arty_groups#pl_active_arty_group_idx)];
+];", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, pl_arty_enabled, groupId (pl_arty_groups#pl_active_arty_group_idx), [pl_arty_round_type] call pl_get_type_str];
 showCommandingMenu "#USER:pl_on_map_arty_menu";
 };
 

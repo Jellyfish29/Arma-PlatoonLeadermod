@@ -46,7 +46,8 @@ pl_find_cover = {
                 pl_covers pushBack _x;
                 _coverPos = getPos _x;
                 _unit doMove _coverPos;
-                waitUntil {sleep 0.5; (!alive _unit) or !((group _unit) getVariable ["onTask", true]) or ([_unit, _coverPos] call pl_position_reached_check)};
+                sleep 0.5;
+                waitUntil {(!alive _unit) or !((group _unit) getVariable ["onTask", true]) or unitReady _unit};
                 if ((group _unit) getVariable ["onTask", true]) then {
                     if (_fullCover) then {
                         _unit setUnitPos "DOWN";
@@ -56,10 +57,11 @@ pl_find_cover = {
                         _unit setUnitPos "MIDDLE";
                     };
                     if (_moveBehind) then {
-                        _moveDir = [(_watchDir - 180)] call pl_angle_switcher;
+                        _moveDir = _watchDir - 180;
                         _coverPos =  (getPos _unit) getPos [1, _moveDir];
                         _unit doMove _coverPos;
-                        waitUntil {sleep 0.5; (!alive _unit) or !((group _unit) getVariable ["onTask", true]) or ([_unit, _coverPos] call pl_position_reached_check)};
+                        sleep 0.5;
+                        waitUntil {(!alive _unit) or !((group _unit) getVariable ["onTask", true]) or unitReady _unit};
                         if ((group _unit) getVariable ["onTask", true]) then {
                             doStop _unit;
                             _unit doWatch _watchPos;

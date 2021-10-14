@@ -413,7 +413,14 @@ pl_fire_on_map_arty = {
 
     for "_i" from 1 to _volleys do {
         {
-            _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
+            switch (pl_arty_round_type) do { 
+                case 1 : {_ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0}; 
+                case 2 : {_ammoType = ((getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select {["smoke", _x] call BIS_fnc_inString})#0}; 
+                case 3 : {_ammoType = ((getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select {["illum", _x] call BIS_fnc_inString})#0};
+                default {_ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0}; 
+            };
+            if (isNil "_ammoType") exitWith {};
+
             _firePos = [[[_cords, _dispersion + 20]],[]] call BIS_fnc_randomPos;
             _x setVariable ["pl_waiting_for_fired", true];
             _x commandArtilleryFire [_firePos, _ammoType, 1];
@@ -437,7 +444,6 @@ pl_fire_on_map_arty = {
     deleteMarker _centerMarkerName;
 
     {
-        _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf _x >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
         _x addMagazineTurret [_ammoType, [-1]];
         _x removeEventHandler ["Fired", _eh];
     } forEach _guns;

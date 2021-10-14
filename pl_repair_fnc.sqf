@@ -23,13 +23,14 @@ addMissionEventHandler ["EntityKilled",{
             if (pl_enable_map_radio) then {[group (driver _killed), "...We are hit!", 15] call pl_map_radio_callout};
 
             _crew = crew _killed;
+            _vicGroup = group (driver _killed);
 
             _crewClassName = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "crew");
             _unitText = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "textSingular");
             private _cargoGroups = [];
             {
                 // if (typeOf _x isEqualTo _crewClassName and !(((_killed call BIS_fnc_objectType) select 1) isEqualTo "Car")) then {
-                if (_killed isKindOf "Tank" or _unitText isEqualTo "APC") then {
+                if ((_killed isKindOf "Tank" or _unitText isEqualTo "APC") and (group _x) == _vicGroup ) then {
                     deleteVehicle _x;
                 }
                 else

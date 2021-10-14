@@ -508,6 +508,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#b20000' image='\A3\3den\data\Attributes\default_ca.paa'/><t> Cancel Task / Stop</t>";
                 shortcuts[]={5};
+                shortcutsAction = "CommandingMenu4";
                 submenu="";
                 command=-5;
                 class params
@@ -536,6 +537,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa'/><t> Hold</t>";
                 shortcuts[]={6};
+                shortcutsAction = "CommandingMenu5";
                 submenu="";
                 command=-5;
                 class params
@@ -550,6 +552,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Execute</t>";
                 shortcuts[]={7};
+                shortcutsAction = "CommandingMenu6";
                 submenu="";
                 command=-5;
                 class params
@@ -578,6 +581,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa'/><t> Form on Commander</t>";
                 shortcuts[]={8};
+                shortcutsAction = "CommandingMenu7";
                 submenu="";
                 command=-5;
                 class params
@@ -618,6 +622,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\military\arrow_CA.paa'/><t> Assault Position</t>";
                 shortcuts[]={2};
+                shortcutsAction = "CommandingMenu1";
                 submenu="";
                 command=-5;
                 class params
@@ -633,6 +638,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Position</t>";
                 shortcuts[]={3};
+                shortcutsAction = "CommandingMenu2";
                 submenu="";
                 command=-5;
                 class params
@@ -648,6 +654,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>";
                 shortcuts[]={4};
+                shortcutsAction = "CommandingMenu3";
                 submenu="";
                 command=-5;
                 class params
@@ -676,6 +683,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Suppress Position</t>";
                 shortcuts[]={5};
+                shortcutsAction = "CommandingMenu4";
                 submenu="";
                 command=-5;
                 class params
@@ -720,6 +728,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover/Button Up</t>";
                 shortcuts[]={6};
+                shortcutsAction = "CommandingMenu5";
                 submenu="";
                 command=-5;
                 class params
@@ -759,39 +768,12 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlBoundingSquad
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\help_ca.paa'/><t> Bounding Overwatch</t>";
-                shortcuts[]={7};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_bounding_squad";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
             
-            class PlSeperator301
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
             class PlAttachInf
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Follow Vehicle</t";
-                shortcuts[]={8};
+                shortcuts[]={7};
+                shortcutsAction = "CommandingMenu6";
                 submenu="";
                 command=-5;
                 class params
@@ -1189,6 +1171,7 @@ class RscHCGroupRootMenu
             {
                 title="Get in Vehicle as Cargo";
                 shortcuts[]={2};
+                shortcutsAction = "CommandingMenu1";
                 submenu="";
                 command=-5;
                 class params
@@ -1203,6 +1186,7 @@ class RscHCGroupRootMenu
             {
                 title="Get Out Vehicle";
                 shortcuts[]={3};
+                shortcutsAction = "CommandingMenu2";
                 submenu="";
                 command=-5;
                 class params
@@ -1217,6 +1201,7 @@ class RscHCGroupRootMenu
             {
                 title="Clear Area/Buildings";
                 shortcuts[]={4};
+                shortcutsAction = "CommandingMenu3";
                 submenu="";
                 command=-5;
                 class params
@@ -1263,6 +1248,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa'/><t> Load / Extraction</t";
                 shortcuts[]={2};
+                shortcutsAction = "CommandingMenu1";
                 submenu="";
                 command=-5;
                 class params
@@ -1277,6 +1263,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa'/><t> Unload / Insertion</t";
                 shortcuts[]={3};
+                shortcutsAction = "CommandingMenu2";
                 submenu="";
                 command=-5;
                 class params
@@ -1291,6 +1278,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Unload at current Pos</t";
                 shortcuts[]={4};
+                shortcutsAction = "CommandingMenu3";
                 submenu="";
                 command=-5;
                 class params
@@ -1319,6 +1307,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Crew Vehicle</t";
                 shortcuts[]={5};
+                shortcutsAction = "CommandingMenu4";
                 submenu="";
                 command=-5;
                 class params
@@ -1333,6 +1322,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Leave Vehicle</t";
                 shortcuts[]={6};
+                shortcutsAction = "CommandingMenu5";
                 submenu="";
                 command=-5;
                 class params
@@ -1361,6 +1351,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa'/><t> Move as Convoy</t";
                 shortcuts[]={7};
+                shortcutsAction = "CommandingMenu6";
                 submenu="";
                 command=-5;
                 class params
@@ -1386,25 +1377,11 @@ class RscHCGroupRootMenu
                 speechId=0;
             };
 
-            class PlSeperator201
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
-
             class PlReverseVic
             {
                 title="Reverse Vehicle Direction";
                 shortcuts[]={10};
+                shortcutsAction = "CommandingMenu9";
                 submenu="";
                 command=-5;
                 class params
@@ -1419,6 +1396,7 @@ class RscHCGroupRootMenu
             {
                 title="Unstuck Vehicle/Group";
                 shortcuts[]={11};
+                shortcutsAction = "CommandingMenu0";
                 submenu="";
                 command=-5;
                 class params
@@ -1602,6 +1580,7 @@ class RscHCGroupRootMenu
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa'/><t> Group Management</t";
                 shortcuts[]={6};
+                shortcutsAction = "CommandingMenu5";
                 menu="#USER:pl_group_management";
                 command=-5;
                 class params

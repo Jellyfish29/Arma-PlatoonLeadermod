@@ -131,7 +131,7 @@ pl_sitrep_solo = {
         _message = _message + format ["
             <br /><br /><t color='#cccccc' size='1' align='left'>Vehicle: %1</t>
             <br /><t color='#cccccc' size='0.8' align='left'>Status</t><t color='#cccccc' size='1' align='right'>%2%3</t>", _vicName, _unitDamage, "%"];
-        if (_vic getVariable ["pl_is_supply_vehicle", false] or _vic getVariable ["pl_is_repair_vehicle", false]) then {
+        if (_vic getVariable ["pl_is_supply_vehicle", false] or _vic getVariable ["pl_is_repair_vehicle", false] or getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car") then {
             _ammoCargo = _vic getVariable ["pl_supplies", 0];
             _repairCargo = _vic getVariable ["pl_repair_supplies", 0];
             _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];

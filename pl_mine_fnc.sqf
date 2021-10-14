@@ -231,7 +231,10 @@ pl_mine_clearing = {
 
     {
         [_x, getPos _x, 0, 10, false] spawn pl_find_cover;
+        _x disableAI "AUTOCOMBAT";
     } forEach (units _group) - [_engineer];
+    _engineer disableAI "AUTOCOMBAT";
+    _group setBehaviour "AWARE";
 
     if ((count _mines) > 0) then {
         {

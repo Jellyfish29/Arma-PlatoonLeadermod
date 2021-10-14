@@ -606,6 +606,11 @@ pl_vehicle_setup = {
                 [_grp, "maint"] call pl_change_group_icon;
             };
         };
+
+        if (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car") then {
+            _vic setVariable ["pl_supplies", 40];
+        };
+
         _vic addEventHandler ["IncomingMissile", {
             params ["_target", "_ammo", "_vehicle", "_instigator"];
 
