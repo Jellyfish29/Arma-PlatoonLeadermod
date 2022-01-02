@@ -344,16 +344,16 @@
     true
 ] call CBA_fnc_addSetting;
 
-[
-    "pl_enable_nato_icons_enemy",
-    "CHECKBOX",
-    ["Disable Nato Markers for Non Palyerside","WARNING! creates a error in vanilla function createMenu"],
-    ["Platoon Leader", "UI"],
-    [false],
-    nil,
-    {},
-    true
-] call CBA_fnc_addSetting;
+// [
+//     "pl_enable_nato_icons_enemy",
+//     "CHECKBOX",
+//     ["Disable Nato Markers for Non Palyerside","WARNING! creates a error in vanilla function createMenu"],
+//     ["Platoon Leader", "UI"],
+//     [false],
+//     nil,
+//     {},
+//     true
+// ] call CBA_fnc_addSetting;
 
 // [
 //     "pl_enable_map_icons_performance",

@@ -661,24 +661,28 @@ pl_ai_setUp_loop = {
 
         {
             if (side _x isEqualTo playerSide) then {
+
                 if (isNil {_x getVariable "spotRepEnabled"}) then {
                     [_x] spawn pl_share_info;
                 };
-                if (isNil {(leader _x) getVariable "PlContactRepEnabled"}) then {
-                    [_x, false] spawn pl_contact_report;
-                };
-                if (isNil {_x getVariable "aiSetUp"}) then {
-                    [_x] call pl_set_up_ai;
-                };
-                // unit Reset loop
-                {
-                    if (!((lifeState _x) isEqualTo "INCAPACITATED") and alive _x) then {
-                        [_x] call pl_auto_unstuck;
-                        if (_x getVariable "pl_wia") then {
-                            _x setVariable ["pl_wia", false];
-                        };
+                
+                if (hcLeader _x isEqualTo player) then {
+                    if (isNil {(leader _x) getVariable "PlContactRepEnabled"}) then {
+                        [_x, false] spawn pl_contact_report;
                     };
-                } forEach (units _x);
+                    if (isNil {_x getVariable "aiSetUp"}) then {
+                        [_x] call pl_set_up_ai;
+                    };
+                    // unit Reset loop
+                    {
+                        if (!((lifeState _x) isEqualTo "INCAPACITATED") and alive _x) then {
+                            [_x] call pl_auto_unstuck;
+                            if (_x getVariable "pl_wia") then {
+                                _x setVariable ["pl_wia", false];
+                            };
+                        };
+                    } forEach (units _x);
+                };
             }
             else
             {
@@ -687,9 +691,9 @@ pl_ai_setUp_loop = {
                         [_x] spawn pl_share_info_opfor;
                     };
                 };
-                if (pl_enable_nato_icons_enemy) then {
-                    [_x] call pl_hide_group_icon;
-                };
+                // if (pl_enable_nato_icons_enemy) then {
+                //     [_x] call pl_hide_group_icon;
+                // };
             };
 
             if(_x != (group player)) then {
