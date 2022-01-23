@@ -52,7 +52,7 @@ addMissionEventHandler ["Draw3D", {
                 };
             }; 
 
-       } forEach (allGroups select {side _x isEqualTo playerSide});
+       } forEach (allGroups select {hcLeader _x isEqualTo player});
     };
 }];
 
