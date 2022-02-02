@@ -491,10 +491,10 @@ pl_lay_mine_field = {
         _usedMines = _usedMines + 1;
         _exSpecialist setUnitPos "Auto";
 
-        // _m = createMarker [str (random 5), _x];
-        // _m setMarkerType "mil_destroy";
-        // _m setMarkerColor "colorRED";
-        // _m setMarkerSize [0.3, 0.3];
+        _m = createMarker [str (random 5), _x];
+        _m setMarkerType "mil_dot";
+        _m setMarkerColor "colorRED";
+        _m setMarkerSize [0.5, 0.5];
 
         // _mineMarkers pushBack _m;
     } forEach _minePositions;
@@ -512,17 +512,20 @@ pl_lay_mine_field = {
         [_group] call pl_reset;
         _group addWaypoint [_origPos, 0];
 
-        _finiedAreaMarker = format ["%1mineFieldFinished%2", _group, random 2];
-        createMarker [_finiedAreaMarker, _cords];
-        _finiedAreaMarker setMarkerShape "RECTANGLE";
-        _finiedAreaMarker setMarkerBrush "Cross";
-        // _finiedAreaMarker setMarkerBrush "SolidBorder";
-        _finiedAreaMarker setMarkerColor "colorRED";
-        _finiedAreaMarker setMarkerAlpha 0.6;
-        _finiedAreaMarker setMarkerSize [_mineFieldSize, 6];
-        _finiedAreaMarker setMarkerDir _watchDir;
+        // _finiedAreaMarker = format ["%1mineFieldFinished%2", _group, random 2];
+        // createMarker [_finiedAreaMarker, _cords];
+        // _finiedAreaMarker setMarkerShape "RECTANGLE";
+        // _finiedAreaMarker setMarkerBrush "Cross";
+        // // _finiedAreaMarker setMarkerBrush "SolidBorder";
+        // _finiedAreaMarker setMarkerColor "colorRED";
+        // _finiedAreaMarker setMarkerAlpha 0.6;
+        // _finiedAreaMarker setMarkerSize [_mineFieldSize, 6];
+        // _finiedAreaMarker setMarkerDir _watchDir;
+    }
+    else
+    {
+        deleteMarker _areaMarker;
     };
-    deleteMarker _areaMarker;
 };
 
 pl_groups_with_charges = [];

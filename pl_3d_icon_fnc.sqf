@@ -1,5 +1,49 @@
 sleep 1;
 
+pl_draw_3d_icon = {
+
+params ["_group", "_type"];
+private _r = -1;
+
+if (pl_enable_3d_mil_symbols) then {
+    _r = addMissionEventHandler ["Draw3D", {
+        _group = _thisArgs#0;
+        _type = _thisArgs#1;
+        _distance = (leader _group) distance2D player;
+        _mPos = (getPos leader _group) vectorAdd [0,0,3];
+        _size = (1.8 - ((_distance * 0.06) - (_distance * 0.057)));
+        drawIcon3D [
+            _type, //texture)
+            [0,0,0,0.5], //color
+            _mPos, //pos
+            _size, //width
+            _size, //height,
+            0, //angle,
+            "", //text,
+            true, //shadow,
+            0.05, //textSize,
+            'EtelkaMonospacePro', //font
+            "center", //textAlign,
+            false, //drawSideArrows,
+            0, //offsetX,
+            0 //offsetY
+        ];
+        },
+        [_group, _type]];
+    };
+    _r
+};
+
+pl_remove_3d_icon = {
+    params ["_eh"];
+
+    if (_eh > 0) then {
+
+        removeMissionEventHandler ["Draw3D", _eh];
+    };
+};
+
+
 
 addMissionEventHandler ["Draw3D", {
      

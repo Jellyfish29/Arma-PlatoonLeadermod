@@ -877,7 +877,7 @@ pl_draw_unit_group_lines = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
             {
-                if (vehicle (leader _x) == leader _x) then {
+                if (vehicle (leader _x) == leader _x and side (leader _x) == playerSide) then {
                     _pos1 = getPos (leader _x);
                     {
                         _pos2 = getPos _x;
@@ -888,7 +888,7 @@ pl_draw_unit_group_lines = {
                             ];
                     } forEach ((units _x) - [leader _x]);
                 };
-            } forEach (hcSelected player);
+            } forEach allGroups select {hcLeader _x isEqualTo player};
     "]; // "
 };
 

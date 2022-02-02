@@ -557,21 +557,19 @@ pl_assault_position = {
     _arrowDis = ((leader _group) distance2D _cords) / 2;
     _arrowPos = [_arrowDis * (sin _arrowDir), _arrowDis * (cos _arrowDir), 0] vectorAdd (getPos (leader _group));
 
+
     _arrowMarkerName = format ["%1arrow%2", _group, random 1];
     createMarker [_arrowMarkerName, _arrowPos];
-    _arrowMarkerName setMarkerType "mil_Arrow";
-    // _arrowMarkerName setMarkerAlpha 0.8;
-    // _arrowMarkerName setMarkerSize [1.3, 1.3];
+    _arrowMarkerName setMarkerType "marker_std_atk";
     _arrowMarkerName setMarkerDir _arrowDir;
-    _arrowText = "";
-    _arrowColor = "colorYellow";
+    _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
+    _arrowColor = "colorBlufor";
     switch (_attackMode) do { 
-        case "tactical" : {_arrowText = "CQB"; _arrowColor = "colorGreen"}; 
-        case "fast" : {_arrowText = "FST"; _arrowColor = "colorRed"}; 
-        default {_arrowText = ""; _arrowColor = "colorYellow"}; 
+        case "tactical" : {_arrowMarkerName setMarkerType "marker_cqb_atk";}; 
+        case "fast" : {_arrowMarkerName setMarkerType "marker_fst_atk";}; 
+        default {}; 
     };
     _arrowMarkerName setMarkerColor _arrowColor;
-    _arrowMarkerName setMarkerText _arrowText;
 
     [_group] call pl_reset;
     sleep 0.2;
@@ -672,7 +670,18 @@ pl_assault_position = {
         _atkTriggerDistance = 40; 
     };
 
-    waitUntil {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
+    // waitUntil {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
+    while {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) == 0) and (_group getVariable ["onTask", true])} do {
+
+        _arrowDir = (leader _group) getDir _cords;
+        _arrowDis = ((leader _group) distance2D _cords) / 2;
+        _arrowPos = [_arrowDis * (sin _arrowDir), _arrowDis * (cos _arrowDir), 0] vectorAdd (getPos (leader _group));
+
+        _arrowMarkerName setMarkerPos _arrowPos;
+        _arrowMarkerName setMarkerDir _arrowDir;
+        _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
+        sleep 0.1;
+    };
 
     // leader _group limitSpeed 200;
     // _group setSpeedMode "NORMAL";

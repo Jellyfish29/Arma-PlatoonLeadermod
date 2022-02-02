@@ -300,6 +300,17 @@
     true
 ] call CBA_fnc_addSetting;
 
+// [
+//     "pl_enable_3d_mil_symbols",
+//     "CHECKBOX",
+//     ["Enable 3D mil. Symbols","Enable Extra 3D military Symbols"],
+//     ["Platoon Leader", "UI"],
+//     [true],
+//     nil,
+//     {},
+//     true
+// ] call CBA_fnc_addSetting;
+
 [
     "pl_enable_map_icons",
     "CHECKBOX",

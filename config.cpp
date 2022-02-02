@@ -1718,7 +1718,7 @@ class RscHCWPRootMenu
             {
                 shortcuts[] = {1};
                 title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Type</t>";
-                shortcutsAction = "CommandingMenu1";
+                shortcutsAction = "CommandingMenu2";
                 menu = "RscHCWPType";
                 show = "1";
                 enable = "1";
@@ -1798,7 +1798,7 @@ class RscHCWPRootMenu
                 //     expression = "[] call pl_get_task_plan_wp";
                 // };
                 title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Plan Task</t>";
-                shortcutsAction = "CommandingMenu2";
+                shortcutsAction = "CommandingMenu3";
                 menu = "#USER:pl_task_plan_menu"
                 command = -5;
                 show = "1";
@@ -1833,7 +1833,7 @@ class RscHCWPRootMenu
                     expression = "[] call pl_cancel_planed_task; 'WP_CANCELWP' call BIS_HC_path_menu";
                 };
                 title = "<img color='#b20000' image='\A3\3den\data\Attributes\default_ca.paa'/><t> Cancel Waypoint</t>";
-                shortcutsAction = "CommandingMenu3";
+                shortcutsAction = "CommandingMenu5";
                 command = -5;
                 show = "1";
                 enable = "1";
@@ -1877,8 +1877,8 @@ class CfgMarkers
     class marker_CCP: pl_marker
     {
         name="CCP";
-        icon="\Plmod\gfx\CCP.paa";
-        texture="\Plmod\gfx\CCP.paa";
+        icon="\Plmod\gfx\pl_ccp_marker.paa";
+        texture="\Plmod\gfx\pl_ccp_marker.paa";
     };
     class marker_afp: pl_marker
     {
@@ -1903,6 +1903,42 @@ class CfgMarkers
         name="NATO AT";
         icon="\Plmod\gfx\b_antiarmor.paa";
         texture="\Plmod\gfx\b_antiarmor.paa";
+    };
+    class marker_mcp: pl_marker
+    {
+        name="MCP";
+        icon="\Plmod\gfx\pl_mcp_marker.paa";
+        texture="\Plmod\gfx\pl_mcp_marker.paa";
+    };
+    class marker_r3p: pl_marker
+    {
+        name="R3P";
+        icon="\Plmod\gfx\pl_r3p_marker.paa";
+        texture="\Plmod\gfx\pl_r3p_marker.paa";
+    };
+    class marker_asp: pl_marker
+    {
+        name="ASP";
+        icon="\Plmod\gfx\pl_asp_marker.paa";
+        texture="\Plmod\gfx\pl_asp_marker.paa";
+    };
+    class marker_std_atk: pl_marker
+    {
+        name="Attack Arrow";
+        icon="\Plmod\gfx\pl_std_atk.paa";
+        texture="\Plmod\gfx\pl_std_atk.paa";
+    };
+    class marker_cqb_atk: pl_marker
+    {
+        name="Clear Attack Arrow";
+        icon="\Plmod\gfx\pl_cqb_atk.paa";
+        texture="\Plmod\gfx\pl_cqb_atk.paa";
+    };
+    class marker_fast_atk: pl_marker
+    {
+        name="Fast Attack Arrow";
+        icon="\Plmod\gfx\pl_fst_atk.paa";
+        texture="\Plmod\gfx\pl_fst_atk.paa";
     };
 };
 class RscSubmenu;

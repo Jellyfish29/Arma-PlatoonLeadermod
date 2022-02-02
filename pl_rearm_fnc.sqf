@@ -122,7 +122,7 @@ pl_supply_draw_array = [];
 
 pl_supply_point = {
     params [["_group", (hcSelected player) select 0],["_taskPlanWp", []]];
-    private ["_group", "_cords", "_suppliedGroups", "_ammoBearer", "_toSupplyGroups", "_toSupplyGroups", "_ammoCargo"];
+    private ["_group", "_cords", "_suppliedGroups", "_ammoBearer", "_toSupplyGroups", "_toSupplyGroups", "_ammoCargo", "_marker3D"];
 
     // if already supply point exit
     if (pl_supply_point_active) exitWith {hint "Only on Supply Point!"};
@@ -171,10 +171,13 @@ pl_supply_point = {
     _areaMarkerName setMarkerAlpha 0.15;
     _areaMarkerName setMarkerSize [pl_supply_area, pl_supply_area];
 
-    _pointMarkerName = createMarker ["supply_point_center", (getPos (leader _group))];
-    _pointMarkerName setMarkerType "b_support";
-    _pointMarkerName setMarkerText "SP/MCP";
-    _pointMarkerName setMarkerSize [1.3, 1.3];
+    _pointMarkerName = createMarker ["supply_point_center", (getPos (leader _group)) getPos [7, 0]];
+    _pointMarkerName setMarkerType "marker_r3p";
+    _pointMarkerName setMarkerColor "colorBLUFOR";
+    // _pointMarkerName setMarkerText "SP/MCP";
+    // _pointMarkerName setMarkerSize [1.3, 1.3];
+
+    // _marker3D = [_group, '\Plmod\gfx\pl_r3p_marker.paa'] call pl_draw_3d_icon;
 
     // Setup Group at Position
     [_group] call pl_reset;
@@ -358,6 +361,7 @@ pl_supply_point = {
     pl_supply_point_active = false;
     deleteMarker _areaMarkerName;
     deleteMarker _pointMarkerName;
+    // [_marker3D] call pl_remove_3d_icon;
 
     [_group, _vic] spawn pl_crew_vehicle_now;
 
@@ -368,7 +372,7 @@ pl_supply_point = {
 
 pl_rearm_point = {
     params [["_group", (hcSelected player) select 0],["_taskPlanWp", []]];
-    private ["_group", "_cords", "_suppliedGroups", "_ammoBearer", "_toSupplyGroups", "_toSupplyGroups", "_ammoCargo"];
+    private ["_group", "_cords", "_suppliedGroups", "_ammoBearer", "_toSupplyGroups", "_toSupplyGroups", "_ammoCargo", "_marker3D"];
 
 
     // check if vehicle group
@@ -413,6 +417,14 @@ pl_rearm_point = {
     _areaMarkerName setMarkerAlpha 0.15;
     _areaMarkerName setMarkerSize [20, 20];
 
+    _pointMarkerName = createMarker [format ["ressupplypoint%1", _group], (getPos (leader _group)) getPos [7, 0]];
+    _pointMarkerName setMarkerType "marker_asp";
+    _pointMarkerName setMarkerColor "colorBLUFOR";
+    // _pointMarkerName setMarkerText "SP/MCP";
+    // _pointMarkerName setMarkerSize [1.3, 1.3];
+
+    // _marker3D = [_group, '\Plmod\gfx\pl_asp_marker.paa'] call pl_draw_3d_icon;
+
     // Setup Group at Position
     [_group] call pl_reset;
     sleep 0.2;
@@ -429,8 +441,9 @@ pl_rearm_point = {
     {
         _x disableAI "AUTOCOMBAT";
         _x disableAI "TARGET";
+        _x disableAI "PATH";
     } forEach (units _group);
-    _group setBehaviour "AWARE";
+    _group setBehaviour "SAFE";
 
     sleep 2;
     // delay to geive _ammoBearer Time to disembark
@@ -499,6 +512,8 @@ pl_rearm_point = {
     _group setVariable ["onTask", false];
     _group setVariable ["setSpecial", false];
     deleteMarker _areaMarkerName;
+    deleteMarker _pointMarkerName;
+    // [_marker3D] call pl_remove_3d_icon;
 
     [_group, _vic] spawn pl_crew_vehicle_now;
 };

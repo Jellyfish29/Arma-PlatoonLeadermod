@@ -297,7 +297,7 @@ pl_ccp_revive_action = {
 
 pl_ccp = {
     params [["_group", hcSelected player select 0], ["_isMedevac", false], ["_escort", nil], ["_reviveRange", 650], ["_healRange", 50], ["_medic", nil]];
-    private ["_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP"];
+    private ["_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP", "_marker3D"];
 
     // _group = hcSelected player select 0;
     // if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
@@ -400,6 +400,8 @@ pl_ccp = {
             _markerNameInner setMarkerAlpha 0.10;
             _markerNameInner setMarkerSize [_healRange, _healRange];
 
+            // _marker3D = [_group, '\Plmod\gfx\pl_ccp_marker.paa'] call pl_draw_3d_icon;
+
             if (vehicle (leader _group) != leader _group and _group != (group player)) then {
                 _ccpWp = _group addWaypoint [_ccpPos, 0];
                 sleep 1;
@@ -482,6 +484,7 @@ pl_ccp = {
             deleteMarker _markerNameCCP;
             deleteMarker _markerNameOuter;
             deleteMarker _markerNameInner;
+            // [_marker3D] call pl_remove_3d_icon;
             if !(isNil "_medKit") then {
                 deleteVehicle _medKit;
                 deleteVehicle _medGarbage;
