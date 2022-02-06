@@ -856,23 +856,24 @@ pl_draw_ccp_medic = {
 pl_draw_unit_group_lines = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
-            if (hcShownBar) then {
-                {
-                    if (vehicle (leader _x) == leader _x and side (leader _x) == playerSide) then {
-                        _pos1 = getPos (leader _x);
-                        {
-                            _pos2 = getPos _x;
-                            _display drawLine [
-                                _pos1,
-                                _pos2,
-                                pl_side_color_rgb
-                                ];
-                        } forEach ((units _x) - [leader _x]);
-                    };
-                } forEach allGroups select {hcLeader _x isEqualTo player};
-            };
+            {
+                if (vehicle (leader _x) == leader _x and side (leader _x) == playerSide) then {
+                    _pos1 = getPos (leader _x);
+                    _color = [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, 0.5]
+                    {
+                        _pos2 = getPos _x;
+                        _display drawLine [
+                            _pos1,
+                            _pos2,
+                            _color
+                            ];
+                    } forEach ((units _x) - [leader _x]);
+                };
+            } forEach (hcSelected player);
     "]; // "
 };
+
+// allGroups select {hcLeader _x isEqualTo player}
 
 [] call pl_draw_unit_group_lines;
 
