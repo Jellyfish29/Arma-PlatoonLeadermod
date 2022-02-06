@@ -22,9 +22,9 @@ pl_medevac_sad_enabled = 1;
 pl_sorties = parseNumber pl_sorties;
 pl_arty_ammo = parseNumber pl_arty_ammo;
 pl_cancel_strike = false;
-pl_arty_rounds = 9;
-pl_arty_dispersion = 200;
-pl_arty_delay = 10;
+pl_arty_rounds = 6;
+pl_arty_dispersion = 100;
+pl_arty_delay = 5;
 pl_mortar_rounds = 4;
 pl_arty_cords = [0,0,0];
 
@@ -271,10 +271,10 @@ pl_arty = {
         hint parseText _message;
 
         _markerName = createMarker ["pl_arty_marker", pl_arty_cords];
-        _markerName setMarkerColor "colorRed";
+        _markerName setMarkerColor pl_side_color;
         _markerName setMarkerShape "ELLIPSE";
-        _markerName setMarkerBrush "BDiagonal";
-        _markerName setMarkerAlpha 0.9;
+        _markerName setMarkerBrush "Border";
+        // _markerName setMarkerAlpha 0.9;
         _markerName setMarkerSize [pl_arty_dispersion, pl_arty_dispersion];
         pl_cancel_strike = false;
         onMapSingleClick {
@@ -300,7 +300,7 @@ pl_arty = {
     _markerName setMarkerAlpha 0.4;
     createMarker ["pl_arty_center", pl_arty_cords];
     "pl_arty_center" setMarkerType "mil_destroy";
-    "pl_arty_center" setMarkerText format ["%1 R / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay];
+    "pl_arty_center" setMarkerText format ["%1 HE / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay];
 
     pl_arty_ammo = pl_arty_ammo - pl_arty_rounds;
     if (pl_enable_beep_sound) then {playSound "beep"};
@@ -337,7 +337,27 @@ pl_arty = {
 };
 
 pl_fire_on_map_arty = {
-    private ["_cords", "_ammoType", "_eh", "_markerName", "_centerMarkerName", "_eta", "_battery", "_guns", "_volleys"];
+    private ["_cords", "_ammoType", "_eh", "_markerName", "_centerMarkerName", "_eta", "_battery", "_guns", "_volleys", "_isHc", "_ammoTypestr"];
+
+    _markerName = createMarker [str (random 4), [0,0,0]];
+    _markerName setMarkerColor pl_side_color;
+    _markerName setMarkerShape "ELLIPSE";
+    _markerName setMarkerBrush "Border";
+    // _markerName setMarkerAlpha 1;
+    _markerName setMarkerSize [pl_arty_dispersion, pl_arty_dispersion];
+
+    switch (pl_arty_round_type) do { 
+        case 1 : {_ammoTypestr = "HE"}; 
+        case 2 : {_ammoTypestr = "SMK"}; 
+        case 3 : {_ammoTypestr = "IL"};
+        default {_ammoTypestr = "HE"}; 
+    };
+
+    _markerName setMarkerAlpha 0.4;
+    _centerMarkerName = createMarker [str (random 4), [0,0,0]];
+    _centerMarkerName setMarkerType "mil_destroy";
+    _centerMarkerName setMarkerText format ["%1 %4 / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, _ammoTypestr];
+    _centerMarkerName setMarkerColor pl_side_color;
 
     if (visibleMap) then {
 
@@ -345,12 +365,6 @@ pl_fire_on_map_arty = {
         <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
         hint parseText _message;
 
-        _markerName = createMarker [str (random 4), pl_arty_cords];
-        _markerName setMarkerColor "colorRed";
-        _markerName setMarkerShape "ELLIPSE";
-        _markerName setMarkerBrush "BDiagonal";
-        _markerName setMarkerAlpha 0.9;
-        _markerName setMarkerSize [pl_arty_dispersion, pl_arty_dispersion];
         pl_cancel_strike = false;
         onMapSingleClick {
             pl_arty_cords = _pos;
@@ -362,21 +376,30 @@ pl_fire_on_map_arty = {
         while {!pl_mapClicked} do {
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             _markerName setMarkerPos _mPos;
+            _centerMarkerName setMarkerPos _mPos;
         };
         pl_mapClicked = false;
     }
     else
     {
         pl_arty_cords = screenToWorld [0.5,0.5];
+        _markerName setMarkerPos pl_arty_cords;
+        _centerMarkerName setMarkerPos pl_arty_cords;
     };
 
-    _markerName setMarkerAlpha 0.4;
-    _centerMarkerName = createMarker [str (random 4), pl_arty_cords];
-    _centerMarkerName setMarkerType "mil_destroy";
-    _centerMarkerName setMarkerText format ["%1 R / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay];
 
     _cords = pl_arty_cords;
     _battery = pl_arty_groups#pl_active_arty_group_idx;
+
+    _isHc = false;
+    if (hcLeader _battery == player) then {
+        _isHc = true;
+        player hcRemoveGroup _battery;
+        if (_battery getVariable "setSpecial") then {
+            _battery setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"];
+        };
+    };
+
     _guns = _battery getVariable ["pl_active_arty_guns", []];
     if (_guns isEqualTo []) exitWith {Hint "No active Guns"};
 
@@ -390,14 +413,14 @@ pl_fire_on_map_arty = {
 
     _eta = _eta + 5;
 
-    [_eta, _centerMarkerName] spawn {
-        params ["_eta", "_centerMarkerName"];
+    [_eta, _centerMarkerName, _ammoTypestr] spawn {
+        params ["_eta", "_centerMarkerName", "_ammoTypestr"];
         _time = time +_eta;
         while {time < _time} do {
-            _centerMarkerName setMarkerText format ["%1 R / %2 m / %3 s ETA: %4s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, round (_time - time)];
+            _centerMarkerName setMarkerText format ["%1 %5 / %2 m / %3 s ETA: %4s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, round (_time - time), _ammoTypestr];
             sleep 1;
         };
-        _centerMarkerName setMarkerText "";
+        _centerMarkerName setMarkerText format ["%1 %4 / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, _ammoTypestr];;
     };
 
     if (pl_enable_beep_sound) then {playSound "beep"};
@@ -437,6 +460,13 @@ pl_fire_on_map_arty = {
         _minDelay = time + _delay;
         waitUntil {({_x getVariable ["pl_waiting_for_fired", true]} count _guns == 0 and time >= _minDelay) or time >= _MaxDelay};
         sleep 2;
+    };
+
+    if (_isHc) then {
+        player hcSetGroup [_battery];
+        if (_battery getVariable "setSpecial") then {
+            _battery setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"];
+        };
     };
 
     sleep 20;

@@ -167,13 +167,13 @@ pl_supply_point = {
     _areaMarkerName = createMarker ["supply_point_area", getPos (leader _group)];
     _areaMarkerName setMarkerShape "ELLIPSE";
     _areaMarkerName setMarkerBrush "SolidBorder";
-    _areaMarkerName setMarkerColor "colorIndependent";
+    _areaMarkerName setMarkerColor pl_side_color;
     _areaMarkerName setMarkerAlpha 0.15;
     _areaMarkerName setMarkerSize [pl_supply_area, pl_supply_area];
 
     _pointMarkerName = createMarker ["supply_point_center", (getPos (leader _group)) getPos [7, 0]];
     _pointMarkerName setMarkerType "marker_r3p";
-    _pointMarkerName setMarkerColor "colorBLUFOR";
+    _pointMarkerName setMarkerColor pl_side_color;
     // _pointMarkerName setMarkerText "SP/MCP";
     // _pointMarkerName setMarkerSize [1.3, 1.3];
 
@@ -419,7 +419,7 @@ pl_rearm_point = {
 
     _pointMarkerName = createMarker [format ["ressupplypoint%1", _group], (getPos (leader _group)) getPos [7, 0]];
     _pointMarkerName setMarkerType "marker_asp";
-    _pointMarkerName setMarkerColor "colorBLUFOR";
+    _pointMarkerName setMarkerColor pl_side_color;
     // _pointMarkerName setMarkerText "SP/MCP";
     // _pointMarkerName setMarkerSize [1.3, 1.3];
 

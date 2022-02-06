@@ -124,7 +124,7 @@ pl_suppressive_fire_position = {
     createMarker [_markerName, [0,0,0]];
     _markerName setMarkerShape "ELLIPSE";
     _markerName setMarkerBrush "SolidBorder";
-    _markerName setMarkerColor "colorRED";
+    _markerName setMarkerColor "colorOrange";
     _markerName setMarkerAlpha 0.2;
 
     private _rangelimiter = 500;
@@ -134,7 +134,7 @@ pl_suppressive_fire_position = {
     createMarker [_markerBorderName, getPos (leader _group)];
     _markerBorderName setMarkerShape "ELLIPSE";
     _markerBorderName setMarkerBrush "Border";
-    _markerBorderName setMarkerColor "colorRED";
+    _markerBorderName setMarkerColor "colorOrange";
     _markerBorderName setMarkerAlpha 0.8;
     _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
 
@@ -479,7 +479,7 @@ pl_assault_position = {
     createMarker [_markerName, [0,0,0]];
     _markerName setMarkerShape "ELLIPSE";
     _markerName setMarkerBrush "SolidBorder";
-    _markerName setMarkerColor "colorYellow";
+    _markerName setMarkerColor pl_side_color;
     _markerName setMarkerAlpha 0.35;
     _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
     if (visibleMap) then {
@@ -563,7 +563,7 @@ pl_assault_position = {
     _arrowMarkerName setMarkerType "marker_std_atk";
     _arrowMarkerName setMarkerDir _arrowDir;
     _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
-    _arrowColor = "colorBlufor";
+    _arrowColor = pl_side_color;
     switch (_attackMode) do { 
         case "tactical" : {_arrowMarkerName setMarkerType "marker_cqb_atk";}; 
         case "fast" : {_arrowMarkerName setMarkerType "marker_fst_atk";}; 

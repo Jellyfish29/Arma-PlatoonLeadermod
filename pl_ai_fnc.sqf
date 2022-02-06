@@ -175,7 +175,7 @@ pl_contact_report = {
                     };
                 };
 
-                if (pl_fire_indicator_enabled and ((vehicle _firer) isKindOf "Tank" or (vehicle _firer) isKindOf "Car")) then {
+                if (pl_fire_indicator_enabled and ((vehicle _firer) isKindOf "Tank" or (vehicle _firer) isKindOf "Car") or (getNumber (configFile >> "CfgVehicles" >> typeOf (vehicle _firer) >> "artilleryScanner")) == 1) then {
                     _target = assignedTarget _firer;
                     if (!(isNull _target) and !(_firer getVariable ["pl_fire_indicator_on", false])) then {
                         [_firer, _target] spawn {

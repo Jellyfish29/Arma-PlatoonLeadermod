@@ -268,7 +268,7 @@ pl_mine_clearing = {
 
 pl_mine_field_size = 16;
 pl_Mine_field_cords = [0,0,0];
-pl_mine_spacing = 8;
+pl_mine_spacing = 4;
 
 pl_lay_mine_field = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
@@ -311,7 +311,7 @@ pl_lay_mine_field = {
     _areaMarker setMarkerBrush "SolidBorder";
     _areaMarker setMarkerColor "colorRED";
     _areaMarker setMarkerAlpha 0.8;
-    _areaMarker setMarkerSize [pl_mine_field_size, 4];
+    _areaMarker setMarkerSize [pl_mine_field_size, 3];
 
     onMapSingleClick {
         pl_Mine_field_cords = _pos;
@@ -491,10 +491,10 @@ pl_lay_mine_field = {
         _usedMines = _usedMines + 1;
         _exSpecialist setUnitPos "Auto";
 
-        _m = createMarker [str (random 5), _x];
-        _m setMarkerType "mil_dot";
-        _m setMarkerColor "colorRED";
-        _m setMarkerSize [0.5, 0.5];
+        // _m = createMarker [str (random 5), _x];
+        // _m setMarkerType "mil_dot";
+        // _m setMarkerColor "colorRED";
+        // _m setMarkerSize [0.5, 0.5];
 
         // _mineMarkers pushBack _m;
     } forEach _minePositions;
@@ -532,7 +532,7 @@ pl_groups_with_charges = [];
 
 pl_place_charge = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_cords", "_exSpecialist", "_availableMines"];
+    private ["_cords", "_exSpecialist", "_availableMines", "_markerName"];
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry Only Task!"};
 
@@ -551,6 +551,12 @@ pl_place_charge = {
         pl_show_obstacles = true;
         pl_show_obstacles_pos = getPos (leader _group);
 
+        _markerName = createMarker ["pl_charge_range_marker", [0,0,0]];
+        _markerName setMarkerColor "colorOrange";
+        _markerName setMarkerShape "ELLIPSE";
+        _markerName setMarkerBrush "Border";
+        _markerName setMarkerSize [25, 25];
+
         onMapSingleClick {
             pl_mine_cords = _pos;
             pl_mapClicked = true;
@@ -559,7 +565,10 @@ pl_place_charge = {
             onMapSingleClick "";
         };
 
-        while {!pl_mapClicked} do {sleep 0.1;};
+        while {!pl_mapClicked} do {
+            _markerName setMarkerPos ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
+        };
+        deleteMarker _markerName;
         pl_mapClicked = false;
         if (pl_cancel_strike) exitWith {
             pl_show_obstacles = false;
@@ -673,6 +682,7 @@ pl_detonate_charges = {
         // remove Fences
         {
             deleteVehicle _x;
+            _x setDamage 1;
         } forEach (((getPos _charge) nearObjects 25) select {["fence", typeOf _x] call BIS_fnc_inString or ["barrier", typeOf _x] call BIS_fnc_inString or ["wall", typeOf _x] call BIS_fnc_inString or ["sand", typeOf _x] call BIS_fnc_inString});
         // remove Bunkers
         {

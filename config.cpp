@@ -620,7 +620,7 @@ class RscHCGroupRootMenu
         {
             class OpenFire
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\military\arrow_CA.paa'/><t> Assault Position</t>";
+                title="<img color='#e5e500' image='\Plmod\gfx\pl_std_atk.paa'/><t> Assault Position</t>";
                 shortcuts[]={2};
                 shortcutsAction = "CommandingMenu1";
                 submenu="";
@@ -636,7 +636,7 @@ class RscHCGroupRootMenu
             };
             class HoldFire
             {
-                title="<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Position</t>";
+                title="<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>";
                 shortcuts[]={3};
                 shortcutsAction = "CommandingMenu2";
                 submenu="";
@@ -1934,11 +1934,17 @@ class CfgMarkers
         icon="\Plmod\gfx\pl_cqb_atk.paa";
         texture="\Plmod\gfx\pl_cqb_atk.paa";
     };
-    class marker_fast_atk: pl_marker
+    class marker_fst_atk: pl_marker
     {
         name="Fast Attack Arrow";
         icon="\Plmod\gfx\pl_fst_atk.paa";
         texture="\Plmod\gfx\pl_fst_atk.paa";
+    };
+    class marker_position: pl_marker
+    {
+        name="Position Marker";
+        icon="\Plmod\gfx\pl_position.paa";
+        texture="\Plmod\gfx\pl_position.paa";
     };
 };
 class RscSubmenu;

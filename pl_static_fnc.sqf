@@ -99,8 +99,9 @@ pl_reworked_bis_unpack = {
     forEach (_supportUnits - [_gunner]);
 
     if (isNull _assistant) exitWith {[false, []]}; // changed by Jellyfish
-    
 
+    player hcRemoveGroup _group;
+    
     // -- calculate optimal positions for weapon crew
     private _targetDir = _weaponPos getDir _targetPos;
     private _assistantPos = _weaponPos getPos [1.5, _targetDir + 90]; _assistantPos set [2, _weaponPos select 2]; // -- keep z
@@ -199,9 +200,9 @@ pl_reworked_bis_unpack = {
 
     // -- gunner logic
     
-    [_gunner, _gunnerPos, _targetPos, _assistant, _assistantReady] spawn
+    [_gunner, _gunnerPos, _targetPos, _assistant, _assistantReady, _group] spawn
     {
-        params ["_gunner", "_gunnerPos", "_targetPos", "_assistant", "_assistantReady"];
+        params ["_gunner", "_gunnerPos", "_targetPos", "_assistant", "_assistantReady", "_group"];
             
         _gunner doWatch _targetPos;
         _gunner doMove _gunnerPos;
@@ -210,7 +211,7 @@ pl_reworked_bis_unpack = {
 
         waitUntil {unitReady _gunner};
         
-        if (!alive _gunner || fleeing _gunner) exitWith {_gunner removeAllEventHandlers "WeaponAssembled"};
+        if (!alive _gunner || fleeing _gunner) exitWith {_gunner removeAllEventHandlers "WeaponAssembled"; player hcSetGroup [_group];};
         
         doStop _gunner;
         
@@ -220,7 +221,7 @@ pl_reworked_bis_unpack = {
         waitUntil {stance _gunner isEqualTo "CROUCH" || !alive _gunner};
         waitUntil {scriptDone _assistantReady};
         
-        if (!alive _assistant || fleeing _assistant) exitWith {_gunner removeAllEventHandlers "WeaponAssembled"};
+        if (!alive _assistant || fleeing _assistant) exitWith {_gunner removeAllEventHandlers "WeaponAssembled"; player hcSetGroup [_group];};
         
         // -- unpack weapon
         _weaponBase = unitBackpack _assistant;
@@ -228,11 +229,21 @@ pl_reworked_bis_unpack = {
         _gunner action ["Assemble", _weaponBase];
         sleep 2;
         _weapon = vehicle _gunner;
-        // [] call pl_show_fire_support_menu;
+        [] call pl_show_fire_support_menu;        
         _pos = getPosASL _weapon;
         _pos = [_pos#0, _pos#1, _pos#2 + 1.5];
         _weapon setPosASL _pos;
         _weapon setVectorUp surfaceNormal position _weapon;
+
+        _icon = getText (configfile >> 'CfgVehicles' >> typeof _weapon >> 'icon');
+
+        _group setVariable ["specialIcon", _icon];
+
+        sleep 1;
+        player hcSetGroup [_group];
+
+
+
     };
     [true, [_leader, _gunner, _assistant]]
 };
@@ -333,6 +344,8 @@ pl_reworked_bis_pack = {
 
     if (!alive _weapon || !(_weapon isKindOf "StaticWeapon") || !isNull objectParent _weapon) exitWith _err_badWeapon;
 
+    player hcRemoveGroup _group;
+
     _gunner addEventHandler ["WeaponDisassembled", format [
         '
             params ["_gunner", "_weaponBag", "_baseBag"];
@@ -427,9 +440,9 @@ pl_reworked_bis_pack = {
     };
 
     // -- gunner logic
-    [_gunner, _gunnerPos, _weapon, _assistant, _assistantReady, _isWeaponGunner] spawn
+    [_gunner, _gunnerPos, _weapon, _assistant, _assistantReady, _isWeaponGunner, _group] spawn
     {
-        params ["_gunner", "_gunnerPos", "_weapon", "_assistant", "_assistantReady", "_isWeaponGunner"];
+        params ["_gunner", "_gunnerPos", "_weapon", "_assistant", "_assistantReady", "_isWeaponGunner", "_group"];
             
         if (!_isWeaponGunner) then
         {
@@ -440,7 +453,7 @@ pl_reworked_bis_pack = {
             waitUntil {unitReady _gunner};
         };
         
-        if (!alive _gunner || fleeing _gunner) exitWith {_gunner removeAllEventHandlers "WeaponDisassembled"};
+        if (!alive _gunner || fleeing _gunner) exitWith {_gunner removeAllEventHandlers "WeaponDisassembled"; player hcSetGroup [_group]};
         
         doStop _gunner;
         _gunner doWatch _weapon;
@@ -448,9 +461,13 @@ pl_reworked_bis_pack = {
         waitUntil {scriptDone _assistantReady};
 
 
-        if (!alive _assistant || fleeing _assistant) exitWith {_gunner removeAllEventHandlers "WeaponDisassembled"};
+        if (!alive _assistant || fleeing _assistant) exitWith {_gunner removeAllEventHandlers "WeaponDisassembled"; player hcSetGroup [_group]};
         
         // -- pack weapon
         _gunner action ["Disassemble", _weapon];
+
+        sleep 2;
+
+        player hcSetGroup [_group];
     };
 };

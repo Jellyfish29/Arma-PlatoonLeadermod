@@ -95,7 +95,7 @@ pl_create_new_vic = {
 
     [_loadout, _newVic] call pl_set_vic_laodout;
 
-    _smokeGroup = createGroup east;
+    _smokeGroup = createGroup civilian;
     _smoke = _smokeGroup createUnit ["ModuleEffectsSmoke_F", _pos, [],0 , ""];
     // _smoke setVariable ["timeout", 80];
     _fire = _smokeGroup createUnit ["ModuleEffectsFire_F", _pos, [],0 , ""];
@@ -106,8 +106,13 @@ pl_create_new_vic = {
     _markerName = format ["disabled%1", _newVic];
     createMarker [_markerName, _pos];
     _markerName setMarkerType "mil_destroy";
+    _markerName setMarkerColor pl_side_color;
+    _markerName setMarkerShadow false;
+    _markerName setMarkerDir 45;
+    _markerName setMarkerSize [0.8, 0.8];
+
     _vicName = getText (configFile >> "CfgVehicles" >> _type >> "displayName");
-    _markerName setMarkerText format ["Disabled %1", _vicName];
+    _markerName setMarkerText format ["%1", _vicName];
 
     [_newVic] call pl_vehicle_setup;
     _lives = _lives - 1;

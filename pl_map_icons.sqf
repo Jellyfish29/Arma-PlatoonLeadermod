@@ -17,7 +17,7 @@ pl_get_group_health = {
 
 pl_get_unit_color = {
     params ["_unit"];
-    private _unitColor = [0,0.3,0.6,0.65];
+    private _unitColor = pl_side_color_rgb; //[0,0.3,0.6,0.65];
     if (_unit getVariable 'pl_is_ccp_medic' and (alive _unit)) then {
         _unitColor = [0.4,1,0.2,0.65];
     };
@@ -25,7 +25,7 @@ pl_get_unit_color = {
         _unitColor = [0.92,0.24,0.07,1];
     };
     if (_unit getVariable 'pl_wia') then {
-        _unitColor = [0.7,0,0,0.65];
+        _unitColor = [0.8,0,0,0.65];
     };
     _unitColor
 };
@@ -33,15 +33,15 @@ pl_get_unit_color = {
 pl_get_vic_health = {
     params ["_vic"];
     private ["_healthState"];
-    _healthState = [0,0.3,0.6,0.8];
+    _healthState = pl_side_color_rgb;//[0,0.3,0.6,0.8];
     if ((damage _vic) > 0) then {
-        _healthState = [0.9,0.7,0.1,1];
+        _healthState = [0.9,0.7,0.1,0.8];
     };
     if ((damage _vic) > 0.6) then {
-        _healthState = [0.7,0,0,1];
+        _healthState = [0.7,0,0,0.8];
     };
     if !(canMove _vic) then {
-        _healthState = [0.49,0.06,0.8,1]; // 7E11CA
+        _healthState = [0.49,0.06,0.8,0.8]; // 7E11CA
     };
     _healthState;
 };
@@ -56,16 +56,14 @@ pl_draw_group_info = {
         _display = _this#0;
         {
             if (hcShownBar and (_x getVariable 'pl_show_info') and visibleMap) then {
-
                 pl_map_scale = ctrlMapScale (_this select 0);
                 pl_map_scale_x = pl_map_scale * pl_world_size_x;
                 pl_map_scale_y = pl_map_scale * pl_world_size_y;
-
                 if ((getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName')) isEqualTo 'Game Logic') exitWith {};
                 {
                     _unit = _x;
                     _icon = getText (configfile >> 'CfgVehicles' >> typeof _unit >> 'icon');
-                    _size = 15;
+                    _size = 12;
                     _unitColor = [_unit] call pl_get_unit_color;
                     if (vehicle _unit == _unit and (alive _unit)) then {
                         _display drawIcon [
@@ -78,9 +76,7 @@ pl_draw_group_info = {
                         ];
                     };
                 } forEach (units _x);
-
                 _pos = getPosVisual (vehicle (leader _x));
-
                 _callsignText = format ['  %1', groupId _x];
                 if (count (units _x) == 1 and _x != (group player)) then {
                     _unitMos = getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName');
@@ -94,7 +90,7 @@ pl_draw_group_info = {
                 };
                 _display drawIcon [
                     '#(rgb,4,1,1)color(1,1,1,0)',
-                    [0,0.3,0.6,1],
+                    pl_side_color_rgb,
                     _pos,
                     23,
                     23,
@@ -105,7 +101,6 @@ pl_draw_group_info = {
                     'EtelkaMonospacePro',
                     'right'
                     ];
-
                 _strength = count (units _x);
                 _healthColor = [_x] call pl_get_group_health;
                 _strengthText = format ['%1  ', _strength];
@@ -122,8 +117,6 @@ pl_draw_group_info = {
                     'EtelkaMonospacePro',
                     'left'
                 ];
-
-
                 _contactIcon = '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa';
                 _contactPos = [(_pos select 0) - pl_map_scale_x, (_pos select 1) - pl_map_scale_y];
                 _contactColor = [0.4,1,0.2,1];
@@ -146,8 +139,6 @@ pl_draw_group_info = {
                     '',
                     2
                 ];
-
-
                 _behaviourPos = [(_pos select 0) + pl_map_scale_x, (_pos select 1) - pl_map_scale_y];
                 _behaviour = behaviour (leader _x);
                 _color = [0.4,1,0.2,1];
@@ -174,7 +165,6 @@ pl_draw_group_info = {
                     '',
                     2
                 ];
-
                 if (_x getVariable 'setSpecial') then {
                     _specialIcon = _x getVariable 'specialIcon';
                     _posOffset = pl_map_scale_x + (pl_map_scale_x * 0.85);
@@ -192,7 +182,6 @@ pl_draw_group_info = {
                         2
                     ];
                 };
-
                 if (_x getVariable ['pl_healing_active', false]) then {
                     _healingPos = [(_pos select 0) - (pl_map_scale_x * 1.8), _pos select 1];
                     _color = [0.9,0.9,0,1];
@@ -208,13 +197,11 @@ pl_draw_group_info = {
                         2
                     ];
                 };
-
                 if ((vehicle (leader _x)) != leader _x) then {
                     _vicPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
                     _vicColor = [vehicle (leader _x)] call pl_get_vic_health;
                     _vicDir = getDir (vehicle (leader _x));
                     _vicIcon = '\A3\ui_f\data\map\MapControl\viewtower_CA.paa';
-
                     _display drawIcon [
                         _vicIcon,
                         _vicColor,
@@ -225,11 +212,9 @@ pl_draw_group_info = {
                         '',
                         2
                     ];
-
                     _vicSpeedLimit = vehicle (leader _x) getVariable 'pl_speed_limit';
                     _vicSpeedPos = [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 1.5)];
                     _vicSpeedColor = [0.9, 0.9, 0.9,1];
-
                     switch (_vicSpeedLimit) do { 
                         case '50' : {_vicSpeedColor = [0.4,1,0.2,1]}; 
                         case '30' : {_vicSpeedColor = [0.9,0.9,0,1]};
@@ -248,7 +233,6 @@ pl_draw_group_info = {
                         '',
                         2
                     ];
-
                     if (_x getVariable ['pl_has_cargo', false]) then {
                         _cargoPos = [(_pos select 0) - (pl_map_scale_x * 2), _pos select 1];
                         _color = [0.9,0.9,0,1];
@@ -267,7 +251,6 @@ pl_draw_group_info = {
                 else
                 {
                     _formPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
-
                     _form = formation _x;
                     _formIcon = '\A3\3den\data\Attributes\Formation\wedge_ca.paa';
                     switch (_form) do { 
@@ -280,10 +263,8 @@ pl_draw_group_info = {
                         case 'LINE' : {_formIcon = '\A3\3den\data\Attributes\Formation\line_ca.paa'};
                         case 'FILE' : {_formIcon = '\A3\3den\data\Attributes\Formation\file_ca.paa'}; 
                         case 'DIAMOND' : {_formIcon = '\A3\3den\data\Attributes\Formation\diamond_ca.paa'}; 
-
                         default {_formIcon = '\A3\3den\data\Attributes\Formation\line_ca.paa'}; 
                     };
-
                     _display drawIcon [
                         _formIcon,
                         [0.9,0.9,0,1],
@@ -295,7 +276,6 @@ pl_draw_group_info = {
                         2
                     ];
                 };
-
                 if (pl_enable_map_radio) then {
                     _radioText = _x getVariable ['pl_radio_text',''];
                     if !(_radioText isEqualTo '') then {
@@ -876,19 +856,21 @@ pl_draw_ccp_medic = {
 pl_draw_unit_group_lines = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
-            {
-                if (vehicle (leader _x) == leader _x and side (leader _x) == playerSide) then {
-                    _pos1 = getPos (leader _x);
-                    {
-                        _pos2 = getPos _x;
-                        _display drawLine [
-                            _pos1,
-                            _pos2,
-                            [0,0.4,0.6,0.5]
-                            ];
-                    } forEach ((units _x) - [leader _x]);
-                };
-            } forEach allGroups select {hcLeader _x isEqualTo player};
+            if (hcShownBar) then {
+                {
+                    if (vehicle (leader _x) == leader _x and side (leader _x) == playerSide) then {
+                        _pos1 = getPos (leader _x);
+                        {
+                            _pos2 = getPos _x;
+                            _display drawLine [
+                                _pos1,
+                                _pos2,
+                                pl_side_color_rgb
+                                ];
+                        } forEach ((units _x) - [leader _x]);
+                    };
+                } forEach allGroups select {hcLeader _x isEqualTo player};
+            };
     "]; // "
 };
 
@@ -940,6 +922,36 @@ pl_mark_obstacles = {
 
 [] call pl_mark_obstacles;
 
+
+pl_draw_defence_watchpos_select = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (pl_show_watchpos_selector) then {
+            _pos1 = pl_defence_cords;
+            _pos2 = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+
+            _display drawArrow [
+                _pos1,
+                _pos2,
+                pl_side_color_rgb
+            ];
+
+            _display drawIcon [
+                '\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa',
+                [0.9,0.9,0,1],
+                _pos2,
+                14,
+                14,
+                0,
+                '',
+                2
+            ];
+        };
+    "]; // "
+};
+
+[] call pl_draw_defence_watchpos_select;
+
 addMissionEventHandler ["Loaded", {
     params ["_saveType"];
     [] call pl_draw_group_info;
@@ -965,6 +977,7 @@ addMissionEventHandler ["Loaded", {
     [] call pl_damaged_vics;
     [] call pl_draw_at_targets_indicator;
     [] call pl_mark_obstacles;
+    [] call pl_draw_defence_watchpos_select;
 }];
 
 
@@ -972,54 +985,55 @@ pl_marker_targets = [];
 
 pl_mark_targets_on_map = {
     params ["_targets"];
-    _markers = [];
-    _markerTargets = [];
-    // _time = time + 20;
-    {
-        if !(_x in pl_marker_targets) then {
-            if (alive _x and (side _x) != civilian) then {
-                if (_x isKindOf "Man" or _x isKindOf "Tank" or _x isKindOf "Car" or _x isKindOf "Truck") then {
-                    _pos = [[[getPos _x, 10]],[]] call BIS_fnc_randomPos;
-                    private _markerName = str _x;
-                    _markerSize = 0.15;
-                    _marker = createMarker [_markerName, _pos];
-                    _markerName setMarkerType "o_unknown";
-                    // if (_x isKindOf "Tank") then {
-                    //     _markerName setMarkerType "o_armor";
-                    //     _markerSize = 0.4;
-                    // };
-                    // if (_x isKindOf "Car") then {
-                    //     _markerName setMarkerType "o_motor_inf";
-                    //     _markerSize = 0.4;
-                    // };
-                    _unitText = getText (configFile >> "CfgVehicles" >> typeOf _x >> "textSingular");
+    // _markers = [];
+    // _markerTargets = [];
+    // // _time = time + 20;
 
-                    switch (_unitText) do {
-                        case "truck" : {_markerName setMarkerType "o_support"; _markerSize = 0.3};
-                        case "car" : {_markerName setMarkerType "o_motor_inf"; _markerSize = 0.3}; 
-                        case "tank" : {_markerName setMarkerType "o_armor"; _markerSize = 0.3}; 
-                        case "specop" : {_markerName setMarkerType "o_recon"}; 
-                        case "APC" : {_markerName setMarkerType "o_mech_inf"; _markerSize = 0.3};
-                        default {_markerName setMarkerType "o_inf";};
-                    };
+    // {
+    //     if !(_x in pl_marker_targets) then {
+    //         if (alive _x and (side _x) != civilian) then {
+    //             if (_x isKindOf "Man" or _x isKindOf "Tank" or _x isKindOf "Car" or _x isKindOf "Truck") then {
+    //                 _pos = [[[getPos _x, 10]],[]] call BIS_fnc_randomPos;
+    //                 private _markerName = str _x;
+    //                 _markerSize = 0.15;
+    //                 _marker = createMarker [_markerName, _pos];
+    //                 _markerName setMarkerType "o_unknown";
+    //                 // if (_x isKindOf "Tank") then {
+    //                 //     _markerName setMarkerType "o_armor";
+    //                 //     _markerSize = 0.4;
+    //                 // };
+    //                 // if (_x isKindOf "Car") then {
+    //                 //     _markerName setMarkerType "o_motor_inf";
+    //                 //     _markerSize = 0.4;
+    //                 // };
+    //                 _unitText = getText (configFile >> "CfgVehicles" >> typeOf _x >> "textSingular");
 
-                    _markerName setMarkerColor "colorOpfor";
-                    _markerName setMarkerSize [_markerSize, _markerSize];
-                    // _markerName setMarkerText str (parseText _markerText);
-                    _markers pushBack _markerName;
-                    _markerTargets pushBack _x;
-                    pl_marker_targets pushBack _x;
-                };
-            };
-        };
-    } forEach _targets;
+    //                 switch (_unitText) do {
+    //                     case "truck" : {_markerName setMarkerType "o_support"; _markerSize = 0.3};
+    //                     case "car" : {_markerName setMarkerType "o_motor_inf"; _markerSize = 0.3}; 
+    //                     case "tank" : {_markerName setMarkerType "o_armor"; _markerSize = 0.3}; 
+    //                     case "specop" : {_markerName setMarkerType "o_recon"}; 
+    //                     case "APC" : {_markerName setMarkerType "o_mech_inf"; _markerSize = 0.3};
+    //                     default {_markerName setMarkerType "o_inf";};
+    //                 };
 
-    // waitUntil {time >= _time};
-    sleep 20;
-    {
-        deleteMarker _x;
-    } forEach _markers;
-    pl_marker_targets = pl_marker_targets - _markerTargets; 
+    //                 _markerName setMarkerColor "colorOpfor";
+    //                 _markerName setMarkerSize [_markerSize, _markerSize];
+    //                 // _markerName setMarkerText str (parseText _markerText);
+    //                 _markers pushBack _markerName;
+    //                 _markerTargets pushBack _x;
+    //                 pl_marker_targets pushBack _x;
+    //             };
+    //         };
+    //     };
+    // } forEach _targets;
+
+    // // waitUntil {time >= _time};
+    // sleep 20;
+    // {
+    //     deleteMarker _x;
+    // } forEach _markers;
+    // pl_marker_targets = pl_marker_targets - _markerTargets; 
 };
 
 pl_map_radio_callout = {
@@ -1047,9 +1061,11 @@ pl_draw_kia = {
     _pos = getPos _unit;
     _markerName = str _unit;
     _marker = createMarker [_markerName, _pos];
-    _markerName setMarkerSize [0.5, 0.5];
-    _markerName setMarkerType "mil_warning";
-    _markerName setMarkerColor "ColorBlufor";
+    _markerName setMarkerSize [0.3, 0.3];
+    _markerName setMarkerType "mil_destroy";
+    _markerName setMarkerColor pl_side_color;
+    _markerName setMarkerDir 45;
+    _markerName setMarkerShadow false;
     _time = time + 60;
     waitUntil {time >= _time};
     deleteMarker _markerName;

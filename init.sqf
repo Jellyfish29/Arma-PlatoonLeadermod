@@ -23,6 +23,13 @@ execVM "Plmod\pl_util.sqf";
 // setGroupIconsVisible [true,true]; 
 
 
+switch (side player) do { 
+    case west : {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.7]}; 
+    case east : {pl_side_color = "colorOpfor"; pl_side_color_rgb = [0.5,0,0,0.7]};
+    case resistance : {pl_side_color = "colorIndependent"; pl_side_color_rgb = [0,0.5,0,0.7]};
+    default {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.7]}; 
+};
+
 
 pl_vehicle_group_check = {
     private ["_vicArray"];
@@ -39,7 +46,7 @@ pl_vehicle_group_check = {
     } forEach (allGroups select {side _x isEqualto playerSide});  
 };
 
-[] call pl_vehicle_group_check;
+// [] call pl_vehicle_group_check;
 
 
 

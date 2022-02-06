@@ -165,3 +165,13 @@ pl_position_reached_check = {
     false
 };
 
+
+pl_is_forest = {
+    params ["_pos"];
+
+    _trees = nearestTerrainObjects [_pos, ["Tree"], 50, false, true];
+
+    if (count _trees > 25) exitWith {true};
+
+    false
+};
