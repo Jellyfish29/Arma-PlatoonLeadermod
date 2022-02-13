@@ -209,8 +209,15 @@ pl_mine_clearing = {
         _markerName setMarkerAlpha 0.3;
     };
 
+
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [_group] call pl_reset;
-    sleep 0.2;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
@@ -415,10 +422,15 @@ pl_lay_mine_field = {
         pl_cancel_strike = false;
     };
 
-    [_group] call pl_reset;
-    if (pl_enable_beep_sound) then {playSound "beep"};
 
-    sleep 0.2;
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
@@ -603,11 +615,14 @@ pl_place_charge = {
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     [_group] call pl_reset;
-    if (pl_enable_beep_sound) then {playSound "beep"};
 
-    sleep 0.2;
+    sleep 0.5;
 
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
@@ -757,10 +772,15 @@ pl_destroy_bridge = {
 
     if ((count _bridges) <= 0) exitWith {hint format ["No Bridges in Area", groupId _group]};
 
-    [_group] call pl_reset;
-    if (pl_enable_beep_sound) then {playSound "beep"};
 
-    sleep 0.2;
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
     _group setVariable ["onTask", true];

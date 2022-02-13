@@ -244,8 +244,15 @@ pl_repair = {
 
             if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
 
+
+            if (pl_enable_beep_sound) then {playSound "beep"};
             [_group] call pl_reset;
-            sleep 0.2;
+
+            sleep 0.5;
+
+            [_group] call pl_reset;
+
+            sleep 0.5;
 
             _group setVariable ["onTask", true];
             _group setVariable ["setSpecial", true];
@@ -394,10 +401,14 @@ pl_repair_bridge = {
 
     if ((count _bridges) <= 0) exitWith {hint format ["No damaged Bridges in Area", groupId _group]};
 
-    [_group] call pl_reset;
     if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group] call pl_reset;
 
-    sleep 0.2;
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa";
     _group setVariable ["onTask", true];

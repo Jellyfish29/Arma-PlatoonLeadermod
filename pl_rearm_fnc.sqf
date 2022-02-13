@@ -41,11 +41,15 @@ pl_rearm = {
     if (isNil "_targetBox") exitWith {hint "No available Supplies!"};
     if ((_targetBox distance2D _cords) >= 25) exitWith {hint "No available Supplies!"};
 
-    [_group] call pl_reset;
-
-    sleep 0.2;
 
     if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
@@ -180,8 +184,15 @@ pl_supply_point = {
     // _marker3D = [_group, '\Plmod\gfx\pl_r3p_marker.paa'] call pl_draw_3d_icon;
 
     // Setup Group at Position
+
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [_group] call pl_reset;
-    sleep 0.2;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     _cords = getPos (leader _group);
 
@@ -381,7 +392,7 @@ pl_rearm_point = {
     _vic = vehicle (leader _group);
 
     // check if vehicle is supply vehicle
-    if !(getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car") exitWith {hint "Requires APC"};
+    if !(getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car") exitWith {hint "Requires APC or Supply Vehicle"};
 
     // get current Ammo Cargo of Vic and calc _ammoStep -> per one inve refill -2% Supplies
     _ammoCargo = _vic getVariable ["pl_supplies", 0];
@@ -417,6 +428,14 @@ pl_rearm_point = {
     _areaMarkerName setMarkerAlpha 0.15;
     _areaMarkerName setMarkerSize [20, 20];
 
+    _supplyWalkupRange = 250;
+    _areaMarkerNameOuter = createMarker [format ["ammo_area_outer%1", random 1], getPos (leader _group)];
+    _areaMarkerNameOuter setMarkerShape "ELLIPSE";
+    _areaMarkerNameOuter setMarkerBrush "Border";
+    _areaMarkerNameOuter setMarkerColor "colorIndependent";
+    _areaMarkerNameOuter setMarkerAlpha 0.15;
+    _areaMarkerNameOuter setMarkerSize [_supplyWalkupRange, _supplyWalkupRange];
+
     _pointMarkerName = createMarker [format ["ressupplypoint%1", _group], (getPos (leader _group)) getPos [7, 0]];
     _pointMarkerName setMarkerType "marker_asp";
     _pointMarkerName setMarkerColor pl_side_color;
@@ -426,8 +445,15 @@ pl_rearm_point = {
     // _marker3D = [_group, '\Plmod\gfx\pl_asp_marker.paa'] call pl_draw_3d_icon;
 
     // Setup Group at Position
+
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [_group] call pl_reset;
-    sleep 0.2;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     _cords = getPos (leader _group);
 
@@ -444,11 +470,9 @@ pl_rearm_point = {
         _x disableAI "PATH";
     } forEach (units _group);
     _group setBehaviour "SAFE";
+    _vic setVariable ["pl_is_rearm_point", true];
 
     sleep 2;
-    // delay to geive _ammoBearer Time to disembark
-    sleep 4;
-
 
     // Supply Loop -> Supllies every Group in Range once while actice
     while {_group getVariable ["onTask", true]} do {
@@ -507,6 +531,7 @@ pl_rearm_point = {
 
     // subtract used ammo from _vic
     _vic setVariable ["pl_supplies", _ammoCargo];
+    _vic setVariable ["pl_is_rearm_point", nil];
 
     // reset group Variables
     _group setVariable ["onTask", false];

@@ -167,7 +167,7 @@ pl_contact_report = {
                                 _targetPos = getPos _target;
                                 pl_at_targets_indicator pushBack [_firerPos, _targetPos];
 
-                                sleep 5;
+                                sleep 8;
 
                                 pl_at_targets_indicator = pl_at_targets_indicator - [[_firerPos, _targetPos]];
                             };
@@ -185,7 +185,7 @@ pl_contact_report = {
                             pl_at_targets_indicator pushBack [_firerPos, _targetPos];
                             _firer setVariable ["pl_fire_indicator_on", true];
 
-                            sleep 3;
+                            sleep 5;
 
                             pl_at_targets_indicator = pl_at_targets_indicator - [[_firerPos, _targetPos]];
                             _firer setVariable ["pl_fire_indicator_on", false];
@@ -316,7 +316,7 @@ pl_ammo_bearer = {
                 _magCount = count ((magazines _unit) select {_x isEqualTo _mag});
                 if (_magCount <= 0 and (_weapon != (secondaryWeapon _unit))) then {
                     _ammoBearer = objNull;
-                    _highestAmount = 1;
+                    _highestAmount = 0;
                     {
                         _friendMagCount = count ((magazines _x) select {_x isEqualTo _mag});
                         if (_friendMagCount > _highestAmount ) then {
@@ -376,8 +376,14 @@ pl_special_forces_skills = {
     };
 };
 
+pl_actvie_mg_gunners = [];
+
 pl_add_unit_fire_indicator = {
     params ["_unit"];
+
+    if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun") then {
+        pl_actvie_mg_gunners pushBack _unit;
+    };
 
     _unit addEventHandler ["FiredMan", {
         params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_vehicle"];
@@ -712,7 +718,7 @@ pl_ai_setUp_loop = {
 pl_auto_unstuck = {
     params ["_unit"];
     _distance = _unit distance2D leader (group _unit);
-    if (_distance > 100 and _unit checkAIFeature "PATH") then {
+    if (_distance > 120 and _unit checkAIFeature "PATH" and !(_unit getVariable ["pl_engaging", false])) then {
         doStop _unit;
         _pos = (getPos _unit) findEmptyPosition [0, 50, typeOf _unit];
         _unit setPos _pos;

@@ -149,19 +149,23 @@ pl_enable_force_move = {
 
 pl_position_reached_check = {
     params ["_unit", "_movePos", ["_randomise", true]];
+    private ["_counter"];
 
-        if ((_unit distance2D _movePos) > 2) then {
-            if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
-                doStop _unit;
-                _unit setUnitPosWeak "UP";
-                if (_randomise) then {
-                    _movePos = [-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd _movePos;
-                };
-                _unit doMove _movePos;
+    _counter = _unit getVariable ["pl_reached_counter", 0];
+    if ((_unit distance2D _movePos) > 2) then {
+        if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
+            _counter = _counter + 1;
+            doStop _unit;
+            _unit setUnitPosWeak "UP";
+            if (_randomise) then {
+                _movePos = [-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd _movePos;
             };
+            _unit doMove _movePos;
         };
+    };
 
-    if ((_unit distance2D _movePos) < 2 and currentCommand _unit isNotEqualTo "MOVE") exitWith {true};
+    if (((_unit distance2D _movePos) < 2 and currentCommand _unit isNotEqualTo "MOVE") or _counter >= 8) exitWith {true};
+    _unit setVariable ["pl_reached_counter", _counter];
     false
 };
 
@@ -174,4 +178,41 @@ pl_is_forest = {
     if (count _trees > 25) exitWith {true};
 
     false
+};
+
+pl_convert_to_heigth_ASL = {
+    params ["_pos", "_height"];
+
+    _pos = ASLToATL _pos;
+    _pos = [_pos#0, _pos#1, _height];
+    _pos = ATLToASL _pos;
+
+    _pos
+};
+
+pl_is_indoor = {
+    params ["_pos"];
+    _pos = AGLToASL _pos;
+    if (lineIntersects [_pos, _pos vectorAdd [0, 0, 10]]) exitWith {true};
+    false
+};
+
+pl_fof_check = {
+    params ["_pos","_d", "_h"];
+    private _c = 0;
+    _startPos = [_pos, _h] call pl_convert_to_heigth_ASL;
+    for "_i" from 0 to 300 step 25 do {
+
+        _checkPos = [_pos getPos [_i, _d], _h] call pl_convert_to_heigth_ASL;
+
+        _visP = lineIntersectsSurfaces [_startPos, _checkPos, objNull, objNull, true, 1, "VIEW"];
+
+        if !(_visP isEqualTo []) exitWith {};
+        _c = _c + 1;
+
+        // _helper = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
+        // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
+        // _helper setposASL _checkPos;
+    };
+    _c
 };

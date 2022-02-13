@@ -102,6 +102,12 @@ pl_reset = {
     // resets and stops Group
 
     // reset individual units variables
+    [_group] spawn {
+        params ["_group"];
+        _group setVariable ["pl_stop_event", true];
+        sleep 2;
+        _group setVariable ["pl_stop_event", nil];
+    };
     {
         _unit = _x;
         // if ((currentCommand _unit) isEqualTo "SUPPORT") then {
@@ -119,6 +125,10 @@ pl_reset = {
         _unit enableAI "WEAPONAIM";
         _unit setUnitPos "AUTO";
         _unit setUnitTrait ["camouflageCoef", 1, true];
+        _unit setVariable ["pl_engaging", false];
+        _unit setVariable ["pl_damage_reduction", false];
+        _unit setVariable ['pl_is_at', false];
+        _unit setVariable ["pl_def_pos", nil];
         // sleep 0.5;
         _unit limitSpeed 5000;
         _unit forceSpeed -1;
@@ -226,6 +236,8 @@ pl_reset = {
 
 pl_spawn_reset = {
     {
+        [_x] spawn pl_reset;
+        sleep 0.5
         [_x] spawn pl_reset;
     } forEach hcSelected player;
 };

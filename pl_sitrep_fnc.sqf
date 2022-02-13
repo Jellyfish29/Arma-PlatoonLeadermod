@@ -38,6 +38,34 @@ pl_get_ammo_group_state = {
     _ammoState
 };
 
+pl_get_mg_ammo_status_need = {
+    params ["_group"];
+
+    _mgAmmoStatus = {
+        _unit = _x;
+        if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun" and ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> primaryWeapon _unit >> "magazines") apply {toUpper _x})} count magazines _unit) <= 2) exitWith {true}; 
+        false
+    } forEach (units _group);
+    _mgAmmoStatus  
+};
+
+pl_get_at_ammo_status_need = {
+    params ["_group"];
+
+    private _missileCount = 0;
+    private _c = 0;
+    {
+        if (secondaryWeapon _x != "") then {
+            _c = _c + 1;
+            _secondary = secondaryWeapon _x;
+            if (toUpper ((secondaryWeaponMagazine _x)#0) in (getArray (configFile >> "CfgWeapons" >> _secondary >> "magazines") apply {toUpper _x})) then {_missileCount = _missileCount + 1};
+        };
+    } forEach (units _group);
+    if (_c == 0) exitWith {false};
+    if (_missileCount <= 0) exitWith {true};
+    false 
+};
+
 pl_sitrep_solo = {
 
     params ["_group"];

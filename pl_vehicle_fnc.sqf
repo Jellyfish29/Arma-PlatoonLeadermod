@@ -96,8 +96,15 @@ pl_getIn_vehicle = {
             deleteVehicle _landigPad;
         };
 
-        [_group] call pl_reset;
-        sleep 0.2;
+
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
         if (_group getVariable ["pl_healing_active", false]) then {_group setVariable ["pl_healing_active", false]};
 
@@ -220,6 +227,11 @@ pl_getOut_vehicle = {
             };
         };
 
+
+/*        [_group] call pl_reset;
+        sleep 0.5;
+        [_group] call pl_reset;
+        sleep 0.5;*/
         _vic setVariable ["pl_on_transport", true];
         _cargo = fullCrew _vic;
         _commander = driver _vic;
@@ -1044,9 +1056,15 @@ pl_crew_vehicle = {
     _targetVic = pl_vics select 0;
     if (isNil "_targetVic") exitWith {hint "No available vehicle!"};
 
+
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [_group] call pl_reset;
 
-    sleep 0.2;
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
 
     _unitsInVic = {vehicle _x == _targetVic} count (units _group);
     _groupLen = (count (units _group)) - _unitsInVic;
@@ -1171,9 +1189,17 @@ pl_attach_inf = {
     _attachForm = pl_attach_form;
 
 
+
+    if (pl_enable_beep_sound) then {playSound "beep"};
     [_group] call pl_reset;
     [_vicGroup] call pl_reset;
-    sleep 0.2;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+    [_vicGroup] call pl_reset;
+
+    sleep 0.5;
 
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];

@@ -19,7 +19,10 @@ pl_get_unit_color = {
     params ["_unit"];
     private _unitColor = pl_side_color_rgb; //[0,0.3,0.6,0.65];
     if (_unit getVariable 'pl_is_ccp_medic' and (alive _unit)) then {
-        _unitColor = [0.4,1,0.2,0.65];
+        _unitColor = [0.4,1,0.2,0.5];
+    };
+    if (_unit getVariable ['pl_is_at', false]) then {
+        _unitColor = [0.6,0.2,1,0.5];
     };
     if (_unit getVariable ['pl_firing', false]) then {
         _unitColor = [0.92,0.24,0.07,1];
@@ -841,11 +844,13 @@ pl_draw_ccp_medic = {
             {
                 _pos1 = _x select 0;
                 _pos2 = getPos (_x select 1);
-                _display drawLine [
-                    _pos1,
-                    _pos2,
-                    [0.4,1,0.2,0.8]
+                if !(isNull (_x#1)) then {
+                    _display drawLine [
+                        _pos1,
+                        _pos2,
+                        [0.4,1,0.2,0.8]
                     ];
+                };
             } forEach pl_ccp_draw_array;
     "]; // "
 };
@@ -859,7 +864,7 @@ pl_draw_unit_group_lines = {
             {
                 if (vehicle (leader _x) == leader _x and side (leader _x) == playerSide) then {
                     _pos1 = getPos (leader _x);
-                    _color = [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, 0.5]
+                    _color = [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, 0.5];
                     {
                         _pos2 = getPos _x;
                         _display drawLine [
@@ -896,6 +901,25 @@ pl_draw_at_targets_indicator = {
 
 [] call pl_draw_at_targets_indicator;
 
+pl_draw_mg_fire_indicator = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                if (_x getVariable ['pl_firing', false]) then {
+                    _pos1 = getPos _x;
+                    _pos2 = _pos1 getPos [60, getDir _x];
+                    _display drawArrow [
+                        _pos1,
+                        _pos2,
+                        [0.92,0.24,0.07,1]
+                        ];
+                };
+            } forEach pl_actvie_mg_gunners;
+    "]; // "
+};
+
+[] call pl_draw_mg_fire_indicator;
+
 pl_mark_obstacles = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
@@ -924,34 +948,85 @@ pl_mark_obstacles = {
 [] call pl_mark_obstacles;
 
 
-pl_draw_defence_watchpos_select = {
+// pl_draw_defence_watchpos_select = {
+//     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+//         _display = _this#0;
+//         if (pl_show_watchpos_selector) then {
+//             _pos1 = pl_defence_cords;
+//             _pos2 = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+
+//             _display drawArrow [
+//                 _pos1,
+//                 _pos2,
+//                 pl_side_color_rgb
+//             ];
+
+//             _display drawIcon [
+//                 '\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa',
+//                 [0.9,0.9,0,1],
+//                 _pos2,
+//                 14,
+//                 14,
+//                 0,
+//                 '',
+//                 2
+//             ];
+//         };
+//     "]; // "
+// };
+
+// [] call pl_draw_defence_watchpos_select;
+
+pl_draw_at_attack = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
-        if (pl_show_watchpos_selector) then {
-            _pos1 = pl_defence_cords;
-            _pos2 = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-
-            _display drawArrow [
-                _pos1,
-                _pos2,
-                pl_side_color_rgb
-            ];
-
-            _display drawIcon [
-                '\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa',
-                [0.9,0.9,0,1],
-                _pos2,
-                14,
-                14,
-                0,
-                '',
-                2
-            ];
-        };
+            {
+                _pos1 = getPos (_x select 0);
+                _pos2 =_x select 1;
+                _escord = _x select 2;
+                _color = [0.6,0.2,1,0.65];
+                if (currentWeapon (_x#0) == secondaryWeapon (_x#0)) then {
+                    _color = [0,1,0,0.7];
+                };
+                if !((typeName _pos2) isEqualTo 'ARRAY') then {
+                    _pos2 = getPos _pos2;
+                    _display drawIcon [
+                        '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa',
+                        [0.6,0.2,1,0.4],
+                        _pos2,
+                        10,
+                        10,
+                        0,
+                        '',
+                        2,
+                        0.05
+                    ];
+                };
+                if !(isNull _escord) then {
+                    if (alive _escord) then {
+                        _display drawLine [
+                            _pos1,
+                            getPos _escord,
+                            [0.6,0.2,1,0.4]
+                        ];
+                    };
+                };
+                _display drawLine [
+                    _pos1,
+                    _pos2,
+                    _color
+                    ];
+                _display drawLine [
+                    _pos1,
+                    getPos (leader(_x#0)),
+                    pl_side_color_rgb
+                    ];
+            } forEach pl_at_attack_array;
     "]; // "
 };
 
-[] call pl_draw_defence_watchpos_select;
+[] call pl_draw_at_attack;
+
 
 addMissionEventHandler ["Loaded", {
     params ["_saveType"];
@@ -978,7 +1053,8 @@ addMissionEventHandler ["Loaded", {
     [] call pl_damaged_vics;
     [] call pl_draw_at_targets_indicator;
     [] call pl_mark_obstacles;
-    [] call pl_draw_defence_watchpos_select;
+    // [] call pl_draw_defence_watchpos_select;
+    [] call pl_draw_at_attack;
 }];
 
 
