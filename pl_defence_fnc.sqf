@@ -1229,11 +1229,11 @@ pl_at_defence = {
             waitUntil {!(_atSoldier getVariable ["pl_wia", false]) and !((secondaryWeaponMagazine _atSoldier) isEqualTo []) and (isNull (_group getVariable ["pl_grp_active_at_soldier", objNull]))};
         };
 
-        _vics = nearestObjects [_watchPos, ["Car", "Tank"], 300, true];
+        _vics = nearestObjects [_defencePos, ["Car", "Tank"], 300, true];
 
         _targets = [];
         {
-            if (speed _x <= 5 and alive _x and (count (crew _x) > 0) and (_atSoldier knowsAbout _x) >= 0) then {
+            if (speed _x <= 3 and alive _x and (count (crew _x) > 0) and (_atSoldier knowsAbout _x) >= 0 or _x getVariable ["pl_at_enaged", false]) then {
                 _targets pushBack _x;
             };
         } forEach (_vics select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
@@ -1241,25 +1241,6 @@ pl_at_defence = {
         if (count _targets > 0 and !((secondaryWeaponMagazine _atSoldier) isEqualTo [])) then {
             _targets = [_targets, [], {_x distance2D (getPos _atSoldier)}, "ASCEND"] call BIS_fnc_sortBy;
             _target = _targets#0;
-
-
-
-            {
-                doStop _x;
-                _x enableAI "PATH";
-                _x setUnitPos "AUTO";
-                _x disableAI "TARGET";
-                _x disableAI "AUTOTARGET";
-                _x disableAI "AIMINGERROR";
-                _x setBehaviourStrong "AWARE";
-                _x setUnitTrait ["camouflageCoef", 0.1, true];
-                _x setVariable ["pl_damage_reduction", true];
-                _x setVariable ['pl_is_at', true];
-                _x setVariable ["pl_engaging", true];
-            } forEach [_atSoldier, _atEscord];
-
-            _group setVariable ["pl_grp_active_at_soldier", _atSoldier];
-            pl_at_attack_array pushBack [_atSoldier, _target, _atEscord];
 
             _defenceAreaSize = _defenceAreaSize + 50;
             _debugMarkers = [];
@@ -1291,6 +1272,24 @@ pl_at_defence = {
             };
 
             if (count _checkPosArray > 0 and !((secondaryWeaponMagazine _atSoldier) isEqualTo [])) then {
+
+                _target setVariable ["pl_at_enaged", true];
+                {
+                    doStop _x;
+                    _x enableAI "PATH";
+                    _x setUnitPos "AUTO";
+                    _x disableAI "TARGET";
+                    _x disableAI "AUTOTARGET";
+                    _x disableAI "AIMINGERROR";
+                    _x setBehaviourStrong "AWARE";
+                    _x setUnitTrait ["camouflageCoef", 0.1, true];
+                    _x setVariable ["pl_damage_reduction", true];
+                    _x setVariable ['pl_is_at', true];
+                    _x setVariable ["pl_engaging", true];
+                } forEach [_atSoldier, _atEscord];
+
+                _group setVariable ["pl_grp_active_at_soldier", _atSoldier];
+                pl_at_attack_array pushBack [_atSoldier, _target, _atEscord];
 
                 _movePos = ([_checkPosArray, [], {_atSoldier distance2D _x}, "ASCEND"] call BIS_fnc_sortBy) select 0;
                 _atSoldier doMove _movePos;
@@ -1369,7 +1368,7 @@ pl_defence_suppression = {
     params ["_group", "_watchPos"];
     private ["_targetsPos", "_firers"];
 
-    _time = time + 20;
+    private  _time = time + 20;
     waitUntil { time >= time or !(_group getVariable ["onTask", true]) };
     if !(_group getVariable ["onTask", true]) exitWith {};
 
@@ -1412,7 +1411,7 @@ pl_defence_rearm = {
     params ["_group", "_defencePos"];
     private ["_ammoCargo"]; 
 
-    _time = time + 20;
+    private  _time = time + 20;
     waitUntil { time >= time or !(_group getVariable ["onTask", true]) };
     if !(_group getVariable ["onTask", true]) exitWith {};
 
@@ -1505,7 +1504,7 @@ pl_defence_rearm = {
 pl_defence_ccp = {
     params ["_group", "_medic", "_ccpPos"];
 
-    _time = time + 10;
+    private  _time = time + 10;
     waitUntil { time >= time or !(_group getVariable ["onTask", true]) };
     if !(_group getVariable ["onTask", true]) exitWith {};
 
@@ -1539,9 +1538,9 @@ pl_defence_ccp = {
 pl_move_back_to_def_pos = {
     params ["_unit"];
 
-    _time = time + 3;
-    waitUntil { time >= time or !(_group getVariable ["onTask", true]) };
-    if !(_group getVariable ["onTask", true]) exitWith {};
+    private _time = time + 5;
+    waitUntil { time >= time or !((group _unit) getVariable ["onTask", true]) };
+    if !((group _unit) getVariable ["onTask", true]) exitWith {};
 
     _movePos = _unit getVariable ["pl_def_pos", []];
 

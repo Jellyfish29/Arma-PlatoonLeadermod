@@ -828,7 +828,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {2};
                 class Params
                 {
-                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_STEALTH' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 0.3, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_STEALTH' call BIS_HC_path_menu";
                 };
                 title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa'/><t> Stealth</t>";
                 shortcutsAction = "CommandingMenu1";
@@ -841,7 +841,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {3};
                 class Params
                 {
-                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_DANGER' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_DANGER' call BIS_HC_path_menu";
                 };
                 title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\danger_ca.paa'/><t> Combat</t";
                 shortcutsAction = "CommandingMenu2";
@@ -854,7 +854,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {4};
                 class Params
                 {
-                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_AWARE' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_AWARE' call BIS_HC_path_menu";
                 };
                 title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\listen_ca.paa'/><t> Aware</t";
                 shortcutsAction = "CommandingMenu3";
@@ -867,7 +867,7 @@ class RscHCGroupRootMenu
                 shortcuts[] = {5};
                 class Params
                 {
-                    expression = "{{_x disableAI 'AUTOCOMBAT';}forEach (units _x);}forEach (hcSelected player); 'COMBAT_SAFE' call BIS_HC_path_menu";
+                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_SAFE' call BIS_HC_path_menu";
                 };
                 title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa'/><t> Safe</t";
                 shortcutsAction = "CommandingMenu4";
