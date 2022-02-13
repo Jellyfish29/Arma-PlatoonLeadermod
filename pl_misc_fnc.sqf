@@ -236,9 +236,12 @@ pl_reset = {
 
 pl_spawn_reset = {
     {
-        [_x] spawn pl_reset;
-        sleep 0.5
-        [_x] spawn pl_reset;
+        [_x] spawn {
+            params ["_group"];
+            [_group] spawn pl_reset;
+            sleep 0.5;
+            [_group] spawn pl_reset;
+        };
     } forEach hcSelected player;
 };
 
