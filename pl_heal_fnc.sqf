@@ -77,13 +77,13 @@ pl_medic_heal = {
         _medic enableAI "AUTOCOMBAT";
         _medic setUnitPos "AUTO";
     };
+    _medic enableAI "PATH";
     if (isNil "_ccpPos") then {
         _medic doFollow leader (group _medic);
     }
     else
     {
         _medic doMove _ccpPos;
-        _medic moveTo _ccpPos;
     };
 };
 

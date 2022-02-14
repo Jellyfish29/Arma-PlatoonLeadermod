@@ -17,44 +17,55 @@ pl_get_group_health = {
 
 pl_get_unit_color = {
     params ["_unit"];
-    private _unitColor = pl_side_color_rgb; //[0,0.3,0.6,0.65];
-    if (_unit getVariable 'pl_is_ccp_medic' and (alive _unit)) then {
-        _unitColor = [0.4,1,0.2,0.5];
-    };
-    if (_unit getVariable ['pl_is_at', false]) then {
-        _unitColor = [0.6,0.2,1,0.5];
-    };
-    if (_unit getVariable ['pl_firing', false]) then {
-        _unitColor = [0.92,0.24,0.07,1];
-    };
-    if (_unit getVariable 'pl_wia') then {
-        _unitColor = [0.8,0,0,0.65];
-    };
-    _unitColor
+    if (_unit getVariable ['pl_wia', false]) exitWith {[0.7,0,0,1]};
+    if (_unit getVariable ['pl_firing', false]) exitWith {[0.92,0.24,0.07,1]};
+    if (_unit getVariable ['pl_is_ccp_medic', false]) exitWith {[0.4,1,0.2,0.9]};
+    if (_unit getVariable ['pl_is_at', false]) exitWith {[1,0.7,0.3,0.9]};
+    pl_side_color_rgb
 };
 
 pl_get_vic_health = {
     params ["_vic"];
-    private ["_healthState"];
-    _healthState = pl_side_color_rgb;//[0,0.3,0.6,0.8];
-    if ((damage _vic) > 0) then {
-        _healthState = [0.9,0.7,0.1,0.8];
-    };
-    if ((damage _vic) > 0.6) then {
-        _healthState = [0.7,0,0,0.8];
-    };
-    if !(canMove _vic) then {
-        _healthState = [0.49,0.06,0.8,0.8]; // 7E11CA
-    };
-    _healthState;
+    if ((damage _vic) > 0) exitWith {[0.9,0.7,0.1,0.8]};
+    if ((damage _vic) > 0.6) exitWith {[0.7,0,0,0.8]};
+    if !(canMove _vic) exitWith {[0.49,0.06,0.8,0.8]}; // 7E11CA};
+    pl_side_color_rgb
 };
 
+pl_update_group_ammo_status = {
+
+    {
+        _group = _x;
+        _mg = {
+            if ((primaryweapon _x call BIS_fnc_itemtype) select 1 == "MachineGun") exitWith {true};
+            false
+        } forEach (units _group);
+        _at = {
+            if (secondaryWeapon _x != "") exitWith {true};
+            false
+        } forEach (units _group);
+        _group setVariable ["pl_has_mg", _mg];
+        _group setVariable ["pl_has_at", _at];
+    } forEach (allGroups select {hcLeader _x == player});
+
+    sleep 4;
+    
+    while {true} do {
+        {
+            _x setVariable ["pl_group_mg_status", [_x, 0, _x getVariable ["pl_has_mg", false]] call pl_get_mg_ammo_status_need];
+            _x setVariable ["pl_group_at_status", [_x, 0, _x getVariable ["pl_has_at", false]] call pl_get_at_ammo_status_need];
+            _x setVariable ["pl_group_ammo_status", [_x] call pl_get_ammo_group_state]
+        } forEach (allGroups select {hcLeader _x == player});
+        sleep 5;
+    };
+};
+
+[] spawn pl_update_group_ammo_status;
 
 pl_world_size_x = round (worldSize * 0.03);
 pl_world_size_y = round (worldSize * 0.02);
 
 pl_draw_group_info = {
-
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
         {
@@ -168,6 +179,19 @@ pl_draw_group_info = {
                     '',
                     2
                 ];
+                if (((_x getVariable ['pl_group_ammo_status', ['Green',0, [0.4,1,0.2,1]]])#0) isEqualTo 'Red') then {
+                    _ammoStatusPos = [(_pos select 0) - (pl_map_scale_x * 2.3), _pos select 1];
+                    _display drawIcon [
+                        '\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa',
+                        [1,0,0,0.8],
+                        _ammoStatusPos,
+                        12,
+                        12,
+                        0,
+                        '',
+                        2
+                    ];
+                };
                 if (_x getVariable 'setSpecial') then {
                     _specialIcon = _x getVariable 'specialIcon';
                     _posOffset = pl_map_scale_x + (pl_map_scale_x * 0.85);
@@ -253,6 +277,46 @@ pl_draw_group_info = {
                 }
                 else
                 {
+                    _wStatusPos1 = [(_pos select 0) - (pl_map_scale_x * 1), (_pos select 1) + (pl_map_scale_y * 1)];
+                    _wStatusPos2 = [(_pos select 0) - (pl_map_scale_x * 1.8), (_pos select 1) + (pl_map_scale_y * 1)];
+
+                    pl_wStatus_pos = 0;
+                    if (_x getVariable ['pl_group_at_status', false]) then {
+                        _atStatusPos = _wStatusPos1;
+                        pl_wStatus_pos = pl_wStatus_pos + 1;
+                        _display drawIcon [
+                            '#(rgb,4,1,1)color(1,1,1,0)',
+                            [0.9,0,0,1],
+                            _atStatusPos,
+                            6,
+                            6,
+                            0,
+                            'AT!',
+                            0,
+                            0.019,
+                            'EtelkaMonospacePro',
+                            'center'
+                        ];
+                    };
+                    if (_x getVariable ['pl_group_mg_status', false]) then {
+                        _mgStatusPos = _wStatusPos1;
+                        if (pl_wStatus_pos == 1) then {_mgStatusPos = _wStatusPos2};
+                        _display drawIcon [
+                            '#(rgb,4,1,1)color(1,1,1,0)',
+                            [0.9,0,0,1],
+                            _mgStatusPos,
+                            6,
+                            6,
+                            0,
+                            'MG!',
+                            0,
+                            0.019,
+                            'EtelkaMonospacePro',
+                            'center'
+                        ];
+                    };
+
+
                     _formPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
                     _form = formation _x;
                     _formIcon = '\A3\3den\data\Attributes\Formation\wedge_ca.paa';
@@ -314,6 +378,33 @@ pl_draw_group_info = {
 };
 
 [] call pl_draw_group_info;
+
+// if (_x getVariable ['pl_group_mg_status', false]) then {
+//     _mgStatusPos = [(_pos select 0) - (pl_map_scale_x * 2.1), (_pos select 1) + (pl_map_scale_y * 1)];
+//     _display drawIcon [
+//         '\Plmod\gfx\pl_mg_indicator.paa',
+//         [1,0,0,0.8],
+//         _mgStatusPos,
+//         15,
+//         15,
+//         0,
+//         '',
+//         2
+//     ];
+// };
+// if (_x getVariable ['pl_group_at_status', false]) then {
+//     _atStatusPos = [(_pos select 0) - (pl_map_scale_x * 1), (_pos select 1) + (pl_map_scale_y * 1)];
+//     _display drawIcon [
+//         '\Plmod\gfx\pl_at_indicator.paa',
+//         [1,0,0,0.8],
+//         _atStatusPos,
+//         15,
+//         15,
+//         0,
+//         '',
+//         2
+//     ];
+// };
 
 pl_mark_vics = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -864,9 +955,10 @@ pl_draw_unit_group_lines = {
             {
                 if (vehicle (leader _x) == leader _x and side (leader _x) == playerSide) then {
                     _pos1 = getPos (leader _x);
-                    _color = [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, 0.5];
                     {
                         _pos2 = getPos _x;
+                        _color = pl_side_color;
+                        if (_x getVariable ['pl_wia', false]) then {_color = [0.7,0,0,0.5]};
                         _display drawLine [
                             _pos1,
                             _pos2,
@@ -984,7 +1076,7 @@ pl_draw_at_attack = {
                 _pos1 = getPos (_x select 0);
                 _pos2 =_x select 1;
                 _escord = _x select 2;
-                _color = [0.6,0.2,1,0.65];
+                _color = [1,0.7,0.3,0.5];
                 if (currentWeapon (_x#0) == secondaryWeapon (_x#0)) then {
                     _color = [0,1,0,0.7];
                 };
@@ -992,7 +1084,7 @@ pl_draw_at_attack = {
                     _pos2 = getPos _pos2;
                     _display drawIcon [
                         '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa',
-                        [0.6,0.2,1,0.4],
+                        [0.6,0.2,1,0.5],
                         _pos2,
                         10,
                         10,
@@ -1007,7 +1099,7 @@ pl_draw_at_attack = {
                         _display drawLine [
                             _pos1,
                             getPos _escord,
-                            [0.6,0.2,1,0.4]
+                            _color
                         ];
                     };
                 };
@@ -1143,7 +1235,7 @@ pl_draw_kia = {
     _markerName setMarkerColor pl_side_color;
     _markerName setMarkerDir 45;
     _markerName setMarkerShadow false;
-    _time = time + 60;
-    waitUntil {time >= _time};
+    _time = time + 120;
+    waitUntil {sleep 1; time >= _time};
     deleteMarker _markerName;
 };

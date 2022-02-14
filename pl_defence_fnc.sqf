@@ -1071,7 +1071,7 @@ pl_defend_position = {
             _cover = false;
             _mgOffset = 2;
             private _maxLos = 0;
-            _mgStartLine = _cords getPos [5, _watchDir];
+            _mgStartLine = _cords getPos [2, _watchDir];
             if !(_validBuildings isEqualTo []) then {
                 _mgStartLine = (getPos (_validBuildings#0)) getPos [5, _watchDir];
             };
@@ -1135,7 +1135,7 @@ pl_defend_position = {
                 // _m setMarkerSize [0.5, 0.5];
 
 
-                _unit setVariable ["pl_def_pos", _pos];
+                _unit setVariable ["pl_def_pos", _pos, true];
                 _unit disableAI "AUTOCOMBAT";
                 _unit disableAI "AUTOTARGET";
                 _unit disableAI "TARGET";
@@ -1229,7 +1229,7 @@ pl_at_defence = {
             waitUntil {!(_atSoldier getVariable ["pl_wia", false]) and !((secondaryWeaponMagazine _atSoldier) isEqualTo []) and (isNull (_group getVariable ["pl_grp_active_at_soldier", objNull]))};
         };
 
-        _vics = nearestObjects [_defencePos, ["Car", "Tank"], 300, true];
+        _vics = nearestObjects [_watchPos, ["Car", "Tank"], 300, true];
 
         _targets = [];
         {
@@ -1445,7 +1445,7 @@ pl_defence_rearm = {
                     _supplySoldier doMove _supplyPos;
                     _supplySoldier setDestination [_supplyPos, "LEADER PLANNED", true];
 
-                    pl_supply_draw_array pushBack [_supplyPos, _defencePos, [0.9,0.7,0.1,0.8]];
+                    pl_supply_draw_array pushBack [_defencePos, _supplyPos, [0.9,0.7,0.1,0.8]];
 
                     sleep 1;
 
@@ -1466,7 +1466,7 @@ pl_defence_rearm = {
 
                     waitUntil {unitReady _supplySoldier or ((_supplySoldier distance2D _startPos) < 6) or (!alive _supplySoldier) or !((group _supplySoldier) getVariable ["onTask", true])};
 
-                    pl_supply_draw_array = pl_supply_draw_array - [[_supplyPos, _defencePos, [0.9,0.7,0.1,0.8]]];
+                    pl_supply_draw_array = pl_supply_draw_array - [[_defencePos, _supplyPos, [0.9,0.7,0.1,0.8]]];
 
                     _supplySoldier setVariable ["pl_is_ccp_medic", false];
                     _supplySoldier enableAI "TARGET";
@@ -1538,13 +1538,14 @@ pl_defence_ccp = {
 pl_move_back_to_def_pos = {
     params ["_unit"];
 
-    private _time = time + 5;
-    waitUntil { time >= time or !((group _unit) getVariable ["onTask", true]) };
+    private _time = time + 10;
+    waitUntil {time >= _time or !((group _unit) getVariable ["onTask", true]) };
     if !((group _unit) getVariable ["onTask", true]) exitWith {};
 
     _movePos = _unit getVariable ["pl_def_pos", []];
 
     if !(_movePos isEqualTo []) then {
+        _unit switchmove "";
         doStop _unit;
         _unit enableAI "PATH";
         _unit disableAI "AUTOCOMBAT";

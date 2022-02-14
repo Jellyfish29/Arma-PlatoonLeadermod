@@ -39,30 +39,35 @@ pl_get_ammo_group_state = {
 };
 
 pl_get_mg_ammo_status_need = {
-    params ["_group"];
+    params ["_group", ["_amount", 2], ["_liveCheck", false]];
 
+    private _c = 0;
     _mgAmmoStatus = {
         _unit = _x;
-        if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun" and ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> primaryWeapon _unit >> "magazines") apply {toUpper _x})} count magazines _unit) <= 2) exitWith {true}; 
+        if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun" and alive _x and !(lifeState _x isEqualTo "INCAPACITATED")) then {_c = _c + 1};
+        if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun" and ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> primaryWeapon _unit >> "magazines") apply {toUpper _x})} count magazines _unit) <= _amount) exitWith {true}; 
         false
     } forEach (units _group);
+    if (_liveCheck and _c == 0) exitWith {true};
+    if (_c == 0) exitWith {false};
     _mgAmmoStatus  
 };
 
 pl_get_at_ammo_status_need = {
-    params ["_group"];
+    params ["_group", ["_amount", 0], ["_liveCheck", false]];
 
     private _missileCount = 0;
     private _c = 0;
     {
-        if (secondaryWeapon _x != "") then {
+        if (secondaryWeapon _x != "" and alive _x and !(lifeState _x isEqualTo "INCAPACITATED")) then {
             _c = _c + 1;
             _secondary = secondaryWeapon _x;
             if (toUpper ((secondaryWeaponMagazine _x)#0) in (getArray (configFile >> "CfgWeapons" >> _secondary >> "magazines") apply {toUpper _x})) then {_missileCount = _missileCount + 1};
         };
     } forEach (units _group);
+    if (_liveCheck and _c == 0) exitWith {true};
     if (_c == 0) exitWith {false};
-    if (_missileCount <= 0) exitWith {true};
+    if (_missileCount <= _amount) exitWith {true};
     false 
 };
 
