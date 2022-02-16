@@ -20,7 +20,7 @@ pl_get_unit_color = {
     if (_unit getVariable ['pl_wia', false]) exitWith {[0.7,0,0,1]};
     if (_unit getVariable ['pl_firing', false]) exitWith {[0.92,0.24,0.07,1]};
     if (_unit getVariable ['pl_is_ccp_medic', false]) exitWith {[0.4,1,0.2,0.9]};
-    if (_unit getVariable ['pl_is_at', false]) exitWith {[1,0.7,0.3,0.9]};
+    if (_unit getVariable ['pl_is_at', false]) exitWith {[1,0.7,0.4,0.9]};
     pl_side_color_rgb
 };
 
@@ -31,6 +31,54 @@ pl_get_vic_health = {
     if !(canMove _vic) exitWith {[0.49,0.06,0.8,0.8]}; // 7E11CA};
     pl_side_color_rgb
 };
+
+pl_get_at_status = {
+    params ["_group"];
+    private ["_ammoStatus", "_liveStatus", "_missileCount", "_c "];
+
+    _ammoStatus = false;
+    _liveStatus = false;
+    _c = 0;
+    { 
+        _c = _c + 1;
+        _unit = _x;
+        _missileCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> secondaryWeapon _unit >> "magazines") apply {toUpper _x})} count magazines _unit);
+        if (toUpper ((secondaryWeaponMagazine _unit)#0) in (getArray (configFile >> "CfgWeapons" >> secondaryWeapon _unit >> "magazines") apply {toUpper _x})) then {_missileCount = _missileCount + 1};
+        if (_missileCount <= 0 ) then {_ammoStatus = true};
+
+        if (!alive _unit or _unit getVariable ["pl_wia", false] or (lifeState _unit isEqualTo "INCAPACITATED")) then {
+            _liveStatus = true;
+        };
+    } forEach ((units _group) select {secondaryWeapon _x != ""});
+
+    if (_group getVariable ["pl_has_at", false] and _c <= 0) then {_liveStatus = true};
+
+    [_ammoStatus, _liveStatus]
+};
+
+pl_get_mg_status = {
+    params ["_group"];
+    private ["_ammoStatus", "_liveStatus", "_c"];
+
+    _ammoStatus = false;
+    _liveStatus = false;
+    _c = 0;
+    {   
+        _c = _c + 1;
+        _unit = _x;
+        if (({toUpper _x in (getArray (configFile >> "CfgWeapons" >> primaryWeapon _unit >> "magazines") apply {toUpper _x})} count magazines _unit) <= 0) then {
+            _ammoStatus = true;
+        };
+        if (!alive _unit or _unit getVariable ["pl_wia", false] or (lifeState _unit isEqualTo "INCAPACITATED")) then {
+            _liveStatus = true;
+        };
+    } forEach ((units _group) select {(primaryweapon _x call BIS_fnc_itemtype) select 1 == "MachineGun"});
+
+    if (_group getVariable ["pl_has_mg", false] and _c <= 0) then {_liveStatus = true};
+
+    [_ammoStatus, _liveStatus]
+};
+
 
 pl_update_group_ammo_status = {
 
@@ -48,15 +96,15 @@ pl_update_group_ammo_status = {
         _group setVariable ["pl_has_at", _at];
     } forEach (allGroups select {hcLeader _x == player});
 
-    sleep 4;
+    sleep 8;
     
     while {true} do {
         {
-            _x setVariable ["pl_group_mg_status", [_x, 0, _x getVariable ["pl_has_mg", false]] call pl_get_mg_ammo_status_need];
-            _x setVariable ["pl_group_at_status", [_x, 0, _x getVariable ["pl_has_at", false]] call pl_get_at_ammo_status_need];
-            _x setVariable ["pl_group_ammo_status", [_x] call pl_get_ammo_group_state]
+            _x setVariable ["pl_group_mg_status", [_x] call pl_get_mg_status];
+            _x setVariable ["pl_group_at_status", [_x] call pl_get_at_status];
+            _x setVariable ["pl_group_ammo_status", [_x] call pl_get_ammo_group_state];
         } forEach (allGroups select {hcLeader _x == player});
-        sleep 5;
+        sleep 2;
     };
 };
 
@@ -281,12 +329,16 @@ pl_draw_group_info = {
                     _wStatusPos2 = [(_pos select 0) - (pl_map_scale_x * 1.8), (_pos select 1) + (pl_map_scale_y * 1)];
 
                     pl_wStatus_pos = 0;
-                    if (_x getVariable ['pl_group_at_status', false]) then {
+                    if (true in (_x getVariable ['pl_group_at_status', [false, false]])) then {
                         _atStatusPos = _wStatusPos1;
                         pl_wStatus_pos = pl_wStatus_pos + 1;
+                        _statusColor = [1,0.3,0.3,1];
+                        if ((_x getVariable ['pl_group_at_status', [false, false]])#1) then {
+                            _statusColor = [0.9,0,0,1];
+                        };
                         _display drawIcon [
                             '#(rgb,4,1,1)color(1,1,1,0)',
-                            [0.9,0,0,1],
+                            _statusColor,
                             _atStatusPos,
                             6,
                             6,
@@ -298,12 +350,16 @@ pl_draw_group_info = {
                             'center'
                         ];
                     };
-                    if (_x getVariable ['pl_group_mg_status', false]) then {
+                    if (true in (_x getVariable ['pl_group_mg_status', [false, false]])) then {
                         _mgStatusPos = _wStatusPos1;
                         if (pl_wStatus_pos == 1) then {_mgStatusPos = _wStatusPos2};
+                        _statusColor = [1,0.7,0.3,1];
+                        if ((_x getVariable ['pl_group_mg_status', [false, false]])#1) then {
+                            _statusColor = [0.9,0,0,1];
+                        };
                         _display drawIcon [
                             '#(rgb,4,1,1)color(1,1,1,0)',
-                            [0.9,0,0,1],
+                            _statusColor,
                             _mgStatusPos,
                             6,
                             6,
@@ -957,7 +1013,7 @@ pl_draw_unit_group_lines = {
                     _pos1 = getPos (leader _x);
                     {
                         _pos2 = getPos _x;
-                        _color = pl_side_color;
+                        _color = pl_side_color_rgb;
                         if (_x getVariable ['pl_wia', false]) then {_color = [0.7,0,0,0.5]};
                         _display drawLine [
                             _pos1,
@@ -1076,7 +1132,7 @@ pl_draw_at_attack = {
                 _pos1 = getPos (_x select 0);
                 _pos2 =_x select 1;
                 _escord = _x select 2;
-                _color = [1,0.7,0.3,0.5];
+                _color = [1,0.7,0.4,0.9];
                 if (currentWeapon (_x#0) == secondaryWeapon (_x#0)) then {
                     _color = [0,1,0,0.7];
                 };
@@ -1084,7 +1140,7 @@ pl_draw_at_attack = {
                     _pos2 = getPos _pos2;
                     _display drawIcon [
                         '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa',
-                        [0.6,0.2,1,0.5],
+                        [1,0.7,0.4,0.9],
                         _pos2,
                         10,
                         10,

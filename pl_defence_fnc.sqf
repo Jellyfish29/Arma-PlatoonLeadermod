@@ -882,8 +882,6 @@ pl_defend_position = {
     _group setVariable ["specialIcon", _icon];
     _group setVariable ["pl_combat_mode", true];
     _group setVariable ["pl_in_position", true];
-    [_group, _defenceWatchPos] spawn pl_defence_suppression;
-    [_group, _cords] spawn pl_defence_rearm;
 
     _validPos = [];
     _allPos = [];
@@ -971,6 +969,8 @@ pl_defend_position = {
     {_units pushBack _x} forEach _mgGunners;
     _units pushBack _medic;
 
+    [_group, _defenceWatchPos, _medic] spawn pl_defence_suppression;
+    [_group, _cords] spawn pl_defence_rearm;
 
     _posOffsetStep = _defenceAreaSize / (round ((count _units) / 2));
     private _posOffset = 0; //+ _posOffsetStep;
@@ -981,6 +981,7 @@ pl_defend_position = {
     _avaiableWeapons = _weapons select { simulationEnabled _x && { !isObjectHidden _x } && { locked _x != 2 } && { (_x emptyPositions "Gunner") > 0 } };
     _weapons = + _avaiableWeapons;
     _coverCount = 0;
+
 
     for "_i" from 0 to (count _units) - 1 step 1 do {
         private _cover = false;
@@ -1365,7 +1366,7 @@ pl_at_defence = {
 
 
 pl_defence_suppression = {
-    params ["_group", "_watchPos"];
+    params ["_group", "_watchPos", "_medic"];
     private ["_targetsPos", "_firers"];
 
     private  _time = time + 20;
@@ -1384,9 +1385,9 @@ pl_defence_suppression = {
                     _x setUnitTrait ["camouflageCoef", 0.5, false];
                     _x setVariable ["pl_damage_reduction", true];
                 } else {
-                    if ((random 1) > 0.5) then {_firers pushBackUnique _x;}
+                    if ((random 1) > 0.4) then {_firers pushBackUnique _x;}
                 };
-            } forEach ((units _group) select {!(_x checkAIFeature "PATH")});
+            } forEach ((units _group) select {!(_x checkAIFeature "PATH") and _x != _medic});
             {
                 _unit = _x;
                 _target = selectRandom _enemyTargets;
@@ -1408,7 +1409,7 @@ pl_defence_suppression = {
 };
 
 pl_defence_rearm = {
-    params ["_group", "_defencePos"];
+    params ["_group", "_defencePos", "_medic"];
     private ["_ammoCargo"]; 
 
     private  _time = time + 20;
@@ -1423,9 +1424,9 @@ pl_defence_rearm = {
             _supplyPoint = ([_supplyPoints, [], {_defencePos distance2D _x}, "ASCEND"] call BIS_fnc_sortBy) select 0;
             _ammoCargo = _supplyPoint getVariable ["pl_supplies", 0];
 
-            if ((([_group] call pl_get_ammo_group_state)#0) isEqualTo "Red" or [_group] call pl_get_at_ammo_status_need or [_group] call pl_get_mg_ammo_status_need) then {
+            if ((([_group] call pl_get_ammo_group_state)#0) isEqualTo "Red" or (([_group] call pl_get_at_status)#0) or (([_group] call pl_get_mg_status)#0)) then {
                 _supplySoldier = {
-                    if (_x != (leader _group) and ((primaryweapon _x call BIS_fnc_itemtype) select 1 != "MachineGun") and (secondaryWeapon _x == "") and !(_x checkAIFeature "PATH") and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "attendant" ) isEqualTo 1)) exitWith {_x};
+                    if (_x != (leader _group) and ((primaryweapon _x call BIS_fnc_itemtype) select 1 != "MachineGun") and (secondaryWeapon _x == "") and !(_x checkAIFeature "PATH") and _x != _medic ) exitWith {_x};
                     objNull
                 } foreach (units _group);
 

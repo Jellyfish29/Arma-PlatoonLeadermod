@@ -250,6 +250,7 @@ pl_ccp_revive_action = {
             _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
             waitUntil {scriptDone _dragScript};
         };
+        sleep 1;
         if (alive _medic and alive _healTarget and (_group getVariable [_waitVar, true]) and !(lifeState _medic isEqualTo "INCAPACITATED")) then {
 
             sleep 3;
@@ -287,7 +288,7 @@ pl_ccp_revive_action = {
         _healTarget setVariable ["pl_beeing_treatet", false];
     };
     _medic setUnitPos "AUTO";
-    if (_group getVariable _waitVar and (alive _medic) and !(_medic getVariable "pl_wia") and ((_medic distance2D _healTarget) < 2) and time > _reviveTime) then {
+    if (_group getVariable _waitVar and (alive _medic) and !(_medic getVariable "pl_wia") and ((_medic distance2D _healTarget) < 2) and time > _reviveTime and !(lifeState _medic isEqualTo "INCAPACITATED")) then {
         _healTarget setUnconscious false;
         _healTarget setDamage 0;
         _healTarget setUnitPos "AUTO";
@@ -388,7 +389,7 @@ pl_injured_drag = {
     deleteVehicle _dummy;
     _dragger enableAI "ANIM";
     _unit switchmove "";
-    // _unit setUnconscious true;
+    _unit setUnconscious true;
     _anim = selectRandom [
         "UnconsciousReviveArms_A","UnconsciousReviveArms_B","UnconsciousReviveArms_C","UnconsciousReviveBody_A",
         "UnconsciousReviveBody_B","UnconsciousReviveDefault_A","UnconsciousReviveDefault_B","UnconsciousReviveHead_A",

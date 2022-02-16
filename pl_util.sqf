@@ -197,6 +197,13 @@ pl_is_indoor = {
     false
 };
 
+pl_is_city = {
+    params ["_pos"];
+    _buildings = nearestTerrainObjects [_pos, ["House"], 50, false, true];
+    if (count _buildings >= 4) exitWith {true};
+    false
+};
+
 pl_fof_check = {
     params ["_pos","_d", "_h"];
     private _c = 0;

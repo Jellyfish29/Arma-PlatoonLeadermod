@@ -724,6 +724,7 @@ pl_auto_unstuck = {
         _pos = (getPos _unit) findEmptyPosition [0, 50, typeOf _unit];
         _unit setPos _pos;
         _unit doFollow leader (group _unit);
+        _unit switchMove "";
     };
 };
 
@@ -755,6 +756,7 @@ pl_vehicle_unstuck = {
             _type = typeOf _x;
             _pos = (getPos _x) findEmptyPosition [0, 20, _type];
             _x setVehiclePosition [_pos, [], 0, "NONE"];
+            _x switchMove "";
         } forEach (units _group);
     };
 };

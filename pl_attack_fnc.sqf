@@ -341,42 +341,46 @@ pl_friendly_check = {
 
 
 pl_bounding_squad = {
-    params ["_mode"];
+    params ["_mode", ["_ai", false]];
     private ["_cords", "_icon", "_group", "_team1", "_team2", "_MoveDistance", "_distanceOffset", "_movePosArrayTeam1", "_movePosArrayTeam2", "_unitPos"];
 
     // if !(visibleMap) exitWith {hint "Open Map for bounding OW"};
 
-    _group = hcSelected player select 0;
+    if !(_ai) then {
+        _group = hcSelected player select 0;
 
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+        if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
-    if (visibleMap) then {
-        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-    }
-    else
-    {
-        _cords = screenToWorld [0.5,0.5];
+        if (visibleMap) then {
+            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        }
+        else
+        {
+            _cords = screenToWorld [0.5,0.5];
+        };
+        
+        _moveDir = (leader _group) getDir _cords;
+
+        if (pl_enable_beep_sound) then {playSound "beep"};
+        [_group] call pl_reset;
+
+        sleep 0.5;
+
+        [_group] call pl_reset;
+
+        sleep 0.5;
+        
+        switch (_mode) do { 
+            case "team" : {_icon = "\Plmod\gfx\team_bounding.paa";}; 
+            case "buddy" : {_icon = "\Plmod\gfx\buddy_bounding.paa";}; 
+            default {_icon = "\Plmod\gfx\team_bounding.paa";}; 
+        };
+        
+        _group setVariable ["setSpecial", true];
+        _group setVariable ["specialIcon", _icon];
+    } else {
+        _cords
     };
-    
-    _moveDir = (leader _group) getDir _cords;
-
-    if (pl_enable_beep_sound) then {playSound "beep"};
-    [_group] call pl_reset;
-
-    sleep 0.5;
-
-    [_group] call pl_reset;
-
-    sleep 0.5;
-    
-    switch (_mode) do { 
-        case "team" : {_icon = "\Plmod\gfx\team_bounding.paa";}; 
-        case "buddy" : {_icon = "\Plmod\gfx\buddy_bounding.paa";}; 
-        default {_icon = "\Plmod\gfx\team_bounding.paa";}; 
-    };
-    
-    _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", _icon];
 
     _wp = _group addWaypoint [_cords, 0];
     pl_draw_planed_task_array pushBack [_wp, _icon];

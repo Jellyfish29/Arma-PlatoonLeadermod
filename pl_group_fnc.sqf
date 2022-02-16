@@ -250,6 +250,7 @@ pl_hard_unstuck = {
         {
             _pos = getPos _x findEmptyPosition [35, 300, typeOf _x];
             _x setVehiclePosition [_pos, [], 0, "NONE"];
+            _x switchMove "";
         } forEach (units _group);
     };
 };
