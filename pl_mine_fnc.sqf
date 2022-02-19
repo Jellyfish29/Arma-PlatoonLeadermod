@@ -154,7 +154,8 @@
 // };
 
 pl_mine_clearing = {
-    private ["_group", "_cords", "_engineer", "_mines"];
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_cords", "_engineer", "_mines"];
 
     _group = (hcSelected player) select 0;
 
@@ -175,6 +176,18 @@ pl_mine_clearing = {
     _markerName setMarkerAlpha 0.5;
     _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size];
 
+    private _rangelimiter = 60;
+
+    _markerBorderName = str (random 2);
+    private _borderMarkerPos = getPos (leader _group);
+    if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+    createMarker [_markerBorderName, _borderMarkerPos];
+    _markerBorderName setMarkerShape "ELLIPSE";
+    _markerBorderName setMarkerBrush "Border";
+    _markerBorderName setMarkerColor "colorOrange";
+    _markerBorderName setMarkerAlpha 0.8;
+    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
     if (visibleMap) then {
         _message = "Select Search Area <br /><br />
         <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>
@@ -193,7 +206,9 @@ pl_mine_clearing = {
         while {!pl_mapClicked} do {
             // sleep 0.1;
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            _markerName setMarkerPos _mPos;
+            if ((_mPos distance2D (leader _group)) <= _rangelimiter) then {
+                _markerName setMarkerPos _mPos;
+            };
             if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
             if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
             _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size];
@@ -204,11 +219,13 @@ pl_mine_clearing = {
         player enableSimulation true;
 
         pl_mapClicked = false;
-        _cords = pl_sweep_cords;
+        _cords = getMarkerPos _markerName;
         _markerName setMarkerPos _cords;
         _markerName setMarkerAlpha 0.3;
+        deleteMarker _markerBorderName;
     };
 
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
 
     if (pl_enable_beep_sound) then {playSound "beep"};
     [_group] call pl_reset;
@@ -222,46 +239,49 @@ pl_mine_clearing = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"];
+    private _escort = {
+        if (_x != (leader _group) and _x != _engineer) exitWith {_x};
+        objNull
+    } forEach (units _group);
 
-    _wp = _group addWaypoint [_cords, 0];
+    {
+        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+    } forEach (units _group) - [_engineer] - [_escort];
 
-    waitUntil {sleep 0.1; (((leader _group) distance _cords) < (50)) or !(_group getVariable ["onTask", true])};
-
-    [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
-    sleep 0.1;
-    for "_i" from count waypoints _group - 1 to 0 step -1 do {
-        deleteWaypoint [_group, _i];
-    };
+    _engineer disableAI "AUTOCOMBAT";
+    _engineer disableAI "TARGET";
+    _engineer disableAI "AUTOTARGET";
+    _escort disableAI "AUTOCOMBAT";
+    _group setBehaviour "AWARE";
+    {
+        _x setVariable ["pl_is_at", true];
+        _x setVariable ["pl_engaging", true];
+        _x setUnitTrait ["camouflageCoef", 0.5, true];
+        _x setVariable ["pl_damage_reduction", true];
+        _x setUnitPosWeak "MIDDLE";
+    } forEach [_engineer, _escort];
+    pl_at_attack_array pushBack [_engineer, _cords, _escort];
 
     _mines = allMines select {(_x distance2D _cords) < pl_mine_sweep_area_size + 3};
-    _mines = [_mines, [], { _engineer distance _x }, "ASCEND"] call BIS_fnc_sortBy;
 
-    {
-        [_x, getPos _x, 0, 10, false] spawn pl_find_cover;
-        _x disableAI "AUTOCOMBAT";
-    } forEach (units _group) - [_engineer];
-    _engineer disableAI "AUTOCOMBAT";
-    _group setBehaviour "AWARE";
+    while {count _mines > 0} do {
 
-    if ((count _mines) > 0) then {
-        {
-            _pos = getPosATL _x;
-            _engineer doMove _pos;
+        _mine = ([_mines, [], { _engineer distance _x }, "ASCEND"] call BIS_fnc_sortBy)#0;
+        _pos = getPosATL _mine;
+        _engineer doMove _pos;
+        _escort doFollow _engineer;
 
-            sleep 0.5;
+        sleep 0.5;
 
-            waitUntil {((_engineer distance2D _pos) < 1.8) or (unitReady _engineer) or !(_group getVariable ["onTask", true])};
+        waitUntil {sleep 0.5; ((_engineer distance2D _pos) < 1) or (unitReady _engineer) or !(_group getVariable ["onTask", true])};
 
-            if !(_group getVariable ["onTask", true]) exitWith {};
+        if !(_group getVariable ["onTask", true]) exitWith {};
 
-            _engineer action ["Deactivate", _engineer, _x];
+        _engineer action ["Deactivate", _engineer, _mine];
 
-        } forEach _mines;
-    }
-    else
-    {
-        _engineer doMove _cords;
-        waitUntil {(unitReady _engineer) or !(_group getVariable ["onTask", true])};
+        _mines deleteAt (_mines find _mine);
+
+        sleep 2;
     };
 
     if (_group getVariable ["onTask", true]) then {
@@ -269,6 +289,7 @@ pl_mine_clearing = {
         if (pl_enable_map_radio) then {[_group, "...Mine Sweep Complete", 20] call pl_map_radio_callout};
         [_group] call pl_reset;
     };
+    pl_at_attack_array = pl_at_attack_array - [[_engineer, _cords, _escort]];
     deleteMarker _markerName
 };
 
@@ -320,6 +341,18 @@ pl_lay_mine_field = {
     _areaMarker setMarkerAlpha 0.8;
     _areaMarker setMarkerSize [pl_mine_field_size, 3];
 
+    private _rangelimiter = 60;
+
+    _markerBorderName = str (random 2);
+    private _borderMarkerPos = getPos (leader _group);
+    if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+    createMarker [_markerBorderName, _borderMarkerPos];
+    _markerBorderName setMarkerShape "ELLIPSE";
+    _markerBorderName setMarkerBrush "Border";
+    _markerBorderName setMarkerColor "colorOrange";
+    _markerBorderName setMarkerAlpha 0.8;
+    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
     onMapSingleClick {
         pl_Mine_field_cords = _pos;
         pl_mapClicked = true;
@@ -331,9 +364,12 @@ pl_lay_mine_field = {
     player enableSimulation false;
 
     while {!pl_mapClicked} do {
-        _watchDir = getPos (leader _group) getDir ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
-        _areaMarker setMarkerPos ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
-        _areaMarker setMarkerDir _watchDir;
+        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        _watchDir = getPos (leader _group) getDir _mPos;
+        if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+            _areaMarker setMarkerPos _mPos;
+            _areaMarker setMarkerDir _watchDir;
+        };
         if (inputAction "MoveForward" > 0) then {pl_mine_field_size = pl_mine_field_size + _mineFieldSize; sleep 0.05};
         if (inputAction "MoveBack" > 0) then {pl_mine_field_size = pl_mine_field_size - _mineFieldSize; sleep 0.05};
         _areaMarker setMarkerSize [pl_mine_field_size, 4];
@@ -360,9 +396,9 @@ pl_lay_mine_field = {
     hint parseText _message;
 
     sleep 0.1;
-    _cords = pl_Mine_field_cords;
+    _cords = getMarkerPos _areaMarker;
 
-    _areaMarker setMarkerPos _cords;
+    deleteMarker _markerBorderName;
 
     onMapSingleClick {
         pl_mapClicked = true;
@@ -408,7 +444,7 @@ pl_lay_mine_field = {
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
         _group setVariable ["pl_disembark_finished", nil];
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
@@ -460,38 +496,37 @@ pl_lay_mine_field = {
         _offSet = _offSet - pl_mine_spacing;
         _mPos =  [_offSet *(sin (_watchDir + 90)), _offSet *(cos (_watchDir + 90)), 0] vectorAdd _startPos;
         _minePositions pushBack _mPos;
-
-        // debug
-        // _m = createMarker [str (random 1), _mPos];
-        // _m setMarkerType "mil_dot";
     };
 
-    {
-        _x disableAI "AUTOCOMBAT";
-        // _x disableAI "FSM";
+    private _escort = {
+        if (_x != (leader _group) and _x != _exSpecialist) exitWith {_x};
+        objNull
     } forEach (units _group);
 
-    _origPos = getPosASL (leader _group);
-    _group setBehaviour "AWARE";
-    _wp = _group addWaypoint [_startPos, 0];
-
-    sleep 1;
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 25)};
-
-    if !(_group getVariable "onTask") exitWith {deleteMarker _areaMarker};
-
     {
-        _x enableAI "AUTOCOMBAT";
-        // _x enableAI "FSM";
-        [_x, getPos _x, _watchDir, 15, true] spawn pl_find_cover; 
-    } forEach ((units _group) - [_exSpecialist]);
+        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+    } forEach (units _group) - [_exSpecialist] - [_escort];
+
+    _exSpecialist disableAI "AUTOCOMBAT";
+    _exSpecialist disableAI "TARGET";
+    _exSpecialist disableAI "AUTOTARGET";
+    _escort disableAI "AUTOCOMBAT";
+    _group setBehaviour "AWARE";
+    {
+        _x setVariable ["pl_is_at", true];
+        _x setVariable ["pl_engaging", true];
+        _x setUnitTrait ["camouflageCoef", 0.5, true];
+        _x setVariable ["pl_damage_reduction", true];
+    } forEach [_exSpecialist, _escort];
+    pl_at_attack_array pushBack [_exSpecialist, _cords, _escort];
 
     reverse _minePositions;
 
     {
         _exSpecialist doMove _x;
+        _escort doFollow _exSpecialist;
         sleep 1;
-        waitUntil {(!alive _exSpecialist) or (unitReady _exSpecialist) or !(_group getVariable ["onTask", true])};
+        waitUntil {sleep 0.5; (!alive _exSpecialist) or (unitReady _exSpecialist) or !(_group getVariable ["onTask", true])};
 
         if !(_group getVariable ["onTask", true] and alive _exSpecialist and !(_exSpecialist getVariable ["pl_wia", false])) exitWith {};
 
@@ -522,22 +557,12 @@ pl_lay_mine_field = {
 
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
-        _group addWaypoint [_origPos, 0];
-
-        // _finiedAreaMarker = format ["%1mineFieldFinished%2", _group, random 2];
-        // createMarker [_finiedAreaMarker, _cords];
-        // _finiedAreaMarker setMarkerShape "RECTANGLE";
-        // _finiedAreaMarker setMarkerBrush "Cross";
-        // // _finiedAreaMarker setMarkerBrush "SolidBorder";
-        // _finiedAreaMarker setMarkerColor "colorRED";
-        // _finiedAreaMarker setMarkerAlpha 0.6;
-        // _finiedAreaMarker setMarkerSize [_mineFieldSize, 6];
-        // _finiedAreaMarker setMarkerDir _watchDir;
     }
     else
     {
         deleteMarker _areaMarker;
     };
+    pl_at_attack_array = pl_at_attack_array - [[_exSpecialist, _cords, _escort]];
 };
 
 pl_groups_with_charges = [];
@@ -569,6 +594,18 @@ pl_place_charge = {
         _markerName setMarkerBrush "Border";
         _markerName setMarkerSize [25, 25];
 
+        private _rangelimiter = 60;
+
+        _markerBorderName = str (random 2);
+        private _borderMarkerPos = getPos (leader _group);
+        if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+        createMarker [_markerBorderName, _borderMarkerPos];
+        _markerBorderName setMarkerShape "ELLIPSE";
+        _markerBorderName setMarkerBrush "Border";
+        _markerBorderName setMarkerColor "colorOrange";
+        _markerBorderName setMarkerAlpha 0.8;
+        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
         onMapSingleClick {
             pl_mine_cords = _pos;
             pl_mapClicked = true;
@@ -578,22 +615,29 @@ pl_place_charge = {
         };
 
         while {!pl_mapClicked} do {
-            _markerName setMarkerPos ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition);
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+                _markerName setMarkerPos _mPos;
+            };
         };
-        deleteMarker _markerName;
         pl_mapClicked = false;
         if (pl_cancel_strike) exitWith {
             pl_show_obstacles = false;
             pl_mapClicked = false;
         };
 
-        _cords = pl_mine_cords;
+        _cords = getMarkerPos _markerName;
+        deleteMarker _markerBorderName;
         pl_show_obstacles = false;
         pl_mapClicked = false;
     }
     else
     {
         _cords = screenToWorld [0.5, 0.5];
+        _rangelimiter = 60;
+        if (_cords distance2D (getpos (leader _group))) > _rangelimiter then {
+            hint "Out of Range";
+        };
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
@@ -604,7 +648,7 @@ pl_place_charge = {
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
         _group setVariable ["pl_disembark_finished", nil];
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
@@ -613,7 +657,7 @@ pl_place_charge = {
         _group setVariable ["pl_task_planed", false];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+    if (pl_cancel_strike) exitWith {deleteMarker _markerName; pl_cancel_strike = false};
 
     if (pl_enable_beep_sound) then {playSound "beep"};
     [_group] call pl_reset;
@@ -628,34 +672,34 @@ pl_place_charge = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
 
-
-    {
-        _x disableAI "AUTOCOMBAT";
-        // _x disableAI "FSM";
+    private _escort = {
+        if (_x != (leader _group) and _x != _exSpecialist) exitWith {_x};
+        objNull
     } forEach (units _group);
 
-    _origPos = getPosASL (leader _group);
-    _group setBehaviour "AWARE";
-    _wp = _group addWaypoint [_cords, 0];
-    pl_draw_planed_task_array pushBack [_wp, _icon];
-
-    sleep 1;
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 25)};
-
-    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
-    deleteWaypoint [_group, _wp#1];
-
-    if !(_group getVariable "onTask") exitWith {pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];};
-
     {
-        _x enableAI "AUTOCOMBAT";
-        _x enableAI "FSM";
-        [_x, getPos _x, _x getDir _cords, 15, true] spawn pl_find_cover; 
-    } forEach ((units _group) - [_exSpecialist]);
+        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+    } forEach (units _group) - [_exSpecialist] - [_escort];
+
+    _exSpecialist disableAI "AUTOCOMBAT";
+    _exSpecialist disableAI "TARGET";
+    _exSpecialist disableAI "AUTOTARGET";
+    _escort disableAI "AUTOCOMBAT";
+    _group setBehaviour "AWARE";
+    {
+        _x setVariable ["pl_is_at", true];
+        _x setVariable ["pl_engaging", true];
+        _x setUnitTrait ["camouflageCoef", 0.5, true];
+        _x setVariable ["pl_damage_reduction", true];
+        _x setUnitPosWeak "MIDDLE";
+    } forEach [_exSpecialist, _escort];
+    pl_at_attack_array pushBack [_exSpecialist, _cords, _escort];
 
     _exSpecialist doMove _cords;
+    _escort doFollow _exSpecialist;
+
     sleep 1;
-    waitUntil {(!alive _exSpecialist) or (unitReady _exSpecialist) or !(_group getVariable ["onTask", true])};
+    waitUntil {sleep 0.5; (!alive _exSpecialist) or (unitReady _exSpecialist) or !(_group getVariable ["onTask", true])};
 
     _charges = _group getVariable ["pl_placed_charges", []];
     if (_group getVariable ["onTask", true] and alive _exSpecialist and !(_exSpecialist getVariable ["pl_wia", false])) then {
@@ -673,8 +717,9 @@ pl_place_charge = {
 
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
-        _group addWaypoint [_origPos, 0];
     };
+    pl_at_attack_array = pl_at_attack_array - [[_exSpecialist, _cords, _escort]];
+    deleteMarker _markerName;
 
 };
 
@@ -712,7 +757,7 @@ pl_detonate_charges = {
             params ["_charge"];
             {
                 _x setDamage 1;
-                sleep 0.15;
+                sleep 0.1;
             } forEach (nearestTerrainObjects [getPos _charge, ["TREE", "SMALL TREE", "BUSH"], 20, false, true]);
         };
 
@@ -726,7 +771,7 @@ pl_detonate_charges = {
 
 
 pl_destroy_bridge = {
-    params [["_group", (hcSelected player) #0]];
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
     private ["_cords", "_exSpecialist", "_bridges", "_bridgeMarkers", "_wp", "_charge"];
 
     _exSpecialist = {
@@ -738,24 +783,51 @@ pl_destroy_bridge = {
 
     if (visibleMap) then {
 
+        _markerName = createMarker ["pl_charge_range_marker2", [0,0,0]];
+        _markerName setMarkerColor "colorOrange";
+        _markerName setMarkerShape "ELLIPSE";
+        _markerName setMarkerBrush "Border";
+        _markerName setMarkerSize [30, 30];
+
+        private _rangelimiter = 60;
+
+        private _markerBorderName = str (random 2);
+        private _borderMarkerPos = getPos (leader _group);
+        if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+        createMarker [_markerBorderName, _borderMarkerPos];
+        _markerBorderName setMarkerShape "ELLIPSE";
+        _markerBorderName setMarkerBrush "Border";
+        _markerBorderName setMarkerColor "colorOrange";
+        _markerBorderName setMarkerAlpha 0.8;
+        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
         hint "Select on MAP";
         onMapSingleClick {
             pl_repair_cords = _pos;
             pl_mapClicked = true;
-            pl_show_dead_vehicles = false;
-            pl_show_damaged_vehicles = false;
+            if (_shift) then {pl_cancel_strike = true};
             hint "";
             onMapSingleClick "";
         };
-        while {!pl_mapClicked} do {sleep 0.1;};
+
+        while {!pl_mapClicked} do {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+                _markerName setMarkerPos _mPos;
+            };
+        };
 
         pl_mapClicked = false;
-        _cords = pl_repair_cords;
+        _cords = getMarkerPos _markerName;
+        deleteMarker _markerName;
+        deleteMarker _markerBorderName;
     }
     else
     {
         _cords = screenToWorld [0.5, 0.5];
     };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
     _roads = _cords nearRoads 30;
     _bridges = [];
@@ -787,29 +859,36 @@ pl_destroy_bridge = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
 
-    _origPos = getPosASL (leader _group);
-
-    {
-        _x disableAI "AUTOCOMBAT";
-        // _x disableAI "FSM";
+    private _escort = {
+        if (_x != (leader _group) and _x != _exSpecialist) exitWith {_x};
+        objNull
     } forEach (units _group);
 
-    _wp = _group addWaypoint [_cords, 0];
+    {
+        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+    } forEach (units _group) - [_exSpecialist] - [_escort];
+
+    _exSpecialist disableAI "AUTOCOMBAT";
+    _exSpecialist disableAI "TARGET";
+    _exSpecialist disableAI "AUTOTARGET";
+    _escort disableAI "AUTOCOMBAT";
+    _group setBehaviour "AWARE";
+    {
+        _x setVariable ["pl_is_at", true];
+        _x setVariable ["pl_engaging", true];
+        _x setUnitTrait ["camouflageCoef", 0.5, true];
+        _x setVariable ["pl_damage_reduction", true];
+        _x setUnitPosWeak "MIDDLE";
+    } forEach [_exSpecialist, _escort];
+    pl_at_attack_array pushBack [_exSpecialist, _cords, _escort];
+
+    _roads = _roads - _bridges;
+    _movePos = getPos (([_roads, [], {_exSpecialist distance _x }, "ASCEND"] call BIS_fnc_sortBy)#0);
+    _exSpecialist doMove _movePos;
+    _escort doFollow _exSpecialist;
+
     sleep 1;
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 35)};
-
-    [_group, (currentWaypoint _group)] setWaypointType "MOVE";
-    [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
-    sleep 0.1;
-    deleteWaypoint [_group, (currentWaypoint _group)];
-    for "_i" from count waypoints _group - 1 to 0 step -1 do {
-        deleteWaypoint [_group, _i];
-    };
-
-    {
-        _x enableAI "AUTOCOMBAT";
-        _x enableAI "FSM";
-    } forEach (units _group);
+    waitUntil {sleep 0.5; (!alive _exSpecialist) or (unitReady _exSpecialist) or !(_group getVariable ["onTask", true])};
 
     sleep 5;
 
@@ -818,7 +897,7 @@ pl_destroy_bridge = {
         _exSpecialist setUnitPos "Middle";
         _exSpecialist playAction "PutDown";
         sleep 3;
-        _bPos = getPosASL (_bridges#0);
+        _bPos = getPosATL (_bridges#0);
         _charge = createMine ["SatchelCharge_F", ASLToATL _bPos, [], 0];
         _charges pushBack _charge;
         _exSpecialist setUnitPos "Auto";
@@ -826,32 +905,24 @@ pl_destroy_bridge = {
         _exSpecialist setVariable ["pl_virtual_mines", (_exSpecialist getVariable "pl_virtual_mines") - 1];
         _group setVariable ["pl_placed_charges", _charges];
         pl_groups_with_charges pushBackUnique _group;
-    };
 
-    if (_group getVariable ["onTask", true]) then {
-        sleep 1;
-        _wp = _group addWaypoint [_origPos, 0];
-    };
-
-    sleep 1;
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 11)};
-
-    if (_group getVariable ["onTask", true]) then {
-        _charge setDamage 1;
-        pl_groups_with_charges = pl_groups_with_charges - [_group];
-
-        {
-            _x setDamage 1;
-        } forEach _bridges;
-
-        if (pl_enable_beep_sound) then {playSound "beep"};
-        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Bridge Destroyed", (groupId _group)]};
-        if (pl_enable_map_radio) then {[_group, "...Bridge Destroyed", 20] call pl_map_radio_callout};
+        sleep 2;
         [_group] call pl_reset;
+        pl_at_attack_array = pl_at_attack_array - [[_exSpecialist, _cords, _escort]];
     };
+
+    sleep 15;
+
+    _charge setDamage 1;
+    pl_groups_with_charges = pl_groups_with_charges - [_group];
+
+    {
+        _x setDamage 1;
+    } forEach _bridges;
+
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Bridge Destroyed", (groupId _group)]};
+    if (pl_enable_map_radio) then {[_group, "...Bridge Destroyed", 20] call pl_map_radio_callout};
 };
 
-pl_remove_obstacle = {
-    
-};
 

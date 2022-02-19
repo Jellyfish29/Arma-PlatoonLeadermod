@@ -89,7 +89,7 @@ pl_advance = {
 
     // waitUntil waypoint reached or task canceled
     sleep 1;
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true])};
+    waitUntil {sleep 0.5;if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true])};
 
     // remove Task Icon from wp and delete wp
     pl_draw_planed_task_array = pl_draw_planed_task_array - [[_awp,  _icon]];
@@ -201,7 +201,8 @@ pl_suppressive_fire_position = {
     _targetsPos = [];
 
     // check if enemy in Area
-    _allTargets = nearestObjects [_cords, ["Man", "Car", "Truck", "Tank"], _area, true];
+    // _allTargets = nearestObjects [_cords, ["Man", "Car", "Truck", "Tank"], _area, true];
+    _allTargets = _cords nearEntities [["Man", "Car", "Truck", "Tank"], _area];
     {
         _targetsPos pushBack (getPosATL _x);
     } forEach (_allTargets select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
@@ -266,7 +267,8 @@ pl_suppressive_fire_position = {
             _unit doSuppressiveFire _pos;
 
             if (_continous) then {
-                _allMen = nearestObjects [_cords, ["Man"], _area, true];
+                // _allMen = nearestObjects [_cords, ["Man"], _area, true];
+                _allMen = _cords nearEntities [["Man"], _area];
                 private _infTargets = [];
                 {
                     _infTargets pushBack _x;
@@ -297,7 +299,7 @@ pl_suppressive_fire_position = {
                             }
                             else
                             {
-                                if (random 1 >= 0.6) then {
+                                if ((random 1) >= 0.4) then {
                                     _pos = selectRandom _targetsPos;
                                     _pos = ATLToASL _pos;
                                     _vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1];
@@ -318,7 +320,7 @@ pl_suppressive_fire_position = {
 
     sleep 2;
 
-    waitUntil {(({(currentCommand _x) isEqualTo "Suppress"} count (units _group)) <= 0 and !(_group getVariable ["pl_is_suppressing", false])) or !alive (leader _group)};
+    waitUntil {sleep 0.5; (({(currentCommand _x) isEqualTo "Suppress"} count (units _group)) <= 0 and !(_group getVariable ["pl_is_suppressing", false])) or !alive (leader _group)};
 
     if (leader _group != vehicle (leader _group)) then {
         [vehicle (leader _group)] call pl_load_ap;
@@ -346,42 +348,37 @@ pl_bounding_squad = {
 
     // if !(visibleMap) exitWith {hint "Open Map for bounding OW"};
 
-    if !(_ai) then {
-        _group = hcSelected player select 0;
+    _group = hcSelected player select 0;
 
-        if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
-        if (visibleMap) then {
-            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-        }
-        else
-        {
-            _cords = screenToWorld [0.5,0.5];
-        };
-        
-        _moveDir = (leader _group) getDir _cords;
-
-        if (pl_enable_beep_sound) then {playSound "beep"};
-        [_group] call pl_reset;
-
-        sleep 0.5;
-
-        [_group] call pl_reset;
-
-        sleep 0.5;
-        
-        switch (_mode) do { 
-            case "team" : {_icon = "\Plmod\gfx\team_bounding.paa";}; 
-            case "buddy" : {_icon = "\Plmod\gfx\buddy_bounding.paa";}; 
-            default {_icon = "\Plmod\gfx\team_bounding.paa";}; 
-        };
-        
-        _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", _icon];
-    } else {
-        _cords
+    if (visibleMap) then {
+        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    }
+    else
+    {
+        _cords = screenToWorld [0.5,0.5];
     };
+    
+    _moveDir = (leader _group) getDir _cords;
 
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+    
+    switch (_mode) do { 
+        case "team" : {_icon = "\Plmod\gfx\team_bounding.paa";}; 
+        case "buddy" : {_icon = "\Plmod\gfx\buddy_bounding.paa";}; 
+        default {_icon = "\Plmod\gfx\team_bounding.paa";}; 
+    };
+    
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", _icon];
     _wp = _group addWaypoint [_cords, 0];
     pl_draw_planed_task_array pushBack [_wp, _icon];
 
@@ -553,7 +550,7 @@ pl_assault_position = {
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
         _group setVariable ["pl_disembark_finished", nil];
         
         // remove Arrow indicator
@@ -669,7 +666,7 @@ pl_assault_position = {
                 _unit setDestination [_pos, "FORMATION PLANNED", false];
                 _reachable = [_unit, _pos, 20] call pl_not_reachable_escape;
                 // _unit forceSpeed 12;
-                // waitUntil {!(alive _unit) or (unitReady _unit) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
+                // waitUntil {sleep 0.5; !(alive _unit) or (unitReady _unit) or (_unit getVariable["pl_wia", false] or !((group _unit) getVariable ["onTask", true]))};
                 // doStop _unit;
             };
         } forEach (units _group);
@@ -678,16 +675,17 @@ pl_assault_position = {
 
     _area = pl_sweep_area_size;
     
-    // waitUntil {(((leader _group) distance _cords) < (pl_sweep_area_size + 10)) or !(_group getVariable ["onTask", true])};
+    // waitUntil {sleep 0.5; (((leader _group) distance _cords) < (pl_sweep_area_size + 10)) or !(_group getVariable ["onTask", true])};
 
-    _vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], _area, true];
+    // _vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], _area, true];
+    _vics = _cords nearEntities [["Car", "Tank", "Truck"], 300];
 
     private _atkTriggerDistance = 10;
     if ((count _vics) > 0) then {
         _atkTriggerDistance = 40; 
     };
 
-    // waitUntil {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
+    // waitUntil {sleep 0.5; (({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
     while {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) == 0) and (_group getVariable ["onTask", true])} do {
 
         _arrowDir = (leader _group) getDir _cords;
@@ -757,7 +755,7 @@ pl_assault_position = {
         // _group setCombatMode "RED";
         // _group setVariable ["pl_combat_mode", true];
         _time = time + 20;
-        waitUntil {!(_group getVariable ["onTask", true]) or (time > _time)};
+        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _time)};
         _group setCombatMode "YELLOW";
         _group setVariable ["pl_combat_mode", false];
     }
@@ -849,15 +847,15 @@ pl_assault_position = {
 
                                 _time = time + ((_unit distance _movePos) / 1.6 + 20);
                                 sleep 0.5;
-                                waitUntil {sleep 0.2; (time > _time or unitReady _unit or !alive _unit or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true]) or !alive _target or (count (crew _target) == 0))};
+                                waitUntil {sleep 0.5; (time >= _time or unitReady _unit or !alive _unit or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true]) or !alive _target or (count (crew _target) == 0))};
                                 _unit reveal [_target, 4];
                                 // _unit enableAI "TARGET";
                                 doStop _unit;
                                 _unit doTarget _target;
-                                waitUntil {!(_group getVariable ["pl_hold_fire", false]) or !alive _unit or _unit getVariable["pl_wia", false] or !alive _target};
+                                waitUntil {sleep 0.5; !(_group getVariable ["pl_hold_fire", false]) or !alive _unit or _unit getVariable["pl_wia", false] or !alive _target};
                                 _unit doFire _target;
                                 _time = 6;
-                                waitUntil {time >= _time or !(_group getVariable ["onTask", false]) or !alive _target};
+                                waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", false]) or !alive _target};
                                 // pl_at_attack_array = pl_at_attack_array - [[_unit, _movePos]];
                                 if (alive _target) then {_unit setVariable ['pl_is_at', false]; pl_at_attack_array = pl_at_attack_array - [[_unit, _target, objNull]]; continue};
                                 if !(alive _target or !alive _unit or _unit getVariable ["pl_wia", false]) then {_target setVariable ["pl_at_enaged_by", nil]};
@@ -927,7 +925,7 @@ pl_assault_position = {
             sleep 0.1;
         } forEach (units _group);
 
-        waitUntil {time > _time or !(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
+        waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
     };
 
 

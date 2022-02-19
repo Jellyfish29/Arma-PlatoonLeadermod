@@ -76,7 +76,7 @@ pl_rearm = {
 
             sleep 1;
 
-            waitUntil {((_unit distance2D _targetBox) < 8) or unitReady _unit or !((group _unit) getVariable ["onTask", true]) or !alive _unit};
+            waitUntil {sleep 0.5; ((_unit distance2D _targetBox) < 8) or unitReady _unit or !((group _unit) getVariable ["onTask", true]) or !alive _unit};
 
             if ((group _unit) getVariable ["onTask", true]) then {
                 _unit action ["rearm",_targetBox];
@@ -110,7 +110,7 @@ pl_rearm = {
     } forEach (units _group);
 
     _time = time + 80;
-    waitUntil {(time > _time) or !(_group getVariable ["onTask", true]) or ({_x getVariable ["pl_finished_rearm", false]} count (units _group)) == count (units _group)};
+    waitUntil {sleep 0.5; (time > _time) or !(_group getVariable ["onTask", true]) or ({_x getVariable ["pl_finished_rearm", false]} count (units _group)) == count (units _group)};
     deleteMarker _markerName;
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", true];
@@ -151,7 +151,7 @@ pl_supply_point = {
     // Taskplanning
     if (count _taskPlanWp != 0) then {
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
 
         deleteWaypoint [_group, _taskPlanWp#1];
 
@@ -259,12 +259,12 @@ pl_supply_point = {
                         pl_supply_draw_array pushBack [_cords, _pos, [0.4,1,0.2,1]];
                         _ammoBearer doMove _pos;
 
-                        waitUntil {unitReady _ammoBearer or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
+                        waitUntil {sleep 0.5; unitReady _ammoBearer or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
 
                         // 15s Supply Time
                         doStop _ammoBearer;
                         _time = time + 15;
-                        waitUntil {time >= _time or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
+                        waitUntil {sleep 0.5; time >= _time or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
 
                         if (_group getVariable ["onTask", true]) then {
 
@@ -352,7 +352,7 @@ pl_supply_point = {
                         _ammoBearer doMove _pos;
                         _suppliedGroups pushBack _targetGrp;
 
-                        waitUntil {unitReady _ammoBearer or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
+                        waitUntil {sleep 0.5; unitReady _ammoBearer or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
 
                         if !(_group getVariable ["onTask", true]) exitWith{};
                     };
@@ -406,7 +406,7 @@ pl_rearm_point = {
     // Taskplanning
     if (count _taskPlanWp != 0) then {
 
-        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
 
         deleteWaypoint [_group, _taskPlanWp#1];
 
@@ -500,7 +500,7 @@ pl_rearm_point = {
 
                 // 15s Supply Time
                 _time = time + 15;
-                waitUntil {time >= _time or !(_group getVariable ["onTask", true])};
+                waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", true])};
 
                 if (_group getVariable ["onTask", true]) then {
 

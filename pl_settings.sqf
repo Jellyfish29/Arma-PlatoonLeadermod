@@ -67,6 +67,17 @@
     true
 ] call CBA_fnc_addSetting;
 
+[
+    "pl_opfor_enhanced_ai",
+    "CHECKBOX",
+    ["Enable Enemy Enhanced AI","Enhanced Enemy Group Behaviour"],
+    ["Platoon Leader","AI"],
+    true,
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
 
 [
     "pl_suppression_min_distance", 

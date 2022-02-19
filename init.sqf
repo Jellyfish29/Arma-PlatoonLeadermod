@@ -1,3 +1,4 @@
+pl_debug = false;
 
 execVM "Plmod\pl_settings.sqf";
 execVM "Plmod\pl_ai_fnc.sqf";

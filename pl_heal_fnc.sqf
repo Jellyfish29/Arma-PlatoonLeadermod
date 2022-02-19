@@ -38,7 +38,7 @@ pl_medic_heal = {
             _stopTarget = true;
         };
         sleep 2;
-        waitUntil {(_medic distance2D _pos < 2) or (unitReady _medic) or (!alive _medic) or !((group _medic) getVariable [_waitVar, true]) or (_medic getVariable ["pl_wia", false]) or (!alive _target) or (_target getVariable ["pl_wia", false])};
+        waitUntil {sleep 0.5; (_medic distance2D _pos < 2) or (unitReady _medic) or (!alive _medic) or !((group _medic) getVariable [_waitVar, true]) or (_medic getVariable ["pl_wia", false]) or (!alive _target) or (_target getVariable ["pl_wia", false])};
         doStop _medic;
         _medic disableAI "PATH";
         _medic setUnitPos "MIDDLE";
@@ -60,7 +60,7 @@ pl_medic_heal = {
     if (_target != player) then {
             _h1 = [_medic, _healPos, true, _target, _waitVar] spawn _moveToPos;
             _time = time + 40;
-            waitUntil {(scriptDone _h1) or !((group _medic) getVariable [_waitVar, true]) or (time >= _time)};
+            waitUntil {sleep 0.5; (scriptDone _h1) or !((group _medic) getVariable [_waitVar, true]) or (time >= _time)};
         if ((!alive _target) or (_target getVariable "pl_wia")) exitWith {
             _medic enableAI "PATH";
             _medic setUnitPos "AUTO";
@@ -132,7 +132,7 @@ pl_heal_group = {
                                 if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and !(_group getVariable ["onTask", true])) then {
 
                                     _h1 = [_group, _medic, nil, _x, [] , 40, "pl_healing_active"] spawn pl_ccp_revive_action;
-                                    waitUntil {scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])}
+                                    waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])}
                                 };
                             // };
                         } forEach ((units _group) select {_x getVariable ["pl_wia", false]});;
@@ -143,7 +143,7 @@ pl_heal_group = {
                             if ((count _enemies) <= 0 and !(_group getVariable ["onTask", true])) then {
                                 if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
                                     _h1 = [_medic, _x, objNull, "pl_healing_active"] spawn pl_medic_heal;
-                                    waitUntil {scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])}
+                                    waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])}
                                 };
                             };
                         } forEach (units _group);
@@ -151,7 +151,7 @@ pl_heal_group = {
                     };
                 };
                 _time = time + 10;
-                waitUntil {time > _time or !(_group getVariable "pl_healing_active") or !alive _medic or (_medic getVariable ["pl_wia", false])};
+                waitUntil {sleep 0.5; time > _time or !(_group getVariable "pl_healing_active") or !alive _medic or (_medic getVariable ["pl_wia", false])};
             };
 
             sleep 1;
@@ -240,15 +240,15 @@ pl_ccp_revive_action = {
     _escort enableAI "PATH";
     _escort doFollow _medic;
     sleep 1;
-    waitUntil {sleep 0.2; (unitReady _medic) or ((_medic distance2D _healTarget) < 2) or !(_group getVariable [_waitVar, true]) or (!alive _healTarget) or (!alive _medic) or (_medic getVariable ["pl_wia", false])};
+    waitUntil {sleep 0.5; (unitReady _medic) or ((_medic distance2D _healTarget) < 2) or !(_group getVariable [_waitVar, true]) or (!alive _healTarget) or (!alive _medic) or (_medic getVariable ["pl_wia", false])};
     // Animation
     if (_group getVariable [_waitVar, true] and (alive _healTarget) and (alive _medic) and !(_medic getVariable ["pl_wia", false]) and ((_medic distance2D _healTarget) <= 5)) then {
         // _medic setUnitPos "MIDDLE";
 
-        _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500};
+        _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500 or (_ccpPos distance2D _healTarget) >= 200};
         if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0) then {
             _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
-            waitUntil {scriptDone _dragScript};
+            waitUntil {sleep 0.5; scriptDone _dragScript};
         };
         sleep 1;
         if (alive _medic and alive _healTarget and (_group getVariable [_waitVar, true]) and !(lifeState _medic isEqualTo "INCAPACITATED")) then {
@@ -353,7 +353,7 @@ pl_injured_drag = {
     sleep 0.3;
     _unit switchmove "AinjPpneMrunSnonWnonDb";
         
-    waitUntil {((AnimationState _dragger) == "AmovPercMstpSlowWrflDnon_AcinPknlMwlkSlowWrflDb_2") || ((AnimationState _dragger) == "AmovPercMstpSnonWnonDnon_AcinPknlMwlkSnonWnonDb_2")}; 
+    waitUntil {sleep 0.5; ((AnimationState _dragger) == "AmovPercMstpSlowWrflDnon_AcinPknlMwlkSlowWrflDb_2") || ((AnimationState _dragger) == "AmovPercMstpSnonWnonDnon_AcinPknlMwlkSnonWnonDb_2")}; 
 
     detach _dragger;
 
@@ -380,7 +380,7 @@ pl_injured_drag = {
     _dragger disableAI "ANIM";
     _dummy doMove _ccpPos;
 
-    waitUntil {!alive _unit or !alive _dragger or (lifeState _dragger isEqualTo "INCAPACITATED") or (_dragger distance2D _ccpPos) < 8 or ((group _dragger) getVariable ["pl_stop_event", false]) or !((group _dragger) getVariable ["onTask", false])};
+    waitUntil {sleep 0.5; !alive _unit or !alive _dragger or (lifeState _dragger isEqualTo "INCAPACITATED") or (_dragger distance2D _ccpPos) < 8 or ((group _dragger) getVariable ["pl_stop_event", false]) or !((group _dragger) getVariable ["onTask", false])};
 
     doStop _dummy;
     detach _unit;
@@ -533,7 +533,7 @@ pl_ccp = {
             if (vehicle (leader _group) != leader _group and _group != (group player)) then {
                 _ccpWp = _group addWaypoint [_ccpPos, 0];
                 sleep 1;
-                waitUntil {!(_group getVariable ["onTask", true]) or !(alive _medic) or (_medic getVariable ["pl_wia", false]) or (vehicle (leader _group) distance2D (waypointPosition _ccpWp)) < 20 or unitReady (vehicle (leader _group))};
+                waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or !(alive _medic) or (_medic getVariable ["pl_wia", false]) or (vehicle (leader _group) distance2D (waypointPosition _ccpWp)) < 20 or unitReady (vehicle (leader _group))};
                 if ((_group getVariable ["onTask", true]) and (alive _medic) and !(_medic getVariable ["pl_wia", false])) then {
                     doStop (vehicle (leader _group));
                     unassignVehicle _medic;
@@ -571,12 +571,12 @@ pl_ccp = {
                     if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet")) then {
                         if !(isNil "_escort") then {
                             _h1 = [_group, _medic, _escort, _x, _ccpPos, 20, "onTask"] spawn pl_ccp_revive_action;
-                            waitUntil {(scriptDone _h1) or !(_group getVariable ["onTask", true])};
+                            waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
                         }
                         else
                         {
                             _h1 = [_group, _medic, objNull, _x, _ccpPos, 20, "onTask"] spawn pl_ccp_revive_action;
-                            waitUntil {(scriptDone _h1) or !(_group getVariable ["onTask", true])};
+                            waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
                         };
                     };
                 } forEach (_reviveTargets select {_x getVariable ["pl_wia", false]});
@@ -584,7 +584,7 @@ pl_ccp = {
                     if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia")) then {
                         _h2 = [_medic, _x, _ccpPos, "onTask"] spawn pl_medic_heal;
                         _time = time + 40;
-                        waitUntil {scriptDone _h2 or !(_group getVariable ["onTask", true]) or (time > _time)}
+                        waitUntil {sleep 0.5; scriptDone _h2 or !(_group getVariable ["onTask", true]) or (time > _time)}
                     };
                 } forEach (_healTargets select {side _x isEqualTo playerSide});
                 sleep 1;
@@ -652,7 +652,7 @@ pl_transfer_medic = {
     missionNamespace setVariable ["pl_transfer_medic_enabled", true];
 
     hint "Select Group to transfer to";
-    waitUntil {!(missionNamespace getVariable ["pl_transfer_medic_enabled", true])};
+    waitUntil {sleep 0.5; !(missionNamespace getVariable ["pl_transfer_medic_enabled", true])};
     hintSilent "";
 
     _destGroup = missionNamespace getVariable ["pl_transfer_medic_group", false];

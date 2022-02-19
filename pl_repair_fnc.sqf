@@ -233,7 +233,7 @@ pl_repair = {
                 // add Arrow indicator
                 pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-                waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
 
                 // remove Arrow indicator
                 pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
@@ -277,7 +277,7 @@ pl_repair = {
             if (pl_enable_beep_sound) then {playSound "beep"};
             // leader _group sideChat format ["%1 is moving to damaged vehicle, over", (groupId _group)];
             sleep 4;
-            waitUntil {sleep 0.1; !alive _engVic or (unitReady _engVic) or !(_group getVariable ["onTask", true])};
+            waitUntil {sleep 0.5; !alive _engVic or (unitReady _engVic) or !(_group getVariable ["onTask", true])};
             sleep 2;
 
             // remove Task Icon from wp and delete wp
@@ -287,7 +287,7 @@ pl_repair = {
             {
                 _x disableAI "PATH";
             } forEach crew _engVic;
-            waitUntil {sleep 1; time >= _repairTime or !(_group getVariable ["onTask", true])};
+            waitUntil {sleep 0.5; time >= _repairTime or !(_group getVariable ["onTask", true])};
             {
                 _x enableAI "PATH";
             } forEach crew _engVic;
@@ -349,7 +349,7 @@ pl_repair = {
 };
 
 pl_repair_bridge = {
-    params [["_group", (hcSelected player) #0]];
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
     private ["_cords", "_engineer", "_bridges", "_bridgeMarkers"];
 
     _engineer = {
@@ -361,24 +361,51 @@ pl_repair_bridge = {
 
     if (visibleMap) then {
 
+        _markerName = createMarker ["pl_charge_range_marker2", [0,0,0]];
+        _markerName setMarkerColor "colorOrange";
+        _markerName setMarkerShape "ELLIPSE";
+        _markerName setMarkerBrush "Border";
+        _markerName setMarkerSize [30, 30];
+
+        private _rangelimiter = 60;
+
+        private _markerBorderName = str (random 2);
+        private _borderMarkerPos = getPos (leader _group);
+        if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+        createMarker [_markerBorderName, _borderMarkerPos];
+        _markerBorderName setMarkerShape "ELLIPSE";
+        _markerBorderName setMarkerBrush "Border";
+        _markerBorderName setMarkerColor "colorOrange";
+        _markerBorderName setMarkerAlpha 0.8;
+        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
         hint "Select on MAP";
         onMapSingleClick {
             pl_repair_cords = _pos;
             pl_mapClicked = true;
-            pl_show_dead_vehicles = false;
-            pl_show_damaged_vehicles = false;
+            if (_shift) then {pl_cancel_strike = true};
             hint "";
             onMapSingleClick "";
         };
-        while {!pl_mapClicked} do {sleep 0.1;};
+
+        while {!pl_mapClicked} do {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+                _markerName setMarkerPos _mPos;
+            };
+        };
 
         pl_mapClicked = false;
-        _cords = pl_repair_cords;
+        _cords = getMarkerPos _markerName;
+        deleteMarker _markerName;
+        deleteMarker _markerBorderName;
     }
     else
     {
         _cords = screenToWorld [0.5, 0.5];
     };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
     _roads = _cords nearRoads 30;
     _bridges = [];
@@ -415,39 +442,57 @@ pl_repair_bridge = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
 
-    {
-        _x disableAI "AUTOCOMBAT";
+    private _escort = {
+        if (_x != (leader _group) and _x != _engineer) exitWith {_x};
+        objNull
     } forEach (units _group);
 
-    _dir = _cords getDir (leader _group);
-    _wpPos = _cords getPos [35, _dir];
-    _wp = _group addWaypoint [_wpPos, 0];
+    {
+        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+    } forEach (units _group) - [_engineer] - [_escort];
+
+    _engineer disableAI "AUTOCOMBAT";
+    _engineer disableAI "TARGET";
+    _engineer disableAI "AUTOTARGET";
+    _escort disableAI "AUTOCOMBAT";
+    _group setBehaviour "AWARE";
+    {
+        _x setVariable ['pl_is_ccp_medic', true];
+        _x setVariable ["pl_engaging", true];
+        _x setUnitTrait ["camouflageCoef", 0.5, true];
+        _x setVariable ["pl_damage_reduction", true];
+        _x setUnitPosWeak "MIDDLE";
+    } forEach [_engineer, _escort];
+
+    _roads = _roads - _bridges;
+    _movePos = getPos (([_roads, [], {_engineer distance _x }, "ASCEND"] call BIS_fnc_sortBy)#0);
+    _engineer doMove _movePos;
+    _escort doFollow _engineer;
+
     sleep 1;
-    waitUntil {if (_group isEqualTo grpNull) exitWith {true}; unitReady (leader _group) or !(_group getVariable ["onTask", true]) or (((leader _group) distance2D (waypointPosition _wp)) < 11)};
+    waitUntil {sleep 0.5; (!alive _engineer) or (unitReady _engineer) or !(_group getVariable ["onTask", true])};
+
     if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Starting Repairs", (groupId _group)]};
     if (pl_enable_map_radio) then {[_group, "...Starting Repairs", 20] call pl_map_radio_callout};
 
-    {
-        _x enableAI "AUTOCOMBAT";
-        [_x, getPos _x, _x getDir _cords, 15, true] spawn pl_find_cover; 
-    } forEach (units _group);
-
     _repairTime = time + 100;
 
-    waitUntil {time >= _repairTime or !(_group getVariable ["onTask", true]) or !alive _engineer or _engineer getVariable ["pl_wia", false]};
+    waitUntil {sleep 0.5; time >= _repairTime or !(_group getVariable ["onTask", true]) or !alive _engineer or _engineer getVariable ["pl_wia", false]};
 
     if ((_group getVariable ["onTask", false]) and alive _engineer and !(_engineer getVariable ["pl_wia", false])) then {
         {
             _x setDamage 0;
         } forEach _bridges;
+        if (pl_enable_beep_sound) then {playSound "beep"};
+        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Bridge Repairs completeted", (groupId _group)]};
+        if (pl_enable_map_radio) then {[_group, "...Bridge Repairs completeted", 20] call pl_map_radio_callout};
+        [_group] call pl_reset;
     };
+    _engineer setVariable ['pl_is_ccp_medic', false];
+    _escort setVariable ['pl_is_ccp_medic', false];
 
     {
         deleteMarker _x;
     } forEach _bridgeMarkers;
-    if (pl_enable_beep_sound) then {playSound "beep"};
-    if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Bridge Repairs completeted", (groupId _group)]};
-    if (pl_enable_map_radio) then {[_group, "...Bridge Repairs completeted", 20] call pl_map_radio_callout};
-    [_group] call pl_reset;
 };
 

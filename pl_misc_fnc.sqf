@@ -127,7 +127,8 @@ pl_reset = {
         _unit setUnitTrait ["camouflageCoef", 1, true];
         _unit setVariable ["pl_engaging", false];
         _unit setVariable ["pl_damage_reduction", false];
-        _unit setVariable ['pl_is_at', false];
+        _unit setVariable ['pl_is_at', nil];
+        _unit setVariable ['pl_is_ccp_medic', false];
         _unit setVariable ["pl_def_pos", nil];
         // sleep 0.5;
         _unit limitSpeed 5000;

@@ -219,7 +219,7 @@ pl_cas = {
     };
     _vicGroup setGroupId [_cs];
     _vicGroup setVariable ["pl_not_addalbe", true];
-    waitUntil {sleep 0.1; _support isEqualTo objNull};
+    waitUntil {sleep 0.5; _support isEqualTo objNull};
     deleteMarker _markerName;
     sleep 8;
     switch (_key) do {

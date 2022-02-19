@@ -16,18 +16,20 @@ pl_share_info = {
     params ["_group"];
     _group setVariable ["spotRepEnabled", true];
 
-    while {!(isNull _group)} do {
-        waitUntil {sleep 1; (behaviour (leader _group)) isEqualto "COMBAT"};
+    while {{sleep 1; count ((units _group) select {alive _x}) > 0} do {
+        // waitUntil {sleep 1; (behaviour (leader _group)) isEqualto "COMBAT"};
 
         _targets = [];
 
         // [_targets] spawn pl_mark_targets_on_map;
 
         _targets = [(leader _group)] call pl_get_targets;
-        [_targets, (leader _group)] call pl_reveal_targets;
-        [_targets] spawn pl_mark_targets_on_map;
+        if !(_targets isEqualto []) then {
+            [_targets, (leader _group)] call pl_reveal_targets;
+            [_targets] spawn pl_mark_targets_on_map;
+        };
 
-        sleep 20;
+        sleep 10;
     };
 };
 
@@ -64,17 +66,19 @@ pl_share_info_opfor = {
     params ["_group"];
     _group setVariable ["spotRepEnabled", true];
 
-    while {true} do {
-        waitUntil {(behaviour (leader _group)) isEqualto "COMBAT"};
+    while {sleep 1; count ((units _group) select {alive _x}) > 0} do {
+        // waitUntil {(behaviour (leader _group)) isEqualto "COMBAT"};
 
         _targets = [];
 
         // [_targets] spawn pl_mark_targets_on_map;
 
         _targets = [(leader _group)] call pl_get_targets_opfor;
-        [_targets, (leader _group)] call pl_reveal_targets_opfor;
+        if !(_targets isEqualto []) then {
+            [_targets, (leader _group)] call pl_reveal_targets_opfor;
+        };
 
-        sleep 20;
+        sleep 10;
     };
 };
 
@@ -108,7 +112,7 @@ pl_reveal_targets_opfor = {
 
 pl_contact_info_share = {
     params ["_unit"];
-    sleep 7;
+    sleep 5;
     _targets = [];
     _targets = [_unit] call pl_get_targets;
     [_targets, _unit] call pl_reveal_targets;
@@ -696,6 +700,14 @@ pl_ai_setUp_loop = {
                 if (pl_opfor_info_share_enabled) then {
                     if (isNil {_x getVariable "spotRepEnabled"}) then {
                         [_x] spawn pl_share_info_opfor;
+                    };
+                };
+                if (pl_opfor_enhanced_ai) then {
+                    if (vehicle (leader _x) == (leader _x)) then {
+                        if (isNil {_x getVariable "pl_opfor_ai_enabled"}) then {
+                            _x execFSM "\Plmod\fsm\pl_opfor_cmd.fsm"
+                            _x setVariable ["pl_opfor_ai_enabled", true];
+                        };
                     };
                 };
                 // if (pl_enable_nato_icons_enemy) then {

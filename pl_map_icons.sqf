@@ -1088,7 +1088,7 @@ pl_mark_obstacles = {
                     _size,
                     getDirVisual _obstacle
                 ]
-            } forEach ((pl_show_obstacles_pos nearObjects 180) select {['fence', typeOf _x] call BIS_fnc_inString or ['barrier', typeOf _x] call BIS_fnc_inString or ['wall', typeOf _x] call BIS_fnc_inString or ['sand', typeOf _x] call BIS_fnc_inString or ['bunker', typeOf _x] call BIS_fnc_inString or ['wire', typeOf _x] call BIS_fnc_inString}) + (allDead - allDeadMen);
+            } forEach ((pl_show_obstacles_pos nearObjects 90) select {['fence', typeOf _x] call BIS_fnc_inString or ['barrier', typeOf _x] call BIS_fnc_inString or ['wall', typeOf _x] call BIS_fnc_inString or ['sand', typeOf _x] call BIS_fnc_inString or ['bunker', typeOf _x] call BIS_fnc_inString or ['wire', typeOf _x] call BIS_fnc_inString}) + (allDead - allDeadMen);
         };
     "]; // "
 };
