@@ -395,25 +395,29 @@ pl_opfor_attack_closest_enemy = {
 pl_opfor_create_marker = {
 	params ["_grp", "_type", "_pos", "_dir", "_color"];
 
-	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], 800]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
+	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], 1000]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
 	private _target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
-	private _targetPos = getPos _target;
-	private _targetDir = (leader _grp) getDir _targetPos;
 
-	_markerName = _grp getVariable "pl_opfor_marker_Name";
-     createMarker [_markerName, _pos];
-    _markerName setMarkerType _type;
-    _markerName setMarkerColor _color;
-    _markerName setMarkerDir _targetDir;
+	if !(isNil "_target") then {
+		private _targetPos = getPos _target;
+		private _targetDir = (leader _grp) getDir _targetPos;
+		_markerName = _grp getVariable "pl_opfor_marker_Name";
+	     createMarker [_markerName, _pos];
+	    _markerName setMarkerType _type;
+	    _markerName setMarkerColor _color;
+	    _markerName setMarkerDir _targetDir;
+	};
 
 };
 
 pl_opfor_join_group = {
 	params ["_grp"];
 
-	_grps = allgroups select {(side _x) isEqualTo (side (leader _grp))};
-	if !(_grps isEqualTo []) exitWith {
-		_targetGrp = ([_grps, [], {(leader _grp) distance2D (leader _x)}, "ASCEND"] call BIS_fnc_sortBy)#0;
+	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], 1000]) select {side _x == side (leader _grp)});
+	_targets = _targets - (units _grp);
+	private _target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
+	private _targetGrp = group _target;
+	if !(isNil "_target") exitWith {
 		{
 			[_x] joinSilent _targetGrp;
 			_x doFollow (leader _targetGrp);

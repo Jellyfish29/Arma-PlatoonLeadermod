@@ -3,19 +3,19 @@
 /*
 item0[] = {"Start",0,250,-491.997406,-653.206299,-401.997406,-603.206360,0.000000,"Start"};
 item1[] = {"has_wp",4,218,-451.086426,-508.194519,-361.086426,-458.194519,2.000000,"has wp"};
-item2[] = {"advance",2,250,-426.059753,-187.245422,-336.059723,-137.245422,0.000000,"advance"};
+item2[] = {"advance",2,250,-426.059753,-142.834015,-336.059723,-92.834015,0.000000,"advance"};
 item3[] = {"no_wp",4,218,-602.131836,-530.615295,-512.131836,-480.615234,2.000000,"no wp"};
 item4[] = {"enemy___175m",4,218,48.732086,-133.393036,138.732086,-83.393066,4.000000,"enemy < 175m"};
 item5[] = {"cassualty",4,218,74.683441,-52.843735,164.683441,-2.843735,3.000000,"cassualty"};
 item6[] = {"__x_Suppression",4,218,-24.684601,-42.598541,65.315399,7.401459,2.000000,"2x Suppression " \n "> 0.4"};
 item7[] = {"alive_units_",4,218,139.631195,550.734375,229.631195,600.734314,10.000000,"alive units?"};
 item8[] = {"END",1,250,141.507965,675.160706,231.507996,725.160583,0.000000,"END"};
-item9[] = {"random_Delay",4,218,-342.369659,61.259491,-252.369690,111.259491,0.000000,"random Delay"};
+item9[] = {"random_Delay",4,218,-302.787628,34.871460,-212.787659,84.871460,0.000000,"random Delay"};
 item10[] = {"panic_reaction",2,250,35.847443,61.751373,125.847458,111.751373,0.000000,"panic reaction"};
 item11[] = {"dynamic__cover_a",2,250,373.084656,-133.083069,463.084717,-83.083038,0.000000,"dynamic " \n "cover" \n "atk"};
 item12[] = {"in_Cover_Positio",2,250,-784.112976,-291.827576,-694.113098,-241.827545,0.000000,"in Cover" \n "Position"};
 item13[] = {"Suppression_Loop",2,250,-789.485962,-115.721710,-699.485901,-65.721710,0.000000,"Suppression" \n "Loop"};
-item14[] = {"check_for__Cover",2,250,-88.472748,-118.893280,1.527283,-68.893280,0.000000,"check for " \n "Cover Condition"};
+item14[] = {"check_for__Cover",2,250,-82.344757,-148.511963,7.655273,-98.511963,0.000000,"check for " \n "Cover Condition"};
 item15[] = {"random_Delay",4,218,377.072205,61.115143,467.072205,111.115143,0.000000,"random Delay"};
 item16[] = {"in_assault__poss",2,250,532.030396,67.865723,622.030457,117.865723,0.000000,"in assault" \n " possition"};
 item17[] = {"suppression____0_1",4,218,607.790039,-21.591415,697.790039,28.408585,1.000000,"suppression" \n " > 0.4"};
@@ -42,8 +42,8 @@ item37[] = {"delay",4,218,-243.444626,-199.419083,-153.444611,-149.419083,1.0000
 item38[] = {"True",8,218,-136.267273,-36.663727,-46.267273,13.336273,0.000000,"True"};
 item39[] = {"Cover_Loop",2,250,-231.326538,-120.299179,-141.326508,-70.299179,0.000000,"Cover" \n "Loop"};
 item40[] = {"Return",8,218,-864.691345,-211.111145,-774.691345,-161.111145,0.000000,"Return"};
-item41[] = {"no_wp",4,218,-93.236267,-261.312469,-3.236267,-211.312408,1.000000,"no wp"};
-item42[] = {"position__reache",2,250,-174.077362,-322.509125,-84.077362,-272.509125,0.000000,"position " \n "reached"};
+item41[] = {"no_wp",4,218,-96.473816,-234.332550,-6.473816,-184.332489,1.000000,"no wp"};
+item42[] = {"position__reache",2,250,-131.988678,-318.192383,-41.988678,-268.192383,0.000000,"position " \n "reached"};
 item43[] = {"Combat_Mode",4,218,-280.937958,-261.689880,-190.937958,-211.689880,0.000000,"Combat" \n "Mode"};
 item44[] = {"Start_Flanking_M",2,250,-252.298309,-414.927521,-162.298279,-364.927521,0.000000,"Start Flanking" \n "Move"};
 item45[] = {"flankPos_reached",4,218,-327.692444,-335.555603,-237.692444,-285.555603,0.000000,"flankPos" \n "reached"};
@@ -84,41 +84,41 @@ link30[] = {20,16};
 link31[] = {21,7};
 link32[] = {21,22};
 link33[] = {22,23};
-link34[] = {23,7};
-link35[] = {23,47};
-link36[] = {24,2};
-link37[] = {25,12};
-link38[] = {26,25};
-link39[] = {26,27};
-link40[] = {27,12};
-link41[] = {28,2};
-link42[] = {29,28};
-link43[] = {30,7};
-link44[] = {30,32};
-link45[] = {30,35};
-link46[] = {31,30};
-link47[] = {32,33};
-link48[] = {33,34};
-link49[] = {34,30};
-link50[] = {35,44};
-link51[] = {36,13};
-link52[] = {37,14};
-link53[] = {38,39};
-link54[] = {39,7};
-link55[] = {39,37};
-link56[] = {40,12};
-link57[] = {41,42};
-link58[] = {42,43};
-link59[] = {43,2};
-link60[] = {44,7};
-link61[] = {44,45};
-link62[] = {45,2};
+link34[] = {23,47};
+link35[] = {24,2};
+link36[] = {25,12};
+link37[] = {26,25};
+link38[] = {26,27};
+link39[] = {27,12};
+link40[] = {28,2};
+link41[] = {29,28};
+link42[] = {30,7};
+link43[] = {30,32};
+link44[] = {30,35};
+link45[] = {31,30};
+link46[] = {32,33};
+link47[] = {33,34};
+link48[] = {34,30};
+link49[] = {35,44};
+link50[] = {36,13};
+link51[] = {37,14};
+link52[] = {38,39};
+link53[] = {39,7};
+link54[] = {39,37};
+link55[] = {40,12};
+link56[] = {41,42};
+link57[] = {42,43};
+link58[] = {43,2};
+link59[] = {44,7};
+link60[] = {44,45};
+link61[] = {45,2};
+link62[] = {46,7};
 link63[] = {46,24};
 link64[] = {46,48};
 link65[] = {47,46};
 link66[] = {48,23};
-globals[] = {0.000000,0,0,0,0,640,480,1,92,6316128,1,-800.673218,932.340515,1201.150513,-154.587631,1130,884,1};
-window[] = {2,-1,-1,-32000,-32000,837,78,1518,78,3,1148};
+globals[] = {0.000000,0,0,0,0,640,480,1,92,6316128,1,-1189.906372,1257.629395,1066.061523,-522.500671,1362,884,1};
+window[] = {2,-1,-1,-1,-1,915,156,1596,156,3,1380};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -234,7 +234,6 @@ class FSM
                          "	systemchat format [""%1: joining Group"", groupId _grp];" \n
                          "};" \n
                          "if ([_grp] call pl_opfor_join_group) then {" \n
-                         "	deleteGroup _grp;" \n
                          "	deleteMarker _markerName;" \n
                          "};"/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
@@ -365,7 +364,7 @@ class FSM
                          "" \n
                          "if (count (((getPos (leader _grp)) nearEntities [[""Man""], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 1}) > 0) then {" \n
                          "	[_grp] call pl_opfor_suppress; " \n
-                         "	_grp setVariable [""pl_opf_task"", ""suppress""]:" \n
+                         "	_grp setVariable [""pl_opf_task"", ""suppress""];" \n
                          "	if (pl_debug) then {" \n
                          "    	systemchat format [""%1: static_suppress"", groupId _grp];" \n
                          "	};" \n
@@ -616,17 +615,6 @@ class FSM
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {
-                                /*%FSM<LINK "alive_units_">*/
-                                class alive_units_
-                                {
-                                        itemno = 7;
-                                        priority = 10.000000;
-                                        to="END";
-                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= 2;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
-                                };
-                                /*%FSM</LINK>*/
                                 /*%FSM<LINK "Delay">*/
                                 class Delay
                                 {
@@ -851,6 +839,7 @@ class FSM
                          "	_flankPos = [_grp] call pl_opfor_flanking_move;" \n
                          "	_grp setVariable [""pl_opf_task"", ""advance""];" \n
                          "};" \n
+                         "_time = time + 10;" \n
                          "" \n
                          "if (pl_debug) then {" \n
                          "    systemchat format [""%1: flank"", groupId _grp];" \n
@@ -876,7 +865,7 @@ class FSM
                                         priority = 0.000000;
                                         to="advance";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"(leader _grp) distance2D _flankPos < 15;"/*%FSM</CONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"(leader _grp) distance2D _flankPos < 15 and time >= _time;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_panicCoverCount = 0;" \n
                                          "_suppressionCycles = 0;" \n
                                          "_startUnitCount = count (units _grp);" \n
@@ -895,6 +884,17 @@ class FSM
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {
+                                /*%FSM<LINK "alive_units_">*/
+                                class alive_units_
+                                {
+                                        itemno = 7;
+                                        priority = 10.000000;
+                                        to="END";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= 2;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
                                 /*%FSM<LINK "enemy___50m">*/
                                 class enemy___50m
                                 {

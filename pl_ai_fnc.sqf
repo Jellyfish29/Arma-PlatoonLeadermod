@@ -16,7 +16,7 @@ pl_share_info = {
     params ["_group"];
     _group setVariable ["spotRepEnabled", true];
 
-    while {{sleep 1; count ((units _group) select {alive _x}) > 0} do {
+    while {sleep 1; count ((units _group) select {alive _x}) > 0} do {
         // waitUntil {sleep 1; (behaviour (leader _group)) isEqualto "COMBAT"};
 
         _targets = [];
@@ -705,7 +705,7 @@ pl_ai_setUp_loop = {
                 if (pl_opfor_enhanced_ai) then {
                     if (vehicle (leader _x) == (leader _x)) then {
                         if (isNil {_x getVariable "pl_opfor_ai_enabled"}) then {
-                            _x execFSM "\Plmod\fsm\pl_opfor_cmd.fsm"
+                            _x execFSM "\Plmod\fsm\pl_opfor_cmd.fsm";
                             _x setVariable ["pl_opfor_ai_enabled", true];
                         };
                     };
