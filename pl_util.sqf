@@ -135,6 +135,7 @@ pl_enable_force_move = {
         _unit disableAI "SUPPRESSION";
         _unit disableAI "WEAPONAIM";
         _unit setUnitCombatMode "BLUE";
+        _unit setBehaviourStrong "AWARE";
     }
     else
     {

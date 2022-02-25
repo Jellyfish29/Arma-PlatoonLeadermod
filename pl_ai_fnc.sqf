@@ -88,7 +88,7 @@ pl_get_targets_opfor = {
     _targets = [];
     {
         if (alive _x and (side _x) != civilian) then {
-            if (_leader knowsAbout _x > 2) then {
+            if (_leader knowsAbout _x > 0) then {
             _targets append [_x];
             };
         };
