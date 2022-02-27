@@ -493,7 +493,8 @@ pl_ccp = {
             if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; pl_ccp_set = false;};
 
 
-            if (pl_enable_beep_sound) then {playSound "beep"};
+            // if (pl_enable_beep_sound) then {playSound "beep"};
+            [_group, "confirm", 1] call pl_voice_radio_answer;
             [_group] call pl_reset;
 
             sleep 0.5;

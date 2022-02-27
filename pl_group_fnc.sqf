@@ -255,6 +255,41 @@ pl_hard_unstuck = {
     };
 };
 
+pl_enable_voice_radio = true;
+pl_voice_radio_answer = {
+    params ["_group", "_message", ["_delay", 1]];
+   //Confrim Oeder: SentConfirmAttack, SentConfirmOther,SentSupportConfirm
+   //Confirm Suppress: SentConfirmSuppress
+   // Contact: SentEnemyContact, SentOpenFireInCombat, SentOpenFire
+   // Destroyed Enemy: SentObjectDestroyedUnknown
+   // own KIA: SentUnitKilled
+   // vic damaged: SentDammageCritical
+   // Attack completed: SentClear
+   if (pl_enable_voice_radio) then {
+
+        private _answerVoiceLine = "";
+        switch (_message) do { 
+            case "confirm" : {_answerVoiceLine = selectRandom ["SentConfirmAttack", "SentConfirmOther", "SentSupportConfirm"]};
+            case "suppress" : {_answerVoiceLine = selectRandom ["SentConfirmAttack", "SentConfirmOther", "SentSupportConfirm"]}; 
+            case "contact" : {_answerVoiceLine = selectRandom ["SentEnemyContact", "SentOpenFireInCombat"]};
+            case "kia" : {_answerVoiceLine = "SentUnitKilled"}; 
+            case "destroyed" : {_answerVoiceLine = "SentObjectDestroyedUnknown"}; 
+            case "damaged" : {_answerVoiceLine = "SentDammageCritical"}; 
+            case "atk_complete" : {_answerVoiceLine = "SentClear"}; 
+            default {_answerVoiceLine = ""};
+        };
+
+        [_group, _answerVoiceLine, _delay] spawn {
+            params ["_group", "_answerVoiceLine", "_delay"];
+            sleep _delay;
+            (leader _group) sideRadio _answerVoiceLine;
+        };
+
+   };
+};
+
 _playerIcon = format ["%1_%2", [group player] call pl_get_side_prefix, "hq"];
 (group player) setVariable ["pl_custom_icon", _playerIcon];
+
+
 

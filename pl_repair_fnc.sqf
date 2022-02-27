@@ -21,6 +21,7 @@ addMissionEventHandler ["EntityKilled",{
             if (pl_enable_beep_sound) then {playSound "beep"};
             if (pl_enable_chat_radio) then {driver _killed sideChat format ["%1 has been disabled!", _groupId]};
             if (pl_enable_map_radio) then {[group (driver _killed), "...We are hit!", 15] call pl_map_radio_callout};
+            [group driver _killed, "damaged", 1] call pl_voice_radio_answer;
 
             _crew = crew _killed;
             _vicGroup = group (driver _killed);
@@ -70,6 +71,7 @@ addMissionEventHandler ["EntityKilled",{
             if (pl_enable_beep_sound) then {playSound "beep"};
             if (pl_enable_chat_radio) then {player sideChat format ["%1 has been destroyed", _groupId]};
             if (pl_enable_map_radio) then {[group (driver _killed), "...Ahhh", 10] call pl_map_radio_callout};
+            [group driver _killed, "damaged", 1] call pl_voice_radio_answer;
         };
     };
 }];
@@ -245,7 +247,8 @@ pl_repair = {
             if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
 
 
-            if (pl_enable_beep_sound) then {playSound "beep"};
+            // if (pl_enable_beep_sound) then {playSound "beep"};
+            [_group, "confirm", 1] call pl_voice_radio_answer;
             [_group] call pl_reset;
 
             sleep 0.5;
@@ -428,7 +431,8 @@ pl_repair_bridge = {
 
     if ((count _bridges) <= 0) exitWith {hint format ["No damaged Bridges in Area", groupId _group]};
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;

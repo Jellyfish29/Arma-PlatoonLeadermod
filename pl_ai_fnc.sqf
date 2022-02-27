@@ -148,6 +148,8 @@ pl_contact_report = {
                             if (pl_enable_beep_sound) then {playSound "beep"};
                             if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Engaging Enemies", _callsign]};
                             if (pl_enable_map_radio) then {[group _unit, "...Contact!", 15] call pl_map_radio_callout};
+                            [group _unit, "contact", 1] call pl_voice_radio_answer;
+
                         };
                         [_unit] spawn pl_contact_info_share;
                         (group _unit) setVariable ['inContact', true];
@@ -243,6 +245,7 @@ pl_enemy_destroyed_report = {
             if (pl_enable_beep_sound) then {playSound "beep"};
             if (pl_enable_chat_radio) then {_killer sideChat format ["%1 destroyed enemy %2", groupId (group _killer), _typeStr]};
             if (pl_enable_map_radio) then {[group _killer, format ["...destroyed enemy %1", _typeStr], 15] call pl_map_radio_callout};
+            [_group, "destroyed", 1] call pl_voice_radio_answer;
         };
     };
 };
@@ -702,12 +705,16 @@ pl_ai_setUp_loop = {
                         [_x] spawn pl_share_info_opfor;
                     };
                 };
+
                 if (pl_opfor_enhanced_ai) then {
                     if (vehicle (leader _x) == (leader _x)) then {
                         if (isNil {_x getVariable "pl_opfor_ai_enabled"}) then {
                             _x execFSM "\Plmod\fsm\pl_opfor_cmd.fsm";
                             _x setVariable ["pl_opfor_ai_enabled", true];
                         };
+                    } else {
+                            _x execFSM "\Plmod\fsm\pl_opfor_cmd_vic.fsm";
+                            _x setVariable ["pl_opfor_ai_enabled", true];
                     };
                 };
                 // if (pl_enable_nato_icons_enemy) then {
@@ -1029,6 +1036,7 @@ if (pl_hc_active) then {
             // };
         };
 
+        [_x] spawn pl_reset;
 
     } forEach (allGroups select {side _x isEqualTo playerSide});
 };

@@ -97,7 +97,8 @@ pl_getIn_vehicle = {
         };
 
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -287,6 +288,9 @@ pl_getOut_vehicle = {
             _convoyArray = [];
             _inLandConvoy = false;
 
+            _wp = (group _commander) addWaypoint [_cords, 0];
+            _wp setWaypointType "TR UNLOAD";
+            {_x disableAI "PATH"} forEach (units _group);
             // More then One Tranport == Convoy
             if ((count (missionNamespace getVariable _convoyId)) > 1) then {
                 if (_group isEqualTo ((missionNamespace getVariable _convoyId) select 0)) then {
@@ -393,8 +397,7 @@ pl_getOut_vehicle = {
                 _inLandConvoy = false;
             };
 
-            _wp = (group _commander) addWaypoint [_cords, 0];
-            _wp setWaypointType "TR UNLOAD";
+            {_x enableAI "PATH"} forEach (units _group);
             if (_vic isKindOf "Air") then {
                 _vic flyInHeight 60;
                 _landCords = _cords findEmptyPosition [0, 100, "Land_HelipadEmpty_F"];
@@ -509,9 +512,7 @@ pl_getOut_vehicle = {
                                     _timeout = time + 7;
                                     waitUntil {(speed _vic) > 0 or time >= _timeout};
                                     if ((speed _vic) == 0) then {
-                                        {
-                                            _x setDamage 1;
-                                        } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
+                                        [_vic, _group, _cords] call pl_vehicle_convoy_unstuck;
                                     };
                                 };
                             }
@@ -558,9 +559,7 @@ pl_getOut_vehicle = {
                                     _timeout = time + 7;
                                     waitUntil {(speed _vic) > 0 or time >= _timeout};
                                     if ((speed _vic) == 0) then {
-                                        {
-                                            _x setDamage 1;
-                                        } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
+                                        [_vic, _group, _cords] call pl_vehicle_convoy_unstuck; 
                                     };
                                 };
                             };
@@ -879,7 +878,8 @@ pl_unload_at_position_planed = {
         _x leaveVehicle _vic;
     } forEach _cargoGroups;
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     // _commander sideChat format ["Roger, %1 beginning unloading, over", groupId _group];
     private _cargoPers = [];
     {
@@ -1057,7 +1057,8 @@ pl_crew_vehicle = {
     if (isNil "_targetVic") exitWith {hint "No available vehicle!"};
 
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -1190,7 +1191,8 @@ pl_attach_inf = {
 
 
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
     [_vicGroup] call pl_reset;
 
@@ -1256,6 +1258,34 @@ pl_attach_inf = {
     _vic forceSpeed -1;
     _vic limitSpeed 50;
     _vic setVariable ["pl_speed_limit", "50"];
+};
+
+pl_vehicle_convoy_unstuck = {
+    params ["_vic", "_group", "_cords"];
+    _vic setVehiclePosition [getPosVisual _vic, [], 0, "CAN_COLLIDE"];
+    {
+        _x setDamage 1;
+    } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
+    _leader = leader _group;
+    (units _group) joinSilent _group;
+    _group selectLeader _leader;
+
+    if ((currentWaypoint _group) >= count (waypoints _group)) then {
+        _group addWaypoint [_cords, 2];
+    } else {
+        [_group, (currentWaypoint _group)] setWaypointPosition [_cords, -1];
+        _vic doMove _cords;
+    };
+
+    _road = [getPos _vic, 10] call BIS_fnc_nearestRoad;
+    if !(isNull _road) then {
+        _info = getRoadInfo _road;    
+        _endings = [_info#6, _info#7];
+        _endings = [_endings, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;
+        _vPos = _endings#0;
+        _roadDir = (_endings#1) getDir (_endings#0);
+        _vic setDir _roadDir;
+    };
 };
 
 // pl_viv_trans_set_up = {

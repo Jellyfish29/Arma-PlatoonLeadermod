@@ -60,6 +60,7 @@ addMissionEventHandler ["EntityKilled",{
             [_killed] spawn pl_draw_kia;
             _group = group _killed;
             if (pl_enable_map_radio) then {[_group, format ["...%1 KIA", _unitMos], 15] call pl_map_radio_callout};
+            [_group, "kia", random 2] call pl_voice_radio_answer;
             _mags = _group getVariable "magCountAllDefault";
             _mag = _group getVariable "magCountSoloDefault";
             _mags = _mags - _mag;
@@ -250,7 +251,8 @@ pl_hold = {
     // disables pathfinding on group
 
     params ["_group"];
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
 
     // set Variable
     _group setVariable ["pl_on_hold", true];
@@ -278,7 +280,8 @@ pl_spawn_hold = {
 
 pl_execute = {
     params ["_group"];
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     _group setVariable ["pl_on_hold", false];
 
     // if icon == "wait" disable icon
@@ -481,7 +484,8 @@ pl_watch_dir = {
 
 
     if (_dir isEqualTo "") then {
-        if (pl_enable_beep_sound) then {playSound "beep"};
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        [_group, "confirm", 1] call pl_voice_radio_answer;
         _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
         _groupPos = getPos (leader _group);
         _watchDir = [_cords, _groupPos] call BIS_fnc_dirTo;
@@ -546,7 +550,8 @@ pl_set_unit_pos = {
 pl_hold_fire = {
     params ["_group"];
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
 
     _group setCombatMode "GREEN";
     _group setVariable ["pl_hold_fire", true];
@@ -556,7 +561,8 @@ pl_hold_fire = {
 pl_open_fire = {
     params ["_group"];
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
 
     _group setCombatMode "YELLOW";
     _group setVariable ["pl_hold_fire", false];
@@ -572,13 +578,15 @@ pl_follow = {
     {
         if (_x != (group player)) then {
             [_x] call pl_reset;
-
-            sleep 0.2;
+            sleep 0.5;
+            [_x] call pl_reset;
+            sleep 0.5;
 
             _x setVariable ["onTask", true];
             _x setVariable ["setSpecial", true];
             _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"];
-            if (pl_enable_beep_sound) then {playSound "beep"};
+            // if (pl_enable_beep_sound) then {playSound "beep"};
+            [_group, "confirm", 1] call pl_voice_radio_answer;
             // leader _x sideChat format ["%1 is forming up on %2, over",(groupId _x), (groupId (group player))];
             _pos1 = getPos (leader _x);
             _pos2 = getPos player;
@@ -679,9 +687,13 @@ pl_march = {
 
     if (isNil {_group getVariable "pl_on_march"}) then {
         [_group] call pl_reset;
-        sleep 0.2;
+        sleep 0.5;
+        [_group] call pl_reset;
+        sleep 0.5;
 
-        if (pl_enable_beep_sound) then {playSound "beep"};
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        [_group, "confirm", 1] call pl_voice_radio_answer;
+
 
         // _group setVariable ["onTask", true];
         _group setVariable ["setSpecial", true];

@@ -42,7 +42,8 @@ pl_rearm = {
     if ((_targetBox distance2D _cords) >= 25) exitWith {hint "No available Supplies!"};
 
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -185,7 +186,8 @@ pl_supply_point = {
 
     // Setup Group at Position
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -446,7 +448,8 @@ pl_rearm_point = {
 
     // Setup Group at Position
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;

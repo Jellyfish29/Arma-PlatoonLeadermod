@@ -194,6 +194,7 @@ pl_suppressive_fire_position = {
     
     _continous = pl_supppress_continuous;
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa";
+    [_group, "suppress", 1] call pl_voice_radio_answer;
     _leader = leader _group;
 
     if (_continous) then {_group setVariable ["pl_is_suppressing", true]};
@@ -362,7 +363,8 @@ pl_bounding_squad = {
     
     _moveDir = (leader _group) getDir _cords;
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -581,7 +583,8 @@ pl_assault_position = {
     };
     _arrowMarkerName setMarkerColor _arrowColor;
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -952,6 +955,7 @@ pl_assault_position = {
         if (pl_enable_beep_sound) then {playSound "beep"};
         if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Assault complete", (groupId _group)]};
         if (pl_enable_map_radio) then {[_group, "...Assault Complete!", 20] call pl_map_radio_callout};
+        [_group, "atk_complete", 1] call pl_voice_radio_answer;
         if (_tacticalAtk) then {
             {
                 [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;

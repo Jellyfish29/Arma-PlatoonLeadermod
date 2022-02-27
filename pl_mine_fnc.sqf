@@ -227,7 +227,8 @@ pl_mine_clearing = {
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -459,7 +460,8 @@ pl_lay_mine_field = {
     };
 
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -659,7 +661,8 @@ pl_place_charge = {
 
     if (pl_cancel_strike) exitWith {deleteMarker _markerName; pl_cancel_strike = false};
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -845,7 +848,8 @@ pl_destroy_bridge = {
     if ((count _bridges) <= 0) exitWith {hint format ["No Bridges in Area", groupId _group]};
 
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;

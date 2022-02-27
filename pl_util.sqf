@@ -224,3 +224,16 @@ pl_fof_check = {
     };
     _c
 };
+
+pl_get_near_inf_groups = {
+    params {"_group", "_distance", ["_side", playerside]};
+
+    private _allies = ((getPos (leader _group)) nearEntities [["Man"], _distance]) select {side (leader _group) == _side};
+    private _nearGroups = [];
+
+    {
+        _nearGroups pushBackUnique (group _x);
+    } forEach _allies;
+
+    _nearGroups
+};

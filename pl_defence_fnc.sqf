@@ -9,7 +9,7 @@ pl_mapClicked = false;
 pl_360_area = false;
 pl_show_watchpos_selector = false;
 pl_at_attack_array = [];
-pl_valid_covers = ["TREE", "SMALL TREE", "BUSH", "FOREST BORDER", "FOREST TRIANGLE", "FOREST SQUARE", "WALL", "FOREST", "ROCK", "ROCKS", "HOUSE", "FENCE"];
+pl_valid_covers = ["TREE", "SMALL TREE", "BUSH", "ROCK", "ROCKS", "FENCE", "WALL"];
 
 // // _helper = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
 // // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
@@ -177,6 +177,7 @@ pl_rush = {
     };
     
     if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -415,7 +416,8 @@ pl_take_position = {
           };
 
         // Whyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy?????????????????
-        if (pl_enable_beep_sound) then {playSound "beep"};
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        [_group, "confirm", 1] call pl_voice_radio_answer;
         [_group] call pl_reset;
 
         sleep 0.5;
@@ -704,7 +706,7 @@ pl_full_cover = {
 
 pl_defend_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_watchDir", "_cords", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_buildings", "_doorPos", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_mgPos", "_mgOffset", "_atEscord"];
+    private ["_watchDir", "_cords", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_doorPos", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_mgPos", "_mgOffset", "_atEscord"];
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
 
@@ -858,7 +860,10 @@ pl_defend_position = {
     // if ((count _validBuildings == 0)) exitWith {hint "No buildings in Area!"; deleteMarker _markerAreaName; deleteMarker _markerDirName;};
 
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+
+    // player sideRadio "SentCmdHide";
+    [_group, "confirm", 1] call pl_voice_radio_answer;
 
     // Whyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy?????????????????
     [_group] call pl_reset;
@@ -988,10 +993,46 @@ pl_defend_position = {
 
     for "_i" from 0 to (count _units) - 1 step 1 do {
         private _cover = false;
-        private _covers = nearestTerrainObjects [_cords, pl_valid_covers, _defenceAreaSize, true, true];
-        // private _blacklist = nearestTerrainObjects [_cords, [], (_defenceAreaSize - 8), true, true];
-        // _covers = _covers - _blacklist;
-        _covers = [_covers, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
+        if !(_buildings isEqualTo []) then {
+
+            _covers = [];
+            {
+                _buildingCenter = getPos _x;
+                _coverSearchPos = _buildingCenter getPos [10, _watchDir];
+                _c = nearestTerrainObjects [_coverSearchPos, pl_valid_covers, 15, true, true];
+                _covers = _covers + _c;
+            } forEach _buildings;
+            _covers = [_covers, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
+        } else {
+            _covers = [];
+        };
+
+        {
+            // _box = 2 boundingBoxReal _x;
+            // _boxCenter = getPosVisual _x;
+            // _minPos = _boxCenter vectorAdd [(_box#0)#0, (_box#0)#1, 0];
+            // _maxPos = _boxCenter vectorAdd [(_box#1)#0, (_box#1)#1, 0];
+
+            // _m = createMarker [str (random 1), _minPos];
+            // _m setMarkerType "mil_dot";
+            // _m setMarkerSize [0.5, 0.5];
+
+            // _m = createMarker [str (random 1), _maxPos];
+            // _m setMarkerType "mil_dot";
+            // _m setMarkerSize [0.5, 0.5];
+
+            // private _houseCornerPos = [];
+            _corners = [_x] call BIS_fnc_boundingBoxCorner;
+
+            {
+                _m = createMarker [str (random 1), _x];
+                _m setMarkerType "mil_dot";
+                _m setMarkerSize [0.5, 0.5];
+            } forEach _corners;
+
+
+
+        } forEach _buildings;
 
         _unitWatchDir = _watchDir;
         private _moveToStatic = false;
@@ -1246,7 +1287,7 @@ pl_at_defence = {
 
         _targets = [];
         {
-            if (speed _x <= 3 and alive _x and (count (crew _x) > 0) and (_atSoldier knowsAbout _x) >= 0 or _x getVariable ["pl_at_enaged", false]) then {
+            if (speed _x <= 3 and alive _x and (count (crew _x) > 0) and (_atSoldier knowsAbout _x) >= 0.5 or _x getVariable ["pl_at_enaged", false]) then {
                 _targets pushBack _x;
             };
         } forEach (_vics select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
@@ -1290,16 +1331,16 @@ pl_at_defence = {
                 {
                     doStop _x;
                     _x enableAI "PATH";
-                    _x setUnitPos "AUTO";
+                    _x setUnitPos "MIDDLE";
                     _x disableAI "TARGET";
                     _x disableAI "AUTOTARGET";
-                    _x disableAI "AIMINGERROR";
                     _x setBehaviourStrong "AWARE";
                     _x setUnitTrait ["camouflageCoef", 0.1, true];
                     _x setVariable ["pl_damage_reduction", true];
                     _x setVariable ['pl_is_at', true];
                     _x setVariable ["pl_engaging", true];
                 } forEach [_atSoldier, _atEscord];
+                // _atSoldier disableAI "AIMINGERROR";
 
                 _group setVariable ["pl_grp_active_at_soldier", _atSoldier];
                 pl_at_attack_array pushBack [_atSoldier, _target, _atEscord];
@@ -1320,6 +1361,7 @@ pl_at_defence = {
                     _time = time + ((_atSoldier distance _movePos) / 1.6 + 20);
                     sleep 0.5;
                     waitUntil {sleep 0.5; (time > _time or unitReady _atSoldier or !alive _atSoldier or (_atSoldier getVariable ["pl_wia", false]) or !((group _atSoldier) getVariable ["onTask", true]) or !alive _target or (count (crew _target) == 0)) or (([_targets, [], {_x distance2D (getPos _atSoldier)}, "ASCEND"] call BIS_fnc_sortBy)#0) != _target};
+                    _atSoldier setUnitPos "AUTO";
                     _atSoldier reveal [_target, 2];
                     _atSoldier doTarget _target;
                     waitUntil {sleep 0.5; !(_group getVariable ["pl_hold_fire", false]) or !alive _atSoldier or _atSoldier getVariable["pl_wia", false] or !alive _target};
