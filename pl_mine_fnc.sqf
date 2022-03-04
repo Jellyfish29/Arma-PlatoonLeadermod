@@ -738,10 +738,8 @@ pl_detonate_charges = {
         _charge = _x;
         // remove Vehicle wrec
         {
-            if ((_x distance2D _charge) < 25) then {
-                    deleteVehicle _x;
-                };
-        } forEach (allDead - allDeadMen);
+             deleteVehicle _x;
+        } forEach (allDead select {(_x distance2D _charge) < 25});
         // remove Fences
         {
             deleteVehicle _x;

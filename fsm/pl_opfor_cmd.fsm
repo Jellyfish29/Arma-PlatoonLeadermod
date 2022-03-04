@@ -130,8 +130,8 @@ link71[] = {50,28};
 link72[] = {51,52};
 link73[] = {52,53};
 link74[] = {53,28};
-globals[] = {0.000000,0,0,0,0,640,480,1,101,6316128,1,-731.667053,569.224243,295.584351,-1005.306885,1244,1244,1};
-window[] = {2,-1,-1,-1,-1,785,26,1466,26,3,1262};
+globals[] = {0.000000,0,0,0,0,640,480,1,101,6316128,1,-725.303101,511.831299,296.459259,-834.487671,617,884,1};
+window[] = {2,-1,-1,-1,-1,941,182,1622,182,3,635};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -209,7 +209,7 @@ class FSM
                         itemno = 2;
                         init = /*%FSM<STATEINIT""">*/"[_grp] call pl_opfor_advance;" \n
                          "_grp setVariable [""pl_opf_task"", ""advance""];" \n
-                         "_time = time + 10;" \n
+                         "_time = time + 9 + (random 1);;" \n
                          "" \n
                          "if (pl_debug) then {" \n
                          "    systemchat format [""%1: advance"", groupId _grp];" \n
@@ -319,7 +319,7 @@ class FSM
                         name = "dynamic__cover_a";
                         itemno = 11;
                         init = /*%FSM<STATEINIT""">*/"[_grp] call pl_opfor_dynamic_cover;" \n
-                         "[_grp, ""marker_afp"", getPos (leader _grp), getDir (leader _grp), _sideColor] call pl_opfor_create_marker;" \n
+                         "[_grp, ""marker_std_atk"", getPos (leader _grp), getDir (leader _grp), _sideColor] call pl_opfor_create_marker;" \n
                          "if (pl_debug) then {" \n
                          "	 systemchat format [""%1: cover_assault"", groupId _grp];" \n
                          "};" \n
@@ -439,11 +439,11 @@ class FSM
                                         to="dynamic_Cover_de";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"_panicCoverCount >= 1 or count (units _grp) < (round (_startUnitCount / 2) + 2);"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"private _overwatchInf = ((getPos (leader _grp)) nearEntities [[""Man""], 500]) select {side _x == _side and (_x getVariable [""pl_opf_task"", """"]) == ""overwatch""};" \n
+                                        action=/*%FSM<ACTION""">*/"private _overwatchInf = ((getPos (leader _grp)) nearEntities [[""Man""], 600]) select {side _x == _side and ((group _x) getVariable [""pl_opf_task"", """"]) == ""overwatch""};" \n
                                          "" \n
                                          "if !(_overWatchInf isEqualto []) then {" \n
                                          "	[_grp] call pl_opfor_dynamic_cover;" \n
-                                         "	[_grp, ""marker_sfp"", getPos (leader _grp), getDir (leader _grp), _sideColor] call pl_opfor_create_marker;" \n
+                                         "	[_grp, ""marker_position_eny"", getPos (leader _grp), getDir (leader _grp), _sideColor] call pl_opfor_create_marker;" \n
                                          "} else {" \n
                                          "	_allowOverwatch = true;" \n
                                          "};" \n
@@ -606,7 +606,7 @@ class FSM
                         init = /*%FSM<STATEINIT""">*/"_assaultPos = [_grp] call pl_opfor_assault;" \n
                          "_markerDir = (leader _grp) getDir _assaultPos;" \n
                          "_markerPos = (getPos (leader _grp)) getPos [30, _markerDir];" \n
-                         "[_grp, ""marker_std_atk"", _markerPos, _markerDir, _sideColor] call pl_opfor_create_marker;" \n
+                         "// [_grp, ""marker_std_atk"", _markerPos, _markerDir, _sideColor] call pl_opfor_create_marker;" \n
                          "" \n
                          "_grp setVariable [""pl_opf_task"", ""assault""];" \n
                          "if (pl_debug) then {" \n
@@ -715,7 +715,6 @@ class FSM
                         name = "dynamic_Cover_de";
                         itemno = 28;
                         init = /*%FSM<STATEINIT""">*/"_time = time + 25;" \n
-                         "private _overwatchInf = ((getPos (leader _grp)) nearEntities [[""Man""], 500]) select {side _x == _side and (_x getVariable [""pl_opf_task"", """"]) == ""overwatch""};" \n
                          ""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links

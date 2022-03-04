@@ -149,25 +149,32 @@ pl_enable_force_move = {
 };
 
 pl_position_reached_check = {
-    params ["_unit", "_movePos", ["_randomise", true]];
+    params ["_unit", "_movePos", "_counter"];
     private ["_counter"];
 
-    _counter = _unit getVariable ["pl_reached_counter", 0];
     if ((_unit distance2D _movePos) > 2) then {
-        if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
-            _counter = _counter + 1;
+        if (currentCommand _unit isNotEqualTo "MOVE" or ((speed _unit) == 0) and _counter % 2 == 0) then {
             doStop _unit;
             _unit setUnitPosWeak "UP";
-            if (_randomise) then {
-                _movePos = [-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd _movePos;
-            };
+
+            _movePos = [-1 + (random 2), -1 + (random 2), 0] vectorAdd _movePos;
             _unit doMove _movePos;
+            _counter = _counter + 1;
+            if (_counter == 10) then {
+                _pos = (getPos _unit) findEmptyPosition [0, 10, typeOf _unit];
+                _unit setPos _pos;
+            };
         };
     };
+    if (_counter >= 15) then {
+        doStop _unit;
+        _movePos = _movePos findEmptyPosition [0, _counter + 5, typeOf _unit];
+        _unit doMove _movePos;
+    };
 
-    if (((_unit distance2D _movePos) < 2 and currentCommand _unit isNotEqualTo "MOVE") or _counter >= 8) exitWith {true};
-    _unit setVariable ["pl_reached_counter", _counter];
-    false
+    if (((_unit distance2D _movePos) < 2 and currentCommand _unit isNotEqualTo "MOVE") or _counter > 20) exitWith {[true, _movePos, _counter]};
+
+    [false, _movePos, _counter];
 };
 
 
@@ -236,4 +243,40 @@ pl_get_near_inf_groups = {
     } forEach _allies;
 
     _nearGroups
+};
+
+pl_find_highest_point = {
+    params ["_center", "_radius", ["_uDir", 0]];
+
+    private _scanStart = (_center getPos [_radius / 2, _uDir]) getPos [_radius / 2, _uDir + 90];
+    private _widthOffSet = 0;
+    private _heigthOffset = 0;
+    private _maxZ = 0;
+    private _r = _center;
+    for "_i" from 0 to 100 do {
+        _heigthOffset = 0;
+        _scanPos = _scanStart getPos [_widthOffSet, _uDir - 180];
+        for "_j" from 0 to 100 do {
+            _checkPos = _scanPos getPos [_heigthOffset, _uDir - 90];
+            _checkPos = ATLToASL _checkPos;
+
+            // _m = createMarker [str (random 1), _checkPos];
+   //       _m setMarkerType "mil_dot";
+   //       _m setMarkerSize [0.3, 0.3];
+
+            _z = _checkPos#2;
+            if (_z > _maxZ) then {
+                _r = _checkPos;
+                _maxZ = _z;
+            };
+            _heigthOffset = _heigthOffset + (_radius / 100);
+        };
+        _widthOffSet = _widthOffSet + (_radius / 100);
+    };
+
+    // _m = createMarker [str (random 1), _r];
+    // _m setMarkerColor "colorGreen";
+    // _m setMarkerType "mil_dot";
+    ASLToATL _r;
+    _r
 };

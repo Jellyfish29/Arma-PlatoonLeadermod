@@ -1,7 +1,7 @@
 // Jellyfish
 private ["_name","_variable","_input","_submenu","_expression","_input_count","_input_start","_input_page","_input_end","_array","_item"];
 scopename "main";
-// scriptname "A3\functions_f\misc\fn_createmenu.sqf",
+scriptname "A3\functions_f\misc\fn_createmenu.sqf",
 
 // _name = _this select 0;
 // _contextsensitive = false;

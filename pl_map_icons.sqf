@@ -124,10 +124,10 @@ pl_draw_group_info = {
                 if ((getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName')) isEqualTo 'Game Logic') exitWith {};
                 {
                     _unit = _x;
-                    _icon = getText (configfile >> 'CfgVehicles' >> typeof _unit >> 'icon');
+                    _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _unit) >> 'icon');
                     _size = 12;
                     _unitColor = [_unit] call pl_get_unit_color;
-                    if (vehicle _unit == _unit and (alive _unit)) then {
+                    if (vehicle (leader _x) == (leader _x) and (alive _unit)) then {
                         _display drawIcon [
                             _icon,
                             _unitColor,
@@ -1095,6 +1095,33 @@ pl_mark_obstacles = {
 
 [] call pl_mark_obstacles;
 
+pl_draw_text_array = [];
+pl_draw_text = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        {
+            _text = _x#0;
+            _textPos = _x#1;
+            _textSize = _x#2;
+            _color = _x#3;
+            _display drawIcon [
+                '#(rgb,4,1,1)color(1,1,1,0)',
+                _color,
+                _textPos,
+                6,
+                6,
+                0,
+                _text,
+                0,
+                _textSize,
+                'EtelkaMonospacePro',
+                'center'
+            ];
+        } forEach pl_draw_text_array;
+    "]; 
+};
+
+[] call pl_draw_text;
 
 // pl_draw_defence_watchpos_select = {
 //     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -1174,6 +1201,39 @@ pl_draw_at_attack = {
 };
 
 [] call pl_draw_at_attack;
+
+pl_draw_delay_array = [];
+pl_draw_delay_arrow = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                _pos1 = _x#0;
+                _pos2 = _x#1;
+                _display drawArrow [
+                    _pos1,
+                    _pos2,
+                    pl_side_color_rgb
+                ];
+
+                _textPos = _pos1 getPos [(_pos1 distance2D _pos2) / 2, _pos1 getDir _pos2];
+                _display drawIcon [
+                    '#(rgb,4,1,1)color(1,1,1,0)',
+                    pl_side_color_rgb,
+                    _textPos,
+                    6,
+                    6,
+                    0,
+                    'D',
+                    0,
+                    0.03,
+                    'EtelkaMonospacePro',
+                    'center'
+                ];
+            } forEach pl_draw_delay_array;
+    "]; // "  
+};
+
+[] call pl_draw_delay_arrow;
 
 
 addMissionEventHandler ["Loaded", {

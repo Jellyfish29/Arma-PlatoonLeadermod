@@ -333,12 +333,11 @@ pl_suppressive_fire_position = {
 };
 
 pl_friendly_check = {
-    params ["_pos"];
-    _entities = _pos nearEntities ["Man", 20];
+    params ["_unit", "_pos"];
+    _distance = _unit distance2D _pos; 
+    _allies = (_pos nearEntities ["Man", 10 + _distance * 0.15]) select {side _x == side _unit};
     private _return = false;
-    {
-        if ((side _x) isEqualTo playerSide) exitWith {_return = true};
-    } forEach _entities;
+    if !(_allies isEqualTo []) exitWith {true};
     _return
 };
 
@@ -481,19 +480,47 @@ pl_bounding_squad = {
 
 pl_assault_position = {
     params ["_group", ["_taskPlanWp", []]];
-    private ["_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_attackMode", "_fastAtk", "_tacticalAtk"];
+    private ["_leftPos", "_rightPos", "_markerPhaselineName", "_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_attackMode", "_fastAtk", "_tacticalAtk"];
 
     pl_sweep_area_size = 35;
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
 
-    _markerName = format ["%1sweeper%2", _group, random 1];
+    _markerName = format ["%1sweeper", _group];
     createMarker [_markerName, [0,0,0]];
     _markerName setMarkerShape "ELLIPSE";
     _markerName setMarkerBrush "SolidBorder";
     _markerName setMarkerColor pl_side_color;
     _markerName setMarkerAlpha 0.35;
     _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
+
+    // _arrowMarkerName = format ["%1arrow", _group];
+    // createMarker [_arrowMarkerName, [0,0,0]];
+    // _arrowMarkerName setMarkerType "marker_std_atk";
+    // _arrowMarkerName setMarkerDir 0;
+    // _arrowMarkerName setMarkerColor pl_side_color;
+    // _arrowMarkerName setMarkerSize [1.2, 1.2];
+
+    private _rangelimiterCenter = getPos (leader _group);
+    if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
+    private _rangelimiter = 200;
+    _markerBorderName = str (random 2);
+    createMarker [_markerBorderName, _rangelimiterCenter];
+    _markerBorderName setMarkerShape "ELLIPSE";
+    _markerBorderName setMarkerBrush "Border";
+    _markerBorderName setMarkerColor "colorOrange";
+    _markerBorderName setMarkerAlpha 0.8;
+    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+    _markerPhaselineName = format ["%1atk_phase", _group];
+    createMarker [_markerPhaselineName, [0,0,0]];
+    _markerPhaselineName setMarkerShape "RECTANGLE";
+    _markerPhaselineName setMarkerBrush "Solid";
+    _markerPhaselineName setMarkerColor pl_side_color;
+    _markerPhaselineName setMarkerAlpha 0.7;
+    _markerPhaselineName setMarkerSize [pl_sweep_area_size, 0.5];
+
+
     if (visibleMap) then {
         _message = "Select Assault Location <br /><br />
             <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>In Foramtion</t> <br />
@@ -517,10 +544,26 @@ pl_assault_position = {
         while {!pl_mapClicked} do {
             // sleep 0.1;
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            _markerName setMarkerPos _mPos;
+            if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
+                _markerName setMarkerPos _mPos;
+                _phaseDir = _mPos getDir (leader _group);
+                _phasePos = _mPos getPos [pl_sweep_area_size + 10, _phaseDir];
+                _markerPhaselineName setMarkerPos _phasePos;
+                _markerPhaselineName setMarkerDir _phaseDir;
+
+                // _arrowPos = _phasePos getPos [15, _phaseDir];
+                // _arrowDir = _phaseDir - 180;
+                // _arrowDis = ((leader _group) distance2D _mPos) / 2;
+
+                // _arrowMarkerName setMarkerPos _arrowPos;
+                // _arrowMarkerName setMarkerDir _arrowDir;
+                // _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
+            };
+
             if (inputAction "MoveForward" > 0) then {pl_sweep_area_size = pl_sweep_area_size + 5; sleep 0.05};
             if (inputAction "MoveBack" > 0) then {pl_sweep_area_size = pl_sweep_area_size - 5; sleep 0.05};
             _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
+            _markerPhaselineName setMarkerSize [pl_sweep_area_size + 10, 0.5];
             if (pl_sweep_area_size >= 120) then {pl_sweep_area_size = 120};
             if (pl_sweep_area_size <= 5) then {pl_sweep_area_size = 5};
 
@@ -529,8 +572,15 @@ pl_assault_position = {
         player enableSimulation true;
 
         pl_mapClicked = false;
-        _cords = pl_sweep_cords;
+        deleteMarker _markerBorderName;
+        _cords = getMarkerPos _markerName;
         _markerName setMarkerPos _cords;
+        _markerName setMarkerBrush "Border";
+
+        _rightPos = _cords getPos [pl_sweep_area_size, 90];
+        _leftPos = _cords getPos [pl_sweep_area_size, 270];
+        pl_draw_text_array pushBack ["ENY", _leftPos, 0.02, pl_side_color_rgb];
+        pl_draw_text_array pushBack ["ENY", _rightPos, 0.02, pl_side_color_rgb];
     }
     else
     {
@@ -562,26 +612,24 @@ pl_assault_position = {
         _group setVariable ["pl_task_planed", false];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+    if (pl_cancel_strike) exitWith {
+        pl_cancel_strike = false;
+        deleteMarker _markerName;
+        deleteMarker _markerPhaselineName;
+        pl_draw_text_array = pl_draw_text_array - [["ENY", _leftPos, 0.02, pl_side_color_rgb]];
+        pl_draw_text_array = pl_draw_text_array - [["ENY", _rightPos, 0.02, pl_side_color_rgb]];
+     };
 
 
     _arrowDir = (leader _group) getDir _cords;
     _arrowDis = ((leader _group) distance2D _cords) / 2;
     _arrowPos = [_arrowDis * (sin _arrowDir), _arrowDis * (cos _arrowDir), 0] vectorAdd (getPos (leader _group));
 
-
-    _arrowMarkerName = format ["%1arrow%2", _group, random 1];
-    createMarker [_arrowMarkerName, _arrowPos];
-    _arrowMarkerName setMarkerType "marker_std_atk";
-    _arrowMarkerName setMarkerDir _arrowDir;
-    _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
-    _arrowColor = pl_side_color;
     switch (_attackMode) do { 
-        case "tactical" : {_arrowMarkerName setMarkerType "marker_cqb_atk";}; 
-        case "fast" : {_arrowMarkerName setMarkerType "marker_fst_atk";}; 
-        default {}; 
+        case "tactical" : {pl_draw_text_array pushBack ["CLEAR", _cords, 0.025, pl_side_color_rgb];}; 
+        case "fast" : {pl_draw_text_array pushBack ["SEIZE", _cords, 0.025, pl_side_color_rgb];}; 
+        default {pl_draw_text_array pushBack ["SECURE", _cords, 0.025, pl_side_color_rgb];}; 
     };
-    _arrowMarkerName setMarkerColor _arrowColor;
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -609,7 +657,7 @@ pl_assault_position = {
 
     _wp = _group addWaypoint [_cords, 0];
 
-    pl_draw_planed_task_array pushBack [_wp, _icon];
+    // pl_draw_planed_task_array pushBack [_wp, _icon];
 
     _fastAtk = false;
     _tacticalAtk = false;
@@ -684,31 +732,39 @@ pl_assault_position = {
     _vics = _cords nearEntities [["Car", "Tank", "Truck"], 300];
 
     private _atkTriggerDistance = 10;
-    if ((count _vics) > 0) then {
-        _atkTriggerDistance = 40; 
-    };
+    // if ((count _vics) > 0) then {
+    //     _atkTriggerDistance = 40; 
+    // };
 
-    // waitUntil {sleep 0.5; (({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
-    while {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) == 0) and (_group getVariable ["onTask", true])} do {
+    waitUntil {sleep 0.5; (({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
+    // while {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) == 0) and (_group getVariable ["onTask", true])} do {
 
-        _arrowDir = (leader _group) getDir _cords;
-        _arrowDis = ((leader _group) distance2D _cords) / 2;
-        _arrowPos = [_arrowDis * (sin _arrowDir), _arrowDis * (cos _arrowDir), 0] vectorAdd (getPos (leader _group));
+    //     _arrowDir = (leader _group) getDir _cords;
+    //     _arrowDis = ((leader _group) distance2D _cords) / 2;
+    //     _arrowPos = [_arrowDis * (sin _arrowDir), _arrowDis * (cos _arrowDir), 0] vectorAdd (getPos (leader _group));
 
-        _arrowMarkerName setMarkerPos _arrowPos;
-        _arrowMarkerName setMarkerDir _arrowDir;
-        _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
-        sleep 0.1;
-    };
+    //     _arrowMarkerName setMarkerPos _arrowPos;
+    //     _arrowMarkerName setMarkerDir _arrowDir;
+    //     _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
+    //     sleep 0.1;
+    // };
 
     // leader _group limitSpeed 200;
     // _group setSpeedMode "NORMAL";
 
     if (!(_group getVariable ["onTask", true])) exitWith {
         deleteMarker _markerName;
-        deleteMarker _arrowMarkerName;
+        deleteMarker _markerPhaselineName;
+        pl_draw_text_array = pl_draw_text_array - [["ENY", _leftPos, 0.02, pl_side_color_rgb]];
+        pl_draw_text_array = pl_draw_text_array - [["ENY", _rightPos, 0.02, pl_side_color_rgb]];
+        switch (_attackMode) do { 
+            case "tactical" : {pl_draw_text_array = pl_draw_text_array - [["CLEAR", _cords, 0.025, pl_side_color_rgb]]}; 
+            case "fast" : {pl_draw_text_array = pl_draw_text_array - [["SEIZE", _cords, 0.025, pl_side_color_rgb]]}; 
+            default {pl_draw_text_array = pl_draw_text_array - [["SECURE", _cords, 0.025, pl_side_color_rgb]]}; 
+        };
+        // deleteMarker _arrowMarkerName;
         _group setVariable ["pl_is_attacking", false];
-        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+        // pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
         {
             _x setVariable ["pl_damage_reduction", false];
         } forEach (units _group);
@@ -750,17 +806,30 @@ pl_assault_position = {
     };
     
     if ((count _targets) == 0) then {
+        private _n = 0;
+        private _pos = [_cords, 1, _area, 0, 0, 0, 0] call BIS_fnc_findSafePos;;
         {
-            _pos = [_cords, 1, _area, 0, 0, 0, 0] call BIS_fnc_findSafePos;
+            if (_n % 2 == 0) then {
+                _pos = [_cords, 1, _area, 0, 0, 0, 0] call BIS_fnc_findSafePos;
+            };
             _x doMove _pos;
             _x setDestination [_pos, "FORMATION PLANNED", false];
+            _n = _n + 1;
         } forEach (units _group);
+        (leader _group) doMove _cords;
         // _group setCombatMode "RED";
         // _group setVariable ["pl_combat_mode", true];
-        _time = time + 20;
-        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _time)};
+        _time = time + 20 + _area;
+        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _time) or (leader _group) distance2D _cords < 5};
         _group setCombatMode "YELLOW";
         _group setVariable ["pl_combat_mode", false];
+        if (_group getVariable ["onTask", true]) then {
+            {
+                [_x, _cords, 30] spawn pl_find_cover_allways;
+            } forEach (units _group);
+        };
+        _minDelay = time + 20;
+        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _minDelay)};
     }
     else
     {
@@ -768,6 +837,8 @@ pl_assault_position = {
         missionNamespace setVariable [format ["targets_%1", _group], _targets];
         private _time = time + 120;
 
+        private _n = 1;
+        private _buddy = objNull;
         {
             _x enableAI "AUTOCOMBAT";
             _x enableAI "FSM";
@@ -776,7 +847,7 @@ pl_assault_position = {
                 params ["_unit", "_group", "_area", "_cords", "_attackMode"];
                 private ["_movePos", "_target"];
 
-                while {(count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {
+                while {sleep 0.5; (count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {
                     if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
                         _target = {
                             _attacker = _x getVariable ["pl_at_enaged_by", objNull];
@@ -890,7 +961,8 @@ pl_assault_position = {
 
                     // } else {
                     // OpenArea Clear
-                    _target = selectRandom (missionNamespace getVariable format ["targets_%1", _group]);
+                    // _target = selectRandom (missionNamespace getVariable format ["targets_%1", _group]);
+                    _target = (missionNamespace getVariable format ["targets_%1", _group])#([0,1] call BIS_fnc_randomInt);
                     // };
                     if !(isNil "_target") then {
                         if (alive _target and (_target isKindOf "Man")) then {
@@ -909,7 +981,7 @@ pl_assault_position = {
 
                                 sleep 1;
                             };
-                            if (_unreachableTimeOut <= time) then {
+                            if (time >= _unreachableTimeOut) then {
                                 _target enableAI "PATH";
                                 _target doMove ((getPos _target) findEmptyPosition [10, 100, typeOf _target]);
                             };
@@ -937,7 +1009,7 @@ pl_assault_position = {
     _group setVariable ["pl_is_attacking", false];
 
     // remove Icon form wp
-    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+    // pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
     {
         _x setVariable ["pl_damage_reduction", false];
         _x limitSpeed 5000;
@@ -948,7 +1020,15 @@ pl_assault_position = {
     _group enableAttack false;
     // sleep 8;
     deleteMarker _markerName;
-    deleteMarker _arrowMarkerName;
+    // deleteMarker _arrowMarkerName;
+    deleteMarker _markerPhaselineName;
+    pl_draw_text_array = pl_draw_text_array - [["ENY", _leftPos, 0.02, pl_side_color_rgb]];
+    pl_draw_text_array = pl_draw_text_array - [["ENY", _rightPos, 0.02, pl_side_color_rgb]];
+    switch (_attackMode) do { 
+        case "tactical" : {pl_draw_text_array = pl_draw_text_array - [["CLEAR", _cords, 0.025, pl_side_color_rgb]]}; 
+        case "fast" : {pl_draw_text_array = pl_draw_text_array - [["SEIZE", _cords, 0.025, pl_side_color_rgb]]}; 
+        default {pl_draw_text_array = pl_draw_text_array - [["SECURE", _cords, 0.025, pl_side_color_rgb]]}; 
+    };
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
         sleep 1;

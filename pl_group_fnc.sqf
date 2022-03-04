@@ -270,7 +270,7 @@ pl_voice_radio_answer = {
         private _answerVoiceLine = "";
         switch (_message) do { 
             case "confirm" : {_answerVoiceLine = selectRandom ["SentConfirmAttack", "SentConfirmOther", "SentSupportConfirm"]};
-            case "suppress" : {_answerVoiceLine = selectRandom ["SentConfirmAttack", "SentConfirmOther", "SentSupportConfirm"]}; 
+            case "suppress" : {_answerVoiceLine = selectRandom ["SentConfirmSuppress"]}; 
             case "contact" : {_answerVoiceLine = selectRandom ["SentEnemyContact", "SentOpenFireInCombat"]};
             case "kia" : {_answerVoiceLine = "SentUnitKilled"}; 
             case "destroyed" : {_answerVoiceLine = "SentObjectDestroyedUnknown"}; 
@@ -282,7 +282,11 @@ pl_voice_radio_answer = {
         [_group, _answerVoiceLine, _delay] spawn {
             params ["_group", "_answerVoiceLine", "_delay"];
             sleep _delay;
+            // playsound "radioina";
+            // sleep 0.5;
             (leader _group) sideRadio _answerVoiceLine;
+            // sleep 1.5;
+            // playsound "radiout";
         };
 
    };

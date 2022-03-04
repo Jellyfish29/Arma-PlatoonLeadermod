@@ -228,7 +228,14 @@ pl_opfor_form_line = {
             _unit doMove _movePos;
             _unit setDestination [_movePos, "FORMATION PLANNED", false];
             sleep 1;
-            waitUntil {sleep 0.5; (!alive _unit) or [_unit, _movePos] call pl_position_reached_check or ((group _unit) getVariable ["pl_opf_task", "cover"] != _mode)};
+            private _counter = 0;
+            while {alive _unit and ((group _unit) getVariable ["pl_opf_task", "cover"] != _mode)} do {
+                sleep 0.5;
+                _dest = [_unit, _movePos, _counter] call pl_position_reached_check;
+                if (_dest#0) exitWith {};
+                _movePos = _dest#1;
+                _counter = _dest#2;
+            };
             _unit enableAI "AUTOCOMBAT";
             _unit enableAI "AUTOTARGET";
             _unit enableAI "TARGET";
@@ -367,7 +374,7 @@ pl_opfor_flanking_move = {
 			_grp setBehaviour "AWARE";
 			_grp setFormation "WEDGE";
 			_grp setSpeedMode "FULL";
-			_grp setCombatMode "BLUE";
+			// _grp setCombatMode "BLUE";
 		};
 	};
 	_targetPos;
@@ -381,6 +388,7 @@ pl_opfor_cqb = {
 		_x setUnitPos "AUTO";
 		_x doFollow (leader _grp);
 	} forEach (units _grp);
+	_grp setFormation "DIAMOND";
 };
 
 
@@ -425,10 +433,10 @@ pl_opfor_find_overwatch = {
 	if !(_knownUnits isEqualto []) exitWith {
 
 		_atkPos = getPos (leader (group (_knownUnits#0)));
-		_overwatchPos = [_atkPos, 400, 100, 100] call BIS_fnc_findOverwatch;
+		_overwatchPos = [getPos (leader _grp), 500] call pl_find_highest_point;
 		if (_overwatchPos distance2d _atkPos > 50) then {
 			[_grp, _overwatchPos, _atkPos] spawn {
-				params ["_grp", "_flankPos", "_flankDistance", "_targetDir", "_targetPos"];
+				params ["_grp", "_overwatchPos", "_atkPos"];
 
 				[_grp] call pl_opfor_reset;
 				sleep 0.2;
@@ -447,7 +455,7 @@ pl_opfor_find_overwatch = {
 					if !(_x == leader _grp) then {
 						_x doFollow (leader _grp);
 					} else {
-						_x doMove _flankPos;
+						_x doMove _overwatchPos;
 						_x playActionNow "GestureAdvance";
 					};
 				} forEach (units _grp);
@@ -455,15 +463,50 @@ pl_opfor_find_overwatch = {
 				_grp setBehaviour "AWARE";
 				_grp setFormation "WEDGE";
 				_grp setSpeedMode "FULL";
-				_grp setCombatMode "BLUE";
+				// _grp setCombatMode "BLUE";
 
 			};
 		};
-		[true, _overwatchPos, _targetPos]
+		[true, _overwatchPos, _atkPos]
 	};
 	[false, [0,0,0], [0,0,0]]
 };
 
+pl_find_highest_point = {
+	params ["_center", "_radius", ["_uDir", 0]];
+
+	private _scanStart = (_center getPos [_radius / 2, _uDir]) getPos [_radius / 2, _uDir + 90];
+	private _widthOffSet = 0;
+	private _heigthOffset = 0;
+	private _maxZ = 0;
+	private _r = _center;
+	for "_i" from 0 to 100 do {
+		_heigthOffset = 0;
+		_scanPos = _scanStart getPos [_widthOffSet, _uDir - 180];
+		for "_j" from 0 to 100 do {
+			_checkPos = _scanPos getPos [_heigthOffset, _uDir - 90];
+			_checkPos = ATLToASL _checkPos;
+
+			// _m = createMarker [str (random 1), _checkPos];
+   //      	_m setMarkerType "mil_dot";
+   //      	_m setMarkerSize [0.3, 0.3];
+
+			_z = _checkPos#2;
+			if (_z > _maxZ) then {
+				_r = _checkPos;
+				_maxZ = _z;
+			};
+			_heigthOffset = _heigthOffset + (_radius / 100);
+		};
+		_widthOffSet = _widthOffSet + (_radius / 100);
+	};
+
+	// _m = createMarker [str (random 1), _r];
+	// _m setMarkerColor "colorGreen";
+	// _m setMarkerType "mil_dot";
+	ASLToATL _r;
+	_r
+};
 
 pl_opfor_create_marker = {
 	params ["_grp", "_type", "_pos", "_dir", "_color"];
@@ -668,14 +711,14 @@ pl_opfor_vic_suppress = {
 
 // hint "oof";
 // pl_debug = true;
-// {
-// 	if (leader _x == vehicle (leader _x)) then {
-// 		_x execFSM "pl_opfor_cmd.fsm";
-// 	} else {
-// 		_x execFSM "pl_opfor_cmd_vic.fsm";
-// 	};
-// 	// [_x, getPos player] spawn pl_opfor_bounding_move;
-// } forEach (allGroups select {side _x == east});
+{
+	if (leader _x == vehicle (leader _x)) then {
+		_x execFSM "pl_opfor_cmd.fsm";
+	} else {
+		_x execFSM "pl_opfor_cmd_vic.fsm";
+	};
+	// [_x, getPos player] spawn pl_opfor_bounding_move;
+} forEach (allGroups select {side _x == east});
 
 // [o1, getpos player] spawn pl_opfor_bounding_move;
 

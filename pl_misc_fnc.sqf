@@ -11,7 +11,7 @@ addMissionEventHandler ["GroupIconClick", {
     private ["_vic", "_vicGroup"];
 
     if (side _group == playerSide) then {
-        if (pl_enable_beep_sound) then {playSound "beep"};
+        // if (pl_enable_beep_sound) then {playSound "radioin"};
         // if ((vehicle (leader _group)) != (leader _group)) then {
         //     _vic = vehicle (leader _group);
         //     // player sideChat str _vic;
@@ -43,6 +43,17 @@ addMissionEventHandler ["GroupIconClick", {
             missionNamespace setVariable ["pl_transfer_medic_enabled", false];
             missionNamespace setVariable ["pl_transfer_medic_group", _group];
         };
+    };
+}];
+
+addMissionEventHandler ["HCGroupSelectionChanged", {
+    params ["_group", "_isSelected"];
+
+    if (_isSelected) then {
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        if (pl_enable_beep_sound) then {playSound "radioina"};
+    } else {
+        if (pl_enable_beep_sound) then {playSound "radioutc"};
     };
 }];
 
@@ -484,8 +495,8 @@ pl_watch_dir = {
 
 
     if (_dir isEqualTo "") then {
-        // if (pl_enable_beep_sound) then {playSound "beep"};
-        [_group, "confirm", 1] call pl_voice_radio_answer;
+        if (pl_enable_beep_sound) then {playSound "beep"};
+        // [_group, "confirm", 1] call pl_voice_radio_answer;
         _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
         _groupPos = getPos (leader _group);
         _watchDir = [_cords, _groupPos] call BIS_fnc_dirTo;
