@@ -17,7 +17,7 @@ pl_share_info = {
     _group setVariable ["spotRepEnabled", true];
 
     while {sleep 1; count ((units _group) select {alive _x}) > 0} do {
-        // waitUntil {sleep 1; (behaviour (leader _group)) isEqualto "COMBAT"};
+        waitUntil {sleep 1; (behaviour (leader _group)) isEqualto "COMBAT"};
 
         _targets = [];
 
@@ -26,10 +26,10 @@ pl_share_info = {
         _targets = [(leader _group)] call pl_get_targets;
         if !(_targets isEqualto []) then {
             [_targets, (leader _group)] call pl_reveal_targets;
-            [_targets] spawn pl_mark_targets_on_map;
+            [_targets] call pl_mark_targets_on_map;
         };
 
-        sleep 10;
+        sleep 8 + (random 4);
     };
 };
 
@@ -38,12 +38,12 @@ pl_get_targets = {
     private ["_targets"];
     _targets = [];
     {
-        if (alive _x and (side _x) != civilian) then {
-            if (_leader knowsAbout _x > 1) then {
-            _targets append [_x];
+        if (alive _x and [(side _x), playerside] call BIS_fnc_sideIsEnemy) then {
+            if (_leader knowsAbout _x > 0.105) then {
+                _targets pushBack _x;
             };
         };
-    } forEach (allUnits+vehicles select {side _x != playerSide});
+    } forEach (allUnits+vehicles);
     _targets
 };
 
@@ -112,12 +112,13 @@ pl_reveal_targets_opfor = {
 
 pl_contact_info_share = {
     params ["_unit"];
-    sleep 5;
-    _targets = [];
+
+    sleep (random 4);
+
     _targets = [_unit] call pl_get_targets;
     [_targets, _unit] call pl_reveal_targets;
 
-    [_targets] spawn pl_mark_targets_on_map;
+    [_targets] call pl_mark_targets_on_map;
 };
 
 pl_contact_report = {
@@ -216,7 +217,7 @@ pl_player_report = {
         if (player knowsAbout _x > 0) then {
           _targets pushBack _x;
         };
-    } forEach (allUnits+vehicles select {side _x != playerSide});
+    } forEach (allUnits+vehicles select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
 
     [_targets] spawn pl_mark_targets_on_map;
 
@@ -697,9 +698,10 @@ pl_ai_setUp_loop = {
                         };
                     } forEach (units _x);
                 };
-            }
-            else
-            {
+            };
+
+            if (([(side _x), playerside] call BIS_fnc_sideIsEnemy) and side _x != civilian) then {
+                
                 if (pl_opfor_info_share_enabled) then {
                     if (isNil {_x getVariable "spotRepEnabled"}) then {
                         [_x] spawn pl_share_info_opfor;
@@ -717,9 +719,6 @@ pl_ai_setUp_loop = {
                             _x setVariable ["pl_opfor_ai_enabled", true];
                     };
                 };
-                // if (pl_enable_nato_icons_enemy) then {
-                //     [_x] call pl_hide_group_icon;
-                // };
             };
 
             if(_x != (group player)) then {

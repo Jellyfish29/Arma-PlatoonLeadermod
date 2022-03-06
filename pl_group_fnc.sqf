@@ -44,7 +44,7 @@ pl_split_hc_group = {
         if (_x != (leader _group)) then {
             _newGroup = createGroup [playerSide, true];
             [_x] joinSilent _newGroup;
-            player hcSetGroup [_newGroup]
+            player hcSetGroup [_newGroup];
         };
     } forEach (units _group);
 };

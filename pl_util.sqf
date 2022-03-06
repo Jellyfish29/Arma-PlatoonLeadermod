@@ -280,3 +280,17 @@ pl_find_highest_point = {
     ASLToATL _r;
     _r
 };
+
+pl_friendly_check = {
+    params ["_unit", "_pos"];
+
+    // _m = createMarker [str (random 1), _pos];
+    // _m setMarkerType "mil_dot";
+    // _m setMarkerColor "colorGreen";
+    
+    _distance = _unit distance2D _pos; 
+    _allies = (_pos nearEntities [["Man", "Car", "Tank"], 10 + (_distance * 0.25)]) select {side _x == side _unit};
+    // player sideChat str _allies;
+    if !(_allies isEqualTo []) exitWith {true};
+    false
+};

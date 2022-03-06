@@ -719,7 +719,7 @@ class RscHCGroupRootMenu
             };
             class PlTakeCover
             {
-                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover/Button Up</t>";
+                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover</t>";
                 shortcuts[]={5};
                 shortcutsAction = "CommandingMenu5";
                 submenu="";
@@ -764,7 +764,7 @@ class RscHCGroupRootMenu
             
             class PlAttachInf
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Follow Vehicle</t";
+                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Attach/Detach Infantry</t";
                 shortcuts[]={6};
                 shortcutsAction = "CommandingMenu6";
                 submenu="";
@@ -2430,6 +2430,41 @@ class CfgSounds {
 //         };
 
 // };
+
+// class CfgPatches
+// {
+//     class A3_Modules_F_Marta
+//     {
+//         addonRootClass="A3_Modules_F";
+//         requiredAddons[]=
+//         {
+//             "A3_Modules_F"
+//         };
+//         requiredVersion=0.1;
+//         units[]=
+//         {
+//             "MartaManager"
+//         };
+//         weapons[]={};
+//     };
+// };
+class CfgVehicles
+{
+    class Module_F;
+    class MartaManager: Module_F
+    {
+        author="$STR_A3_Bohemia_Interactive";
+        _generalMacro="MartaManager";
+        scope=2;
+        displayName="$STR_MARTA_NAME";
+        icon="\A3\modules_f\data\icon_MARTA_ca.paa";
+        class EventHandlers
+        {
+            init="if (isnil 'BIS_marta_mainscope') then {BIS_marta_mainscope = _this select 0; if (isServer) then {private [""_ok""];_ok = _this execVM ""Plmod\overwrites\marta_main.sqf""}};";
+        };
+    };
+};
+
 
 
 

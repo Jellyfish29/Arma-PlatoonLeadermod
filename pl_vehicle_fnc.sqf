@@ -65,6 +65,8 @@ pl_getIn_vehicle = {
     } forEach pl_vics;
     if !(isNil "_targetVic") then {
 
+        _targetVic lockCargo false;
+
         // Request Airlift
         if ((_targetVic distance2D (leader _group)) > 200 and _targetVic isKindOf "Air") then {
             {
@@ -228,11 +230,6 @@ pl_getOut_vehicle = {
             };
         };
 
-
-/*        [_group] call pl_reset;
-        sleep 0.5;
-        [_group] call pl_reset;
-        sleep 0.5;*/
         _vic setVariable ["pl_on_transport", true];
         _cargo = fullCrew _vic;
         _commander = driver _vic;
@@ -792,26 +789,44 @@ pl_getOut_vehicle = {
 pl_dismount_cargo = {
     params [["_group", (hcSelected player) select 0]];
 
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    if (_group getVariable ["pl_is_dismounted", false]) exitWith {_group setVariable ["pl_is_dismounted", nil]};
+
+    _group setVariable ["pl_is_dismounted", true];
 
     _vic = vehicle (leader _group);
     _driver = driver _vic;
     _vicGroup = group _driver;
     doStop _vic;
+    _vic limitSpeed 12;
     _cargo = fullCrew [_vic, "cargo", false];
     if (_cargo isEqualTo []) exitWith {hint "No Cargo to Unload"};
+    private _dismounts = [];
     {
         _unit = _x select 0;
         if (_unit in (units _vicGroup)) then {
             _unit = _x select 0;
             doGetOut _unit;
             [_unit] allowGetIn false;
+            _dismounts pushback _unit;
         };
     } forEach _cargo;
 
+    _group setFormation "STAG COLUMN";
+    _vic lockCargo true;
+
+    waitUntil {sleep 0.5; !(_group getVariable ["pl_is_dismounted", false])};
+    _vic limitSpeed 50;
+
+    _group setVariable ["pl_is_dismounted", nil];
+    _vic lockCargo false;
+    _vic limitSpeed 50;
+
     {
-        _x doFollow (leader _group);
-    } forEach (units _group);
+        _x assignAsCargo _vic;
+        [_x] allowGetIn true;
+        [_x] orderGetIn true;
+    } forEach _dismounts;
 };
 
 // [] spawn pl_dismount_cargo;
@@ -827,7 +842,10 @@ pl_unload_at_position_planed = {
     _vicGroup = group _driver;
     _cargo = fullCrew [_vic, "cargo", false];
 
-    _cargoGroups = [];
+    private _attached = _vicGroup getVariable ["pl_attached_infGrp", grpNull];
+    if !(isNull _attached) exitWith {[_vicGroup, _attached, _taskPlanWp] spawn pl_detach_inf_planed};
+
+    private _cargoGroups = [];
     {
         _unit = _x select 0;
         if (!(_unit in (units _vicGroup)) and !(_unit in (units (group player)))) then {
@@ -905,6 +923,30 @@ pl_unload_at_position_planed = {
         {
             _x setVariable ["pl_disembark_finished", nil];
         } forEach _cargoGroups;
+    };
+};
+
+pl_detach_inf_planed = {
+    params ["_group", "_attached", "_taskPlanWp"];
+
+    if (count _taskPlanWp != 0) then {
+
+        _wpPos = waypointPosition _taskPlanWp;
+        _wpPos = +_wpPos;
+
+        pl_draw_unload_inf_task_plan_icon_array pushBack [_attached, _wpPos];
+
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
+
+        deleteWaypoint [_group, _taskPlanWp#1];
+
+        if !(_group getVariable ["pl_task_planed", false]) then {
+            pl_cancel_strike = true;
+            pl_draw_unload_inf_task_plan_icon_array = pl_draw_unload_inf_task_plan_icon_array - [[_attached, _wpPos]];
+        }; // deleteMarker
+        _group setVariable ["pl_task_planed", false];
+        _group setVariable ["pl_vic_attached", false];
+        _attached setVariable ["pl_disembark_finished", true];
     };
 };
 
@@ -1151,6 +1193,8 @@ pl_attach_inf = {
 
     _group = (hcSelected player) select 0;
 
+    if (_group getVariable ["pl_vic_attached", false]) exitWith {_group setVariable ["pl_vic_attached", false]};
+
     if (vehicle (leader _group) != leader _group) exitWith {"Infantry Only Task!"};
 
     pl_attach_form = false;
@@ -1206,6 +1250,10 @@ pl_attach_inf = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
     _group setVariable ["specialIcon", "\A3\ui_f\data\map\markers\nato\n_mech_inf.paa"];
+    _vicGroup setVariable ["pl_vic_attached", true];
+    _vicGroup setVariable ["pl_attached_infGrp", _group];
+    // _vicGroup setVariable ["setSpecial", true];
+    // _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\map\markers\nato\n_mech_inf.paa"];
     // _group setVariable ["specialIcon", "\A3\3den\data\Attributes\Formation\line_ca.paa"];
 
     pl_follow_array_other = pl_follow_array_other + [[_vicGroup, _group]];
@@ -1217,6 +1265,7 @@ pl_attach_inf = {
         case "Diamond" : {_group setFormation "DIAMOND"}; 
         default {_group setFormation "LINE"}; 
     };
+
 
     {
         _x disableAI "AUTOCOMBAT";
@@ -1231,9 +1280,18 @@ pl_attach_inf = {
     } forEach ((units _group) - [_leader]);
     _group setFormDir (getDir _vic);
 
-    while {_group getVariable ["onTask", true] and (alive _vic)} do {
+    _attachDir = (leader _group) getDir _vic;
+    _turnPos = [_vic, _attachDir] call pl_get_turn_vehicle;
+    _vic doMove _turnPos;
+
+    waitUntil {sleep 0.5; unitReady _vic or !(_group getVariable ["onTask", false]) or !alive _vic and unitReady (leader _group)};
+
+    player hcRemoveGroup _group;
+
+    while {(alive _vic) and (_group getVariable ["onTask", false]) and (_vicGroup getVariable ["pl_vic_attached", false])} do {
 
         _group setFormDir (getDir _vic);
+        _group setFormation (formation _vicGroup);
         if (speed _vic > 0) then {
             _group setBehaviour "AWARE";
             _leader = leader _group;
@@ -1253,8 +1311,12 @@ pl_attach_inf = {
         waitUntil {sleep 0.1; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
     };
 
+    _vicGroup setVariable ["pl_vic_attached", nil];
+    _vicGroup setVariable ["pl_attached_infGrp", nil];
+    player hcSetGroup [_group];
+
     pl_follow_array_other = pl_follow_array_other - [[_vicGroup, _group]];
-    if !(alive _vic) exitWith {[_group] call pl_reset};
+    [_group] call pl_reset;
     _vic forceSpeed -1;
     _vic limitSpeed 50;
     _vic setVariable ["pl_speed_limit", "50"];

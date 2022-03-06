@@ -263,7 +263,7 @@ pl_suppressive_fire_position = {
             _pos = (_vis select 0) select 0;
         };
 
-        if ((_pos distance2D _unit) > pl_suppression_min_distance and !([_pos] call pl_friendly_check)) then {
+        if ((_pos distance2D _unit) > pl_suppression_min_distance and !([_unit, _pos] call pl_friendly_check)) then {
 
             _unit doSuppressiveFire _pos;
 
@@ -332,14 +332,7 @@ pl_suppressive_fire_position = {
     pl_draw_suppression_array = pl_draw_suppression_array - [[_cords, _leader, _continous, _icon]];
 };
 
-pl_friendly_check = {
-    params ["_unit", "_pos"];
-    _distance = _unit distance2D _pos; 
-    _allies = (_pos nearEntities ["Man", 10 + _distance * 0.15]) select {side _x == side _unit};
-    private _return = false;
-    if !(_allies isEqualTo []) exitWith {true};
-    _return
-};
+
 
 
 pl_bounding_squad = {
@@ -539,6 +532,9 @@ pl_assault_position = {
             onMapSingleClick "";
         };
 
+        private _rangelimiterCenter = getPos (leader _group);
+        if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
+
         player enableSimulation false;
 
         while {!pl_mapClicked} do {
@@ -546,7 +542,7 @@ pl_assault_position = {
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
                 _markerName setMarkerPos _mPos;
-                _phaseDir = _mPos getDir (leader _group);
+                _phaseDir = _mPos getDir _rangelimiterCenter;
                 _phasePos = _mPos getPos [pl_sweep_area_size + 10, _phaseDir];
                 _markerPhaselineName setMarkerPos _phasePos;
                 _markerPhaselineName setMarkerDir _phaseDir;
@@ -729,7 +725,7 @@ pl_assault_position = {
     // waitUntil {sleep 0.5; (((leader _group) distance _cords) < (pl_sweep_area_size + 10)) or !(_group getVariable ["onTask", true])};
 
     // _vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], _area, true];
-    _vics = _cords nearEntities [["Car", "Tank", "Truck"], 300];
+    _vics = _cords nearEntities [["Car", "Tank", "Truck"], _area];
 
     private _atkTriggerDistance = 10;
     // if ((count _vics) > 0) then {

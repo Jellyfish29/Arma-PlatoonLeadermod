@@ -131,7 +131,7 @@ pl_heal_group = {
                             // if (_enemies isEqualTo []) then {
                                 if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and !(_group getVariable ["onTask", true])) then {
 
-                                    _h1 = [_group, _medic, nil, _x, [] , 40, "pl_healing_active"] spawn pl_ccp_revive_action;
+                                    _h1 = [_group, _medic, objNull, _x, [] , 40, "pl_healing_active"] spawn pl_ccp_revive_action;
                                     waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])}
                                 };
                             // };
@@ -235,10 +235,12 @@ pl_ccp_revive_action = {
     _pos = [0.5 - (random 1), 0.5 - (random 1)] vectorAdd _pos;
     _medic doMove _pos;
     _medic setDestination [_pos,"LEADER DIRECT", true];
-    _escort disableAI "AUTOCOMBAT";
-    // _escort disableAI "FSM";
-    _escort enableAI "PATH";
-    _escort doFollow _medic;
+    if !(isNull _escort) then {
+        _escort disableAI "AUTOCOMBAT";
+        // _escort disableAI "FSM";
+        _escort enableAI "PATH";
+        _escort doFollow _medic;
+    };
     sleep 1;
     waitUntil {sleep 0.5; (unitReady _medic) or ((_medic distance2D _healTarget) < 2) or !(_group getVariable [_waitVar, true]) or (!alive _healTarget) or (!alive _medic) or (_medic getVariable ["pl_wia", false])};
     // Animation

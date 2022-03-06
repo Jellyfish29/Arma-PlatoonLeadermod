@@ -185,7 +185,7 @@ pl_opfor_form_line = {
 			_units = units _grp;
 			_startPos = getPos (([_units, [], {_target distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0);
 		} else {
-			_startPos = getPos (leader _grp);
+		_startPos = getPos (leader _grp);
 		};
 	};
     private _posArray = [];
@@ -229,7 +229,7 @@ pl_opfor_form_line = {
             _unit setDestination [_movePos, "FORMATION PLANNED", false];
             sleep 1;
             private _counter = 0;
-            while {alive _unit and ((group _unit) getVariable ["pl_opf_task", "cover"] != _mode)} do {
+            while {alive _unit and ((group _unit) getVariable ["pl_opf_task", "cover"] == _mode)} do {
                 sleep 0.5;
                 _dest = [_unit, _movePos, _counter] call pl_position_reached_check;
                 if (_dest#0) exitWith {};
@@ -402,7 +402,7 @@ pl_opfor_attack_closest_enemy = {
 
 	    _units = allUnits select {side _x == playerSide and alive _x};
 	    _units = [_units, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
-	    _knownUnits = _units select {((leader _grp) knowsAbout _x) > 0.5};
+	    _knownUnits = _units select {((leader _grp) knowsAbout _x) > 0.1};
 	    
 
 	    if !(_knownUnits isEqualto []) then {
@@ -420,7 +420,7 @@ pl_opfor_attack_closest_enemy = {
 	    };
 
 	    _wp = _grp addWaypoint [_atkPos, 20];
-	    _wp setWaypointType "SAD";
+	    _wp setWaypointType "MOVE";
 	};
 };
 
@@ -711,14 +711,14 @@ pl_opfor_vic_suppress = {
 
 // hint "oof";
 // pl_debug = true;
-{
-	if (leader _x == vehicle (leader _x)) then {
-		_x execFSM "pl_opfor_cmd.fsm";
-	} else {
-		_x execFSM "pl_opfor_cmd_vic.fsm";
-	};
-	// [_x, getPos player] spawn pl_opfor_bounding_move;
-} forEach (allGroups select {side _x == east});
+// {
+// 	if (leader _x == vehicle (leader _x)) then {
+// 		_x execFSM "pl_opfor_cmd.fsm";
+// 	} else {
+// 		_x execFSM "pl_opfor_cmd_vic.fsm";
+// 	};
+// 	// [_x, getPos player] spawn pl_opfor_bounding_move;
+// } forEach (allGroups select {side _x == east});
 
 // [o1, getpos player] spawn pl_opfor_bounding_move;
 

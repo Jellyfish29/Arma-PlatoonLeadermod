@@ -366,10 +366,11 @@
     true
 ] call CBA_fnc_addSetting;
 
+pl_enable_vanilla_marta = false;
 // [
-//     "pl_enable_nato_icons_enemy",
+//     "pl_enable_vanilla_marta",
 //     "CHECKBOX",
-//     ["Disable Nato Markers for Non Palyerside","WARNING! creates a error in vanilla function createMenu"],
+//     ["Enable Vanilla Mil. Symbols","Restores Standardt MARTA-Module Functionality"],
 //     ["Platoon Leader", "UI"],
 //     [false],
 //     nil,

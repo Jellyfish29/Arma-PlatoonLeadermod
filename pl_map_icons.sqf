@@ -127,7 +127,7 @@ pl_draw_group_info = {
                     _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _unit) >> 'icon');
                     _size = 12;
                     _unitColor = [_unit] call pl_get_unit_color;
-                    if (vehicle (leader _x) == (leader _x) and (alive _unit)) then {
+                    if (vehicle _x == _x and (alive _unit)) then {
                         _display drawIcon [
                             _icon,
                             _unitColor,
@@ -1009,9 +1009,9 @@ pl_draw_unit_group_lines = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
             {
-                if (vehicle (leader _x) == leader _x and side (leader _x) == playerSide) then {
-                    _pos1 = getPos (leader _x);
-                    {
+                _pos1 = getPos (leader _x);
+                {
+                    if (vehicle _x == _x and side _x == playerSide) then {
                         _pos2 = getPos _x;
                         _color = pl_side_color_rgb;
                         if (_x getVariable ['pl_wia', false]) then {_color = [0.7,0,0,0.5]};
@@ -1020,8 +1020,8 @@ pl_draw_unit_group_lines = {
                             _pos2,
                             _color
                             ];
-                    } forEach ((units _x) - [leader _x]);
-                };
+                        };
+                } forEach ((units _x) - [leader _x]);
             } forEach (hcSelected player);
     "]; // "
 };
@@ -1202,38 +1202,61 @@ pl_draw_at_attack = {
 
 [] call pl_draw_at_attack;
 
-pl_draw_delay_array = [];
-pl_draw_delay_arrow = {
+pl_opfor_wp_dic = createHashMap;
+pl_opfor_wp_arrow = {
     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
         _display = _this#0;
             {
-                _pos1 = _x#0;
-                _pos2 = _x#1;
-                _display drawArrow [
-                    _pos1,
-                    _pos2,
-                    pl_side_color_rgb
-                ];
-
-                _textPos = _pos1 getPos [(_pos1 distance2D _pos2) / 2, _pos1 getDir _pos2];
-                _display drawIcon [
-                    '#(rgb,4,1,1)color(1,1,1,0)',
-                    pl_side_color_rgb,
-                    _textPos,
-                    6,
-                    6,
-                    0,
-                    'D',
-                    0,
-                    0.03,
-                    'EtelkaMonospacePro',
-                    'center'
-                ];
-            } forEach pl_draw_delay_array;
+                if !(isNull (_y#3)) then {
+                    _pos1 = _y#0;
+                    _pos2 = _y#1;
+                    _color = _y#2;
+                    _display drawArrow [
+                        _pos1,
+                        _pos2,
+                        _color
+                    ];
+                } else {
+                    pl_opfor_wp_dic deleteat _x;  
+                };
+            } forEach pl_opfor_wp_dic;
     "]; // "  
 };
 
-[] call pl_draw_delay_arrow;
+[] call pl_opfor_wp_arrow;
+
+// pl_draw_delay_array = [];
+// pl_draw_delay_arrow = {
+//     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+//         _display = _this#0;
+//             {
+//                 _pos1 = _x#0;
+//                 _pos2 = _x#1;
+//                 _display drawArrow [
+//                     _pos1,
+//                     _pos2,
+//                     pl_side_color_rgb
+//                 ];
+
+//                 _textPos = _pos1 getPos [(_pos1 distance2D _pos2) / 2, _pos1 getDir _pos2];
+//                 _display drawIcon [
+//                     '#(rgb,4,1,1)color(1,1,1,0)',
+//                     pl_side_color_rgb,
+//                     _textPos,
+//                     6,
+//                     6,
+//                     0,
+//                     'D',
+//                     0,
+//                     0.03,
+//                     'EtelkaMonospacePro',
+//                     'center'
+//                 ];
+//             } forEach pl_draw_delay_array;
+//     "]; // "  
+// };
+
+// [] call pl_draw_delay_arrow;
 
 
 addMissionEventHandler ["Loaded", {
@@ -1268,58 +1291,6 @@ addMissionEventHandler ["Loaded", {
 
 pl_marker_targets = [];
 
-pl_mark_targets_on_map = {
-    params ["_targets"];
-    // _markers = [];
-    // _markerTargets = [];
-    // // _time = time + 20;
-
-    // {
-    //     if !(_x in pl_marker_targets) then {
-    //         if (alive _x and (side _x) != civilian) then {
-    //             if (_x isKindOf "Man" or _x isKindOf "Tank" or _x isKindOf "Car" or _x isKindOf "Truck") then {
-    //                 _pos = [[[getPos _x, 10]],[]] call BIS_fnc_randomPos;
-    //                 private _markerName = str _x;
-    //                 _markerSize = 0.15;
-    //                 _marker = createMarker [_markerName, _pos];
-    //                 _markerName setMarkerType "o_unknown";
-    //                 // if (_x isKindOf "Tank") then {
-    //                 //     _markerName setMarkerType "o_armor";
-    //                 //     _markerSize = 0.4;
-    //                 // };
-    //                 // if (_x isKindOf "Car") then {
-    //                 //     _markerName setMarkerType "o_motor_inf";
-    //                 //     _markerSize = 0.4;
-    //                 // };
-    //                 _unitText = getText (configFile >> "CfgVehicles" >> typeOf _x >> "textSingular");
-
-    //                 switch (_unitText) do {
-    //                     case "truck" : {_markerName setMarkerType "o_support"; _markerSize = 0.3};
-    //                     case "car" : {_markerName setMarkerType "o_motor_inf"; _markerSize = 0.3}; 
-    //                     case "tank" : {_markerName setMarkerType "o_armor"; _markerSize = 0.3}; 
-    //                     case "specop" : {_markerName setMarkerType "o_recon"}; 
-    //                     case "APC" : {_markerName setMarkerType "o_mech_inf"; _markerSize = 0.3};
-    //                     default {_markerName setMarkerType "o_inf";};
-    //                 };
-
-    //                 _markerName setMarkerColor "colorOpfor";
-    //                 _markerName setMarkerSize [_markerSize, _markerSize];
-    //                 // _markerName setMarkerText str (parseText _markerText);
-    //                 _markers pushBack _markerName;
-    //                 _markerTargets pushBack _x;
-    //                 pl_marker_targets pushBack _x;
-    //             };
-    //         };
-    //     };
-    // } forEach _targets;
-
-    // // waitUntil {time >= _time};
-    // sleep 20;
-    // {
-    //     deleteMarker _x;
-    // } forEach _markers;
-    // pl_marker_targets = pl_marker_targets - _markerTargets; 
-};
 
 pl_map_radio_callout = {
     params ["_group", "_text", "_cdTime"];

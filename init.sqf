@@ -20,16 +20,17 @@ execVM "Plmod\pl_disable_hc_elements.sqf";
 execVM "Plmod\pl_mine_fnc.sqf";
 execVM "Plmod\pl_util.sqf";
 execVM "Plmod\pl_opfor_ai_fnc.sqf";
+execVM "Plmod\pl_recon_fnc.sqf";
 // execVM "Plmod\pl_marta_overwrite.sqf";
 
 // setGroupIconsVisible [true,true]; 
 
 
 switch (side player) do { 
-    case west : {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.5]}; 
-    case east : {pl_side_color = "colorOpfor"; pl_side_color_rgb = [0.5,0,0,0.5]};
-    case resistance : {pl_side_color = "colorIndependent"; pl_side_color_rgb = [0,0.5,0,0.5]};
-    default {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.5]}; 
+    case west : {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.5]; pl_side_prefix = "b"; pl_opfor_prefix = "o"}; 
+    case east : {pl_side_color = "colorOpfor"; pl_side_color_rgb = [0.5,0,0,0.5]; pl_side_prefix = "o"; pl_opfor_prefix = "b"};
+    case resistance : {pl_side_color = "colorIndependent"; pl_side_color_rgb = [0,0.5,0,0.5]; pl_side_prefix = "n"; pl_opfor_prefix = "o"};
+    default {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.5]; pl_side_prefix = "b"; pl_opfor_prefix = "o"}; 
 };
 
 
