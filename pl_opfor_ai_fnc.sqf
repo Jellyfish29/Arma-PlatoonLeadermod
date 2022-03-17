@@ -48,7 +48,7 @@ pl_opfor_find_cover = {
     private ["_valid"];
 
     _covers = nearestTerrainObjects [getPos _unit, pl_valid_covers, _radius, true, true];
-    _watchPos = [1000*(sin _watchDir), 1000*(cos _watchDir), 0] vectorAdd _watchPos;
+    _watchPos = (getPos _unit) getPos [1000, _watchDir];
     if ((count _covers) > 0) then {
         {
 
@@ -650,7 +650,7 @@ pl_opfor_drop_cargo = {
         _x leaveVehicle _vic;
         [_x] call pl_opfor_attack_closest_enemy;
         sleep 0.5;
-        _x execFSM "pl_opfor_cmd.fsm";
+        _x execFSM "\Plmod\fsm\pl_opfor_cmd.fsm";
         _x setVariable ["pl_opf_cargo_inf", true];
     } forEach _cargoGroups;
     private _cargoPers = [];

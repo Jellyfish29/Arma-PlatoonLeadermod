@@ -96,6 +96,7 @@ pl_bounding_move_team = {
                 [_unit, true] call pl_enable_force_move;
                 _unit setUnitPos "UP";
                 _unit doMove _movePos;
+                _unit setDestination [_movePos, "LEADER DIRECT", true];
             };
         }
         else
@@ -152,21 +153,23 @@ pl_position_reached_check = {
     params ["_unit", "_movePos", "_counter"];
     private ["_counter"];
 
-    if ((_unit distance2D _movePos) > 2) then {
-        if (currentCommand _unit isNotEqualTo "MOVE" or ((speed _unit) == 0) and _counter % 2 == 0) then {
+    if ((_unit distance2D _movePos) > 4) then {
+        if ((currentCommand _unit isNotEqualTo "MOVE" or ((speed _unit) == 0)) and (_counter % 3) == 0) then {
             doStop _unit;
             _unit setUnitPosWeak "UP";
 
+            _unit setPosATL ([-1 + (random 2), -1 + (random 2), 0] vectorAdd (getPosATLVisual _unit)); 
             _movePos = [-1 + (random 2), -1 + (random 2), 0] vectorAdd _movePos;
             _unit doMove _movePos;
+            _unit setDestination [_movePos, "LEADER DIRECT", true];
             _counter = _counter + 1;
-            if (_counter == 10) then {
+            if (_counter == 15) then {
                 _pos = (getPos _unit) findEmptyPosition [0, 10, typeOf _unit];
                 _unit setPos _pos;
             };
         };
     };
-    if (_counter >= 15) then {
+    if (_counter >= 21) then {
         doStop _unit;
         _movePos = _movePos findEmptyPosition [0, _counter + 5, typeOf _unit];
         _unit doMove _movePos;
@@ -208,7 +211,7 @@ pl_is_indoor = {
 pl_is_city = {
     params ["_pos"];
     _buildings = nearestTerrainObjects [_pos, ["House"], 50, false, true];
-    if (count _buildings >= 4) exitWith {true};
+    if (count _buildings >= 3) exitWith {true};
     false
 };
 
@@ -293,4 +296,28 @@ pl_friendly_check = {
     // player sideChat str _allies;
     if !(_allies isEqualTo []) exitWith {true};
     false
+};
+
+pl_clear_obstacles = {
+    params ["_pos", "_radius"];
+
+    {
+         deleteVehicle _x;
+    } forEach (allDead select {(_x distance2D _pos) < _radius});
+    // remove Fences
+    {
+        deleteVehicle _x;
+    } forEach ((_pos nearObjects _radius) select {["fence", typeOf _x] call BIS_fnc_inString or ["barrier", typeOf _x] call BIS_fnc_inString or ["wall", typeOf _x] call BIS_fnc_inString or ["sand", typeOf _x] call BIS_fnc_inString});
+    // remove Bunkers
+    {
+        deleteVehicle _x;;
+    } forEach ((_pos nearObjects _radius) select {["bunker", typeOf _x] call BIS_fnc_inString});
+    // remove wire
+    {
+        deleteVehicle _x;
+    } forEach ((_pos nearObjects _radius) select {["wire", typeOf _x] call BIS_fnc_inString});
+    // kill trees
+    {
+        _x setDamage 1;
+    } forEach (nearestTerrainObjects [_pos, ["TREE", "SMALL TREE", "BUSH"], _radius, false, true]);
 };

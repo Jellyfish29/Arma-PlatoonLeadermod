@@ -124,10 +124,10 @@ pl_draw_group_info = {
                 if ((getText (configFile >> 'CfgVehicles' >> typeOf (units _x select 0)>> 'displayName')) isEqualTo 'Game Logic') exitWith {};
                 {
                     _unit = _x;
-                    _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _unit) >> 'icon');
-                    _size = 12;
-                    _unitColor = [_unit] call pl_get_unit_color;
-                    if (vehicle _x == _x and (alive _unit)) then {
+                    if ((isNull objectParent _x or _unit getVariable ['pl_in_static', false]) and (alive _unit)) then {
+                        _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _unit) >> 'icon');
+                        _size = 12;
+                        _unitColor = [_unit] call pl_get_unit_color;
                         _display drawIcon [
                             _icon,
                             _unitColor,
@@ -372,7 +372,6 @@ pl_draw_group_info = {
                         ];
                     };
 
-
                     _formPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
                     _form = formation _x;
                     _formIcon = '\A3\3den\data\Attributes\Formation\wedge_ca.paa';
@@ -399,6 +398,7 @@ pl_draw_group_info = {
                         2
                     ];
                 };
+
                 if (pl_enable_map_radio) then {
                     _radioText = _x getVariable ['pl_radio_text',''];
                     if !(_radioText isEqualTo '') then {
@@ -497,7 +497,7 @@ pl_convoy_marker = {
             {
                 _convoy = _x;
                 {
-                    if (_x != (_convoy select 0) and _x getVariable 'pl_draw_convoy') then {
+                    if (_x != (_convoy select 0) and _x getVariable ['pl_draw_convoy', false]) then {
                         _convoyPos = _convoy find _x;
                         _pos1 = getPos (leader _x);
                         _pos2 = getPos (leader (_convoy select (_convoyPos -1)));
@@ -1225,6 +1225,45 @@ pl_opfor_wp_arrow = {
 
 [] call pl_opfor_wp_arrow;
 
+pl_draw_convoy_path_array = [];
+pl_draw_convoy_path = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                for '_i' from 0 to (count _x) -2 do {
+                    _pos1 = _x#_i;
+                    _pos2 = _x#(_i + 1);
+                    _display drawLine [
+                        _pos1,
+                        _pos2,
+                        [0.92,0.24,0.07,1]
+                    ];
+                };
+            } forEach pl_draw_convoy_path_array;
+    "]; // "  
+};
+
+[] call pl_draw_convoy_path;
+
+
+pl_draw_vic_advance_wp = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                    _pos1 = getPos (_x#0);
+                    _pos2 = _x#1;
+                    _display drawArrow [
+                        _pos1,
+                        _pos2,
+                        pl_side_color_rgb
+                    ];
+
+            } forEach pl_draw_vic_advance_wp_array;
+    "]; // "
+};
+
+[] call pl_draw_vic_advance_wp;
+
 // pl_draw_delay_array = [];
 // pl_draw_delay_arrow = {
 //     findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
@@ -1258,6 +1297,25 @@ pl_opfor_wp_arrow = {
 
 // [] call pl_draw_delay_arrow;
 
+pl_draw_planed_wps = {
+    findDisplay 12 displayCtrl 51 ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                {
+                    _pos1 = _x#0;
+                    _pos2 = _x#1;
+                    _display drawArrow [
+                        _pos1,
+                        _pos2,
+                        [0.9,0.9,0,1]
+                    ];
+                } forEach _y;
+            } forEach pl_draw_planed_wps_dic;
+    "]; // "
+};
+
+[] call pl_draw_planed_wps;
+
 
 addMissionEventHandler ["Loaded", {
     params ["_saveType"];
@@ -1285,7 +1343,10 @@ addMissionEventHandler ["Loaded", {
     [] call pl_draw_at_targets_indicator;
     [] call pl_mark_obstacles;
     // [] call pl_draw_defence_watchpos_select;
+    [] call pl_opfor_wp_arrow;
     [] call pl_draw_at_attack;
+    [] call pl_draw_vic_advance_wp;
+    [] call pl_draw_planed_wps;
 }];
 
 

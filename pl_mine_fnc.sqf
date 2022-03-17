@@ -1,163 +1,10 @@
-// pl_mine_cls = ["APERSMineDispenser_Mag", "APERSBoundingMine_Range_Mag", "APERSMine_Range_Mag", "ATMine_Range_Mag", "SLAMDirectionalMine_Range_Mag", "ClaymoreDirectionalMine_Remote_Mag", "DemoCharge_Remote_Mag", "SatchelCharge_Remote_Mag", "ClaymoreDirectionalMine_Remote_Mag"];
-// "APERSTripMine_Wire_Mag"
 
-// pl_get_group_mines = {
-//     params ["_group"];
-//     private ["_groupMines"];
-
-//     _groupMines = [];
-
-//     {
-//         _unit = _x;
-//         _mines = (magazines _unit) select {_x in pl_mine_cls};
-//         {
-//             _groupMines pushBack [_x, _unit];
-//         } forEach _mines;
-//     } forEach (units _group);
-//     _groupMines
-// };
-
-// pl_create_mine_menu = {
-//     private ["_group", "_idx", "_mine", "_unit"];
-//     _group = (hcSelected player) select 0; 
-//     _groupMines = [_group] call pl_get_group_mines;
-//     pl_test = _groupMines;
-
-//     _menuStr = "pl_mine_menu = [['Available Mines', true],";
-//     pl_mine_idx = -1;
-//     _idx = 0;
-//     {
-//         _mine = _x select 0;
-//         _unit = _x select 1;
-//         _mineName = getText (configFile >> "CfgMagazines" >> _mine >> "displayName");
-//         _unitName = getText (configFile >> "CfgVehicles" >> typeOf _unit >> "displayName");
-//         _menuStr = _menuStr + format ["['%1 (%2)', [%3 + 2], '', -5, [['expression', 'pl_mine_idx = %3']], '1', '1'],", _mineName, _unitName, _idx];
-//         _idx = _idx + 1;
-//     } forEach _groupMines;
-//     _menuStr = _menuStr + "['', [], '', -5, [['expression', '']], '0', '0']]";
-//     call compile _menuStr;
-
-//     showCommandingMenu "#USER:pl_mine_menu";
-
-//     _time = time + 20;
-//     waitUntil {pl_mine_idx != -1 or commandingMenu == ""};
-//     if (pl_mine_idx == -1) exitWith {};
-//     _mineUnit = _groupMines select pl_mine_idx;
-//     [_mineUnit#0, _group, _mineUnit#1] call pl_place_mine;
-//     pl_mine_idx = -1;
-// };
-
-// pl_get_closest_mine = {
-//     params ["_unit"];
-
-//     _mines = allMines;
-//     _mine = ([_mines, [], { _unit distance2D _x }, "ASCEND"] call BIS_fnc_sortBy) select 0;
-//     _mine
-// };
-
-// pl_place_mine = {
-//     params ["_mine", "_group", "_unit"];
-//     private ["_cords", "_mineDir"];
-
-
-//     if (visibleMap) then {
-//         hintSilent "";
-//         hint "Select MINE position on MAP (SHIFT + LMB to cancel)";
-
-//         onMapSingleClick {
-//             pl_mine_cords = _pos;
-//             pl_mapClicked = true;
-//             pl_show_draw_mine_dir = true;
-//             if (_shift) then {pl_cancel_strike = true};
-//             hintSilent "";
-//             onMapSingleClick "";
-//         };
-
-//         while {!pl_mapClicked} do {sleep 0.1;};
-//         pl_mapClicked = false;
-//         if (pl_cancel_strike) exitWith {};
-
-//         _cords = pl_mine_cords;
-
-//         hint "Select MINE facing on MAP (SHIFT + LMB to cancel)";
-
-//         onMapSingleClick {
-//             pl_mapClicked = true;
-//             if (_shift) then {pl_cancel_strike = true};
-//             hintSilent "";
-//             onMapSingleClick "";
-//         };
-
-//         while {!pl_mapClicked} do {
-//             _mineDir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
-//             sleep 0.1;
-//         };
-//         pl_mapClicked = false;
-//         pl_show_draw_mine_dir = false;
-//     }
-//     else
-//     {
-//         _cords = screenToWorld [0.5, 0.5];
-//         _mineDir = getDir player;
-//     };
-
-//     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
-
-//     // kompleter scheiß, weil _unit einfach randam sein Value aendert
-//     missionNamespace setVariable ["mine_unit", _unit];
-//     if ((_unit distance2D _cords) > 75) exitWith {hint "Group needs to be within 75 Meters of position!"};
-//     if (_unit getVariable ["pl_mining_task", false]) exitWith {hint "Unit is already placing a mine!"};
-    
-//     [_group] call pl_reset;
-//     sleep 0.2;
-//     _unit = missionNamespace getVariable "mine_unit";
-
-//     _group setVariable ["onTask", true];
-//     _group setVariable ["setSpecial", true];
-//     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"];
-//     _unit setVariable ["pl_mining_task", true];
-//     _mineVic = (_mine splitString "_") select 0;
-//     [_group, _unit, _mine, _mineVic, _cords, _mineDir] spawn {
-//         params ["_group", "_unit", "_mine", "_mineVic", "_cords", "_mineDir"];
-
-//         _unit disableAI "AUTOCOMBAT";
-//         _unit doMove _cords;
-
-//         waitUntil {unitReady _unit or !(_group getVariable ["onTask", true])};
-
-//         _unit enableAI "AUTOCOMBAT";
-//         _muzzles = getArray (configFile >> "CfgWeapons" >> "Put" >> "muzzles");
-
-//         _muzzle = {
-//             _mags = getArray (configFile >> "CfgWeapons" >> "Put" >> _x >> "magazines");
-//             if (_mine in _mags) exitWith {_x};
-//             objNull
-//         } forEach _muzzles;
-
-//         // _unit playActionNow "PutDown";
-//         _unit fire [_muzzle, _muzzle, _mine];
-//         sleep 1.5;
-//         _mines = allMines;
-//         _mine = ([_mines, [], { _unit distance2D _x }, "ASCEND"] call BIS_fnc_sortBy) select 0;
-//         // playerSide reveal _mine;
-//         player addOwnedMine _mine;
-//         _mine setDir _mineDir;
-
-//         sleep 1;
-//         _unit setVariable ["pl_mining_task", nil];
-//         [_group] call pl_reset;
-//     };
-//     {
-//         _x disableAI "AUTOCOMBAT";
-//         [_x, (getPos _x), 0, 10, false] spawn pl_find_cover;
-//     } forEach (units _group) - [_unit];
-// };
 
 pl_mine_clearing = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
     private ["_cords", "_engineer", "_mines"];
 
-    _group = (hcSelected player) select 0;
+    // _group = (hcSelected player) select 0;
 
     _engineer = {
         if ("MineDetector" in (items _x) and "ToolKit" in (items _x)) exitWith {_x};
@@ -206,7 +53,7 @@ pl_mine_clearing = {
         while {!pl_mapClicked} do {
             // sleep 0.1;
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            if ((_mPos distance2D (leader _group)) <= _rangelimiter) then {
+            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
                 _markerName setMarkerPos _mPos;
             };
             if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
@@ -223,6 +70,22 @@ pl_mine_clearing = {
         _markerName setMarkerPos _cords;
         _markerName setMarkerAlpha 0.3;
         deleteMarker _markerBorderName;
+    };
+
+    private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa";
+
+    if (count _taskPlanWp != 0) then {
+
+        // add Arrow indicator
+        pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+        _group setVariable ["pl_disembark_finished", nil];
+        // remove Arrow indicator
+        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+        _group setVariable ["pl_task_planed", false];
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
@@ -264,25 +127,42 @@ pl_mine_clearing = {
     pl_at_attack_array pushBack [_engineer, _cords, _escort];
 
     _mines = allMines select {(_x distance2D _cords) < pl_mine_sweep_area_size + 3};
+    _engineer forceSpeed 1;
+    _escort forceSpeed 1;
 
-    while {count _mines > 0} do {
+    if (count _mines > 0) then {
+        while {count _mines > 0} do {
 
-        _mine = ([_mines, [], { _engineer distance _x }, "ASCEND"] call BIS_fnc_sortBy)#0;
-        _pos = getPosATL _mine;
-        _engineer doMove _pos;
-        _escort doFollow _engineer;
+            _mine = ([_mines, [], { _engineer distance _x }, "ASCEND"] call BIS_fnc_sortBy)#0;
+            _pos = getPosATL _mine;
+            _engineer doMove _pos;
+            _escort doFollow _engineer;
 
-        sleep 0.5;
+            sleep 0.5;
 
-        waitUntil {sleep 0.5; ((_engineer distance2D _pos) < 1) or (unitReady _engineer) or !(_group getVariable ["onTask", true])};
+            waitUntil {sleep 0.5; ((_engineer distance2D _pos) < 1) or (unitReady _engineer) or !(_group getVariable ["onTask", true])};
 
-        if !(_group getVariable ["onTask", true]) exitWith {};
+            if !(_group getVariable ["onTask", true]) exitWith {};
 
-        _engineer action ["Deactivate", _engineer, _mine];
+            _engineer action ["Deactivate", _engineer, _mine];
 
-        _mines deleteAt (_mines find _mine);
+            _mines deleteAt (_mines find _mine);
 
-        sleep 2;
+            sleep 2;
+        };
+    } else {
+        private _time = time + ([60, 120] call BIS_fnc_randomInt);
+        private _time2 = 0;
+        while {_time > time and (_group getVariable ["onTask", false])} do {
+
+            _engineer doMove ([[[_cords, 30]], ["water"]] call BIS_fnc_randomPos);
+            _escort doFollow _engineer;
+            _time2 = time + 6;
+
+            waituntil {time >= _time2 or !(_group getVariable ["onTask", false])};
+
+            sleep 0.5;
+        };
     };
 
     if (_group getVariable ["onTask", true]) then {
@@ -291,7 +171,9 @@ pl_mine_clearing = {
         [_group] call pl_reset;
     };
     pl_at_attack_array = pl_at_attack_array - [[_engineer, _cords, _escort]];
-    deleteMarker _markerName
+    deleteMarker _markerName;
+    _engineer forceSpeed -1;
+    _escort forceSpeed -1;
 };
 
 

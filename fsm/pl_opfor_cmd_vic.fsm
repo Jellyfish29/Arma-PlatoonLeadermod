@@ -21,7 +21,7 @@ item16[] = {"ally_dead__",4,218,686.676758,86.780945,776.676758,136.780945,0.000
 item17[] = {"enemy___50m",4,218,274.935944,73.693939,364.935944,123.693939,5.000000,"enemy < 50m"};
 item18[] = {"enemy___75m",4,218,272.020325,322.878784,362.020325,372.878784,0.000000,"enemy < 75m"};
 item19[] = {"enemy___400m",4,218,274.467712,137.123138,364.467712,187.123138,4.000000,"enemy < 400m"};
-item20[] = {"is_cargo_",4,4314,-45.114990,653.071594,44.885010,703.071594,10.000000,"is cargo?"};
+item20[] = {"is_cargo_",4,218,-45.114990,653.071594,44.885010,703.071594,10.000000,"is cargo?"};
 item21[] = {"is_tank_and__near",4,218,274.328278,191.226501,364.328278,241.226501,2.000000,"is tank and " \n "near support"};
 item22[] = {"nearby_Inf_",4,218,270.736145,249.858643,360.736145,299.858643,1.000000,"nearby" \n "Inf?"};
 link0[] = {0,1};
@@ -59,8 +59,8 @@ link31[] = {19,3};
 link32[] = {20,8};
 link33[] = {21,3};
 link34[] = {22,3};
-globals[] = {0.000000,0,0,0,0,640,480,1,39,6316128,1,-276.407410,935.462036,779.001648,-496.434570,1182,1244,1};
-window[] = {2,-1,-1,-1,-1,1019,260,1700,260,3,1200};
+globals[] = {0.000000,0,0,0,0,640,480,1,39,6316128,1,-214.411682,738.046997,816.306152,-329.235931,735,884,1};
+window[] = {2,-1,-1,-1,-1,889,130,1570,130,3,753};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -72,7 +72,8 @@ class FSM
                 {
                         name = "Start";
                         itemno = 0;
-                        init = /*%FSM<STATEINIT""">*/"private [""_time"", ""_target"", ""_targetdistance"", ""_side"", ""_allies"", ""_ally"", ""_cargo"", ""_cargoGroups"", ""_vicType""];" \n
+                        init = /*%FSM<STATEINIT""">*/"" \n
+                         "private [""_time"", ""_target"", ""_targetdistance"", ""_side"", ""_allies"", ""_ally"", ""_cargo"", ""_cargoGroups"", ""_vicType""];" \n
                          "" \n
                          "_grp = _this;" \n
                          "_vic = vehicle (leader _grp);" \n
@@ -80,6 +81,7 @@ class FSM
                          "_vic limitSpeed 40;" \n
                          "_ally = objNull;" \n
                          "_vicType = getText (configFile >> ""CfgVehicles"" >> typeOf (vehicle (leader _grp)) >> ""textSingular"");" \n
+                         "_vic setUnloadInCombat [false, false];" \n
                          "" \n
                          "_cargo = fullCrew [_vic, ""cargo"", false];" \n
                          "_cargoGroups = [];" \n
@@ -159,7 +161,7 @@ class FSM
                                         priority = 10.000000;
                                         to="End";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp));" \n
+                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp)) or !(canMove _vic);" \n
                                          ""/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
@@ -239,7 +241,7 @@ class FSM
                                         priority = 10.000000;
                                         to="End";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp));" \n
+                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp)) or !(canMove _vic);" \n
                                          ""/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
@@ -295,8 +297,20 @@ class FSM
                         itemno = 8;
                         init = /*%FSM<STATEINIT""">*/"_ally setVariable [""pl_is_vic_supported"", nil];" \n
                          "" \n
+                         "if !(canMove _vic) then {" \n
+                         "	if !(_cargoGroups isEqualto []) then {" \n
+                         "		[_grp, _vic, _cargo, _cargoGroups] spawn pl_opfor_drop_cargo;" \n
+                         "	};" \n
+                         "};" \n
+                         "" \n
                          "if (vehicle (leader _grp) == (leader _grp)) then {" \n
-                         "	[_grp] spawn pl_opfor_surrender;" \n
+                         "	 _grp execFSM ""\Plmod\fsm\pl_opfor_cmd.fsm"";" \n
+                         "	if !(_cargoGroups isEqualto []) then {" \n
+                         "		[_grp, _vic, _cargo, _cargoGroups] spawn pl_opfor_drop_cargo;" \n
+                         "	};" \n
+                         "	if (pl_debug) then {" \n
+                         "    	systemchat format [""%1: start inf fsm from vic"", groupId _grp];" \n
+                         "	};" \n
                          "};" \n
                          "" \n
                          "if (pl_debug) then {" \n
@@ -325,8 +339,8 @@ class FSM
                          "private _alliedInf = ((getPos (leader _grp)) nearEntities [[""Man""], 150]) select {side _x == _side};" \n
                          "" \n
                          "private _supportingNearVics = [];" \n
-                         "if (_vicType == ""tank"") then {" \n
-                         "	_supportingNearVics = ((getPos (leader _grp)) nearEntities [[""Car"", ""Tank""], 350]) select {!(isNull (_x getVariable [""pl_to_support_grp"", objNull]))};" \n
+                         "if (_vicType == ""tank"" and _cargoGroups isEqualto []) then {" \n
+                         "	_supportingNearVics = ((getPos (leader _grp)) nearEntities [[""Car"", ""Tank""], 500]) select {!(isNull (_x getVariable [""pl_to_support_grp"", objNull]))};" \n
                          "};" \n
                          "" \n
                          "_grp setVariable [""pl_opf_task"", ""advance""];"/*%FSM</STATEINIT""">*/;
@@ -358,7 +372,7 @@ class FSM
                                         to="mobile";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"_targetdistance < 400 and !(_cargoGroups isEqualto []);"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (_targetdistance < 200 or ((leader _grp) knowsAbout _target) > 1) then {" \n
+                                        action=/*%FSM<ACTION""">*/"if (_targetdistance < 300 or ((leader _grp) knowsAbout _target) > 0.15) then {" \n
                                          "	[_grp, _vic, _cargo, _cargoGroups] spawn pl_opfor_drop_cargo;" \n
                                          "	_cargo = [];" \n
                                          "	_cargoGroups = [];" \n
@@ -460,7 +474,7 @@ class FSM
                                         priority = 10.000000;
                                         to="End";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp));" \n
+                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp)) or !(canMove _vic);" \n
                                          ""/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };

@@ -193,6 +193,7 @@ pl_reset = {
         _vic = vehicle (leader _group);
         _vic forceSpeed -1;
         _vic call pl_load_ap;
+        _vic setVariable ["pl_phasing", nil];
         if (_vic getVariable ["pl_on_transport", false]) then {
             _vic setVariable ["pl_on_transport", nil];
             // _group setVariable ["setSpecial", true];
@@ -358,10 +359,8 @@ pl_task_planer = {
     switch (_taskType) do { 
         case "assault" : {[_group, _wp] spawn pl_assault_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
         case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "defPos" : {[_group, _wp] spawn pl_take_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "resupply" : {[_group, _wp] spawn pl_supply_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
         case "recover" : {[_group, _wp] spawn pl_repair; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
-        case "maintenance" : {[_group, _wp] spawn pl_maintenance_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
         case "mine" : {[_group, _wp] spawn pl_lay_mine_field; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
         case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         case "unload" : {[_group, _wp] spawn pl_unload_at_position_planed; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
@@ -420,11 +419,13 @@ pl_task_planer_unload_inf = {
     _group setVariable ["pl_unload_task_planed", true];
 
     // call task to be executed
-    switch (_taskType) do { 
+    switch (_taskType) do {
+        case "addwp" : {[_group, _wp] spawn pl_add_wp_planed; _icon = "\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"};
         case "assault" : {[_group, _wp] spawn pl_assault_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
         case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "defPos" : {[_group, _wp] spawn pl_take_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "mine" : {[_group, _wp] spawn pl_lay_mine_field; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "clearmine" : {[_group, _wp] spawn pl_mine_clearing; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"};
         case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         default {}; 
     };
@@ -438,6 +439,81 @@ pl_task_planer_unload_inf = {
         waitUntil {!(_group getVariable ["pl_task_planed", true])};
         pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
     };
+};
+
+pl_draw_planed_wps_dic = createHashMap;
+
+pl_add_wp_planed = {
+    params ["_group", "_startWp"];
+
+    private _wpPath = [waypointPosition _startWp];
+    pl_confirm_wps = false;
+    private _i = 0;
+    _callsign = groupId _group;
+    pl_draw_planed_wps_dic set [_callsign, []];
+    while {!pl_confirm_wps} do {
+
+        onMapSingleClick {
+            pl_wp_cords = _pos;
+            pl_mapClicked = true;
+            if (_shift) then {pl_confirm_wps = true};
+            hintSilent "";
+            onMapSingleClick "";
+        };
+
+
+        while {!pl_mapClicked} do {
+            sleep 0.05;
+        };
+
+        sleep 0.05;
+        pl_mapClicked = false;
+        _drawArray = pl_draw_planed_wps_dic get _callsign;
+        _drawArray pushback [_wpPath#_i, pl_wp_cords];
+        pl_draw_planed_wps_dic set [_callsign, _drawArray];
+        _i = _i + 1;
+        _wpPath pushback pl_wp_cords;
+    };
+
+    private _lastWpPos = pl_wp_cords;
+    _wpPath deleteAt 0;
+
+        // add Arrow indicator
+
+    waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _startWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+    _group setVariable ["pl_disembark_finished", nil];
+    
+    // remove Arrow indicator
+    // pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _startWp, _icon]];
+
+    if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+    _group setVariable ["pl_task_planed", false];
+
+    pl_draw_planed_wps_dic deleteAt _callsign;
+    if (pl_cancel_strike) exitwith {};
+
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", "\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"];
+    _group setVariable ["pl_on_march", true];
+
+    {
+        _x disableAI "AUTOCOMBAT";
+    } forEach (units _group);
+    (leader _group) limitSpeed 14;
+    // _group setFormation "FILE";
+    _group setBehaviour "AWARE";
+
+    {
+        _group addWaypoint [_x, 0];
+    } forEach _wpPath;
+
+    waitUntil {sleep 0.5; (((leader _group) distance2D _lastWpPos) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
+    _group setVariable ["pl_on_march", nil];
+    _group setVariable ["setSpecial", false];
+    {
+        _x enableAI "AUTOCOMBAT";
+    } forEach (units _group);
+    (leader _group) limitSpeed 5000;
 };
 
 pl_cancel_planed_task = {
@@ -491,7 +567,7 @@ pl_watch_dir = {
     // order group to watch direction and vehicles to turn in direction
 
     params ["_group", ["_dir", ""]];
-    private ["_watchDir", "_watchPos", _groupPos];
+    private ["_watchDir", "_watchPos", "_groupPos"];
 
 
     if (_dir isEqualTo "") then {
@@ -597,7 +673,7 @@ pl_follow = {
             _x setVariable ["setSpecial", true];
             _x setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"];
             // if (pl_enable_beep_sound) then {playSound "beep"};
-            [_group, "confirm", 1] call pl_voice_radio_answer;
+            [_x, "confirm", 1] call pl_voice_radio_answer;
             // leader _x sideChat format ["%1 is forming up on %2, over",(groupId _x), (groupId (group player))];
             _pos1 = getPos (leader _x);
             _pos2 = getPos player;
@@ -621,7 +697,7 @@ pl_follow = {
     if (pl_follow_active) then {
         while {pl_follow_active} do {
             _pos1 = getPos player;
-            sleep 2;
+            sleep 0.5;
             _pos2 = getPos player;
             _posOffset = [(_pos2 select 0) - (_pos1 select 0), (_pos2 select 1) - (_pos1 select 1)];
             _pBehaviour = behaviour player;
@@ -644,14 +720,16 @@ pl_follow = {
                     _leader = leader _x;
                     _relPos = _x getVariable "pl_rel_pos";
                     if (vehicle _leader != _leader) then {
-                        (vehicle _leader) limitSpeed 18;
+                        // (vehicle _leader) limitSpeed (speed player) + 5;
                         if ((speed (vehicle _leader)) < 1) then {
                             _newPos = [((getPos _leader) select 0) + ((_posOffset select 0) * 15), ((getPos _leader) select 1) + ((_posOffset select 1) * 15)];
-                            driver (vehicle _leader) doMove _newPos;
+                            (vehicle _leader) doMove _newPos;
+                            (vehicle _leader) setDestination [_newPos,"VEHICLE PLANNED" , true];
                         };
                         if ((speed player) < 1) then {
                             _newPos = [((getPos player) select 0) + (_relPos select 0), ((getPos player) select 1) + (_relPos select 1)];
-                            driver (vehicle _leader) doMove _newPos;
+                            (vehicle _leader) doMove _newPos;
+                            (vehicle _leader) setDestination [_newPos,"VEHICLE PLANNED" , true];
                         };
                     }
                     else
@@ -677,6 +755,7 @@ pl_follow = {
                 _x enableAI "AUTOCOMBAT";
             } forEach (units _x);
         } forEach pl_follow_array;
+        pl_follow_array = [];
         _pGroup setVariable ["onTask", false];
         _pGroup setVariable ["setSpecial", false];
     };
@@ -695,12 +774,11 @@ pl_march = {
         _cords = screenToWorld [0.5,0.5];
     };
 
+    if (vehicle (leader _group) != (leader _group)) exitWith {[_group, _cords] spawn pl_vic_advance};
 
     if (isNil {_group getVariable "pl_on_march"}) then {
         [_group] call pl_reset;
-        sleep 0.5;
-        [_group] call pl_reset;
-        sleep 0.5;
+        sleep 0.2;
 
         // if (pl_enable_beep_sound) then {playSound "beep"};
         [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -727,13 +805,12 @@ pl_march = {
         _group setVariable ["pl_mwp", _mwp];
 
         sleep 1;
-        waitUntil {(((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setFormation _f;
         _group setVariable ["pl_on_march", nil];
         _group setVariable ["setSpecial", false];
         {
             _x enableAI "AUTOCOMBAT";
-            _x enableAI "FSM";
         } forEach (units _group);
         (leader _group) limitSpeed 5000;
 
@@ -747,6 +824,26 @@ pl_march = {
     };
 };
 // {[_x] spawn pl_march}forEach (hcSelected player)
+
+pl_draw_vic_advance_wp_array = [];
+pl_vic_advance = {
+    params ["_group", "_cords"];
+
+    [_group] spawn pl_reset;
+
+    sleep 0.3;
+
+    private _vic = vehicle (leader _group);
+
+    _vic doMove _cords;
+    _vic setDestination [_cords,"VEHICLE PLANNED" , true];
+
+    pl_draw_vic_advance_wp_array pushBack [_vic, _cords];
+
+    sleep 0.5;
+    waitUntil {sleep 0.5, unitReady _vic or !alive _vic};
+    pl_draw_vic_advance_wp_array = pl_draw_vic_advance_wp_array - [[_vic, _cords]];
+};
 
 
 
@@ -798,8 +895,10 @@ pl_move_as_formation = {
         };
         _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
         pl_draw_formation_move_mouse_array pushBack [vehicle (leader _x), _relPos, _pos1];
+        _x setBehaviourStrong "COMBAT";
     } forEach (_groups) - [_formationLeaderGroup];
 
+    _formationLeaderGroup setBehaviourStrong "COMBAT";
     // draw Indicator and wait for mouseclick;
     pl_draw_formation_mouse = true;
 
@@ -868,13 +967,6 @@ pl_move_as_formation = {
     pl_draw_formation_mouse = false;
 };
 
-
-pl_sync_wp = {
-    _logic = player getvariable "BIS_HC_scope";
-    _wp = _logic getvariable "WPover";
-    if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan Task!"};
-    _group = _wp select 0;  
-};
 
 
 

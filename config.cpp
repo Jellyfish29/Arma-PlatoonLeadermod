@@ -88,8 +88,8 @@ class RscHCGroupRootMenu
             {
                 expression="['buddy'] spawn pl_bounding_squad";
             };
-            show="0"//"HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
-            enable="0";
+            show="HCIsLeader * CursorOnGround * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
+            enable="HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=1;
@@ -643,21 +643,21 @@ class RscHCGroupRootMenu
                 speechId=0;
                 cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             };
-            class PlTakePosition
-            {
-                title="<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>";
-                shortcuts[]={4};
-                shortcutsAction = "CommandingMenu3";
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_take_position;";
-                };
-                show="0";
-                enable="0";
-                speechId=0;
-            };
+            // class PlTakePosition
+            // {
+            //     title="<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>";
+            //     shortcuts[]={4};
+            //     shortcutsAction = "CommandingMenu3";
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="[] spawn pl_take_position;";
+            //     };
+            //     show="0";
+            //     enable="0";
+            //     speechId=0;
+            // };
             class PlSeperator11
             {
                 title="";
@@ -717,16 +717,16 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
-            class PlTakeCover
+            class PlGarrisonB
             {
-                title="<img color='#e5e500' image='\A3\3den\data\Attributes\Stance\down_ca.paa'/><t> Take Cover</t>";
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>";
                 shortcuts[]={5};
                 shortcutsAction = "CommandingMenu5";
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="{[_x] spawn pl_full_cover} forEach (hcSelected player)";
+                    expression="{[] psawn pl_garrison";
                 };
                 show="1";
                 enable="HCNotEmpty";
@@ -1239,7 +1239,7 @@ class RscHCGroupRootMenu
             };
             class PlGetInVic
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa'/><t> Load / Extraction</t";
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa'/><t> Load Cargo</t";
                 shortcuts[]={2};
                 shortcutsAction = "CommandingMenu1";
                 submenu="";
@@ -1252,25 +1252,11 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            class PlGetOutVic
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa'/><t> Unload / Insertion</t";
-                shortcuts[]={3};
-                shortcutsAction = "CommandingMenu2";
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_spawn_getOut_vehicle";
-                };
-                show="1";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
+
             class PlGetOutVicAtPos
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Unload at current Pos</t";
-                shortcuts[]={4};
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Unload Cargo</t";
+                shortcuts[]={3};
                 shortcutsAction = "CommandingMenu3";
                 submenu="";
                 command=-5;
@@ -1299,7 +1285,7 @@ class RscHCGroupRootMenu
             class PlCrewVehicle
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Crew Vehicle</t";
-                shortcuts[]={5};
+                shortcuts[]={4};
                 shortcutsAction = "CommandingMenu4";
                 submenu="";
                 command=-5;
@@ -1314,7 +1300,7 @@ class RscHCGroupRootMenu
             class PlLeaveVehicle
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Leave Vehicle</t";
-                shortcuts[]={6};
+                shortcuts[]={5};
                 shortcutsAction = "CommandingMenu5";
                 submenu="";
                 command=-5;
@@ -1342,14 +1328,29 @@ class RscHCGroupRootMenu
             };
             class PlmoveInConvoy
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa'/><t> Move as Convoy</t";
-                shortcuts[]={7};
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa'/><t> Road Convoy</t";
+                shortcuts[]={6};
                 shortcutsAction = "CommandingMenu6";
                 submenu="";
                 command=-5;
                 class params
                 {
-                    expression="[true] call pl_spawn_getOut_vehicle";
+                    expression="[] spawn pl_convoy";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+            class PlAirInsertion
+            {
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\heli_ca.paa'/><t> Air Insertion</t";
+                shortcuts[]={7};
+                shortcutsAction = "CommandingMenu7";
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_air_insertion";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -1367,6 +1368,22 @@ class RscHCGroupRootMenu
                 };
                 show="1";
                 enable="1";
+                speechId=0;
+            };
+
+            class PllineUp
+            {
+                title="Line Up on Road";
+                shortcuts[]={9};
+                shortcutsAction = "CommandingMenu9";
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_line_up_on_road";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
                 speechId=0;
             };
 
@@ -1914,6 +1931,18 @@ class CfgMarkers
         name="ASP";
         icon="\Plmod\gfx\pl_asp_marker.paa";
         texture="\Plmod\gfx\pl_asp_marker.paa";
+    };
+    class marker_pp: pl_marker
+    {
+        name="pp";
+        icon="\Plmod\gfx\pl_pp_marker.paa";
+        texture="\Plmod\gfx\pl_pp_marker.paa";
+    };
+    class marker_rp: pl_marker
+    {
+        name="rp";
+        icon="\Plmod\gfx\pl_rp_marker.paa";
+        texture="\Plmod\gfx\pl_rp_marker.paa";
     };
     class marker_std_atk: pl_marker
     {

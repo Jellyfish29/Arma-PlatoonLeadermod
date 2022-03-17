@@ -125,7 +125,7 @@ pl_recon = {
             //         } forEach (_opfGrp getVariable "pl_active_recon_markers");
             //     };
             // };
-        } forEach (allGroups select {([(side _x), playerside] call BIS_fnc_sideIsEnemy) and !(_x getVariable ["pl_not_recon_able", false]) and alive (leader _x)});
+        } forEach (allGroups select {([(side _x), playerside] call BIS_fnc_sideIsEnemy) and alive (leader _x)});
 
         // intervall
         _time = time + _intelInterval;
@@ -219,6 +219,9 @@ pl_marta_dic = createHashMap;
 
 Pl_marta = {
     params ["_opfGrp", ["_reveal", false]];
+    private ["_unitText"];
+
+    if (_opfGrp getVariable ["pl_not_recon_able", false]) exitWith {};
 
     _leader = leader _opfGrp;
     if (vehicle _leader != _leader and ((assignedVehicleRole _leader)#0) == "cargo") exitWith {};
@@ -245,9 +248,10 @@ Pl_marta = {
         case west : {_sideColor = "colorBlufor"; _sideColorRGB = [0,0.3,0.6,0.5]}; 
         case east : {_sideColor = "colorOpfor"; _sideColorRGB = [0.5,0,0,0.5]};
         case resistance : {_sideColor = "colorIndependent"; _sideColorRGB = [0,0.5,0,0.5]};
-        default {_sideColor = "colorBlufor"; _sideColorRGB = [0.5,0,0,0.5];}; 
+        default {_sideColor = "exit"; _sideColorRGB = [0.5,0,0,0.5];}; 
     };
 
+    if (_sideColor == "exit") exitWith {};
 
 
     // 50 % chance to create Marker
@@ -287,7 +291,7 @@ Pl_marta = {
             createMarker [_markerNameGroup, getPos _leader];
             createMarker [_markerNameStrength, _strengthPos];
             pl_marta_dic set [_callsign, [_opfGrp, [_markerNameGroup, _markerNameStrength]]];
-            [_opfGrp, _unitText, _opfDir] call pl_marta_spotrep;
+            [_opfGrp, _unitText, _opfDir] spawn pl_marta_spotrep;
 
             _markerNameGroup setMarkerSize [_markerSize, _markerSize];
             _markerNameGroup setMarkerColor _sideColor;
@@ -358,9 +362,12 @@ pl_marta_spotrep = {
             _message = _message + format [" Direction %1", round _opfDir];
         };
 
-        if (pl_enable_beep_sound) then {playSound "radioina"};
+        if (pl_enable_beep_sound) then {playSound "radioinc"};
+        if (pl_enable_beep_sound) then {playSound "beep"};
         if (pl_enable_chat_radio) then {(leader _group) sideChat _message};
         if (pl_enable_map_radio) then {[_group, _message, 30] call pl_map_radio_callout};
+        sleep 2;
+        if (pl_enable_beep_sound) then {playSound "radioutc"};
     };
 };
 

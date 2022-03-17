@@ -10,6 +10,8 @@ pl_convoy_pos = 0;
 pl_convoy_array = [];
 pl_draw_convoy_array = [];
 pl_convoy_path_marker = [];
+pl_convoy_speed = 30;
+pl_convoy_max_distance = 3500;
 
 
 pl_getIn_vehicle = {
@@ -205,587 +207,6 @@ pl_getIn_vehicle = {
 };
 
 
-pl_getOut_vehicle = {
-    params ["_group", "_convoyId", "_moveInConvoy", ["_atPosition", false]];
-    private ["_vic", "_commander", "_markerName", "_cargo", "_cargoGroups", "_vicTransport", "_transportedVic", "_inLandConvoy", "_convoyLeader", "_convoyArray", "_convoyPosition", "_watchPos", "_landigPad", "_distanceBack", "_landCords"];
-
-    _leader = leader _group;
-
-    if (vehicle _leader != _leader) then {
-        _vic = vehicle _leader;
-        _vicTransport = false;
-        if !(isNull (isVehicleCargo _vic)) then {
-            _transportedVic = _vic;
-            _vic = isVehicleCargo _vic;
-            _vicTransport = true;
-        };
-
-        if !(isNil {_vic getVariable "pl_on_transport"}) exitWith {
-            if ((count (missionNamespace getVariable _convoyId)) > 1) then {
-                player hcRemoveGroup _group;
-            };
-            if ((missionNamespace getVariable (_convoyId + "time")) > time) then {
-                if (pl_enable_beep_sound) then {playSound "beep"};
-                hint format ["%1 is already on a mission!", groupId (group (driver _vic))];
-            };
-        };
-
-        _vic setVariable ["pl_on_transport", true];
-        _cargo = fullCrew _vic;
-        _commander = driver _vic;
-        {
-            if (_x select 1 isEqualTo "commander") then {
-                _commander = (_x select 0);
-            };
-        } forEach _cargo;
-
-        for "_i" from count waypoints (group _commander) - 1 to 0 step -1 do{
-            deleteWaypoint [(group _commander), _i];
-        };
-        _cargo = fullCrew [_vic, "cargo", false];
-
-        if (visibleMap and !_atPosition) then {
-            // Unload at selected Map Position
-            // For Land Vehicles and Air Transport
-
-            ///// Transport Set up /////
-
-            hintSilent "Select DESTINATION on MAP";
-            onMapSingleClick {
-                pl_mapClicked = true;
-                pl_lz_cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-                pl_lz_marker_cords = pl_lz_cords;
-                // if (_shift) then {pl_cancel_strike = true};
-                hintSilent "";
-                onMapSingleClick "";
-            };
-            waitUntil {pl_mapClicked};
-
-
-            sleep 0.1;
-            pl_mapClicked = false;
-            _cords = pl_lz_cords;
-
-            // (group (driver _vic)) setVariable ["onTask", true];
-            if (!(_moveInConvoy) and (count _cargo) > 0) then {
-                (group (driver _vic)) setVariable ["setSpecial", true];
-                (group (driver _vic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa"];
-            };
-
-            if ((_cords distance2D (_vic getVariable "pl_rtb_pos")) > 200) then {
-                // if (pl_enable_beep_sound) then {playSound "beep"};
-                // _commander sideChat "Roger, Moving to Insertion Point, over";
-            }
-            else
-            {
-                _commander sideChat format ["%1: RTB", groupId (group _commander)];
-                if (pl_enable_map_radio) then {[group _commander, "...RTB", 25] call pl_map_radio_callout};
-            };
-
-            _convoyArray = [];
-            _inLandConvoy = false;
-
-            _wp = (group _commander) addWaypoint [_cords, 0];
-            _wp setWaypointType "TR UNLOAD";
-            {_x disableAI "PATH"} forEach (units _group);
-            // More then One Tranport == Convoy
-            if ((count (missionNamespace getVariable _convoyId)) > 1) then {
-                if (_group isEqualTo ((missionNamespace getVariable _convoyId) select 0)) then {
-                    _c = [(missionNamespace getVariable _convoyId), [], {(leader _x) distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;
-                    missionNamespace setVariable [_convoyId, _c];
-
-                    if !(_vic isKindOf "Air") then {
-                        private _blacklistr1 = [];
-                        private _r2 = [_cords, 100,[]] call BIS_fnc_nearestRoad;
-                        {
-                            private _r1 = [(getPos (leader _x)), 100] call BIS_fnc_nearestRoad;
-                            if (_r1 in _blacklistr1) then {
-                                private _roads = getPos (leader _x) nearRoads 100;
-                                _roads = [_roads, [], {(getPos _x) distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;  
-                                _r1 = {
-                                    if !(_x in _blacklistr1) exitWith {_x};
-                                } forEach _roads;
-                            };
-                            _blacklistr1 pushback _r1;
-                            // player sideChat (str _r1);
-                            _pathCost = [_r1, _r2] call pl_convoy_parth_find;
-                            _x setVariable ["pl_path_cost", _pathCost];
-                            _x setVariable ["r1", _r1];
-                        } forEach (missionNamespace getVariable _convoyId);
-                        hint "Setting up Convoy...";
-                        if (pl_enable_beep_sound) then {playSound "beep"};
-                    }
-                    else
-                    {
-                        hint "Setting up Flight...";
-                        if (pl_enable_beep_sound) then {playSound "beep"};
-                    };
-                };
-                sleep 5;
-                hintSilent "";
-                pl_set_up_convoy = true;
-
-                _c = [(missionNamespace getVariable _convoyId), [], {_x getVariable ["pl_path_cost", 2000]}, "ASCEND"] call BIS_fnc_sortBy;  
-                 missionNamespace setVariable [_convoyId, _c];
-                pl_draw_convoy_array pushBack (missionNamespace getVariable _convoyId);
-                pl_draw_convoy_array = pl_draw_convoy_array arrayIntersect pl_draw_convoy_array;
-                _convoyLeader = (missionNamespace getVariable _convoyId) select 0;
-                _convoyArray = (missionNamespace getVariable _convoyId);
-                if (_group == _convoyLeader) then {
-                    // private _convoyLeaderGroupId = groupId _convoyLeader;
-                    // _convoyLeader setGroupId [format ["%1 (Convoy Leader)", _convoyLeaderGroupId]];
-                    _leaderIsTransport = false;
-                    if (_convoyLeader getVariable ["setSpecial", false]) then {
-                        _leaderIsTransport = true;
-                    };
-                };
-                _convoyLeader setVariable ["onTask", true];
-                _convoyLeader setVariable ["setSpecial", true];
-                _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"];
-                group (_commander) setVariable ["pl_draw_convoy", true];
-
-                if (_group != _convoyLeader and _group != (group player)) then {
-                    player hcRemoveGroup _group;
-                };
-
-                // Air Convoy
-                if (_vic isKindOf "Air") then {
-                    waitUntil {time >= (missionNamespace getVariable (_convoyId + "time")) and (group _commander) == ((missionNamespace getVariable _convoyId) select (missionNamespace getVariable (_convoyId + "pos")))};
-                    if ((group _commander) != _convoyLeader) then {
-                        _dir = [_cords, _vic getVariable "pl_rtb_pos"] call BIS_fnc_dirTo;
-                        _moveDir = [(_dir - 90)] call pl_angle_switcher;
-                        _cords =  [25*(sin _moveDir),25*(cos _moveDir), 0] vectorAdd [pl_lz_cords select 0, pl_lz_cords select 1, 0];
-
-                        pl_lz_cords = _cords;
-                    };
-                    _t = time + 10;
-                    missionNamespace setVariable [_convoyId + "time", _t];
-                    _p  = (missionNamespace getVariable (_convoyId + "pos"));
-                    _p = _p + 1;
-                    missionNamespace setVariable [_convoyId + "pos", _p];
-                }
-                else
-                // Land Convoy
-                {
-                    player hcSetGroup [_convoyLeader];
-                    {
-                        _x disableAI "AUTOCOMBAT";
-                    } forEach units (group _commander);
-                    _vic limitSpeed 51;
-                    // _vic forceFollowRoad true;
-                    // _vic setConvoySeparation 20;
-                    group _commander setBehaviour "SAFE"; // SAFE
-                    _inLandConvoy = true;
-                    waitUntil {(time >= (missionNamespace getVariable (_convoyId + "time")) and (group _commander) == ((missionNamespace getVariable _convoyId) select (missionNamespace getVariable (_convoyId + "pos")))) or !(_convoyLeader getVariable ["onTask", true])};
-
-                    // private _points = pl_convoy_path_marker apply {getMarkerPos _x};
-                    // _vic setDriveOnPath _points;
-
-                    _convoyPosition = (missionNamespace getVariable (_convoyId + "pos"));
-                    _t = time + 2;
-                    missionNamespace setVariable [_convoyId + "time", _t];
-                    _p  = (missionNamespace getVariable (_convoyId + "pos"));
-                    _p = _p + 1;
-                    missionNamespace setVariable [_convoyId + "pos", _p];
-                };
-            }
-            else
-            {
-                _inLandConvoy = false;
-            };
-
-            {_x enableAI "PATH"} forEach (units _group);
-            if (_vic isKindOf "Air") then {
-                _vic flyInHeight 60;
-                _landCords = _cords findEmptyPosition [0, 100, "Land_HelipadEmpty_F"];
-                if (_landCords isEqualTo []) then {_landCords = _cords};
-                _landigPad = "Land_HelipadEmpty_F" createVehicle _landCords;
-                _landigPad setDir (_vic getDir _landCords);
-
-                // _m = createMarker [str (random 2), _landCords];
-                // _m setMarkerType "mil_dot";
-            };
-
-            // Create Destination Marker
-            private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa";
-            if (_moveInConvoy) then {_icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"};
-            // pl_draw_planed_task_array pushBack [_wp, _icon];
-
-            if ((group driver (_vic)) == (group player)) then {
-                (driver _vic) commandMove _cords;
-            };
-            // Setup the cargo of Transport Vehicle
-            _cargo = fullCrew [_vic, "cargo", false];
-            _cargoGroups = [];
-            {
-                _cargoGroups pushBack (group (_x select 0));
-            } forEach _cargo;
-            _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
-
-            /// Transport Execution ///
-
-            // If Infantry is Transported
-            if !(_vicTransport) then {
-                if (_vic isKindOf "Air") then {
-                    {
-                        _x disableAI "AUTOCOMBAT";
-                        _x disableAI "TARGET";
-                        _x disableAI "AUTOTARGET";
-                    } forEach (units (group _commander));
-                    (group _commander) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa"];
-                    [_vic, 0] call pl_door_animation;
-                    sleep 40;
-                    // waitUntil {!alive _vic or (unitReady _vic)};
-                    waitUntil {sleep 0.1; (isTouchingGround _vic) or !alive _vic};
-                    // for "_i" from count waypoints _group - 1 to 0 step -1 do {
-                    //     deleteWaypoint [_group, _i];
-                    // };
-                    [_vic, 1] call pl_door_animation;
-                    {
-                        // {
-                        //     _unit = _x;
-                        //     [_unit] orderGetIn false;
-                        //     [_unit] allowGetIn false;
-                        //     unassignVehicle _unit;
-                        // } forEach (units _x);
-                        _x leaveVehicle _vic;
-                        // player hcSetGroup [_x];
-                        // _x setVariable ["pl_show_info", true];
-                        if !(_x getVariable ["pl_show_info", false]) then {
-                            [_x] call pl_show_group_icon;
-                        };
-                        if (_x != (group player)) then {
-                            if ((_vic distance2D (_vic getVariable "pl_rtb_pos")) > 300) then {
-                                // [_x, _vic] spawn pl_airassualt_security;
-                            }
-                            else
-                            {
-                                _x addWaypoint [getPos _vic, 10];
-                            };
-                        };
-
-                    } forEach _cargoGroups;
-                }
-                else
-                {
-                    sleep 0.2;
-                    // Land Convoy Loop
-                    if (_inLandConvoy) then {
-                        if (_moveInConvoy) then {
-                            _wp setWaypointType "MOVE";
-                        };
-
-                        _vic setVariable ["pl_speed_limit", "CON"];
-                        // _vic forceFollowRoad true;
-                        _vic setConvoySeparation 1;
-
-                        while {
-                        (alive (vehicle (leader _convoyLeader))) and
-                        // !(unitReady (driver (vehicle (leader _convoyLeader)))) and
-                        ((leader _convoyLeader) distance2D waypointPosition[_convoyLeader, currentWaypoint _convoyLeader] > 60) and
-                        (_convoyLeader getVariable ["onTask", true])
-                        } do {
-                            private _convoyLeaderSpeed = (vehicle (leader _convoyLeader)) getVariable "pl_speed_limit";
-                            switch (_convoyLeaderSpeed) do { 
-                                case "CON" : {_convoyLeaderSpeed = 35}; 
-                                case "MAX" : {_convoyLeaderSpeed = 60}; 
-                                default {_convoyLeaderSpeed = parseNumber _convoyLeaderSpeed}; 
-                            };
-                            private _convoyLeaderVic = vehicle (leader _convoyLeader);
-                            if ((group _commander) == _convoyLeader) then {
-                                _distance = _vic distance2d vehicle (leader (_convoyArray select 1));
-                                _vic forceSpeed -1;
-                                _vic limitSpeed _convoyLeaderSpeed;
-                                if (_distance < 60) then {
-                                    _vic limitSpeed _convoyLeaderSpeed;
-                                };
-                                if (_distance > 70) then {
-                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
-                                };
-                                if (_distance > 90) then {
-                                    _vic forceSpeed 0;
-                                };
-                                if ((speed _vic) == 0) then {
-                                    _timeout = time + 7;
-                                    waitUntil {(speed _vic) > 0 or time >= _timeout};
-                                    if ((speed _vic) == 0) then {
-                                        [_vic, _group, _cords] call pl_vehicle_convoy_unstuck;
-                                    };
-                                };
-                            }
-                            else
-                            {
-                                _leaderBehavior = behaviour (leader _convoyLeader);
-                                _group setBehaviour _leaderBehavior;
-                                _distance = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition - 1));
-                                _vic forceSpeed -1;
-                                _vic limitSpeed _convoyLeaderSpeed;
-                                if (_distance > 60) then {
-                                    _vic limitSpeed (_convoyLeaderSpeed + 8);
-                                };
-                                if (_distance < 60) then {
-                                    _vic limitSpeed _convoyLeaderSpeed;
-                                };
-                                if (_distance < 40) then {
-                                    _vic limitSpeed (_convoyLeaderSpeed - (_convoyLeaderSpeed / 2));
-                                };
-                                if (_distance < 25) then {
-                                    _vic forceSpeed 0;
-                                    _vic limitSpeed 0;
-                                };
-                                if ((speed (vehicle (leader (_convoyArray select (_convoyPosition - 1))))) < 2) then {
-                                    _vic forceSpeed 0;
-                                    _vic limitSpeed 0;
-                                };
-                                _distanceBack = 0;
-                                if (_convoyPosition < ((count (_convoyArray)) - 1)) then {
-                                    _distanceBack = _vic distance2d vehicle (leader (_convoyArray select _convoyPosition + 1));
-                                    if (_distanceBack < 40) then {
-                                        _convoyLeaderVic limitSpeed _convoyLeaderSpeed;
-                                    };
-                                    if (_distanceBack > 60) then {
-                                        _vic limitSpeed ((_convoyLeaderSpeed - (_convoyLeaderSpeed / 2)) - 10);
-                                        _convoyLeaderVic limitSpeed (_convoyLeaderSpeed / 2);
-                                    };
-                                    if (_distanceBack > 100) then {
-                                        _vic forceSpeed 0;
-                                        _convoyLeaderVic limitSpeed ((_convoyLeaderSpeed / 2) - 8);
-                                    };
-                                };
-                                if ((speed _vic) == 0) then {
-                                    _timeout = time + 7;
-                                    waitUntil {(speed _vic) > 0 or time >= _timeout};
-                                    if ((speed _vic) == 0) then {
-                                        [_vic, _group, _cords] call pl_vehicle_convoy_unstuck; 
-                                    };
-                                };
-                            };
-                            sleep 0.5;
-                        };
-                        sleep 0.5;
-                        _vic forceSpeed -1;
-                        _vic limitSpeed 50;
-                        _vic setVariable ["pl_speed_limit", "50"];
-                        _vic forceFollowRoad false;
-                        // Land Convoy Arriving
-                        // if moveInConvoy do not unload Cargo
-
-                        if !(_moveInConvoy) then {
-                            if (_vic getVariable ["pl_on_transport", false]) then {
-                                {
-                                    {
-                                        if ((assignedVehicleRole _x) select 0 isEqualTo "Cargo") then {
-                                            unassignVehicle _x;
-                                            doGetOut _x;
-                                        };
-                                    } forEach (units _x);
-                                    [(units _x)] allowGetIn false;
-                                    if (_x == (group player)) then {
-                                        doStop driver (vehicle (player));
-                                        sleep 0.1;
-                                        driver (vehicle (player)) doFollow player;
-                                    };
-                                    // player hcSetGroup [_x];
-                                    if !(_x getVariable ["pl_show_info", false]) then {
-                                        [_x] call pl_show_group_icon;
-                                    };
-                                    _x leaveVehicle _vic;
-                                } forEach _cargoGroups;
-                            };
-                        };
-                        {
-                            player hcSetGroup [_x];
-                        } forEach _convoyArray;
-                        _wp setWaypointPosition [getPos _vic, 0];
-
-                        // remnove wp task icon
-                        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
-
-                        _convoyLeader setVariable ["onTask", false];
-                        _convoyLeader setVariable ["setSpecial", false];
-                        // if (_group == _convoyLeader) then {
-                            // _convoyLeader setGroupId [_convoyLeaderGroupId];
-                        _cVic = vehicle (leader _convoyLeader);
-                        // _cCargo = fullCrew [_cvic, "cargo", false];
-                        // if ((count _cCargo) > 0) then {
-                        //     _convoyLeader setVariable ["setSpecial", true];
-                        //     _convoyLeader setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
-                        // };
-                        // };
-                        // check if convoyLeader has cargo --> set icon
-
-                        group (_commander) setVariable ["pl_draw_convoy", false];
-                        group (_commander) setBehaviour "AWARE";
-
-                        {
-                            _x enableAI "AUTOCOMBAT";
-                        } forEach units (group _commander);
-                        pl_draw_convoy_array = pl_draw_convoy_array - [_convoyArray];
-                    }
-                    // Single Vehicle
-                    else
-                    {
-                        waitUntil {((leader _group) distance2D waypointPosition[(group _commander), currentWaypoint (group _commander)] < 30) or (!alive _vic)};
-                        // remnove wp task icon
-                        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
-
-                        deleteWaypoint [_group, _wp#1];
-                        doStop _vic;
-
-                        sleep 0.5;
-                        if (_vic getVariable ["pl_on_transport", false]) then {
-                            {
-                                _unit = _x select 0;
-                                _unit enableAI "AUTOCOMBAT";
-                                if (_x select 1 isEqualTo "cargo") then {
-                                    unassignVehicle _unit;
-                                    doGetOut _unit;
-                                    (group _unit) leaveVehicle _vic;
-                                    [_unit] allowGetIn false;
-                                };
-                            } forEach _cargo;
-                        };
-                    };
-                    if (!_moveInConvoy and _vic getVariable ["pl_on_transport", false]) then {
-                        {
-                            // _x setVariable ["pl_show_info", true];
-                            if !(_x getVariable ["pl_show_info", false]) then {
-                                [_x] call pl_show_group_icon;
-                            };
-                            _x leaveVehicle _vic;
-                            // _x addWaypoint [getPos _vic, 10];
-                            player hcSetGroup [_x];
-                        } forEach _cargoGroups;
-                    };
-                    // Single Land Tarnsport ariving
-                };
-            }
-            // If Vehicle is Transported
-            else
-            {
-                {
-                    _x disableAI "AUTOCOMBAT";
-                    _x disableAI "TARGET";
-                    _x disableAI "AUTOTARGET";
-                } forEach (units (group _commander));
-                (group _commander) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa"];
-                [_vic, 0] call pl_door_animation;
-                sleep 40;
-
-                // Air Vehicle in Vehicle Tranport Ariving
-                waitUntil {sleep 0.1; (isTouchingGround _vic) or !alive _vic};
-                // player hcSetGroup [_group];
-                {
-                    player hcsetGroup [(group (_x select 0))];
-                } forEach fullCrew[vehicle (leader (_group)), "cargo", false];
-                [_vic, 1] call pl_door_animation;
-                sleep 5;
-                for "_i" from count waypoints _group - 1 to 0 step -1 do {
-                    deleteWaypoint [_group, _i];
-                };
-                _wp = (group _commander) addWaypoint [getPos _vic, 0];
-                _wp setWaypointType  "VEHICLEINVEHICLEUNLOAD";
-                // player hcRemoveGroup (group _commander);
-                sleep 2;
-                waitUntil {isNull (isVehicleCargo _transportedVic) or (!alive _vic)};
-                // _group setVariable ["pl_show_info", true];
-                if !(_group getVariable ["pl_show_info", false]) then {
-                    [_group] call pl_show_group_icon;
-                };
-                // _group leaveVehicle _vic;
-            };
-
-            if !(_moveInConvoy) then {
-                waitUntil {((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
-                // if (pl_enable_beep_sound) then {playSound "beep"};
-                // _commander sideChat format ["%1 finished unloading, over", groupId _group];
-                player hcSetGroup [_group];
-                sleep 2;
-                (group _commander) setVariable ["setSpecial", false];
-                (group _commander) setVariable ["pl_has_cargo", false];
-            };
-            _vic setVariable ["pl_on_transport", nil];
-            sleep 10;
-
-            // Air Tranport Ariving
-            if (_vic isKindOf "Air") then {
-                deleteVehicle _landigPad;
-                _rtbCords = _vic getVariable "pl_rtb_pos";
-                [_vic, 0] call pl_door_animation;
-                if ((_vic distance2D _rtbCords) < 300) exitWith {_vic engineOn false};
-                (group _commander) addWaypoint [_rtbCords, 0];
-                {
-                    _x disableAI "AUTOCOMBAT";
-                } forEach (crew _vic);
-                sleep 2;
-                if (pl_enable_beep_sound) then {playSound "beep"};
-                _commander sideChat format ["%1: RTB", groupId (group _commander)];
-                if (pl_enable_map_radio) then {[group _commander, "...RTB", 25] call pl_map_radio_callout};
-                waitUntil {sleep 0.1; (unitReady _vic) or (!alive _vic)};
-                {
-                    _x enableAI "AUTOCOMBAT";
-                } forEach (crew _vic);
-                sleep 1;
-                // doStop _vic;
-                {
-                    _x enableAI "AUTOCOMBAT";
-                    _x disableAI "TARGET";
-                    _x enableAI "AUTOTARGET";
-                } forEach (units (group _commander));
-                group (_commander) setVariable ["pl_draw_convoy", false];
-                pl_draw_convoy_array = pl_draw_convoy_array - [_convoyArray];
-                _vic land "LAND";
-            };
-        }
-        else
-        {
-            // Unload at Current Position when map closed
-            _vic = vehicle (leader _group);
-            _driver = driver _vic;
-            _vicGroup = group _driver;
-            doStop _vic;
-            _cargo = fullCrew [_vic, "cargo", false];
-            _cargoGroups = [];
-            {
-                _unit = _x select 0;
-                if !(_unit in (units _vicGroup)) then {
-                    unassignVehicle _unit;
-                    doGetOut _unit;
-                    [_unit] allowGetIn false;
-                    _cargoGroups pushBack (group (_x select 0));
-                };
-            } forEach _cargo;
-            _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
-            {
-                // _x leaveVehicle _vic;
-                // _x setVariable ["pl_show_info", true];
-                // player hcSetGroup [_x];
-                if !(_x getVariable ["pl_show_info", false]) then {
-                    [_x] call pl_show_group_icon;
-                };
-                _x leaveVehicle _vic;
-                // _x addWaypoint [getPos _vic, 10];
-            } forEach _cargoGroups;
-
-            if (pl_enable_beep_sound) then {playSound "beep"};
-            // _commander sideChat format ["Roger, %1 beginning unloading, over", groupId _group];
-            waitUntil {sleep 0.1; ((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
-            // {
-            //     {
-            //         doStop _x;
-            //         _x doFollow leader _x;
-            //     } forEach (units _x);
-            // } forEach _cargoGroups;
-            // if (pl_enable_beep_sound) then {playSound "beep"};
-            // _commander sideChat format ["%1 finished unloading, over", groupId _group];
-            _vic setVariable ["pl_on_transport", nil];
-            // (group _commander) setVariable ["setSpecial", false];
-            (group _commander) setVariable ["pl_has_cargo", false];
-            _vic doFollow _vic;
-        };
-    };
-};
-
 pl_dismount_cargo = {
     params [["_group", (hcSelected player) select 0]];
 
@@ -890,6 +311,7 @@ pl_unload_at_position_planed = {
     } forEach _cargo;
 
     {
+        moveOut (leader _x);
         if !(_x getVariable ["pl_show_info", false]) then {
             [_x] call pl_show_group_icon;
         };
@@ -926,6 +348,508 @@ pl_unload_at_position_planed = {
     };
 };
 
+pl_convoy = {
+    private _allgroups = hcSelected player;
+    private _groups = +_allGroups select {((assignedVehicleRole (leader _x))#0) != "cargo"};
+
+    private _markerRPName = format ["convoyrp%1%2",random 2];
+    createMarker [_markerRPName, [0,0,0]];
+    _markerRPName setMarkerPos [0,0,0];
+    _markerRPName setMarkerType "marker_rp";
+    
+
+    private _rangelimiterCenter = getPos (leader (_groups#0));
+    private _rangelimiter = pl_convoy_max_distance;
+    private _markerBorderName = str (random 2);
+    createMarker [_markerBorderName, _rangelimiterCenter];
+    _markerBorderName setMarkerShape "ELLIPSE";
+    _markerBorderName setMarkerBrush "Border";
+    _markerBorderName setMarkerColor "colorOrange";
+    _markerBorderName setMarkerAlpha 0.8;
+    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+    hintSilent "Select DESTINATION on MAP";
+    onMapSingleClick {
+        pl_mapClicked = true;
+        pl_lz_cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        pl_lz_marker_cords = pl_lz_cords;
+        // if (_shift) then {pl_cancel_strike = true};
+        hintSilent "";
+        onMapSingleClick "";
+    };
+    while {!pl_mapClicked} do {
+        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+
+        _road = [_mPos, 50] call BIS_fnc_nearestRoad;
+        if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
+            if (!(isNull _road) and (getMarkerPos _markerBorderName) distance2D _road < _rangelimiter) then {
+                _markerRPName setMarkerPos _road;
+                _markerRPName setMarkerColor "colorGreen";
+            } else {
+                _markerRPName setMarkerPos _mPos;
+                _markerRPName setMarkerColor "ColorRed";
+            };
+        };
+    };
+
+    sleep 0.1;
+    pl_mapClicked = false;
+
+    deleteMarker _markerBorderName;
+    if (getMarkerColor _markerRPName == "colorRED") exitWith {
+        hint "Select Valid Destionation Road";
+        deleteMarker _markerRPName;
+    };
+
+    _markerRPName setMarkerColor pl_side_color;
+    private _cords = getMarkerPos _markerRPName;
+    private _r2 = [_cords, 100,[]] call BIS_fnc_nearestRoad;
+
+    {
+        // [_x] spawn {
+        //     (_this#0) spawn pl_reset;
+        //     sleep 0.5;
+        //     (_this#0) spawn pl_reset;
+        // };
+        _r1 = [getPos (vehicle (leader _x)) , 50,[]] call BIS_fnc_nearestRoad;
+        if (isNull _r1) then {
+            _groups deleteAt (_groups find _x)
+        } else {
+            _path = [_r1, _r2] call pl_convoy_parth_find;
+            _x setVariable ["pl_convoy_path", _path];
+        };
+    } forEach _groups; 
+
+    _groups = ([_groups, [], {count (_x getVariable "pl_convoy_path")}, "ASCEND"] call BIS_fnc_sortBy);
+
+    // sleep 1;
+    _convoyLeaderGroup = _groups#0;
+    _convoyLeader = vehicle (leader _convoyLeaderGroup);
+    _groups = ([_groups, [], {_convoyLeader distance2d (leader _x)}, "ASCEND"] call BIS_fnc_sortBy);
+
+    if ((_convoyLeaderGroup getVariable ["pl_convoy_path", []]) isEqualTo []) exitWith {
+        deleteMarker _markerName;
+        if (pl_enable_map_radio) then {[_convoyLeaderGroup, "... Destination Unreachable!", 25] call pl_map_radio_callout};
+    };
+
+    private _convoy = +_groups;
+    reverse _convoy;
+    pl_draw_convoy_array pushBack _convoy;
+    [_convoyLeaderGroup, "confirm", 1] call pl_voice_radio_answer;
+    _convoyLeaderGroup setVariable ["setSpecial", true];
+    _convoyLeaderGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"];
+    if (pl_enable_map_radio) then {[_convoyLeaderGroup, "... Convoy is OSCAR MIKE!", 25] call pl_map_radio_callout};
+    private _drawPath = (_convoyLeaderGroup getVariable "pl_convoy_path") apply {getpOs _x};
+    pl_draw_convoy_path_array pushback _drawPath;
+
+
+    {
+        if !(_x == _convoyLeaderGroup) then {
+            player hcRemoveGroup _x;
+        };
+        _x setVariable ["pl_draw_convoy", true];
+    } forEach _groups;
+
+    private _ppMarkers = [];
+    private _passigPoints = [[0,0,0]];
+    _noPPn = 0;
+    for "_p" from  0 to count (_convoyLeaderGroup getVariable "pl_convoy_path") - 1 do {
+        private _r = (_convoyLeaderGroup getVariable "pl_convoy_path")#_p;
+        if (count (roadsConnectedTo _r) > 2) then {
+            _valid = {
+                if (_x distance2D _r < 50) exitWith {false};
+                true
+            } forEach _passigPoints;
+            if (_valid) then {
+                _passigPoints pushBackUnique (getPosATL _r);
+                _noPPn = 0;
+
+                // _ppM = createMarker [str (random 1), getPosATL _r];
+                // _ppM setMarkerType "marker_pp";
+                // _ppM setMarkerColor pl_side_color;
+                // _ppM setMarkerSize [0.7, 0.7];
+                // _ppMarkers pushback _ppM;
+            };
+        } else {
+            if (_p > 0) then {
+                if (((getRoadInfo _r)#0) != (getRoadInfo ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 1)))#0) then {
+                    _valid = {
+                        if (_x distance2D _r < 50) exitWith {false};
+                        true
+                    } forEach _passigPoints;
+                    if (_valid) then {
+                        _passigPoints pushBackUnique (getPosATL _r);
+                        _noPPn = 0;
+
+                        // _ppM = createMarker [str (random 1), getPosATL _r];
+                        // _ppM setMarkerType "marker_pp";
+                        // _ppM setMarkerColor pl_side_color;
+                        // _ppM setMarkerSize [0.7, 0.7];
+                        // _ppMarkers pushback _ppM;
+                    };
+                } else {
+                    if (_p > 1 and _p < (count (_convoyLeaderGroup getVariable "pl_convoy_path") - 2)) then {
+                        _dir1 = ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 1)) getDir _r;
+                        _dir2 = _r getDir ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p + 1));
+                        _dirs = [_dir1, _dir2];
+                        // _test = [(_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 2), _r, (_convoyLeaderGroup getVariable "pl_convoy_path")#(_p + 2)];
+                        // _test = [_p - 1, _p, _p + 1];
+                        // player sideChat str _test;
+                        _dirs sort false;
+                        if ((_dirs#0) - (_dirs#1) > 50) then {
+                            _valid = {
+                                if (_x distance2D _r < 80) exitWith {false};
+                                true
+                            } forEach _passigPoints;
+                            if (_valid) then {
+                                _passigPoints pushBackUnique (getPosATL _r);
+                                _noPPn = 0;
+
+                                // _ppM = createMarker [str (random 1), getPosATL _r];
+                                // _ppM setMarkerType "marker_pp";
+                                // _ppM setMarkerColor pl_side_color;
+                                // _ppM setMarkerSize [0.7, 0.7];
+                                // _ppMarkers pushback _ppM;
+                            };
+                        } else {
+                            _noPPn = _noPPn + 1;
+                            if (_noPPn > 20) then {
+                                _noPPn = 0;
+                                _passigPoints pushBackUnique (getPosATL _r);
+
+                                // _ppM = createMarker [str (random 1), getPosATL _r];
+                                // _ppM setMarkerType "mil_marker";
+                                // _ppM setMarkerColor pl_side_color;
+                                // _ppM setMarkerSize [0.7, 0.7];
+                                // _ppMarkers pushback _ppM;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+    _passigPoints deleteAt 0;
+    _passigPoints pushback getposATL _r2;
+
+    for "_i" from 0 to (count _groups) - 1 do {
+        // doStop (vehicle (leader _x));
+
+        private _group = _groups#_i;
+        private _vic = vehicle (leader _group);
+        _vic limitSpeed pl_convoy_speed;
+        _vic setVariable ["pl_speed_limit", "CON"];
+        _group setVariable ["onTask", true];
+        
+        // _vic setConvoySeparation 5;
+        // _vic forceFollowRoad true;
+        _group setVariable ["pl_pp_idx", 0];
+
+        {
+            _x disableAI "AUTOCOMBAT";
+        } forEach (units _group);
+        _group setBehaviourStrong "SAFE";
+        _vic doMove (_passigPoints#0);
+        _vic setDestination [(_passigPoints#0),"VEHICLE PLANNED" , true];
+
+        // _vic setDriveOnPath (_group getVariable "pl_convoy_path");
+
+        if (_vic != _convoyLeader) then {
+
+            // player hcRemoveGroup _group;
+
+            [_group ,_vic, _convoyLeader, _groups, _i, _convoyLeaderGroup, _r2, _passigPoints] spawn {
+                params ["_group" , "_vic", "_convoyLeader", "_groups", "_i", "_convoyLeaderGroup", "_r2", "_passigPoints"];
+                private ["_ppidx", "_time"];
+
+                // _vic setDriveOnPath (_group getVariable "pl_convoy_path");
+
+                _ppidx = 0;
+                private _forward = vehicle (leader (_groups#(_i - 1)));
+                private _startReset = false;
+                while {(_convoyLeaderGroup getVariable ["onTask", true]) and ((_groups#(_i - 1)) getVariable ["onTask", true])} do {
+
+                    if (!alive _vic or ({alive _x and (lifeState _x) != "INCAPACITATED"} count (units _group)) <= 0) exitWith {};
+                    if (!(alive _convoyLeader) or !(alive _forward)) exitWith {};
+
+                    _ppidx = _group getVariable "pl_pp_idx";
+                    if (_vic distance2D (_passigPoints#_ppidx) < 35) then {
+                        _ppidx = _ppidx + 1;
+                        _group setVariable ["pl_pp_idx", _ppidx];
+                        _vic doMove (_passigPoints#_ppidx);
+                        _vic setDestination [(_passigPoints#_ppidx),"VEHICLE PLANNED" , true];
+                    };
+
+                    private _convoyLeaderSpeedStr = vehicle (leader (_convoyLeaderGroup)) getVariable ["pl_speed_limit", "50"];
+                    private _convoyLeaderSpeed = pl_convoy_speed;
+                    switch (_convoyLeaderSpeedStr) do { 
+                        case "CON" : {_convoyLeaderSpeed = pl_convoy_speed}; 
+                        case "MAX" : {_convoyLeaderSpeed = 60}; 
+                        default {_convoyLeaderSpeed = parseNumber _convoyLeaderSpeedStr}; 
+                    };
+                    if ([getPOs _vic] call pl_is_city or [getPOs _vic] call pl_is_forest) then {
+                        if (_convoyLeaderSpeedStr == "CON") then {
+                            _convoyLeaderSpeed = pl_convoy_speed / 2 + 5;
+                        };
+                    };
+                    _vic forceSpeed -1;
+                    _vic limitSpeed _convoyLeaderSpeed;
+                    _distance = _vic distance2D _forward;
+                    if (_distance > 60) then {
+                        _vic limitSpeed (_convoyLeaderSpeed + 5 + (_distance - 60));
+                    };
+                    if (_distance < 60) then {
+                        _vic limitSpeed _convoyLeaderSpeed;
+                    };
+                    if (_distance < 40) then {
+                        _vic limitSpeed (_convoyLeaderSpeed * 0.5);
+                    };
+                    if (_distance < 20) then {
+                        _vic forceSpeed 0;
+                        _vic limitSpeed 0;
+                    };
+                    if (_distance > 40 and (speed _vic) < 8) then {
+                        _vic limitSpeed 1000;
+                    };
+                    if ((speed _vic) == 0 or _distance > 300) then {
+                        _time = time + 20;
+                        if !(_startReset) then {
+                            _time = time + 5;
+                            _startReset = true;
+                        };
+                        waitUntil {sleep 0.5; speed _vic > 5 or time > _time or !(_group getVariable ["onTask", true])};
+                        if ((speed _vic) <= 0  and (_group getVariable ["onTask", true]) and (speed _forward) >= 5) then {
+                            doStop _vic:
+                            sleep 0.3;
+                            _group setBehaviourStrong "SAFE";
+                            _group setVariable ["pl_draw_convoy", true];
+                            // _vic setVariable ["pl_phasing", true];
+                            _pp = (_passigPoints#_ppidx);
+                            _r0 = [getpos _vic, 100,[]] call BIS_fnc_nearestRoad;
+                            _r1 = ([roadsConnectedTo _r0, [], {_pp distance2d _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
+                            _vic setVehiclePosition [getPos _r1, [], 0, "NONE"];
+                            _vic setDir  (_r0 getDir _r1);
+                            sleep 0.1;
+                            if (_distance > 300) exitWith {
+                                sleep 0.2;
+                                [_group] call pl_reset;
+                            };
+                            _vic limitSpeed pl_convoy_speed;
+                            _vic setVariable ["pl_speed_limit", "CON"];
+                            _vic doMove _pp;
+                            _vic setDestination [_pp,"VEHICLE PLANNED" , true];
+                        };
+                    };
+                    sleep 1;
+                };
+                player hcsetGroup [_group];
+                // if ((_vic distance2D _forward) > 60) then {
+                //     _vic doMove getPOs _forward;
+                //     _vic setDestination [getPos _forward,"VEHICLE PLANNED" , true];
+                //     waitUntil {sleep 0.5; _vic distance2D _forward < 60 or !(_group getVariable ["onTask", false])};
+                // };
+                [_group] call pl_reset;
+                _group setVariable ["pl_draw_convoy", nil];
+                _vic limitSpeed 50;
+                _vic setVariable ["pl_speed_limit", "50"];
+                
+            };
+        } else {
+            [_group ,_vic, _convoyLeader, _groups, _i, _convoyLeaderGroup, _r2, _passigPoints, _ppMarkers] spawn {
+                params ["_group" , "_vic", "_convoyLeader", "_groups", "_i", "_convoyLeaderGroup", "_r2", "_passigPoints", "_ppMarkers"];
+                private ["_ppidx"];
+
+                private _dest = getPos ((_convoyLeaderGroup getVariable "pl_convoy_path")#((count (_convoyLeaderGroup getVariable "pl_convoy_path")) - 1));
+
+                while {(_convoyLeaderGroup getVariable ["onTask", true]) and (vehicle (leader _convoyLeaderGroup)) distance2D _dest > 40} do {
+
+                    if !(alive _vic) exitWith {};
+
+                    private _convoyLeaderSpeedStr = vehicle (leader (_convoyLeaderGroup)) getVariable ["pl_speed_limit", "50"];
+                    private _convoyLeaderSpeed = pl_convoy_speed;
+                    switch (_convoyLeaderSpeedStr) do { 
+                        case "CON" : {_convoyLeaderSpeed = pl_convoy_speed}; 
+                        case "MAX" : {_convoyLeaderSpeed = 60}; 
+                        default {_convoyLeaderSpeed = parseNumber _convoyLeaderSpeedStr}; 
+                    };
+                    if ([getPOs _vic] call pl_is_city or [getPOs _vic] call pl_is_forest) then {
+                        if (_convoyLeaderSpeedStr == "CON") then {
+                            _convoyLeaderSpeed = pl_convoy_speed / 2 + 5;
+                        };
+                    };
+                    _vic forceSpeed -1;
+                    _vic limitSpeed _convoyLeaderSpeed;
+
+                    _ppidx = _group getVariable "pl_pp_idx";
+                    if (_vic distance2D (_passigPoints#_ppidx) < 35) then {
+                        _ppidx = _ppidx + 1;
+                        _convoyLeaderGroup setVariable ["pl_pp_idx", _ppidx];
+                        _vic doMove (_passigPoints#_ppidx);
+                        _vic setDestination [(_passigPoints#_ppidx),"VEHICLE PLANNED" , true];
+                    };
+
+                    if ((speed _vic) == 0) then {
+                        _time = time + 10;
+                        waitUntil {sleep 0.5; speed _vic > 5 or time > _time or !(_group getVariable ["onTask", true])};
+                        if ((speed _vic) <= 0 and (_group getVariable ["onTask", true])) then {
+                            // [_group] call pl_reset;
+                            doStop _vic;
+                            sleep 0.3;
+                            _group setBehaviourStrong "SAFE";
+                            _group setVariable ["pl_draw_convoy", true];
+                            _pp = (_passigPoints#_ppidx);
+                            _r0 = [getpos _vic, 100,[]] call BIS_fnc_nearestRoad;
+                            _r1 = ([roadsConnectedTo _r0, [], {_pp distance2d _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
+                            _vic setVehiclePosition [getPos _r1, [], 0, "NONE"];
+                            _vic setDir  (_r0 getDir _r1);
+                            sleep 0.1;
+                            _vic limitSpeed pl_convoy_speed;
+                            _vic setVariable ["pl_speed_limit", "CON"];
+                            _vic doMove _pp;
+                            _vic setDestination [_pp,"VEHICLE PLANNED" , true];
+
+                        }; 
+                    };
+                    sleep 1;
+                };
+
+                [_convoyLeaderGroup] call pl_reset;
+
+                _vic limitSpeed 50;
+                _vic setVariable ["pl_speed_limit", "50"];
+                _convoyLeaderGroup setVariable ["pl_draw_convoy", nil];
+            };
+        };
+        _time = time + 1.5;
+        waituntil {(time >= _time and speed _vic > 13) or !((_convoyLeaderGroup) getVariable ["onTask", true])};
+    };
+
+    // sleep 2;
+    waituntil {sleep 1; !(_convoyLeaderGroup getVariable ["onTask", true])};
+    // if (speed _convoyLeader <= 0) then {if (pl_enable_map_radio) then {[_convoyLeaderGroup, "... Destination unreachable!", 25] call pl_map_radio_callout}};
+
+    pl_draw_convoy_array = pl_draw_convoy_array - [_convoy];
+    pl_draw_convoy_path_array = pl_draw_convoy_path_array - [_drawPath];
+    deleteMarker _markerRPName;
+    {deleteMarker _x} forEach _ppMarkers;
+};
+
+pl_line_up_on_road = {
+
+    private _allgroups = hcSelected player;
+    
+
+    private _markerRPName = format ["convoyrp%1%2",random 2];
+    createMarker [_markerRPName, [0,0,0]];
+    _markerRPName setMarkerPos [0,0,0];
+    _markerRPName setMarkerType "mil_dot";
+    _markerRPName setMarkerSize [1.3, 1.3];
+    
+
+    private _rangelimiterCenter = getPos (leader (_allgroups#0));
+    private _rangelimiter = 300;
+    private _markerBorderName = str (random 2);
+    createMarker [_markerBorderName, _rangelimiterCenter];
+    _markerBorderName setMarkerShape "ELLIPSE";
+    _markerBorderName setMarkerBrush "Border";
+    _markerBorderName setMarkerColor "colorOrange";
+    _markerBorderName setMarkerAlpha 0.8;
+    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+    hintSilent "Select ROAD";
+    onMapSingleClick {
+        pl_mapClicked = true;
+        pl_lz_cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        pl_lz_marker_cords = pl_lz_cords;
+        // if (_shift) then {pl_cancel_strike = true};
+        hintSilent "";
+        onMapSingleClick "";
+    };
+    while {!pl_mapClicked} do {
+        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+
+        _road = [_mPos, 50] call BIS_fnc_nearestRoad;
+        if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
+            if (!(isNull _road) and (getMarkerPos _markerBorderName) distance2D _road < _rangelimiter) then {
+                _markerRPName setMarkerPos _road;
+                _markerRPName setMarkerColor "colorGreen";
+            } else {
+                _markerRPName setMarkerPos _mPos;
+                _markerRPName setMarkerColor "ColorRed";
+            };
+        };
+    };
+
+    sleep 0.1;
+    pl_mapClicked = false;
+
+    deleteMarker _markerBorderName;
+    if (getMarkerColor _markerRPName == "colorRED") exitWith {
+        hint "Select ROAD";
+        deleteMarker _markerRPName;
+    };
+
+    private _cords = getMarkerPos _markerRPName;
+    deleteMarker _markerRPName;
+    private _road = [_cords, 75,[]] call BIS_fnc_nearestRoad;
+
+    private _groups = [];
+    {
+        if ((((leader _x) distance2D (getPos _road)) < 300 )and ((vehicle (leader _x)) != (leader _x))) then {
+            _groups pushBack _x;
+            _x setVariable ["onTask", true];
+        };
+    } forEach _allGroups;
+
+    _groupsCount = count _groups;
+    _groups = [_groups, [], {(leader _x) distance2D _road}, "ASCEND"] call BIS_fnc_sortBy;
+    private _facing = leader (_groups#(_groupsCount - 1)) getDir (getpos _road);
+    private _checkPos = (getPos _road) getPos [500, _facing];
+
+
+    private _roadPositions = [];
+    for  "_i" from 0 to _groupsCount - 1 do {
+        _road = ((roadsConnectedTo _road) - [_road]) select 0;
+        _roadPos = getPos _road;
+        _info = getRoadInfo _road;    
+        _endings = [_info#6, _info#7];
+        _endings = [_endings, [], {_x distance2D _checkPos}, "ASCEND"] call BIS_fnc_sortBy;
+        _roadDir = (_endings#1) getDir (_endings#0);
+        _roadPositions pushBack [_roadPos , _roadDir]
+    };
+
+    {
+        _roadPos = _x#0;
+        _roadDir = _x#1;
+        _group = ([_groups, [], {(leader _x) distance2D _roadPos}, "ASCEND"] call BIS_fnc_sortBy)#0;
+        _groups deleteAt (_groups find _group);
+        // [vehicle (leader _group), _group, _roadPos, _roadDir, _groups] spawn {
+            // params ["_vic", "_group", "_roadPos", "_roadDir", "_groups"];
+            _vic = vehicle (leader _group);
+            _vic doMove _roadPos;
+            _vic setDestination [_roadPos,"VEHICLE PLANNED" , true];
+            pl_draw_vic_advance_wp_array pushBack [_vic, _roadPos];
+            _vic limitSpeed 20;
+            _group setBehaviourStrong "CARELESS";
+
+            sleep 2;
+            _time = time + 7;
+             waitUntil {sleep 0.5; unitReady _vic or !alive _vic or _vic distance2d _roadPos < 50 or !(_group getVariable ["onTask", false]) or time >= _time};
+
+            pl_draw_vic_advance_wp_array = pl_draw_vic_advance_wp_array - [[_vic, _roadPos]];
+            _vic setDir _roadDir;
+            _group setBehaviour "AWARE";
+            _vic limitSpeed 50;
+             if !(_group getVariable ["onTask", false]) exitWith {};
+
+            // _turnPos = [_vic, _roadDir] call pl_get_turn_vehicle;
+            // _vic doMove _turnPos;
+            // _vic setDestination [_turnPos,"VEHICLE PLANNED" , true];
+        // };
+        // sleep 2;
+    } forEach _roadPositions;
+};
+
 pl_detach_inf_planed = {
     params ["_group", "_attached", "_taskPlanWp"];
 
@@ -950,46 +874,25 @@ pl_detach_inf_planed = {
     };
 };
 
-pl_spawn_getOut_vehicle = {
-    params [["_moveInConvoy", false]];
-    if (pl_enable_beep_sound) then {playSound "beep"};
-    private _convoyArray = [];
-    {
-        if (vehicle (leader _x) != leader _x) then {
-            _vic = vehicle (leader _x);
-            _vic engineOn true;
-            _group = group (driver _vic);
-            _convoyArray pushBack _group;
-        };
-    } forEach hcSelected player;
 
-    _convoyArray = _convoyArray arrayIntersect _convoyArray;
-    if (_moveInConvoy and ((count _convoyArray) < 2)) exitWith {
-        
-        (leader (hcSelected player select 0)) sidechat "Not enough Vehicle to form a Convoy";
-    };
-    _convoyId = str (random 2);
-    c_test_id = _convoyId;
-    missionNamespace setVariable [_convoyId, _convoyArray];
-    missionNamespace setVariable [_convoyId + "pos", 0];
-    missionNamespace setVariable [_convoyId + "time", 0];
-    {
-        [_x, _convoyId, _moveInConvoy] spawn pl_getOut_vehicle;
-        // sleep 0.1;
-    } forEach hcSelected player;  
-};
 
 pl_convoy_path_marker = [];
 
 pl_convoy_parth_find = {
     params ["_start", "_goal"];
-    private _dummyGroup = createGroup sideLogic;
+
+    if (isNull _start or isNull _goal) exitWith {[]};
+
+    private _dummyGroup = createGroup [sideLogic, true];
     private _closedSet = [];
     private _openSet = [_start];
     private _current = _start;
     private _nodeCount = 0;
     private _allRoads = [];
-    while {!(_openSet isEqualTo [])} do {
+    private _n = 0;
+    private _returnPath = [];
+    private _time = time + 4;
+    while {!(_openSet isEqualTo []) and time < _time} do {
         private _closest = objNull;
         {
             if (_goal distance _x < _goal distance _closest) then {
@@ -1003,11 +906,14 @@ pl_convoy_parth_find = {
             private _parent = _dummyGroup getVariable ("NF_neighborParent_" + str _current);
             while {!(isNil "_parent")} do {
                 _allRoads pushBack _parent;
+
                 // private _marker = createMarker [str _parent, getPos _parent];
                 // _marker setMarkerShape "ICON";
                 // _marker setMarkerColor "colorBLUFOR";
                 // _marker setMarkerType "MIL_DOT";
                 // _marker setMarkerSize [0.3, 0.3];
+                // _returnPath pushback getPos _parent;
+                _allRoads pushBackUnique _parent;
                 _parent = _dummyGroup getVariable ("NF_neighborParent_" + str _parent);
                 // pl_convoy_path_marker pushBack _marker;
             };
@@ -1028,6 +934,7 @@ pl_convoy_parth_find = {
                     private _neighborG = _dummyGroup getVariable ("NF_neighborG_" + str _x);
                     _gScoreIsBest = _gScore < _neighborG;
                 };
+                if (isNil "_gScoreIsBest") exitWith {};
                 if (_gScoreIsBest) then {
                     _dummyGroup setVariable ["NF_neighborParent_" + str _x, _current];
                     _dummyGroup setVariable ["NF_neighborG_" + str _x, _gScore];
@@ -1035,7 +942,10 @@ pl_convoy_parth_find = {
             };
         } forEach _neighbors;
     };
-    count _allRoads
+    if (time > _time) exitWith {[]};
+    reverse _allRoads;
+    // _returnPath deleteRange [0, 3];
+    _allRoads
 };
 
 pl_door_animation = {
@@ -1045,10 +955,6 @@ pl_door_animation = {
     _vic animateDoor ["Door_L", _mode];
     _vic animateDoor ["Door_R", _mode];
 
-};
-
-pl_airassualt_security = {
-    params ["_group", "_vic"];
 };
 
 pl_vehicle_speed_limit = {
@@ -1193,7 +1099,7 @@ pl_attach_inf = {
 
     _group = (hcSelected player) select 0;
 
-    if (_group getVariable ["pl_vic_attached", false]) exitWith {_group setVariable ["pl_vic_attached", false]};
+    if (_group getVariable ["pl_vic_attached", false]) exitWith {_group setVariable ["pl_vic_attached", false]; _group setVariable ["pl_attached_infGrp", nil];};
 
     if (vehicle (leader _group) != leader _group) exitWith {"Infantry Only Task!"};
 
@@ -1233,6 +1139,7 @@ pl_attach_inf = {
     _vicGroup = group (driver _vic);
     _attachForm = pl_attach_form;
 
+    if (_vicGroup getVariable ["pl_vic_attached", false]) exitWith {Hint "Vehicle already has Infantry attached"};
 
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
@@ -1322,33 +1229,184 @@ pl_attach_inf = {
     _vic setVariable ["pl_speed_limit", "50"];
 };
 
-pl_vehicle_convoy_unstuck = {
-    params ["_vic", "_group", "_cords"];
-    _vic setVehiclePosition [getPosVisual _vic, [], 0, "CAN_COLLIDE"];
+pl_air_insertion = {
+    private ["_cords", "_lzPos", "_helipad", "_rtbPos"];
+    
+    private _allGroups = hcSelected player;
+
+    private _groups = [];
     {
-        _x setDamage 1;
-    } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
-    _leader = leader _group;
-    (units _group) joinSilent _group;
-    _group selectLeader _leader;
+        if (vehicle (leader _x) isKindOf "AIR" and _x getVariable ["pl_has_cargo", false]) then {_groups pushBack _x};
+    } forEach _allGroups;
 
-    if ((currentWaypoint _group) >= count (waypoints _group)) then {
-        _group addWaypoint [_cords, 2];
-    } else {
-        [_group, (currentWaypoint _group)] setWaypointPosition [_cords, -1];
-        _vic doMove _cords;
+    if (_groups isEqualTo []) exitWith {hint "No Loaded Air Units Selected!"};
+
+    private _pps = [];
+    private _ppMarkers = [];
+    pl_confirm_lz = false;
+    while {!pl_confirm_lz} do {
+
+        onMapSingleClick {
+            pl_air_cords = _pos;
+            pl_mapClicked = true;
+            if (_shift) then {pl_confirm_lz = true};
+            hintSilent "";
+            onMapSingleClick "";
+        };
+
+        _ppM = createMarker [str (random 1), [0,0,0]];
+        _ppM setMarkerType "marker_pp";
+        _ppM setMarkerColor pl_side_color;
+        _ppM setMarkerSize [0.7, 0.7];
+        _ppMarkers pushback _ppM;
+
+        while {!pl_mapClicked} do {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            _ppM setMarkerPos _mPos;
+        };
+
+        sleep 0.5;
+        pl_mapClicked = false;
+
+        _cords = pl_air_cords;
+        if (pl_confirm_lz) then {
+            _ppM setMarkerType "marker_rp";
+            _ppM setMarkerSize [1, 1];
+        } else {
+            _pps pushback _cords;
+        };
     };
 
-    _road = [getPos _vic, 10] call BIS_fnc_nearestRoad;
-    if !(isNull _road) then {
-        _info = getRoadInfo _road;    
-        _endings = [_info#6, _info#7];
-        _endings = [_endings, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;
-        _vPos = _endings#0;
-        _roadDir = (_endings#1) getDir (_endings#0);
-        _vic setDir _roadDir;
+    _groups = ([_groups, [], {(_pps#0) distance2d (leader _x)}, "ASCEND"] call BIS_fnc_sortBy);
+
+    private _convoyLeaderGroup = _groups#0;
+    private _convoyLeader = vehicle (leader _convoyLeaderGroup);
+    _convoyLeaderGroup setVariable ["setSpecial", true];
+    _convoyLeaderGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa"];
+
+    private _convoy = +_groups;
+    reverse _convoy;
+    pl_draw_convoy_array pushBack _convoy;
+    private _drawPath = [getPos _convoyLeader] + _pps + [_cords]; 
+    pl_draw_convoy_path_array pushback _drawPath;
+
+    private _approachDir = (_pps#((count _pps) - 1)) getDir _cords;
+    private _posOffset = 0;
+    private _posOffsetStep = 40;
+
+    for "_i" from 0 to (count _groups) - 1 do {
+        _group = _groups#_i;
+        player hcRemoveGroup _group;
+        _group setVariable ["onTask", true];
+        _group setVariable ["setSpecial", true];
+        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa"];
+        _group setVariable ["pl_draw_convoy", true];
+
+        _vic = vehicle (leader _group);
+        [_vic, 0] call pl_door_animation;
+        _landigPadBase = "Land_HelipadEmpty_F" createVehicle (getPos _vic);
+        _vic flyInHeight 40;
+        _landigPadBase setDir (getDir _vic);
+        _rtbPos = getPos _landigPadBase;
+
+        _dirOffset = 90;
+        if (_i % 2 == 0) then {_dirOffset = -90};
+        _lzPos = _cords getPos [_posOffset, _approachDir + _dirOffset];
+        if (_i % 2 == 0) then {_posOffset = _posOffset + _posOffsetStep};
+        [_lzPos, 40] call pl_clear_obstacles;
+        sleep 0.2;
+        _lzPos = _lzPos findEmptyPosition [0, 60, typeOf _vic];
+        _landigPadLz = "Land_HelipadEmpty_F" createVehicle _lzPos;
+        _landigPadLz setDir _approachDir;
+
+        _m = createMarker [str (random 1), _lzPos];
+        _m setMarkerType "mil_dot";
+        _m setMarkerSize [0.7, 0.7];
+
+        {
+            _group addWaypoint [_x, 0];
+        } forEach _pps;
+        _lzWp = _group addWaypoint [_lzPos, 0];
+        _lzWp setWaypointType "TR UNLOAD";
+
+        [_vic, _group, _rtbPos, _landigPadLz, _lzPos, _pps] spawn {
+            params ["_vic", "_group", "_rtbPos", "_landigPadLz", "_lzPos", "_pps"];
+
+            waitUntil{sleep 0.5; !alive _vic or (_vic distance2d _lzPos) < 200};
+
+            _cargo = fullCrew [_vic, "cargo", false];
+            private _cargoGroups = [];
+            {
+                _cargoGroups pushBack (group (_x select 0));
+            } forEach _cargo;
+            _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
+
+            waitUntil {sleep 0.5; (isTouchingGround _vic) or !alive _vic};
+
+            [_vic, 1] call pl_door_animation;
+            {
+                _x leaveVehicle _vic;
+                if !(_x getVariable ["pl_show_info", false]) then {[_x] call pl_show_group_icon;};
+                if (_x != (group player)) then {_x addWaypoint [(getPos _vic) getPos [20, (getDir _vic) - 180], 0]};
+            } forEach _cargoGroups;
+
+            waitUntil {((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
+
+            deleteVehicle _landigPadLz;
+            [_vic, 0] call pl_door_animation;
+
+            if ((_vic distance2D _rtbPos) < 300) exitWith {_vic engineOn false};
+
+            _rPPs = +_pps;
+            reverse _rPPs;
+
+            {
+                _group addWaypoint [_x, 0];
+            } forEach _rPPs;
+            _group addWaypoint [_rtbPos, 0];
+
+            waitUntil {sleep 0.5; ((unitReady _vic) and _vic distance2d _rtbPos < 200) or (!alive _vic)};
+            _vic land "LAND";
+            _group setVariable ["onTask", false];
+            _group setVariable ["setSpecial", false];
+        };
+        sleep 5;
     };
+    sleep 40;
+    waitUntil {sleep 0.5; !(alive _convoyLeader) or !(_convoyLeaderGroup getVariable ["onTask", true])};
+
+    pl_draw_convoy_array = pl_draw_convoy_array - [_convoy];
+    pl_draw_convoy_path_array = pl_draw_convoy_path_array - [_drawPath];
+    {deleteMarker _x} forEach _ppMarkers;
 };
+
+// pl_vehicle_convoy_unstuck = {
+//     params ["_vic", "_group", "_cords"];
+//     _vic setVehiclePosition [getPosVisual _vic, [], 0, "CAN_COLLIDE"];
+//     {
+//         _x setDamage 1;
+//     } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
+//     _leader = leader _group;
+//     (units _group) joinSilent _group;
+//     _group selectLeader _leader;
+
+//     if ((currentWaypoint _group) >= count (waypoints _group)) then {
+//         _group addWaypoint [_cords, 2];
+//     } else {
+//         [_group, (currentWaypoint _group)] setWaypointPosition [_cords, -1];
+//         _vic doMove _cords;
+//     };
+
+//     _road = [getPos _vic, 10] call BIS_fnc_nearestRoad;
+//     if !(isNull _road) then {
+//         _info = getRoadInfo _road;    
+//         _endings = [_info#6, _info#7];
+//         _endings = [_endings, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;
+//         _vPos = _endings#0;
+//         _roadDir = (_endings#1) getDir (_endings#0);
+//         _vic setDir _roadDir;
+//     };
+// };
 
 // pl_viv_trans_set_up = {
 //     params ["_group"];

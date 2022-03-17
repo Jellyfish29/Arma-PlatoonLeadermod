@@ -179,17 +179,27 @@ pl_hc_mech_inf_icon_changer = {
     params ["_group"];
     private ["_tester", "_unitText", "_unitSide", "_sideLetter", "_groupIcon"];
 
-    _tester = vehicle (leader _group);
+    private _tester = vehicle (leader _group);
 
-    _unitText = getText (configFile >> "CfgVehicles" >> typeOf _tester >> "textSingular");
+    private _unitText = getText (configFile >> "CfgVehicles" >> typeOf _tester >> "textSingular");
 
     switch (playerSide) do { 
         case west : {_sideLetter = "b"}; 
         case east : {_sideLetter = "o"};
-        default {_sideLetter = "n"}; 
+        case resistance : {_sideLetter = "n"};
+        default {_sideLetter = "b"}; 
     };
 
-    if (_unitText isEqualTo "APC" and !(_tester isKindOf "Car")) then { 
+    private _type = typeOf _tester;
+
+    private _change = false; 
+    if (["m113", _type] call BIS_fnc_inString) then {_change = true};
+    if (["m2a2", _type] call BIS_fnc_inString) then {_change = true};
+    if (["m2a3", _type] call BIS_fnc_inString) then {_change = true};
+    if (["ifv", _type] call BIS_fnc_inString) then {_change = true};
+    if (["apc", _type] call BIS_fnc_inString) then {_change = true};
+
+    if ((_unitText isEqualTo "APC" or _change) and !(_tester isKindOf "Car")) then { 
         _group setVariable ["MARTA_customIcon", [format ["%1_mech_inf", _sideLetter]]];
     };
 
@@ -282,6 +292,7 @@ pl_voice_radio_answer = {
         [_group, _answerVoiceLine, _delay] spawn {
             params ["_group", "_answerVoiceLine", "_delay"];
             sleep _delay;
+            // playsound "radionoise3";
             // playsound "radioina";
             // sleep 0.5;
             (leader _group) sideRadio _answerVoiceLine;

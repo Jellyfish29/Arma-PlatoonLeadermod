@@ -269,6 +269,45 @@ pl_auto_crouch = {
     };  
 };
 
+pl_auto_formation = {
+    params ["_group"];
+    private ["_dest", "_distance"];
+
+    // if (vehicle (leader _group) != (leader _group)) exitWith {};
+
+
+    _group setFormation "LINE";
+    while {sleep 0.5; {alive _x} count (units _group) > 0} do {
+
+        waitUntil {sleep 0.5; !(_group getVariable ["pl_vic_attached", false])};
+
+        if ([getPos (leader _group)] call pl_is_city) then {
+            if (formation _group != "DIAMOND") then {
+                _group setFormation "DIAMOND";
+            }; 
+        } else {
+            if ((currentWaypoint _group) < count (waypoints _group)) then {
+                _dest = waypointPosition ((waypoints _group) select (count (waypoints _group) - 1));
+                _distance = _dest distance2D (leader _group);
+                if (_distance > 100 and behaviour (leader _group) != "COMBAT") then {
+                    if (formation _group != "STAG COLUMN") then {
+                        _group setFormation "STAG COLUMN";
+                    };
+                } else {
+                    if (formation _group != "LINE") then {
+                        _group setFormation "LINE";
+                    };
+                };
+            } else {
+                if (formation _group != "LINE") then {
+                    _group setFormation "LINE";
+                };
+            };
+        };
+        sleep 5;
+    };   
+};
+
 pl_medical_setup = {
     params ["_unit"];
     _unit setVariable ["pl_beeing_treatet", false];
@@ -446,6 +485,7 @@ pl_set_up_ai = {
     _group allowFleeing 0;
 
     [_group] call pl_ammo_bearer;
+    [_group] spawn pl_auto_formation;
     _magCountAll = 0;
     {     
         if ((_x != player) or !(_x in switchableUnits)) then {
@@ -709,14 +749,13 @@ pl_ai_setUp_loop = {
                 };
 
                 if (pl_opfor_enhanced_ai) then {
-                    if (vehicle (leader _x) == (leader _x)) then {
-                        if (isNil {_x getVariable "pl_opfor_ai_enabled"}) then {
+                    if !(_x getVariable ["pl_opfor_ai_enabled", false]) then {
+                        _x setVariable ["pl_opfor_ai_enabled", true];
+                        if (vehicle (leader _x) == (leader _x)) then {
                             _x execFSM "\Plmod\fsm\pl_opfor_cmd.fsm";
-                            _x setVariable ["pl_opfor_ai_enabled", true];
-                        };
-                    } else {
+                        } else {
                             _x execFSM "\Plmod\fsm\pl_opfor_cmd_vic.fsm";
-                            _x setVariable ["pl_opfor_ai_enabled", true];
+                        };
                     };
                 };
             };
@@ -743,6 +782,14 @@ pl_auto_unstuck = {
         _unit setPos _pos;
         _unit doFollow leader (group _unit);
         _unit switchMove "";
+        if ([getPos _unit] call pl_is_indoor) then {
+            _b = nearestBuilding (getPos _unit);
+            _unit disableCollisionWith _b;
+            [_unit, _b] spawn {
+                sleep 15;
+                (_this#0) enableCollisionWith (_this#1);
+            };
+        };
     };
 };
 
@@ -788,11 +835,17 @@ pl_vehicle_soft_unstuck = {
 pl_reset_group = {
     params ["_group"];
 
-    {
-        if !(_x isEqualTo player) then{
-            _x spawn pl_hard_reset;
-        };
-    } forEach (units _group);
+
+    if (vehicle (leader _group) == leader _group) then {
+        {
+            if !(_x isEqualTo player) then{
+                _x spawn pl_reset_unit;
+            };
+        } forEach (units _group);
+    } else {
+        _vic = vehicle (leader _group);
+        [_vic] call pl_reset_vic;
+    };
 
     _groupId = groupId _group;
     _groupComp = _group getVariable "pl_group_comp";
@@ -815,7 +868,7 @@ pl_reset_group = {
 };
 
 
-pl_hard_reset = {
+pl_reset_unit = {
     params ["_unit"];
 
     _origGroup = group _unit;
@@ -866,11 +919,148 @@ pl_hard_reset = {
     };
 };
 
+pl_reset_vic = {
+    params ["_vic", ["_setPos", []]];
+
+    _animations = "true" configClasses (configFile >> "CfgVehicles" >> typeOf _vic >> "AnimationSources");
+    private _appereance = [];
+
+    {
+        _s = (str _x) splitString "/";
+        _a =  _s select ((count _s) - 1);
+        _appereance pushBack [_a, (_vic animationSourcePhase _a)];
+    } forEach _animations;
+
+    _w = getWeaponCargo _vic;
+    _t = getItemCargo _vic;
+    _m = getMagazineCargo _vic;
+    _b = getBackpackCargo _vic;
+    _vicInv = [_w, _t, _m ,_b];
+
+    _isSupply = _vic getVariable ["pl_is_supply_vehicle", false];
+    _isRepair = _vic getVariable ["pl_is_repair_vehicle", false];
+    _supplies = _vic getVariable ["pl_supplies", 0];
+    _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];
+    _repairCargo = _vic getVariable ["pl_repair_supplies", 0];
+    _lifes = _vic getVariable ["pl_repair_lifes", 1];
+    _varName = vehicleVarName _vic;
+    _damage = getDammage _vic;
+
+    _crew = fullCrew _vic;
+    _pos = getPosATLVisual _vic;
+    _dir = getDir _vic;
+    _driver = driver _vic;
+    _commander = commander _vic;
+    _gunner = gunner _vic;
+    _type = typeof _vic;
+    hideObject _vic;
+    deleteVehicle _vic;
+
+    sleep 0.1;
+
+    private _newVic = createVehicle [_type, _pos, [], 0, "CAN_COLLIDE"];
+    // _newVic disableCollisionWith _vic;
+
+    if !(_setPos isEqualTo []) then {
+        _newVic setPosATL _setPos;
+    } else {
+        _newVic setPosATL _pos;
+    };
+    _newVic setDir _dir;
+    _newVic setDamage _damage;
+
+    {
+        _newVic animateSource [_x#0, _x#1, true];
+    } forEach _appereance;
+    _newVic setVariable ["pl_appereance", _appereance];
+    
+    {
+        _unit = _x#0;
+        switch (_x#1) do { 
+            case "driver" : {_unit moveindriver _newVic;}; 
+            case "gunner" : {_unit moveInGunner _newVic;};
+            case "commander" : {_unit moveInCommander _newVic};
+            case "cargo" : {_unit moveIncargo [_newVic, _x#2, true]};
+            case "turret" : {_unit moveInTurret [_newVic, _x#3]};
+            default {_unit moveIncargo _newVic}; 
+        };
+    } forEach _crew;
+
+    _newVic setVehicleVarName _varName;
+    _newVic limitSpeed 50;
+    _newVic setVariable ["pl_speed_limit", "50"];
+    _newVic setUnloadInCombat [false, false];
+    _newVic allowCrewInImmobile true;
+    _newVic engineOn true;
+
+
+    [_vicInv, _newVic] call pl_set_vic_laodout;
+    _newVic setVariable ["pl_vic_inv", _vicInv];
+    [_newVic] spawn pl_vehicle_tree_stuck_fix;
+    _newVic setVariable ["pl_repair_lifes", _lifes];
+    
+    if (_isSupply) then {
+        _newVic setVariable ["pl_avaible_reinforcements", _reinforcements];
+        _newVic setAmmoCargo 0;
+        [group (driver _newVic)] spawn {
+            params ["_grp"];
+            sleep 5;
+            [_grp, "support"] call pl_change_group_icon;
+        };
+    };
+
+    if (_supplies > 0) then {
+        _newVic setVariable ["pl_supplies", _supplies];
+    };
+
+    if (_isRepair) then {
+        _newVic setVariable ["pl_is_repair_vehicle", true];
+        _newVic setVariable ["pl_repair_supplies", _repairCargo];
+        _newVic setRepairCargo 0;
+        [group (driver _newVic)] spawn {
+            params ["_grp"];
+            sleep 5;
+            [_grp, "maint"] call pl_change_group_icon;
+        };
+    };
+
+    _newVic addEventHandler ["IncomingMissile", {
+            params ["_target", "_ammo", "_vehicle", "_instigator"];
+
+            _pos = getPos _vehicle;
+            _markerPos = [[[_pos, 50]],[]] call BIS_fnc_randomPos;
+            _markerDir =  (_target getDir _markerPos) + 90;
+            _markerName = format ["%1at", _vehicle];
+            [_markerPos, _markerDir, _markerName] spawn {
+                params ["_markerPos", "_markerDir", "_markerName"];
+                createMarker [_markerName, _markerPos];
+                _markerName setMarkerType "mil_ambush";
+                _markerName setMarkerSize [0.5, 0.5];
+                _markerName setMarkerDir _markerDir;
+                _markerName setMarkerColor "ColorRed";
+                _markerName setMarkerText "AT";
+                sleep 30;
+                deleteMarker _markerName;
+            };
+        }];
+    
+     _newVic addEventHandler ['HandleDamage', {
+        params['_unit', '_selName', '_damage', '_source'];
+        if ((_unit getVariable "pl_damage_reduction")) then {
+            _dmg = _damage * 0.8;
+            _damage = _dmg;
+        };
+        _damage
+    }];
+
+    _newVic setVariable ["pl_vehicle_setup_complete", true];
+};
+
 
 pl_spawn_hard_reset = {
     {
         {
-            [_x] call pl_hard_reset;
+            [_x] call pl_reset_unit;
         } forEach (units _x);
         
     } forEach hcSelected player;
@@ -968,78 +1158,81 @@ pl_inf_trans_set_up = {
 
 
 /////////////////// Start Set Up ///////////////////////////
-sleep 5;
+pl_start_set_up = {
+    sleep 5;
 
-_hcc = allMissionObjects "HighCommand";
-_plHcc = allMissionObjects "Pl_HighCommand";
-pl_hc_active = false;
-if (_plHcc isEqualto []) then {
-    if (pl_enable_hc_default) then {
-        _newHcc = (createGroup (sideLogic)) createUnit ["Pl_HighCommand", [0, 0, 0], [], 0, "NONE"];
-        player synchronizeObjectsAdd [_newHcc];
+    _hcc = allMissionObjects "HighCommand";
+    pl_hc_active = false;
+    if (_hcc isEqualto []) then {
+        if (pl_enable_hc_default) then {
+            _newHcc = (createGroup (sideLogic)) createUnit ["HighCommand", [0, 0, 0], [], 0, "NONE"];
+            player synchronizeObjectsAdd [_newHcc];
+            pl_hc_active = true;
+            hcShowBar true;
+            sleep 1;
+        };
+    }
+    else
+    {
         pl_hc_active = true;
         hcShowBar true;
-        sleep 1;
     };
-}
-else
-{
-    pl_hc_active = true;
-    hcShowBar true;
-};
 
-if ((vehicle player) != player) then {
-    _commander = leader (group driver (vehicle player));
-    (vehicle player) setEffectiveCommander _commander;
-};
-
-sleep 2;
-
-if (pl_hc_active) then {
-
-    [group player] call pl_set_up_ai;
-    [] spawn pl_ai_setUp_loop;
+    if ((vehicle player) != player) then {
+        _commander = leader (group driver (vehicle player));
+        (vehicle player) setEffectiveCommander _commander;
+    };
 
     sleep 2;
 
-    {
-        _leader = leader _x;
-        // private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
-        // if (isNil{_hcs}) exitWith {};
-        if (_x getVariable ["pl_is_recon", false]) then {
-            [_x, true] spawn pl_recon;
-        };
+    if (pl_hc_active) then {
 
-        if (_x getVariable ["pl_set_as_medical", false]) then {
-            [_x, "med"] call pl_change_group_icon;
-        };
+        [group player] call pl_set_up_ai;
+        [] spawn pl_ai_setUp_loop;
 
-        // if !((_x getVariable ["pl_custom_icon", ""]) isEqualTo "") then {
-        //     [_x] call pl_show_group_icon;
-        // };
+        sleep 2;
 
-        sleep 0.1;
-        if ((vehicle _leader) != _leader) then {
-            if (((assignedVehicleRole _leader) select 0) isEqualTo "cargo") then {
-                if (group (driver (vehicle _leader)) != _x) then {
-                    [_x] call pl_inf_trans_set_up;
-                };
-                // [_x, true] spawn pl_contact_report;
+        {
+            _leader = leader _x;
+            // private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
+            // if (isNil{_hcs}) exitWith {};
+            if (_x getVariable ["pl_is_recon", false]) then {
+                [_x, true] spawn pl_recon;
             };
-            if !(isNull (isVehicleCargo (vehicle _leader))) then {
-                [_x] call pl_viv_trans_set_up;
-                // [_x, true] spawn pl_contact_report;
+
+            if (_x getVariable ["pl_set_as_medical", false]) then {
+                [_x, "med"] call pl_change_group_icon;
             };
-            // if ((vehicle _leader) isKindOf "Air" and pl_enable_auto_air_remove) then {
-            //     player hcRemoveGroup _x;
+
+            // if !((_x getVariable ["pl_custom_icon", ""]) isEqualTo "") then {
+            //     [_x] call pl_show_group_icon;
             // };
-        };
 
-        [_x] spawn pl_reset;
+            // sleep 0.1;
+            if ((vehicle _leader) != _leader) then {
+                private _vic = vehicle _leader;
+                if ((((assignedVehicleRole _leader) select 0) isEqualTo "cargo" or ((assignedVehicleRole _leader) select 0) isEqualTo "turret") and _leader != commander _vic and _leader != gunner _vic) then {
+                    if (group (driver (vehicle _leader)) != _x) then {
+                        [_x] call pl_inf_trans_set_up;
+                    };
+                    // [_x, true] spawn pl_contact_report;
+                };
+                if !(isNull (isVehicleCargo (vehicle _leader))) then {
+                    [_x] call pl_viv_trans_set_up;
+                    // [_x, true] spawn pl_contact_report;
+                };
+                // if ((vehicle _leader) isKindOf "Air" and pl_enable_auto_air_remove) then {
+                //     player hcRemoveGroup _x;
+                // };
+            };
 
-    } forEach (allGroups select {side _x isEqualTo playerSide});
+            [_x] spawn pl_reset;
+
+        } forEach (allGroups select {side _x isEqualTo playerSide});
+    };
 };
 
+[] call pl_start_set_up;
 
 
 // [spec1] spawn pl_special_forces_skills;

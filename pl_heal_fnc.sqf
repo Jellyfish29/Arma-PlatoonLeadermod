@@ -142,7 +142,7 @@ pl_heal_group = {
                             _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
                             if ((count _enemies) <= 0 and !(_group getVariable ["onTask", true])) then {
                                 if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
-                                    _h1 = [_medic, _x, objNull, "pl_healing_active"] spawn pl_medic_heal;
+                                    _h1 = [_medic, _x, nil, "pl_healing_active"] spawn pl_medic_heal;
                                     waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])}
                                 };
                             };
@@ -219,7 +219,7 @@ pl_bleedout = {
 
 
 pl_ccp_revive_action = {
-    params ["_group", "_medic", "_escort", "_healTarget", "_ccpPos", "_reviveTime", "_waitVar"];
+    params ["_group", "_medic", "_escort", "_healTarget", "_ccpPos", "_reviveTime", "_waitVar", ["_minDragRange", 0]];
     // player sideChat str (alive _healTarget);
     _healTarget setVariable ["pl_beeing_treatet", true];
     _medic disableAI "AUTOCOMBAT";
@@ -248,7 +248,7 @@ pl_ccp_revive_action = {
         // _medic setUnitPos "MIDDLE";
 
         _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500 or (_ccpPos distance2D _healTarget) >= 200};
-        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0) then {
+        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0 and (_medic distance2D _healTarget) > _minDragRange) then {
             _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
             waitUntil {sleep 0.5; scriptDone _dragScript};
         };
@@ -372,9 +372,18 @@ pl_injured_drag = {
     _dummy allowdammage false;
     _dummy setBehaviour "CARELESS";
     _dummy disableAI "FSM";
+    _dummy disableAI "AUTOCOMBAT";
+    _dummy disableAI "COVER";
+    _dummy disableAI "SUPPRESSION";
+    _dummy disableAI "TARGET";
+    _dummy disableAI "AUTOCOMBAT";
+    _dummy enabledynamicSimulation false;
+    _dummy enableSimulation true;
     // _dummy forceSpeed 0.5;
-    _dragger attachTo [_dummy, [0, -0.2, 0]]; 
-    _dragger setDir 180;
+    sleep 0.3;
+    [_dragger, _dummy, true] call BIS_fnc_attachToRelative;
+    // _dragger attachTo [_dummy, [0, -0.2, 0]]; 
+    // _dragger setDir 180;
 
     sleep 0.2,
         
@@ -404,7 +413,7 @@ pl_injured_drag = {
 };
 
 pl_ccp = {
-    params [["_group", hcSelected player select 0], ["_isMedevac", false], ["_escort", nil], ["_reviveRange", 650], ["_healRange", 50], ["_medic", nil]];
+    params [["_group", hcSelected player select 0], ["_isMedevac", false], ["_escort", nil], ["_reviveRange", 650], ["_healRange", 35], ["_medic", nil]];
     private ["_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP", "_marker3D"];
 
     // _group = hcSelected player select 0;
@@ -573,12 +582,12 @@ pl_ccp = {
                 {
                     if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet")) then {
                         if !(isNil "_escort") then {
-                            _h1 = [_group, _medic, _escort, _x, _ccpPos, 20, "onTask"] spawn pl_ccp_revive_action;
+                            _h1 = [_group, _medic, _escort, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
                             waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
                         }
                         else
                         {
-                            _h1 = [_group, _medic, objNull, _x, _ccpPos, 20, "onTask"] spawn pl_ccp_revive_action;
+                            _h1 = [_group, _medic, objNull, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
                             waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
                         };
                     };

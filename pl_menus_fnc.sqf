@@ -93,12 +93,13 @@ pl_show_css_menu = {
 
 pl_mine_spacing_menu = [
     ['Mine Field Spacing',true],
-    ['2m', [2], '', -5, [['expression', 'pl_mine_spacing = 2']], '1', '1'],
-    ['4m', [3], '', -5, [['expression', 'pl_mine_spacing = 4']], '1', '1'],
-    ['6m', [4], '', -5, [['expression', 'pl_mine_spacing = 6']], '1', '1'],
-    ['8m', [5], '', -5, [['expression', 'pl_mine_spacing = 8']], '1', '1'],
-    ['12m', [6], '', -5, [['expression', 'pl_mine_spacing = 12']], '1', '1'],
-    ['16m', [7], '', -5, [['expression', 'pl_mine_spacing = 16']], '1', '1']
+    ['1m', [2], '', -5, [['expression', 'pl_mine_spacing = 1']], '1', '1'],
+    ['2m', [3], '', -5, [['expression', 'pl_mine_spacing = 2']], '1', '1'],
+    ['4m', [4], '', -5, [['expression', 'pl_mine_spacing = 4']], '1', '1'],
+    ['6m', [5], '', -5, [['expression', 'pl_mine_spacing = 6']], '1', '1'],
+    ['8m', [6], '', -5, [['expression', 'pl_mine_spacing = 8']], '1', '1'],
+    ['12m', [7], '', -5, [['expression', 'pl_mine_spacing = 12']], '1', '1'],
+    ['16m', [8], '', -5, [['expression', 'pl_mine_spacing = 16']], '1', '1']
 ];
 
 pl_str_charge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>';
@@ -310,7 +311,7 @@ pl_show_battery_menu = {
 pl_task_plan_menu = [
     ['Task Plan', true],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_std_atk.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] call pl_task_planer']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Take Position</t>", [3], '', -5, [['expression', '["defPos"] call pl_task_planer']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up SP/MCP</t>', [4], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover/Repair Vehicle</t>', [5], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
@@ -324,12 +325,14 @@ pl_task_plan_menu = [
 
 pl_task_plan_menu_unloaded_inf = [
     ['Task Plan', true],
-    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\Plmod\gfx\AFP.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Take Position</t>", [4], '', -5, [['expression', '["defPos"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Add Waypoints</t>", [2], '', -5, [['expression', '["addwp"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    ['', [], '', -1, [['expression', '']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [3], '', -5, [['expression', '["assault"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>", [4], '', -5, [['expression', '["defend"] spawn pl_task_planer_unload_inf']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [5], '', -5, [['expression', '["mine"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [6], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [6], '', -5, [['expression', '["clearmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [7], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1']
 ];
 
