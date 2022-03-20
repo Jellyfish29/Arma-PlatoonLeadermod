@@ -288,13 +288,15 @@ pl_unload_at_position_planed = {
 
         waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
 
-        deleteWaypoint [_group, _taskPlanWp#1];
+
+        // deleteWaypoint [_group, _taskPlanWp#1];
 
         if !(_group getVariable ["pl_task_planed", false]) then {
             pl_cancel_strike = true;
             pl_draw_unload_inf_task_plan_icon_array = pl_draw_unload_inf_task_plan_icon_array - [[_cargoGroup, _wpPos]];
         }; // deleteMarker
         _group setVariable ["pl_task_planed", false];
+
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
@@ -310,31 +312,31 @@ pl_unload_at_position_planed = {
         };
     } forEach _cargo;
 
-    {
-        moveOut (leader _x);
-        if !(_x getVariable ["pl_show_info", false]) then {
-            [_x] call pl_show_group_icon;
-        };
-        _x leaveVehicle _vic;
-    } forEach _cargoGroups;
-
-    // if (pl_enable_beep_sound) then {playSound "beep"};
-    [_group, "confirm", 1] call pl_voice_radio_answer;
-    // _commander sideChat format ["Roger, %1 beginning unloading, over", groupId _group];
     private _cargoPers = [];
     {
-        _unit = _x#0;
-        if ((group _unit) !=_vicGroup) then {
-            _cargoPers pushBack _unit;
+        _cGroup = _x;
+        // moveOut (leader _x);
+        if !(_cGroup getVariable ["pl_show_info", false]) then {
+            [_cGroup] call pl_show_group_icon;
         };
-    } forEach (fullCrew [_vic, "cargo", false]);
+        _cGroup leaveVehicle _vic;
+        {
+            _cargoPers pushBack _x;
+        } forEach (units _cGroup);
+    } forEach _cargoGroups;
 
-    waitUntil {sleep 0.1; (({vehicle _x != _x} count _cargoPers) == 0) or (!alive _vic)};
+
+    [_group, "confirm", 1] call pl_voice_radio_answer;
+
+
+    waitUntil {sleep 0.5; (({vehicle _x != _x} count _cargoPers) == 0) or (!alive _vic)};
+
     // if (pl_enable_beep_sound) then {playSound "beep"};
     _vic setVariable ["pl_on_transport", nil];
     _vicGroup setVariable ["pl_has_cargo", false];
-    _vic doFollow _vic;
-    sleep 10;
+    sleep 1;
+    waitUntil {sleep 0.5; ({unitReady _x} count _cargoPers) == (count _cargoPers)};
+    sleep 1;
     {
         _x setVariable ["pl_disembark_finished", true];
     } forEach _cargoGroups;
@@ -346,6 +348,8 @@ pl_unload_at_position_planed = {
             _x setVariable ["pl_disembark_finished", nil];
         } forEach _cargoGroups;
     };
+    sleep 1;
+    [_group] spawn pl_reset;
 };
 
 pl_convoy = {
@@ -450,78 +454,102 @@ pl_convoy = {
         _x setVariable ["pl_draw_convoy", true];
     } forEach _groups;
 
+    private _bridges = [];
+    private _destroyedBridges = [];
+
+    {
+        _info = getRoadInfo _x;
+        if (_info#8) then {
+            if ((getDammage _x) < 1) then {
+                _bridges pushBackUnique _x;
+            } else {
+                _destroyedBridges pushBackUnique _x;
+            };
+        };
+    } forEach (_convoyLeaderGroup getVariable "pl_convoy_path");
+
+    // if !(_destroyedBridges isEqualTo []) exitWith {};
+
     private _ppMarkers = [];
     private _passigPoints = [[0,0,0]];
     _noPPn = 0;
     for "_p" from  0 to count (_convoyLeaderGroup getVariable "pl_convoy_path") - 1 do {
         private _r = (_convoyLeaderGroup getVariable "pl_convoy_path")#_p;
-        if (count (roadsConnectedTo _r) > 2) then {
-            _valid = {
-                if (_x distance2D _r < 50) exitWith {false};
-                true
-            } forEach _passigPoints;
-            if (_valid) then {
-                _passigPoints pushBackUnique (getPosATL _r);
-                _noPPn = 0;
 
-                // _ppM = createMarker [str (random 1), getPosATL _r];
-                // _ppM setMarkerType "marker_pp";
-                // _ppM setMarkerColor pl_side_color;
-                // _ppM setMarkerSize [0.7, 0.7];
-                // _ppMarkers pushback _ppM;
-            };
-        } else {
-            if (_p > 0) then {
-                if (((getRoadInfo _r)#0) != (getRoadInfo ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 1)))#0) then {
-                    _valid = {
-                        if (_x distance2D _r < 50) exitWith {false};
-                        true
-                    } forEach _passigPoints;
-                    if (_valid) then {
-                        _passigPoints pushBackUnique (getPosATL _r);
-                        _noPPn = 0;
+        private _nearBridge = {
+            if ((_x distance2D _r) < 50) exitWith {true};
+            false
+        } forEach _bridges;
 
-                        // _ppM = createMarker [str (random 1), getPosATL _r];
-                        // _ppM setMarkerType "marker_pp";
-                        // _ppM setMarkerColor pl_side_color;
-                        // _ppM setMarkerSize [0.7, 0.7];
-                        // _ppMarkers pushback _ppM;
-                    };
-                } else {
-                    if (_p > 1 and _p < (count (_convoyLeaderGroup getVariable "pl_convoy_path") - 2)) then {
-                        _dir1 = ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 1)) getDir _r;
-                        _dir2 = _r getDir ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p + 1));
-                        _dirs = [_dir1, _dir2];
-                        // _test = [(_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 2), _r, (_convoyLeaderGroup getVariable "pl_convoy_path")#(_p + 2)];
-                        // _test = [_p - 1, _p, _p + 1];
-                        // player sideChat str _test;
-                        _dirs sort false;
-                        if ((_dirs#0) - (_dirs#1) > 50) then {
-                            _valid = {
-                                if (_x distance2D _r < 80) exitWith {false};
-                                true
-                            } forEach _passigPoints;
-                            if (_valid) then {
-                                _passigPoints pushBackUnique (getPosATL _r);
-                                _noPPn = 0;
+        if !(_nearBridge) then {
+            if (count (roadsConnectedTo _r) > 2) then {
+                _valid = {
+                    if (_x distance2D _r < 50) exitWith {false};
+                    true
+                } forEach _passigPoints;
+                if (_valid) then {
+                    _passigPoints pushBackUnique (getPosATL _r);
+                    _noPPn = 0;
 
-                                // _ppM = createMarker [str (random 1), getPosATL _r];
-                                // _ppM setMarkerType "marker_pp";
-                                // _ppM setMarkerColor pl_side_color;
-                                // _ppM setMarkerSize [0.7, 0.7];
-                                // _ppMarkers pushback _ppM;
-                            };
-                        } else {
-                            _noPPn = _noPPn + 1;
-                            if (_noPPn > 20) then {
-                                _noPPn = 0;
-                                _passigPoints pushBackUnique (getPosATL _r);
+                    // _ppM = createMarker [str (random 1), getPosATL _r];
+                    // _ppM setMarkerType "marker_pp";
+                    // _ppM setMarkerColor pl_side_color;
+                    // _ppM setMarkerSize [0.7, 0.7];
+                    // _ppMarkers pushback _ppM;
+                };
+            } else {
+                if (_p > 0) then {
+                    if (((getRoadInfo _r)#0) != (getRoadInfo ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 1)))#0) then {
+                        _valid = {
+                            if (_x distance2D _r < 50) exitWith {false};
+                            true
+                        } forEach _passigPoints;
+                        if (_valid) then {
+                            _passigPoints pushBackUnique (getPosATL _r);
+                            _noPPn = 0;
 
-                                // _ppM = createMarker [str (random 1), getPosATL _r];
-                                // _ppM setMarkerType "mil_marker";
-                                // _ppM setMarkerColor pl_side_color;
-                                // _ppM setMarkerSize [0.7, 0.7];
-                                // _ppMarkers pushback _ppM;
+                            // _ppM = createMarker [str (random 1), getPosATL _r];
+                            // _ppM setMarkerType "marker_pp";
+                            // _ppM setMarkerColor pl_side_color;
+                            // _ppM setMarkerSize [0.7, 0.7];
+                            // _ppMarkers pushback _ppM;
+                        };
+                    } else {
+                        if (_p > 1 and _p < (count (_convoyLeaderGroup getVariable "pl_convoy_path") - 2)) then {
+                            _dir1 = ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 1)) getDir _r;
+                            _dir2 = _r getDir ((_convoyLeaderGroup getVariable "pl_convoy_path")#(_p + 1));
+                            _dirs = [_dir1, _dir2];
+                            // _test = [(_convoyLeaderGroup getVariable "pl_convoy_path")#(_p - 2), _r, (_convoyLeaderGroup getVariable "pl_convoy_path")#(_p + 2)];
+                            // _test = [_p - 1, _p, _p + 1];
+                            // player sideChat str _test;
+                            _dirs sort false;
+                            if ((_dirs#0) - (_dirs#1) > 50) then {
+                                _valid = {
+                                    if (_x distance2D _r < 80) exitWith {false};
+                                    true
+                                } forEach _passigPoints;
+                                if (_valid) then {
+                                    _passigPoints pushBackUnique (getPosATL _r);
+                                    _noPPn = 0;
+
+                                    // _ppM = createMarker [str (random 1), getPosATL _r];
+                                    // _ppM setMarkerType "marker_pp";
+                                    // _ppM setMarkerColor pl_side_color;
+                                    // _ppM setMarkerSize [0.7, 0.7];
+                                    // _ppMarkers pushback _ppM;
+                                };
+                            } else {
+                                _noPPn = _noPPn + 1;
+                                if (_noPPn > 20) then {
+                                    _noPPn = 0;
+                                    _passigPoints pushBackUnique (getPosATL _r);
+
+                                    // _ppM = createMarker [str (random 1), getPosATL _r];
+                                    // _ppM setMarkerType "mil_marker";
+                                    // _ppM setMarkerColor pl_side_color;
+                                    // _ppM setMarkerSize [0.7, 0.7];
+                                    // _ppMarkers pushback _ppM;
+                                };
                             };
                         };
                     };
@@ -614,7 +642,7 @@ pl_convoy = {
                     if ((speed _vic) == 0 or _distance > 300) then {
                         _time = time + 20;
                         if !(_startReset) then {
-                            _time = time + 5;
+                            _time = time + 3;
                             _startReset = true;
                         };
                         waitUntil {sleep 0.5; speed _vic > 5 or time > _time or !(_group getVariable ["onTask", true])};
@@ -689,7 +717,7 @@ pl_convoy = {
                     };
 
                     if ((speed _vic) == 0) then {
-                        _time = time + 10;
+                        _time = time + 6;
                         waitUntil {sleep 0.5; speed _vic > 5 or time > _time or !(_group getVariable ["onTask", true])};
                         if ((speed _vic) <= 0 and (_group getVariable ["onTask", true])) then {
                             // [_group] call pl_reset;

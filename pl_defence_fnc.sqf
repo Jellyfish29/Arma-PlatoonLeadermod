@@ -16,22 +16,6 @@ pl_valid_walls = ["Land_City_8mD_F", "Land_City2_8mD_F", "Land_Stone_8mD_F", "La
 // // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
 // // _helper setposASL _checkPos;
 
-pl_not_reachable_escape = {
-    params ["_unit", "_pos", "_area"];
-
-    sleep 2;
-
-    if ((currentCommand _unit) isEqualTo "MOVE" and (speed _unit) == 0) exitWith {
-        _movePos = [[[_pos, _area * 1.1]],["water"]] call BIS_fnc_randomPos;
-        _movePos = _movePos findEmptyPosition [0, 10, typeOf _unit];
-        doStop _unit;
-        _unit doMove _movePos;
-        _unit setDestination [_movePos, "LEADER PLANNED", true];
-        false
-    };
-    true
-};
-
 pl_find_cover = {
     params ["_unit", "_watchPos", "_watchDir", "_radius", "_moveBehind", ["_fullCover", false], ["_inArea", ""], ["_fofScan", false]];
     private ["_valid"];
@@ -163,115 +147,6 @@ pl_find_cover_allways = {
     pl_covers = []
 };
 
-
-pl_rush = {
-
-    params ["_group"];
-    private ["_targets", "_cords"];
-
-    if (visibleMap) then {
-        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-    }
-    else
-    {
-        _cords = screenToWorld [0.5,0.5];
-    };
-    
-    // if (pl_enable_beep_sound) then {playSound "beep"};
-    [_group, "confirm", 1] call pl_voice_radio_answer;
-    [_group] call pl_reset;
-
-    sleep 0.5;
-
-    [_group] call pl_reset;
-
-    sleep 0.5;
-
-    _leader = leader _group;
-    if (_leader == vehicle _leader) then {
-        // leader _group sideChat "Roger Falling Back, Over";
-        // [leader _group, "SmokeShellMuzzle"] call BIS_fnc_fire;
-        _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa";
-        _group setVariable ["onTask", true];
-        _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", _icon];
-        _wp = _group addWaypoint [_cords, 0];
-        _group setBehaviourStrong "AWARE";
-        _group setSpeedMode "FULL";
-        _group setCombatMode "BLUE";
-        _group setVariable ["pl_combat_mode", true];
-
-        pl_draw_planed_task_array pushBack [_wp, _icon];
-
-        private _startPos = getPos _unit;
-
-        {
-            _unit = _x;
-            _unit disableAI "AUTOCOMBAT";
-            _unit disableAI "AUTOTARGET";
-            _unit disableAI "TARGET";
-            // _unit disableAI "FSM";
-            _movePos = _cords findEmptyPosition [0, 20, typeOf _unit];
-            _unit doMove _movePos;
-            _unit setDestination [_movePos, "LEADER DIRECT", true];
-            private _startPos = getPos _unit;
-            private _dir = _cords getDir _startPos;
-
-            private _targets = _x targetsQuery [objNull, sideUnknown, "", [], 0];
-            private _count = count _targets;
-                
-            for [{private _i = 0}, {_i < _count}, {_i = _i + 1}] do {
-                private _y = _targets select _i;
-                _x forgetTarget (_y select 1);
-            };
-            
-            [_unit, _group, _cords, _dir] spawn {
-                params ["_unit", "_group", "_cords", "_dir"];
-                waitUntil{sleep 0.5; ((_unit distance2D _cords) < 8) or !(_group getVariable ["onTask", true])};
-                _unit enableAI "AUTOCOMBAT";
-                _unit enableAI "TARGET";
-                _unit enableAI "AUTOTARGET";
-                // _unit doFollow (leader _group);
-                [_unit, getPos _unit, _dir, 25, false] spawn pl_find_cover;
-            };
-
-        } forEach (units _group);
-
-        waitUntil {sleep 0.5; (({_x checkAIFeature "PATH"} count (units _group)) <= 0) or !(_group getVariable ["onTask", true])};
-        
-        sleep 1;
-
-        _group setVariable ["setSpecial", false];
-        _group setVariable ["onTask", false];
-        _group setVariable ["pl_combat_mode", false];
-        _group setSpeedMode "NORMAL";
-        _group setCombatMode "YELLOW";
-        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
-        // leader _group sideChat "We reached Fall Back Position, Over";
-    }
-    else
-    {
-        _group addWaypoint [_cords, 0];
-        _group setVariable ["setSpecial", true];
-        _group setVariable ["onTask", true];
-        _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa"];
-        _vic = vehicle _leader;
-        _vic limitSpeed 5000;
-        _vDir = (getDir _vic) - 180;
-        [_vic, "SmokeLauncher"] call BIS_fnc_fire;
-        _time = time + 45;
-        waitUntil {sleep 0.5; (((leader _group) distance2D waypointPosition[_group, currentWaypoint _group]) < 25) or (time >= _time) or !(_group getVariable ["onTask", true])};
-
-        sleep 2;
-        [_group, str _vDir] call pl_watch_dir;
-        _group setVariable ["setSpecial", false];
-        _group setVariable ["onTask", false];
-        _vicSpeedLimit = _vic getVariable ["pl_speed_limit", "50"];
-        if !(_vicSpeedLimit isEqualTo "MAX") then {
-            _vic limitSpeed (parseNumber _vicSpeedLimit);
-        };
-    };
-};
 
 pl_deploy_static = false;
 
@@ -446,7 +321,6 @@ pl_360 = {
 };
 
 
-
 pl_defend_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []] , ["_cords", []], ["_watchDir", 0]];
     private ["_medicPos", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_doorPos", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord"];
@@ -576,11 +450,17 @@ pl_defend_position = {
 
         if (count _taskPlanWp != 0) then {
 
+            // player sideChat str (_group getVariable ["pl_disembark_finished", false]);
+
             // add Arrow indicator
             pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
             if (vehicle (leader _group) != leader _group) then {
-                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+                if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group))) then {
+                    waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+                } else {
+                    waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+                };
             } else {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
             };
@@ -1516,7 +1396,7 @@ pl_move_back_to_def_pos = {
         _unit disableAI "AUTOTARGET";
         _unit disableAI "TARGET";
         _unit doMove _movePos;
-        _supplySoldier setDestination [_movePos, "LEADER DIRECT", true];
+        _unit setDestination [_movePos, "LEADER DIRECT", true];
         private _counter = 0;
         while {alive _unit and ((group _unit) getVariable ["onTask", true])} do {
             sleep 0.5;
@@ -1603,8 +1483,9 @@ pl_defend_position_vehicle = {
             _group setVariable ["pl_attached_infGrp", nil];
         };
 
-
         sleep 2;
+        waitUntil {sleep 0.5; ({unitReady _x} count (units _infGroup)) == (count (units _infGroup))};
+        sleep 1;
         private _defPos = (getPos _vic) getPos [12, _watchDir];
         [_infGroup, [], _defPos , _watchDir] spawn pl_defend_position;
 

@@ -1935,3 +1935,52 @@ pl_reworked_bis_pack = {
 //         [_x, (getPos _x), 0, 10, false] spawn pl_find_cover;
 //     } forEach (units _group) - [_unit];
 // };
+
+
+    // _markers = [];
+    // _markerTargets = [];
+    // {
+    //     if !(_x in pl_marker_targets) then {
+    //         if (alive _x and (side _x) != civilian) then {
+    //             if (_x isKindOf "Man" or _x isKindOf "Tank" or _x isKindOf "Car" or _x isKindOf "Truck") then {
+    //                 _pos = [[[getPos _x, 10]],[]] call BIS_fnc_randomPos;
+    //                 private _markerName = str _x;
+    //                 _markerSize = 0.15;
+    //                 _marker = createMarker [_markerName, _pos];
+    //                 _markerName setMarkerType "o_unknown";
+    //                 // if (_x isKindOf "Tank") then {
+    //                 //     _markerName setMarkerType "o_armor";
+    //                 //     _markerSize = 0.4;
+    //                 // };
+    //                 // if (_x isKindOf "Car") then {
+    //                 //     _markerName setMarkerType "o_motor_inf";
+    //                 //     _markerSize = 0.4;
+    //                 // };
+    //                 _unitText = getText (configFile >> "CfgVehicles" >> typeOf _x >> "textSingular");
+
+    //                 switch (_unitText) do {
+    //                     case "truck" : {_markerName setMarkerType "o_support"; _markerSize = 0.3};
+    //                     case "car" : {_markerName setMarkerType "o_motor_inf"; _markerSize = 0.3}; 
+    //                     case "tank" : {_markerName setMarkerType "o_armor"; _markerSize = 0.3}; 
+    //                     case "specop" : {_markerName setMarkerType "o_recon"}; 
+    //                     case "APC" : {_markerName setMarkerType "o_mech_inf"; _markerSize = 0.3};
+    //                     default {_markerName setMarkerType "o_inf";};
+    //                 };
+
+    //                 _markerName setMarkerColor "colorOpfor";
+    //                 _markerName setMarkerSize [_markerSize, _markerSize];
+    //                 // _markerName setMarkerText str (parseText _markerText);
+    //                 _markers pushBack _markerName;
+    //                 _markerTargets pushBack _x;
+    //                 pl_marker_targets pushBack _x;
+    //             };
+    //         };
+    //     };
+    // } forEach _targets;
+
+    // // waitUntil {time >= _time};
+    // sleep 20;
+    // {
+    //     deleteMarker _x;
+    // } forEach _markers;
+    // pl_marker_targets = pl_marker_targets - _markerTargets; 

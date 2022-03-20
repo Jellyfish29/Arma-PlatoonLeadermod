@@ -152,7 +152,7 @@ pl_supply_point = {
     // Taskplanning
     if (count _taskPlanWp != 0) then {
 
-        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 40) or !(_group getVariable ["pl_task_planed", false])};
 
         deleteWaypoint [_group, _taskPlanWp#1];
 
@@ -393,8 +393,12 @@ pl_rearm_point = {
 
     _vic = vehicle (leader _group);
 
+    private _isAPC = [_vic] call pl_is_apc;
+
+    player sideChat (str _isAPC);
+
     // check if vehicle is supply vehicle
-    if !(getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car") exitWith {hint "Requires APC or Supply Vehicle"};
+    if (!(_isAPC) and !(_vic isKindOf "Car")) exitWith {hint "Requires APC or Supply Vehicle"};
 
     // get current Ammo Cargo of Vic and calc _ammoStep -> per one inve refill -2% Supplies
     _ammoCargo = _vic getVariable ["pl_supplies", 0];

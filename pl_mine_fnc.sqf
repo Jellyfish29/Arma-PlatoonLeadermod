@@ -1,8 +1,8 @@
-
+pl_engineering_markers = [];
 
 pl_mine_clearing = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_cords", "_engineer", "_mines"];
+    private ["_cords", "_engineer", "_mines", "_watchdir"];
 
     // _group = (hcSelected player) select 0;
 
@@ -17,13 +17,13 @@ pl_mine_clearing = {
 
     _markerName = format ["%1mineSweeper", _group];
     createMarker [_markerName, [0,0,0]];
-    _markerName setMarkerShape "ELLIPSE";
+    _markerName setMarkerShape "RECTANGLE";
     _markerName setMarkerBrush "SolidBorder";;
-    _markerName setMarkerColor "colorORANGE";
+    _markerName setMarkerColor "colorGreen";
     _markerName setMarkerAlpha 0.5;
-    _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size];
+    _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
 
-    private _rangelimiter = 60;
+    private _rangelimiter = 80;
 
     _markerBorderName = str (random 2);
     private _borderMarkerPos = getPos (leader _group);
@@ -31,7 +31,7 @@ pl_mine_clearing = {
     createMarker [_markerBorderName, _borderMarkerPos];
     _markerBorderName setMarkerShape "ELLIPSE";
     _markerBorderName setMarkerBrush "Border";
-    _markerBorderName setMarkerColor "colorOrange";
+    _markerBorderName setMarkerColor "colorORANGE";
     _markerBorderName setMarkerAlpha 0.8;
     _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
 
@@ -58,16 +58,37 @@ pl_mine_clearing = {
             };
             if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
             if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
-            _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size];
-            if (pl_mine_sweep_area_size >= 80) then {pl_mine_sweep_area_size = 80};
+            _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
+            if (pl_mine_sweep_area_size >= 100) then {pl_mine_sweep_area_size = 100};
+            if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
+        };
+
+        // player enableSimulation true;
+        pl_mapClicked = false;
+        _cords = getMarkerPos _markerName;
+
+        onMapSingleClick {
+            pl_mapClicked = true;
+            if (_shift) then {pl_cancel_strike = true};
+            // if (_alt) then {pl_mine_type = "APERSBoundingMine"};
+            onMapSingleClick "";
+        };
+
+        // player enableSimulation false;
+
+        while {!pl_mapClicked} do {
+            _watchDir = (_cords getdir ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition));
+            _markerName setMarkerDir (_watchDir + 90);
+            if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
+            if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
+            _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
+            if (pl_mine_sweep_area_size >= 100) then {pl_mine_sweep_area_size = 100};
             if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
         };
 
         player enableSimulation true;
 
         pl_mapClicked = false;
-        _cords = getMarkerPos _markerName;
-        _markerName setMarkerPos _cords;
         _markerName setMarkerAlpha 0.3;
         deleteMarker _markerBorderName;
     };
@@ -126,14 +147,16 @@ pl_mine_clearing = {
     } forEach [_engineer, _escort];
     pl_at_attack_array pushBack [_engineer, _cords, _escort];
 
-    _mines = allMines select {(_x distance2D _cords) < pl_mine_sweep_area_size + 3};
-    _engineer forceSpeed 1;
-    _escort forceSpeed 1;
+    private _watchPos = _cords getPos [500, _watchDir];
+    _mines = allMines select {(getpos _x) inArea _markerName};
+    _mines = ([_mines, [], {_x distance2D _watchPos}, "DESCEND"] call BIS_fnc_sortBy);
+    // _engineer forceSpeed 1;
+    // _escort forceSpeed 1;
 
     if (count _mines > 0) then {
         while {count _mines > 0} do {
 
-            _mine = ([_mines, [], { _engineer distance _x }, "ASCEND"] call BIS_fnc_sortBy)#0;
+            _mine = _mines#0;
             _pos = getPosATL _mine;
             _engineer doMove _pos;
             _escort doFollow _engineer;
@@ -143,6 +166,14 @@ pl_mine_clearing = {
             waitUntil {sleep 0.5; ((_engineer distance2D _pos) < 1) or (unitReady _engineer) or !(_group getVariable ["onTask", true])};
 
             if !(_group getVariable ["onTask", true]) exitWith {};
+
+            _cm = createMarker [str (random 3), getPos _mine];
+            _cm setMarkerType "mil_triangle";
+            _cm setMarkerSize [0.4, 0.4];
+            _cm setMarkerDir -180;
+            _cm setMarkerColor "colorGreen";
+            _cm setMarkerShadow false;
+            pl_engineering_markers pushBack _cm;
 
             _engineer action ["Deactivate", _engineer, _mine];
 
@@ -169,9 +200,14 @@ pl_mine_clearing = {
         if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Mine Sweep complete", groupId _group]};
         if (pl_enable_map_radio) then {[_group, "...Mine Sweep Complete", 20] call pl_map_radio_callout};
         [_group] call pl_reset;
+        _markerName setMarkerBrush "Cross";
+        _markerName setMarkerColor "colorGreen";
+        _markerName setMarkerText "CLR";
+        pl_engineering_markers pushBack _markerName;
+    } else {
+        deleteMarker _markerName;
     };
     pl_at_attack_array = pl_at_attack_array - [[_engineer, _cords, _escort]];
-    deleteMarker _markerName;
     _engineer forceSpeed -1;
     _escort forceSpeed -1;
 };
@@ -220,9 +256,10 @@ pl_lay_mine_field = {
     _areaMarker setMarkerShape "RECTANGLE";
     // _areaMarker setMarkerBrush "Cross";
     _areaMarker setMarkerBrush "SolidBorder";
-    _areaMarker setMarkerColor "colorRED";
+    _areaMarker setMarkerColor pl_side_color;
     _areaMarker setMarkerAlpha 0.8;
-    _areaMarker setMarkerSize [pl_mine_field_size, 3];
+    _areaMarker setMarkerSize [pl_mine_field_size, 1];
+    pl_engineering_markers pushBack _areaMarker;
 
     private _rangelimiter = 60;
 
@@ -270,7 +307,8 @@ pl_lay_mine_field = {
 
     pl_mapClicked = false;
     if (pl_cancel_strike) exitWith { 
-        deleteMarker _areaMarker; 
+        deleteMarker _areaMarker;
+        deleteMarker _markerBorderName;
         pl_cancel_strike = false;
     };
     _message = "Select Heading <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />
@@ -422,12 +460,13 @@ pl_lay_mine_field = {
         _usedMines = _usedMines + 1;
         _exSpecialist setUnitPos "Auto";
 
-        // _m = createMarker [str (random 5), _x];
-        // _m setMarkerType "mil_dot";
-        // _m setMarkerColor "colorRED";
-        // _m setMarkerSize [0.5, 0.5];
+        _cm = createMarker [str (random 3), getPos _mine];
+        _cm setMarkerType "mil_triangle";
+        _cm setMarkerSize [0.4, 0.4];
+        _cm setMarkerColor pl_side_color;
+        _cm setMarkerShadow false;
+        pl_engineering_markers pushBack _cm;
 
-        // _mineMarkers pushBack _m;
     } forEach _minePositions;
 
     for "_i" from 1 to _usedMines do {
@@ -441,11 +480,8 @@ pl_lay_mine_field = {
 
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
-    }
-    else
-    {
-        deleteMarker _areaMarker;
     };
+
     pl_at_attack_array = pl_at_attack_array - [[_exSpecialist, _cords, _escort]];
 };
 

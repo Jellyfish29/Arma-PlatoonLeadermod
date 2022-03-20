@@ -105,7 +105,7 @@ pl_recon = {
     sleep 5;
 
     // recon logic
-    while {_group getVariable ["pl_is_recon", false]} do {
+    while {sleep 0.5; _group getVariable ["pl_is_recon", false]} do {
         
         {
             _opfGrp = _x;
@@ -166,53 +166,6 @@ pl_mark_targets_on_map = {
         [_x, true] call Pl_marta;
     } forEach _targetGroups;
 
-    // _markers = [];
-    // _markerTargets = [];
-    // {
-    //     if !(_x in pl_marker_targets) then {
-    //         if (alive _x and (side _x) != civilian) then {
-    //             if (_x isKindOf "Man" or _x isKindOf "Tank" or _x isKindOf "Car" or _x isKindOf "Truck") then {
-    //                 _pos = [[[getPos _x, 10]],[]] call BIS_fnc_randomPos;
-    //                 private _markerName = str _x;
-    //                 _markerSize = 0.15;
-    //                 _marker = createMarker [_markerName, _pos];
-    //                 _markerName setMarkerType "o_unknown";
-    //                 // if (_x isKindOf "Tank") then {
-    //                 //     _markerName setMarkerType "o_armor";
-    //                 //     _markerSize = 0.4;
-    //                 // };
-    //                 // if (_x isKindOf "Car") then {
-    //                 //     _markerName setMarkerType "o_motor_inf";
-    //                 //     _markerSize = 0.4;
-    //                 // };
-    //                 _unitText = getText (configFile >> "CfgVehicles" >> typeOf _x >> "textSingular");
-
-    //                 switch (_unitText) do {
-    //                     case "truck" : {_markerName setMarkerType "o_support"; _markerSize = 0.3};
-    //                     case "car" : {_markerName setMarkerType "o_motor_inf"; _markerSize = 0.3}; 
-    //                     case "tank" : {_markerName setMarkerType "o_armor"; _markerSize = 0.3}; 
-    //                     case "specop" : {_markerName setMarkerType "o_recon"}; 
-    //                     case "APC" : {_markerName setMarkerType "o_mech_inf"; _markerSize = 0.3};
-    //                     default {_markerName setMarkerType "o_inf";};
-    //                 };
-
-    //                 _markerName setMarkerColor "colorOpfor";
-    //                 _markerName setMarkerSize [_markerSize, _markerSize];
-    //                 // _markerName setMarkerText str (parseText _markerText);
-    //                 _markers pushBack _markerName;
-    //                 _markerTargets pushBack _x;
-    //                 pl_marker_targets pushBack _x;
-    //             };
-    //         };
-    //     };
-    // } forEach _targets;
-
-    // // waitUntil {time >= _time};
-    // sleep 20;
-    // {
-    //     deleteMarker _x;
-    // } forEach _markers;
-    // pl_marker_targets = pl_marker_targets - _markerTargets; 
 };
 
 pl_marta_dic = createHashMap;
@@ -255,28 +208,62 @@ Pl_marta = {
 
 
     // 50 % chance to create Marker
-    if (((random 1) < 0.5 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.2 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
+    if (((random 1) < 0.5 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.15 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
 
-        _markerSize = 0.5;
         _unitText = getText (configFile >> "CfgVehicles" >> typeOf (vehicle (leader _opfGrp)) >> "textSingular");
 
-        private _markerTypeType = format ["%1_inf", pl_opfor_prefix];
-        switch (_unitText) do {
-            case "truck" : {_markerTypeType = format ["%1_support", pl_opfor_prefix]; _markerSize = 0.5};
-            case "car" : {_markerTypeType = format ["%1_motor_inf", pl_opfor_prefix]; _markerSize = 0.5}; 
-            case "tank" : {_markerTypeType = format ["%1_armor", pl_opfor_prefix]; _markerSize = 0.6}; 
-            case "specop" : {_markerTypeType = format ["%1_recon", pl_opfor_prefix]; _markerSize = 0.5}; 
-            case "APC" : {_markerTypeType = format ["%1_mech_inf", pl_opfor_prefix]; _markerSize = 0.6};
-            default {_markerTypeType = format ["%1_inf", pl_opfor_prefix]; _markerSize = 0.5};
+
+        private _status = "f";
+        if !(_reveal) then {
+            _status = "s";
+        };
+        // private _markerTypeType = format ["unknown_%1_pl", _status];
+        private _markerTypeType = "mil_dot";
+        private _markerSize = 1;
+
+        if !(isNull objectParent (leader _opfGrp)) then {
+            private _vic = vehicle (leader _opfGrp);
+
+            if (_vic isKindOf "Air") then {_markerTypeType = "", _markerSize = 0};
+
+            switch (_unitText) do {
+                case "truck" : {
+                    _markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status];
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {;
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]}}};
+                };
+                case "car" : {
+                    _markerTypeType = format ["%1_%2_truck_pl", pl_opfor_prefix, _status];
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {;
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]}}};
+            }; 
+                case "tank" : {
+                    _markerTypeType = format ["%1_%2_tank_pl", pl_opfor_prefix, _status];
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 6) then {_markerTypeType = format ["%1_%2_apctr_pl", pl_opfor_prefix, _status]};
+                };
+                case "APC" : {
+                    _markerTypeType = format ["%1_%2_apctr_pl", pl_opfor_prefix, _status];
+                    if (_vic isKindOf "Car") then {_markerTypeType = format ["%1_%2_apcwe_pl", pl_opfor_prefix, _status]};
+                };
+                default {_markerTypeType = format ["%1_%2_truck_pl", pl_opfor_prefix, _status]};
+            };
+
+            if (_unitText == "tank" and !(["apctr", _markerTypeType] call BIS_fnc_inString)) then {
+                if ([_vic] call pl_is_apc) then {_markerTypeType = format ["%1_%2_apctr_pl", pl_opfor_prefix, _status];}
+            };
+
+        } else {
+            if (count (units _opfGrp) <= 6) then {
+                // inf Team
+                _markerTypeType = format ["%1_%2_t_inf_pl", pl_opfor_prefix, _status];
+            } else {
+                // Inf Squad
+                _markerTypeType = format ["%1_%2_s_inf_pl", pl_opfor_prefix, _status];
+            };
         };
 
-        _strengthPos = getPos _leader;
-        private _markerTypeStrength = "group_2";
-        if (count (units _opfGrp) < 4) then {_markerTypeStrength = "group_1"};
-        if (count (units _opfGrp) > 12) then {_markerTypeStrength = "group_3"};
-        if (vehicle (leader _opfGrp) != leader _opfGrp) then {_markerTypeStrength = "group_0"};
-
-        
         private _opfDir = -1;
         if ((currentWaypoint _opfGrp) < count (waypoints _opfGrp) and (waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp)) distance2D _leader) > 50) then {
             _wp = waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp));
@@ -289,29 +276,28 @@ Pl_marta = {
 
         if !(_callsign in pl_marta_dic) then {
             createMarker [_markerNameGroup, getPos _leader];
-            createMarker [_markerNameStrength, _strengthPos];
             pl_marta_dic set [_callsign, [_opfGrp, [_markerNameGroup, _markerNameStrength]]];
             [_opfGrp, _unitText, _opfDir] spawn pl_marta_spotrep;
 
             _markerNameGroup setMarkerSize [_markerSize, _markerSize];
-            _markerNameGroup setMarkerColor _sideColor;
-            _markerNameStrength setMarkerSize [1, 1];
+            // _markerNameGroup setMarkerColor _sideColor;
             // first time call out
         } else {
             _markerNameGroup setMarkerPos (getPos _leader);
-            _markerNameStrength setMarkerPos _strengthPos;
         };
 
         _markerNameGroup setMarkerType _markerTypeType;
-        _markerNameStrength setMarkerType _markerTypeStrength;
         
         if (_reveal) then {
             _markerNameGroup setMarkerAlpha 0.9;
-            _markerNameStrength setMarkerAlpha 0.9;
         } else {
-            _markerNameGroup setMarkerAlpha 0.5;
-            _markerNameStrength setMarkerAlpha 0.5;
+            _markerNameGroup setMarkerAlpha 0.8;
         };
+
+        // if !(_leader checkAIFeature "PATH") then {
+        //     _setTacMarker = true;
+        //     _opfGrp setVariable ["pl_opf_tac_marker", "position"];
+        // };
 
         if (_setTacMarker) then {
 
@@ -333,7 +319,7 @@ Pl_marta = {
                     _markerNameOpfTactic setMarkerType _tacMarkerType;
                     _markerNameOpfTactic setMarkerColor _sideColor;
                     _markerNameOpfTactic setMarkerDir _targetDir;
-                    _markerNameOpfTactic setMarkerSize [_markerSize, _markerSize];
+                    _markerNameOpfTactic setMarkerSize [0.7, 0.7];
 
                     pl_marta_dic set [_callsign, [_opfGrp, [_markerNameGroup, _markerNameStrength, _markerNameOpfTactic]]];
                 };
@@ -351,7 +337,7 @@ Pl_marta = {
 
 
 pl_marta_spotrep = {
-    params ["_grp", "_unitext", "_opfDir"];
+    params ["_grp", "_unitText", "_opfDir"];
 
     if !(pl_active_recon_groups isEqualTo []) then {
         _group = selectRandom pl_active_recon_groups;
@@ -366,8 +352,9 @@ pl_marta_spotrep = {
         if (pl_enable_beep_sound) then {playSound "beep"};
         if (pl_enable_chat_radio) then {(leader _group) sideChat _message};
         if (pl_enable_map_radio) then {[_group, _message, 30] call pl_map_radio_callout};
-        sleep 2;
-        if (pl_enable_beep_sound) then {playSound "radioutc"};
+        sleep 0.5;
+        if (pl_enable_beep_sound) then {playSound "radioina"};
+        if (pl_enable_beep_sound) then {playSound "beep"};
     };
 };
 

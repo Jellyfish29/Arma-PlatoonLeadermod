@@ -485,7 +485,7 @@ pl_set_up_ai = {
     _group allowFleeing 0;
 
     [_group] call pl_ammo_bearer;
-    [_group] spawn pl_auto_formation;
+    if (_group != (group player)) then {[_group] spawn pl_auto_formation};
     _magCountAll = 0;
     {     
         if ((_x != player) or !(_x in switchableUnits)) then {
@@ -639,7 +639,7 @@ pl_vehicle_setup = {
         _repairCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportRepair");
         _transportCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportSoldier");
 
-        if ((_magazineCap >= 256 and _transportCap >= 8 and _repairCap <= 0 and _vic isKindOf "Car") or _vic getVariable ["pl_set_supply_vic", false] or _ammoCap > 0) then {
+        if ((_magazineCap >= 256 and _transportCap > 8 and _repairCap <= 0 and _vic isKindOf "Car") or _vic getVariable ["pl_set_supply_vic", false] or _ammoCap > 0) then {
             _vic setVariable ["pl_is_supply_vehicle", true];
             _vic setVariable ["pl_supplies", pl_max_supplies_per_vic];
             _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
@@ -657,13 +657,14 @@ pl_vehicle_setup = {
             _vic setRepairCargo 0;
             [group (driver _vic)] spawn {
                 params ["_grp"];
+                _grp setvariable ["pl_is_repair_group", true];
                 sleep 5;
                 [_grp, "maint"] call pl_change_group_icon;
             };
-        };
-
-        if (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car") then {
-            _vic setVariable ["pl_supplies", 40];
+        } else {
+            if (([_vic] call pl_is_apc) or _vic isKindOf "Car") then {
+                _vic setVariable ["pl_supplies", 40];
+            };
         };
 
         _vic addEventHandler ["IncomingMissile", {

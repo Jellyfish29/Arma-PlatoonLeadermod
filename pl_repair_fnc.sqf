@@ -14,11 +14,11 @@ addMissionEventHandler ["EntityKilled",{
         _abandonedVics pushBack (_x#0);
     } forEach pl_abandoned_markers;
 
-    if ((side (group (driver _killed))) isEqualTo playerSide or _killed in _abandonedVics) then {
+    // if ((side (group (driver _killed))) isEqualTo playerSide or _killed in _abandonedVics) then {
         if (_killed getVariable ["pl_repair_lifes", 0] > 0) then {
 
             _groupId = groupId group driver _killed;
-            if (pl_enable_beep_sound) then {playSound "beep"};
+            if (pl_enable_beep_sound) then {playSound "radioina"};
             if (pl_enable_chat_radio) then {driver _killed sideChat format ["%1 has been disabled!", _groupId]};
             if (pl_enable_map_radio) then {[group (driver _killed), "...We are hit!", 15] call pl_map_radio_callout};
             [group driver _killed, "damaged", 1] call pl_voice_radio_answer;
@@ -64,16 +64,16 @@ addMissionEventHandler ["EntityKilled",{
 
             [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives] spawn pl_create_new_vic;
             
-        }
-        else
-        {
-            _groupId = groupId group driver _killed;
-            if (pl_enable_beep_sound) then {playSound "beep"};
-            if (pl_enable_chat_radio) then {player sideChat format ["%1 has been destroyed", _groupId]};
-            if (pl_enable_map_radio) then {[group (driver _killed), "...Ahhh", 10] call pl_map_radio_callout};
-            [group driver _killed, "damaged", 1] call pl_voice_radio_answer;
         };
-    };
+        // else
+        // {
+        //     _groupId = groupId group driver _killed;
+        //     if (pl_enable_beep_sound) then {playSound "radioina"};
+        //     if (pl_enable_chat_radio) then {player sideChat format ["%1 has been destroyed", _groupId]};
+        //     if (pl_enable_map_radio) then {[group (driver _killed), "...Ahhh", 10] call pl_map_radio_callout};
+        //     [group driver _killed, "damaged", 1] call pl_voice_radio_answer;
+        // };
+    // };
 }];
 
 pl_create_new_vic = {
@@ -171,7 +171,7 @@ pl_repair = {
         _engVic = vehicle (leader _group);
         _vicType = typeOf _engVic;
 
-        if !(_engVic getVariable ["pl_is_repair_vehicle", false]) exitWith {hint "Requires Repair Vehicle!"};
+        if (!(_engVic getVariable ["pl_is_repair_vehicle", false]) or (_group getVariable ["pl_is_repair_group", false])) exitWith {hint "Requires Repair Vehicle!"};
 
         _repairCargo = _engVic getVariable ["pl_repair_supplies", 0];
 
@@ -235,7 +235,7 @@ pl_repair = {
                 // add Arrow indicator
                 pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 40) or !(_group getVariable ["pl_task_planed", false])};
 
                 // remove Arrow indicator
                 pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
@@ -274,7 +274,7 @@ pl_repair = {
                 _wp = _group addWaypoint [getPos _repairTarget, 0];
                 _repairTime = time + 45;
             };
-            [_group, "maint"] call pl_change_group_icon;
+            // [_group, "maint"] call pl_change_group_icon;
             // add Task Icon to wp
             pl_draw_planed_task_array pushBack [_wp, _icon];
             if (pl_enable_beep_sound) then {playSound "beep"};

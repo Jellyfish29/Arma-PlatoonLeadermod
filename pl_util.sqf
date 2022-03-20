@@ -120,7 +120,7 @@ pl_quick_suppress = {
         _targetPos = (_vis select 0) select 0;
     };
     
-    if ((_targetPos distance2D _unit) > 25 and !([_targetPos] call pl_friendly_check)) then {
+    if ((_targetPos distance2D _unit) > 25 and !([_unit, _targetPos] call pl_friendly_check)) then {
         _unit doSuppressiveFire _targetPos;
     };
 
@@ -158,7 +158,8 @@ pl_position_reached_check = {
             doStop _unit;
             _unit setUnitPosWeak "UP";
 
-            _unit setPosATL ([-1 + (random 2), -1 + (random 2), 0] vectorAdd (getPosATLVisual _unit)); 
+            // _unit setPosATL ([-1 + (random 2), -1 + (random 2), 0] vectorAdd (getPosATLVisual _unit));
+            _unit playActionNow "WalkF";
             _movePos = [-1 + (random 2), -1 + (random 2), 0] vectorAdd _movePos;
             _unit doMove _movePos;
             _unit setDestination [_movePos, "LEADER DIRECT", true];
@@ -178,6 +179,22 @@ pl_position_reached_check = {
     if (((_unit distance2D _movePos) < 2 and currentCommand _unit isNotEqualTo "MOVE") or _counter > 20) exitWith {[true, _movePos, _counter]};
 
     [false, _movePos, _counter];
+};
+
+pl_not_reachable_escape = {
+    params ["_unit", "_pos", "_area"];
+
+    sleep 2;
+
+    if ((currentCommand _unit) isEqualTo "MOVE" and (speed _unit) == 0) exitWith {
+        _movePos = [[[_pos, _area * 1.1]],["water"]] call BIS_fnc_randomPos;
+        _movePos = _movePos findEmptyPosition [0, 10, typeOf _unit];
+        doStop _unit;
+        _unit doMove _movePos;
+        _unit setDestination [_movePos, "LEADER PLANNED", true];
+        false
+    };
+    true
 };
 
 
@@ -246,6 +263,18 @@ pl_get_near_inf_groups = {
     } forEach _allies;
 
     _nearGroups
+};
+
+pl_angle_switcher = {
+    params ["_a"];
+    if (_a > 360) then {
+        _a = _a - 360;
+    }
+    else
+    {
+        _a = _a + 360;
+    };
+    _a
 };
 
 pl_find_highest_point = {
@@ -320,4 +349,16 @@ pl_clear_obstacles = {
     {
         _x setDamage 1;
     } forEach (nearestTerrainObjects [_pos, ["TREE", "SMALL TREE", "BUSH"], _radius, false, true]);
+};
+
+pl_is_apc = {
+    params ["_vic"];
+    if (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC") exitWith {true};
+
+    _isAPCtr = {
+        if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
+        false
+    } forEach ["m113", "bmp", "m2a2", "m2a3", "mtlb", "bmd", "amv", "apc", "ifv", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer", "Puma"];
+    _isAPCtr
+
 };

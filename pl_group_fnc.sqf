@@ -1,42 +1,118 @@
-// pl_get_highest_rank = {
-//     params ["_group"];
-//     _rank = 0;
-//     _highestRank = 0;
-//     {
-//         if ((rankId _x) > _rank) then {
-//             _highestRank = _x;
-//         };
-//     } forEach (units _group);
-//     _highestRank;
-// };
+addMissionEventHandler ["GroupIconClick", {
+    params [
+        "_is3D", "_group", "_waypointId",
+        "_mouseButton", "_posX", "_posY",
+        "_shift", "_control", "_alt"];
+    private ["_vic", "_vicGroup"];
+
+    if (side _group == playerSide) then {
+        // if (pl_enable_beep_sound) then {playSound "radioin"};
+        // if ((vehicle (leader _group)) != (leader _group)) then {
+        //     _vic = vehicle (leader _group);
+        //     // player sideChat str _vic;
+        //     _vicGroup = group (driver _vic);
+        //     // player sideChat str _vicGroup;
+        //     [_vicGroup] spawn {
+        //         params ["_vicGroup"];
+        //         sleep 0.35;
+        //         player hcSelectGroup [_vicGroup];
+        //     };
+        // };
+        if (pl_add_group_to_hc) then {
+            if (_group getVariable ["pl_not_addalbe", false]) exitWith {pl_add_group_to_hc = false; hint "Group cant be added!"};
+            [_group ] spawn pl_add_to_hc_execute;
+            [_group] spawn pl_set_up_ai;
+        };
+        if (missionNamespace getVariable ["pl_select_formation_leader", false]) then {
+            missionNamespace setVariable ["pl_formation_leader", _group];
+            missionNamespace setVariable ["pl_select_formation_leader", false];
+            if (_shift) then {
+                missionNamespace setVariable ["pl_formation_cancel", true];
+            }
+            else 
+            {
+                missionNamespace setVariable ["pl_formation_cancel", false]
+            };
+        };
+        if (missionNamespace getVariable ["pl_transfer_medic_enabled", false]) then {
+            missionNamespace setVariable ["pl_transfer_medic_enabled", false];
+            missionNamespace setVariable ["pl_transfer_medic_group", _group];
+        };
+    };
+}];
+
+addMissionEventHandler ["HCGroupSelectionChanged", {
+    params ["_group", "_isSelected"];
+
+    if (_isSelected) then {
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        if (pl_enable_beep_sound) then {playSound "radioina"};
+    } else {
+        if (pl_enable_beep_sound) then {playSound "radioutc"};
+    };
+}];
+
+
+pl_vehicle_destroyed_report_cd = 0;
+
+addMissionEventHandler ["EntityKilled",{
+    params ["_killed", "_killer", "_instigator", "_useEffects"];
+    if ((side group _killed) isEqualto playerside) then {
+        if (vehicle _killed == _killed) then {
+            _leader = leader (group _killed);
+            _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "displayName");
+            _unitName = name _killed;
+            _killed setVariable ["pl_wia", false];
+            [_killed] spawn pl_draw_kia;
+            _group = group _killed;
+            if (pl_enable_map_radio) then {[_group, format ["...%1 KIA", _unitMos], 15] call pl_map_radio_callout};
+            [_group, "kia", random 2] call pl_voice_radio_answer;
+            _mags = _group getVariable "magCountAllDefault";
+            _mag = _group getVariable "magCountSoloDefault";
+            _mags = _mags - _mag;
+            _group setVariable ["magCountAllDefault", _mags];
+
+            // // reinforcements
+            // _type = typeOf _killed;
+            // _loadout = _killed getVariable "pl_loadout";
+            // _killedUnits = _group getVariable "pl_killed_units";
+            // _killedUnits pushBack [_type, _loadout];
+            // _group setVariable ["pl_killed_units", _killedUnits];
+
+            // if (pl_enable_beep_sound) then {playSound "beep"};
+            // _leader sideChat format ["%1: %2 K.I.A", groupId _group, _unitMos];
+        };
+
+        // else
+        // {
+        //     if (time >= pl_vehicle_destroyed_report_cd) then {
+        //         _vic = vehicle _killed;
+        //         _vicName = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");
+        //         player sideChat format ["%1 was destroyed", _vicName];
+        //         pl_vehicle_destroyed_report_cd = time + 3;
+        //     };
+        // };
+    }
+    else
+    {
+        if (_killed isEqualTo (leader (group _killed))) then {
+            if !((getNumber (configFile >> "CfgVehicles" >> typeOf (vehicle _killer) >> "artilleryScanner")) == 1) then {
+                [_killed, _killer, (group _killed)] spawn pl_enemy_destroyed_report;
+            };
+        };
+    };
+}];
+
+pl_set_unit_pos = {
+    params ["_group", "_stance"];
+
+    {
+        _x setUnitPos _stance;
+    } forEach (units _group);
+};
+
 
 pl_add_group_to_hc = false;
-
-// pl_join_hc_group = {
-//     params ["_group"];
-//     private ["_targetGroup"];
-
-//     if (visibleMap) then {
-//         _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-//         _targetGroup = group (nearestObject[_pos, "Man"]);
-//     }
-//     else
-//     {
-//         _target = cursorTarget;
-//         if (_target isKindOf "Man") then {
-//             if (side _target == playerSide) then {
-//                 _targetGroup = group (_target);
-//             };
-//         };
-//     };
-
-//     _group setVariable ["onTask", false];
-//     sleep 0.25;
-
-//     (units _group) join _targetGroup;
-// };
-
-// [hcSelected player select 0] spawn pl_join_hc_group;
 
 pl_split_hc_group = {
     params ["_group"];

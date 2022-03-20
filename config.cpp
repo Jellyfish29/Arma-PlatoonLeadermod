@@ -777,20 +777,35 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
-            // class PlGarBuilding
-            // {
-            //     title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>";
-            //     shortcuts[]={7};
-            //     submenu="";
-            //     command=-5;
-            //     class params
-            //     {
-            //         expression="[] spawn pl_garrison_building";
-            //     };
-            //     show="HCIsLeader";
-            //     enable="HCNotEmpty";
-            //     speechId=0;
-            // };
+            class PlSeperator566666
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlComEng
+            {
+                title="<img color='#e5e500' image='\Plmod\gfx\b_engineer.paa'/><t> Combat Engineering Tasks</t>";
+                shortcuts[]={7};
+                shortcutsAction = "CommandingMenu7";
+                menu="#USER:pl_combat_engineer";
+                command=-5;
+                class params
+                {
+                    expression="";
+                };
+                show="HCIsLeader";
+                enable="1";
+                speechId=0;
+            };
             
             // class PlCancelTask2
             // {
@@ -816,58 +831,33 @@ class RscHCGroupRootMenu
     {
         class items
         {
-            class Stealth
+            class Pl_OpenFire
             {
                 shortcuts[] = {2};
                 class Params
                 {
-                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 0.3, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_STEALTH' call BIS_HC_path_menu";
+                    expression = "{[_x] call pl_open_fire} forEach (hcSelected player)";
                 };
-                title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa'/><t> Stealth</t>";
-                shortcutsAction = "CommandingMenu1";
+                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Open Fire</t";
+                shortcutsAction = "CommandingMenu2";
                 command = -5;
-                show = "";
+                show = "1";
                 enable = "HCNotEmpty";
             };
-            class Combat
+            class Pl_HoldFire
             {
                 shortcuts[] = {3};
                 class Params
                 {
-                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_DANGER' call BIS_HC_path_menu";
+                    expression = "{[_x] call pl_hold_fire} forEach (hcSelected player)";
                 };
-                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\danger_ca.paa'/><t> Combat</t";
-                shortcutsAction = "CommandingMenu2";
-                command = -5;
-                show = "";
-                enable = "HCNotEmpty";
-            };
-            class Aware
-            {
-                shortcuts[] = {4};
-                class Params
-                {
-                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_AWARE' call BIS_HC_path_menu";
-                };
-                title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\listen_ca.paa'/><t> Aware</t";
+                title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Hold Fire</t";
                 shortcutsAction = "CommandingMenu3";
                 command = -5;
-                show = "";
+                show = "1";
                 enable = "HCNotEmpty";
             };
-            class Safe
-            {
-                shortcuts[] = {5};
-                class Params
-                {
-                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_SAFE' call BIS_HC_path_menu";
-                };
-                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa'/><t> Safe</t";
-                shortcutsAction = "CommandingMenu4";
-                command = -5;
-                show = "";
-                enable = "HCNotEmpty";
-            };
+
             class PlSeperator8
             {
                 title="";
@@ -882,6 +872,59 @@ class RscHCGroupRootMenu
                 enable="1";
                 speechId=0;
             };
+            class Stealth
+            {
+                shortcuts[] = {4};
+                class Params
+                {
+                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 0.3, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_STEALTH' call BIS_HC_path_menu";
+                };
+                title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa'/><t> Stealth</t>";
+                shortcutsAction = "CommandingMenu4";
+                command = -5;
+                show = "";
+                enable = "HCNotEmpty";
+            };
+            class Combat
+            {
+                shortcuts[] = {5};
+                class Params
+                {
+                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_DANGER' call BIS_HC_path_menu";
+                };
+                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\danger_ca.paa'/><t> Combat</t";
+                shortcutsAction = "CommandingMenu5";
+                command = -5;
+                show = "";
+                enable = "HCNotEmpty";
+            };
+            class Aware
+            {
+                shortcuts[] = {6};
+                class Params
+                {
+                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_AWARE' call BIS_HC_path_menu";
+                };
+                title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\listen_ca.paa'/><t> Aware</t";
+                shortcutsAction = "CommandingMenu6";
+                command = -5;
+                show = "";
+                enable = "HCNotEmpty";
+            };
+            class Safe
+            {
+                shortcuts[] = {7};
+                class Params
+                {
+                    expression = "{{_x disableAI 'AUTOCOMBAT'; _x setUnitTrait ['camouflageCoef', 1, true];}forEach (units _x);}forEach (hcSelected player); 'COMBAT_SAFE' call BIS_HC_path_menu";
+                };
+                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa'/><t> Safe</t";
+                shortcutsAction = "CommandingMenu7";
+                command = -5;
+                show = "";
+                enable = "HCNotEmpty";
+            };
+
             class OpenFire
             {
                 shortcuts[] = {6};
@@ -890,9 +933,9 @@ class RscHCGroupRootMenu
                     expression = "{[_x] call pl_open_fire} forEach (hcSelected player)";
                 };
                 title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Open Fire</t";
-                shortcutsAction = "CommandingMenu5";
+                shortcutsAction = "CommandingMenu6";
                 command = -5;
-                show = "";
+                show = "0";
                 enable = "HCNotEmpty";
             };
             class HoldFire
@@ -903,9 +946,9 @@ class RscHCGroupRootMenu
                     expression = "{[_x] call pl_hold_fire} forEach (hcSelected player)";
                 };
                 title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Hold Fire</t";
-                shortcutsAction = "CommandingMenu6";
+                shortcutsAction = "CommandingMenu7";
                 command = -5;
-                show = "";
+                show = "0";
                 enable = "HCNotEmpty";
             };
         };
@@ -1726,7 +1769,7 @@ class RscHCWPRootMenu
         {
             class Type
             {
-                shortcuts[] = {1};
+                shortcuts[] = {2};
                 title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'/><t> Type</t>";
                 shortcutsAction = "CommandingMenu2";
                 menu = "RscHCWPType";
@@ -1802,7 +1845,7 @@ class RscHCWPRootMenu
             };
             class CreateTask
             {
-                shortcuts[] = {2};
+                shortcuts[] = {3};
                 // class Params
                 // {
                 //     expression = "[] call pl_get_task_plan_wp";
@@ -1837,7 +1880,7 @@ class RscHCWPRootMenu
             };
             class CancelWP
             {
-                shortcuts[] = {3};
+                shortcuts[] = {5};
                 class Params
                 {
                     expression = "[] call pl_cancel_planed_task; 'WP_CANCELWP' call BIS_HC_path_menu";
@@ -1869,6 +1912,10 @@ class CfgMarkerClasses
     class Check_point_1
     {
         displayName="PL Markers";
+    };
+    class pl_marta_markers
+    {
+        displayName="PL MARTA";
     };
 };
 class CfgMarkers
@@ -1979,6 +2026,298 @@ class CfgMarkers
         name="Objective Marker Enemy";
         icon="\Plmod\gfx\pl_obj_eny.paa";
         texture="\Plmod\gfx\pl_obj_eny.paa";
+    };
+
+    class o_f_tank_pl
+    {
+        name="Heavy Tank Opfor";
+        icon="\Plmod\gfx\marta\o_f_tank_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_tank_pl.paa";
+        color[]={0.5,0,0,0.8};
+        size=24;
+        scope=2;
+        scopeCurator=2;
+        shadow=0;
+        markerClass="pl_marta_markers";
+    };
+    class o_s_tank_pl: o_f_tank_pl
+    {
+        name="Heavy Tank Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_tank_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_tank_pl.paa";
+    };
+
+    class b_f_tank_pl
+    {
+        name="Heavy Tank Blufor";
+        icon="\Plmod\gfx\marta\b_f_tank_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_tank_pl.paa";
+        color[]={0,0.3,0.6,0.8};
+        size=24;
+        scope=2;
+        scopeCurator=2;
+        shadow=0;
+        markerClass="pl_marta_markers";
+    };
+    class b_s_tank_pl: b_f_tank_pl
+    {
+        name="Heavy Tank Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_tank_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_tank_pl.paa";
+    };
+    class n_f_tank_pl
+    {
+        name="Heavy Tank Independet";
+        icon="\Plmod\gfx\marta\n_f_tank_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_tank_pl.paa";
+        color[]={0,0.5,0,0.8};
+        size=24;
+        scope=2;
+        scopeCurator=2;
+        shadow=0;
+        markerClass="pl_marta_markers";
+    };
+    class n_s_tank_pl: n_f_tank_pl
+    {
+        name="Heavy Tank Independet";
+        icon="\Plmod\gfx\marta\n_s_tank_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_tank_pl.paa";
+    };
+
+    class o_f_apctr_pl: o_f_tank_pl
+    {
+        name="APC Tracked Opfor";
+        icon="\Plmod\gfx\marta\o_f_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_apctr_pl.paa";
+    };
+    class o_s_apctr_pl: o_f_tank_pl
+    {
+        name="APC Tracked Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_apctr_pl.paa";
+    };
+    class b_f_apctr_pl: b_f_tank_pl
+    {
+        name="APC Tracked Blufor";
+        icon="\Plmod\gfx\marta\b_f_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_apctr_pl.paa";
+    };
+    class b_s_apctr_pl: b_f_tank_pl
+    {
+        name="APC Tracked Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_apctr_pl.paa";
+    };
+    class n_f_apctr_pl: n_f_tank_pl
+    {
+        name="APC Tracked Independent";
+        icon="\Plmod\gfx\marta\n_f_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_apctr_pl.paa";
+    };
+    class n_s_apctr_pl: n_f_tank_pl
+    {
+        name="APC Tracked Independent Suspected";
+        icon="\Plmod\gfx\marta\n_s_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_apctr_pl.paa";
+    };
+
+    class o_f_apcwe_pl: o_f_tank_pl
+    {
+        name="APC Wheeled Opfor";
+        icon="\Plmod\gfx\marta\o_f_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_apcwe_pl.paa";
+    };
+    class o_s_apcwe_pl: o_f_tank_pl
+    {
+        name="APC Wheeled Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_apcwe_pl.paa";
+    };
+    class b_f_apcwe_pl: b_f_tank_pl
+    {
+        name="APC Wheeled Blufor";
+        icon="\Plmod\gfx\marta\b_f_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_apcwe_pl.paa";
+    };
+    class b_s_apcwe_pl: b_f_tank_pl
+    {
+        name="APC Wheeled Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_apcwe_pl.paa";
+    };
+    class n_f_apcwe_pl: n_f_tank_pl
+    {
+        name="APC Wheeled Independet";
+        icon="\Plmod\gfx\marta\n_f_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_apcwe_pl.paa";
+    };
+    class n_s_apcwe_pl: n_f_tank_pl
+    {
+        name="APC Wheeled Independet Suspected";
+        icon="\Plmod\gfx\marta\n_s_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_apcwe_pl.paa";
+    };
+
+    class o_f_truck_pl: o_f_tank_pl
+    {
+        name="Truck Opfor";
+        icon="\Plmod\gfx\marta\o_f_truck_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_truck_pl.paa";
+    };
+    class o_s_truck_pl: o_f_tank_pl
+    {
+        name="Truck Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_truck_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_truck_pl.paa";
+    };
+    class b_f_truck_pl: b_f_tank_pl
+    {
+        name="Truck Blufor";
+        icon="\Plmod\gfx\marta\b_f_truck_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_truck_pl.paa";
+    };
+    class b_s_truck_pl: b_f_tank_pl
+    {
+        name="Truck Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_truck_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_truck_pl.paa";
+    };
+    class n_f_truck_pl: n_f_tank_pl
+    {
+        name="Truck Independet";
+        icon="\Plmod\gfx\marta\n_f_truck_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_truck_pl.paa";
+    };
+    class n_s_truck_pl: n_f_tank_pl
+    {
+        name="Truck Independet Suspected";
+        icon="\Plmod\gfx\marta\n_s_truck_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_truck_pl.paa";
+    };
+
+    class o_f_truck_sup_pl: o_f_tank_pl
+    {
+        name="Truck Support Opfor";
+        icon="\Plmod\gfx\marta\o_f_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_truck_sup_pl.paa";
+    };
+    class o_s_truck_sup_pl: o_f_tank_pl
+    {
+        name="Truck Support Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_truck_sup_pl.paa";
+    };
+    class b_f_truck_sup_pl: b_f_tank_pl
+    {
+        name="Truck Support Blufor";
+        icon="\Plmod\gfx\marta\b_f_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_truck_sup_pl.paa";
+    };
+    class b_s_truck_sup_pl: b_f_tank_pl
+    {
+        name="Truck Support Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_truck_sup_pl.paa";
+    };
+    class n_f_truck_sup_pl: n_f_tank_pl
+    {
+        name="Truck Support Independet";
+        icon="\Plmod\gfx\marta\n_f_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_truck_sup_pl.paa";
+    };
+    class n_s_truck_sup_pl: n_f_tank_pl
+    {
+        name="Truck Support Independet Suspected";
+        icon="\Plmod\gfx\marta\n_s_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_truck_sup_pl.paa";
+    };
+
+    class b_f_t_inf_pl: b_f_tank_pl
+    {
+        name="Inf Team Blufor";
+        icon="\Plmod\gfx\marta\b_f_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_t_inf_pl.paa";
+    };
+    class b_s_t_inf_pl: b_f_tank_pl
+    {
+        name="Inf Team Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_t_inf_pl.paa";
+    };
+    class b_f_s_inf_pl: b_f_tank_pl
+    {
+        name="Inf Squad Blufor";
+        icon="\Plmod\gfx\marta\b_f_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_s_inf_pl.paa";
+    };
+    class b_s_s_inf_pl: b_f_tank_pl
+    {
+        name="Inf Squad Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_s_inf_pl.paa";
+    };
+
+    class o_f_t_inf_pl: o_f_tank_pl
+    {
+        name="Inf Team Opfor";
+        icon="\Plmod\gfx\marta\o_f_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_t_inf_pl.paa";
+    };
+    class o_s_t_inf_pl: o_f_tank_pl
+    {
+        name="Inf Team Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_t_inf_pl.paa";
+    };
+    class o_f_s_inf_pl: o_f_tank_pl
+    {
+        name="Inf Squad Opfor";
+        icon="\Plmod\gfx\marta\o_f_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_s_inf_pl.paa";
+    };
+    class o_s_s_inf_pl: o_f_tank_pl
+    {
+        name="Inf Squad Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_s_inf_pl.paa";
+    };
+
+    class n_f_t_inf_pl: n_f_tank_pl
+    {
+        name="Inf Team Independet";
+        icon="\Plmod\gfx\marta\n_f_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_t_inf_pl.paa";
+    };
+    class n_s_t_inf_pl: n_f_tank_pl
+    {
+        name="Inf Team Independet Suspected";
+        icon="\Plmod\gfx\marta\n_s_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_t_inf_pl.paa";
+    };
+    class n_f_s_inf_pl: n_f_tank_pl
+    {
+        name="Inf Squad Independet";
+        icon="\Plmod\gfx\marta\n_f_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_s_inf_pl.paa";
+    };
+    class n_s_s_inf_pl: n_f_tank_pl
+    {
+        name="Inf Squad Independet Suspected";
+        icon="\Plmod\gfx\marta\n_s_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_s_inf_pl.paa";
+    };
+
+    class unknown_f_pl: n_f_tank_pl
+    {
+        name="Unknown";
+        icon="\Plmod\gfx\marta\unknown_f_pl.paa";
+        texture="\Plmod\gfx\marta\unknown_f_pl.paa";
+    };
+    class unknown_s_pl: n_f_tank_pl
+    {
+        name="Unknown Suspected";
+        icon="\Plmod\gfx\marta\unknown_s_pl.paa";
+        texture="\Plmod\gfx\marta\unknown_s_pl.paa";
     };
 };
 class RscSubmenu;
