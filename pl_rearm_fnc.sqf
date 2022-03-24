@@ -482,7 +482,7 @@ pl_rearm_point = {
     sleep 2;
 
     // Supply Loop -> Supllies every Group in Range once while actice
-    while {_group getVariable ["onTask", true]} do {
+    while {_group getVariable ["onTask", true] and alive _vic} do {
 
         // Get all friendly Groups in Range
         {

@@ -21,8 +21,8 @@ execVM "Plmod\pl_mine_fnc.sqf";
 execVM "Plmod\pl_util.sqf";
 execVM "Plmod\pl_opfor_ai_fnc.sqf";
 execVM "Plmod\pl_recon_fnc.sqf";
-execVM "pl_planning_fnc.sqf";
-execVm "pl_movement_fnc.sqf";
+execVM "Plmod\pl_planning_fnc.sqf";
+execVm "Plmod\pl_movement_fnc.sqf";
 // execVM "Plmod\pl_marta_overwrite.sqf";
 
 // setGroupIconsVisible [true,true]; 

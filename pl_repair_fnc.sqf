@@ -42,7 +42,13 @@ addMissionEventHandler ["EntityKilled",{
             } forEach _crew;
 
             {
-                [_x] call pl_show_group_icon;
+                if !(_x getVariable ["pl_is_recon", false]) then {
+                    [_x] call pl_show_group_icon;
+                } else {
+                    [_x, "recon"] call pl_change_group_icon;
+                    _x setVariable ["pl_show_info", true];
+                    player hcSetGroup [_x];
+                };
                 [_x] spawn pl_reset;
             } forEach _cargoGroups;
 
@@ -171,7 +177,7 @@ pl_repair = {
         _engVic = vehicle (leader _group);
         _vicType = typeOf _engVic;
 
-        if (!(_engVic getVariable ["pl_is_repair_vehicle", false]) or (_group getVariable ["pl_is_repair_group", false])) exitWith {hint "Requires Repair Vehicle!"};
+        if (!(_engVic getVariable ["pl_is_repair_vehicle", false]) and !(_group getVariable ["pl_is_repair_group", false])) exitWith {hint "Requires Repair Vehicle!"};
 
         _repairCargo = _engVic getVariable ["pl_repair_supplies", 0];
 

@@ -274,12 +274,12 @@ pl_auto_formation = {
     private ["_dest", "_distance"];
 
     // if (vehicle (leader _group) != (leader _group)) exitWith {};
-
+    _group setVariable ["pl_choose_auto_formation", true];
 
     _group setFormation "LINE";
     while {sleep 0.5; {alive _x} count (units _group) > 0} do {
 
-        waitUntil {sleep 0.5; !(_group getVariable ["pl_vic_attached", false])};
+        waitUntil {sleep 1; !(_group getVariable ["pl_vic_attached", false]) and (_group getVariable ["pl_choose_auto_formation", false])};
 
         if ([getPos (leader _group)] call pl_is_city) then {
             if (formation _group != "DIAMOND") then {
@@ -306,6 +306,54 @@ pl_auto_formation = {
         };
         sleep 5;
     };   
+};
+
+pl_toggle_auto_formation = {
+    {
+        if (_x getVariable ["pl_choose_auto_formation", false]) then {
+            _x setVariable ["pl_choose_auto_formation", nil];
+        } else {
+            _x setVariable ["pl_choose_auto_formation", true];
+        };
+    } forEach (hcSelected player);  
+};
+
+pl_auto_vic_speed = {
+    params ["_vic"];
+
+    _vic setVariable ["pl_choose_auto_speed", true];
+    private _group = group (driver _vic);
+
+    while {alive _vic and ({alive _x} count (crew _vic)) > 0} do {
+        waitUntil {sleep 1; _vic getVariable ["pl_choose_auto_speed", false] and (_vic getVariable ["pl_speed_limit", "CON"]) != "CON"};
+        if ([getPos _vic] call pl_is_city) then {
+            _vic limitSpeed 15;
+            _vic setVariable ["pl_speed_limit", "15"];
+        } else {
+            if ((currentWaypoint _group) < count (waypoints _group)) then {
+                _dest = waypointPosition ((waypoints _group) select ((count (waypoints _group)) - 1));
+                _distance = _dest distance2D _vic;
+                if (_distance > 300) then {
+                    _vic limitSpeed 50;
+                    _vic setVariable ["pl_speed_limit", "50"];
+                } else {
+                    _vic limitSpeed 30;
+                    _vic setVariable ["pl_speed_limit", "30"];
+                };
+            };
+        };
+        sleep 5;
+    }  
+};
+
+pl_toggle_auto_speed = {
+    {
+        if ((vehicle (leader _x)) getVariable ["pl_choose_auto_speed", false]) then {
+            (vehicle (leader _x)) setVariable ["pl_choose_auto_speed", nil];
+        } else {
+            (vehicle (leader _x)) setVariable ["pl_choose_auto_speed", true];
+        };
+    } forEach (hcSelected player);  
 };
 
 pl_medical_setup = {
@@ -600,6 +648,7 @@ pl_vehicle_setup = {
         // } forEach (crew _vic);
 
         [_vic] spawn pl_vehicle_tree_stuck_fix;
+        [_vic] spawn pl_auto_vic_speed;
 
         if (isNil {_vic getVariable "pl_repair_lifes"}) then {
             if (_vic isKindOf "Tank") then {
@@ -647,7 +696,7 @@ pl_vehicle_setup = {
             [group (driver _vic)] spawn {
                 params ["_grp"];
                 sleep 5;
-                [_grp, "support"] call pl_change_group_icon;
+                [_grp, "f_truck_sup_pl"] call pl_change_group_icon;
             };
         };
 
@@ -659,7 +708,7 @@ pl_vehicle_setup = {
                 params ["_grp"];
                 _grp setvariable ["pl_is_repair_group", true];
                 sleep 5;
-                [_grp, "maint"] call pl_change_group_icon;
+                [_grp, "f_truck_rep_pl"] call pl_change_group_icon;
             };
         } else {
             if (([_vic] call pl_is_apc) or _vic isKindOf "Car") then {
@@ -706,12 +755,13 @@ pl_ai_setUp_loop = {
         {
             if (side _x isEqualTo playerSide) then {
                 [_x] spawn pl_vehicle_setup;
-
+                [group (driver _x)] spawn pl_change_to_vic_symbols;
             }
             else
             {
                 // _x limitSpeed 45;
-                _x setUnloadInCombat [true, true];
+                _x setUnloadInCombat [true, false];
+                _x allowCrewInImmobile true;
             };
         } forEach vehicles;
 
@@ -998,6 +1048,7 @@ pl_reset_vic = {
     [_vicInv, _newVic] call pl_set_vic_laodout;
     _newVic setVariable ["pl_vic_inv", _vicInv];
     [_newVic] spawn pl_vehicle_tree_stuck_fix;
+    [_newVic] spawn pl_auto_vic_speed;
     _newVic setVariable ["pl_repair_lifes", _lifes];
     
     if (_isSupply) then {
@@ -1118,7 +1169,13 @@ pl_inf_trans_set_up = {
         _x assignAsCargo _targetVic;
     } forEach (units _group);
     [units _group] allowGetIn true; //false;
-    [_group] call pl_hide_group_icon;
+    if !(_group getVariable ["pl_is_recon", false]) then {
+        [_group] call pl_hide_group_icon;
+    } else {
+        [_group, "recon_add_pl"] call pl_change_group_icon;
+        _group setVariable ["pl_show_info", false];
+        player hcRemoveGroup _group;
+    };
 };
 
 
@@ -1197,13 +1254,6 @@ pl_start_set_up = {
             _leader = leader _x;
             // private _hcs = allMissionObjects "HighCommandSubordinate" select 0;
             // if (isNil{_hcs}) exitWith {};
-            if (_x getVariable ["pl_is_recon", false]) then {
-                [_x, true] spawn pl_recon;
-            };
-
-            if (_x getVariable ["pl_set_as_medical", false]) then {
-                [_x, "med"] call pl_change_group_icon;
-            };
 
             // if !((_x getVariable ["pl_custom_icon", ""]) isEqualTo "") then {
             //     [_x] call pl_show_group_icon;
@@ -1227,13 +1277,23 @@ pl_start_set_up = {
                 // };
             };
 
+            sleep 0.2;
+
+            if (_x getVariable ["pl_is_recon", false]) then {
+                [_x, true] spawn pl_recon;
+            };
+
+            if (_x getVariable ["pl_set_as_medical", false]) then {
+                [_x, "med"] call pl_change_group_icon;
+            };
+
             [_x] spawn pl_reset;
 
         } forEach (allGroups select {side _x isEqualTo playerSide});
     };
 };
 
-[] call pl_start_set_up;
+[] spawn pl_start_set_up;
 
 
 // [spec1] spawn pl_special_forces_skills;

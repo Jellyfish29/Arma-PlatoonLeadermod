@@ -154,7 +154,7 @@ pl_hold = {
 
     params ["_group"];
     // if (pl_enable_beep_sound) then {playSound "beep"};
-    [_group, "confirm", 1] call pl_voice_radio_answer;
+    // [_group, "confirm", 1] call pl_voice_radio_answer;
 
     // set Variable
     _group setVariable ["pl_on_hold", true];

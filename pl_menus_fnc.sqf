@@ -325,7 +325,8 @@ pl_task_plan_menu = [
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [7], '', -5, [['expression', '["mineclear"] call pl_task_planer']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [8], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Unload Cargo</t>', [9], '', -5, [['expression', '["unload"] call pl_task_planer']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"/><t> Load Cargo</t>', [9], '', -5, [['expression', '["load"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Unload Cargo</t>', [10], '', -5, [['expression', '["unload"] call pl_task_planer']], '1', '1']
 
 ];
 

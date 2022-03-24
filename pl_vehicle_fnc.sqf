@@ -15,13 +15,18 @@ pl_convoy_max_distance = 3500;
 
 
 pl_getIn_vehicle = {
+    params [["_group", hcSelected player select 0], ["_taskPlanWp", []]];
     private ["_vics", "_targetVic", "_groupLen", "_group", "_cords"];
 
-    _group = hcSelected player select 0;
+    // _group = hcSelected player select 0;
     _groupLen = count (units _group);
 
     if (visibleMap) then {
-        pl_show_vehicles_pos = getPos (leader _group);
+        if (_taskPlanWp isEqualTo []) then {
+            pl_show_vehicles_pos = getPos (leader _group);
+        } else {
+            pl_show_vehicles_pos = waypointPosition _taskPlanWp;
+        };
         pl_show_vehicles = true;
         hint "Select TRANSPORT on Map";
         onMapSingleClick {
@@ -66,6 +71,26 @@ pl_getIn_vehicle = {
         };
     } forEach pl_vics;
     if !(isNil "_targetVic") then {
+
+
+        [group (driver _targetVic)] call pl_hold;
+
+        if (count _taskPlanWp != 0) then {
+
+            private _wPos = waypointPosition _taskPlanWp;
+
+            waitUntil {(((leader _group) distance2D _wPos) < 20) or !(_group getVariable ["pl_task_planed", false])};
+
+            // deleteWaypoint [_group, _taskPlanWp#1];
+
+            if !(_group getVariable ["pl_task_planed", false]) then {
+                pl_cancel_strike = true;
+                [group (driver _targetVic)] call pl_execute;
+            }; // deleteMarker
+            _group setVariable ["pl_task_planed", false];
+        };
+
+        if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
         _targetVic lockCargo false;
 
@@ -177,6 +202,7 @@ pl_getIn_vehicle = {
             } forEach (units _group);
             _group setVariable ["onTask", true];
             waitUntil {({_x in _targetVic} count (units _group) == count (units _group)) or !(_group getVariable ["onTask", true])};
+            [group (driver _targetVic)] call pl_execute;
             if !(_group getVariable "onTask") then {
                 {
                     unassignVehicle _x;
@@ -191,8 +217,13 @@ pl_getIn_vehicle = {
                 _group setVariable ["onTask", false];
                 // _group setVariable ["setSpecial", false];
                 (group (driver _targetVic)) setVariable ["pl_has_cargo", true];
-                [_group] call pl_hide_group_icon;
-                player hcRemoveGroup _group;
+                if !(_group getVariable ["pl_is_recon", false]) then {
+                    [_group] call pl_hide_group_icon;
+                } else {
+                    [_group, "recon_add_pl"] call pl_change_group_icon;
+                    _group setVariable ["pl_show_info", false];
+                    player hcRemoveGroup _group;
+                };
                 // _group setVariable ["pl_show_info", false];
                 // if !(_targetVic isKindOf "Air") then {
                 // };
@@ -317,7 +348,14 @@ pl_unload_at_position_planed = {
         _cGroup = _x;
         // moveOut (leader _x);
         if !(_cGroup getVariable ["pl_show_info", false]) then {
-            [_cGroup] call pl_show_group_icon;
+            // [_cGroup] call pl_show_group_icon;
+            if !(_cGroup getVariable ["pl_is_recon", false]) then {
+                [_cGroup] call pl_show_group_icon;
+            } else {
+                [_cGroup, "recon"] call pl_change_group_icon;
+                _cGroup setVariable ["pl_show_info", true];
+                player hcSetGroup [_cGroup];
+            };
         };
         _cGroup leaveVehicle _vic;
         {
@@ -476,10 +514,13 @@ pl_convoy = {
     for "_p" from  0 to count (_convoyLeaderGroup getVariable "pl_convoy_path") - 1 do {
         private _r = (_convoyLeaderGroup getVariable "pl_convoy_path")#_p;
 
-        private _nearBridge = {
-            if ((_x distance2D _r) < 50) exitWith {true};
-            false
-        } forEach _bridges;
+        private _nearBridge = false;
+        if !(_bridges isEqualTo []) then {
+            _nearBridge = {
+                if ((_x distance2D _r) < 50) exitWith {true};
+                false
+            } forEach _bridges;
+        };
 
         if !(_nearBridge) then {
             if (count (roadsConnectedTo _r) > 2) then {

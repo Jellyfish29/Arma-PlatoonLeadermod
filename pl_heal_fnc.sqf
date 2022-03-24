@@ -248,9 +248,11 @@ pl_ccp_revive_action = {
         // _medic setUnitPos "MIDDLE";
 
         _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500 or (_ccpPos distance2D _healTarget) >= 200};
-        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0 and (_medic distance2D _healTarget) > _minDragRange) then {
-            _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
-            waitUntil {sleep 0.5; scriptDone _dragScript};
+        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0) then {
+            if ((_ccpPos distance2D _healTarget) > _minDragRange) then {
+                _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
+                waitUntil {sleep 0.5; scriptDone _dragScript};
+            };
         };
         sleep 1;
         if (alive _medic and alive _healTarget and (_group getVariable [_waitVar, true]) and !(lifeState _medic isEqualTo "INCAPACITATED")) then {

@@ -493,8 +493,6 @@ pl_rush = {
 
         pl_draw_planed_task_array pushBack [_wp, _icon];
 
-        private _startPos = getPos _unit;
-
         {
             _unit = _x;
             _unit disableAI "AUTOCOMBAT";

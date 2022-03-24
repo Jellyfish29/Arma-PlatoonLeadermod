@@ -273,7 +273,7 @@ pl_draw_group_info = {
                     ];
                 };
                 if ((vehicle (leader _x)) != leader _x) then {
-                    _vicPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
+                    _vicPos = [(_pos select 0), (_pos select 1) + (pl_map_scale_y * 1.5)];
                     _vicColor = [vehicle (leader _x)] call pl_get_vic_health;
                     _vicDir = getDir (vehicle (leader _x));
                     _vicIcon = '\A3\ui_f\data\map\MapControl\viewtower_CA.paa';

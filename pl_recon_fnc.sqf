@@ -32,7 +32,11 @@ pl_recon = {
 
     // sealth, holdfire, recon icon
     // _group setBehaviour "STEALTH";
-    [_group, "recon"] call pl_change_group_icon;
+    // if (vehicle (leader _group) != (leader _group)) then {
+    //     [_group, "recon_add_pl"] call pl_change_group_icon;
+    // } else {
+    //     [_group, "recon"] call pl_change_group_icon;
+    // };
     _group setVariable ["pl_recon_area_size", pl_recon_area_size_default];
 
     // _group setCombatMode "GREEN";
@@ -94,6 +98,12 @@ pl_recon = {
             };
             _h = _group getVariable "pl_recon_area_size";
             _markerName setMarkerSize [_h, _h];
+            // if (([_group getVariable ["pl_custom_icon", ""], "add"] call BIS_fnc_inString) and isNull objectParent (leader _group)) then {
+            //     [_group, "recon"] call pl_change_group_icon;
+            // };
+            // if (([_group getVariable ["pl_custom_icon", ""], "recon"] call BIS_fnc_inString) and !(isNull objectParent (leader _group))) then {
+            //     [_group, "recon_add_pl"] call pl_change_group_icon;
+            // };
             sleep 1;
         };
         _group setVariable ["pl_recon_area_size", nil];
@@ -231,13 +241,13 @@ Pl_marta = {
                     _markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status];
                     if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {
                     if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {;
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]}}};
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_rep_pl", pl_opfor_prefix, _status]}}};
                 };
                 case "car" : {
                     _markerTypeType = format ["%1_%2_truck_pl", pl_opfor_prefix, _status];
                     if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {
                     if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {;
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]}}};
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_rep_pl", pl_opfor_prefix, _status]}}};
             }; 
                 case "tank" : {
                     _markerTypeType = format ["%1_%2_tank_pl", pl_opfor_prefix, _status];
@@ -253,6 +263,9 @@ Pl_marta = {
             if (_unitText == "tank" and !(["apctr", _markerTypeType] call BIS_fnc_inString)) then {
                 if ([_vic] call pl_is_apc) then {_markerTypeType = format ["%1_%2_apctr_pl", pl_opfor_prefix, _status];}
             };
+            
+            if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) then {_markerTypeType = format ["%1_art", pl_opfor_prefix]};
+
 
         } else {
             if (count (units _opfGrp) <= 6) then {

@@ -591,7 +591,7 @@ pl_opfor_surrender = {
 		};
 	} forEach (units _surrenderGrp) ;
 
-	waitUntil {sleep 5; !((((getPos (leader _surrenderGrp)) nearEntities [["Man", "Tank", "Car"], 75]) select {side _x == playerSide}) isEqualto [])};
+	waitUntil {sleep 5; !((((getPos (leader _surrenderGrp)) nearEntities [["Man", "Tank", "Car"], 10]) select {side _x == playerSide}) isEqualto [])};
 
 	{
 		_x forceSpeed 1;

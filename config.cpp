@@ -831,47 +831,6 @@ class RscHCGroupRootMenu
     {
         class items
         {
-            class Pl_OpenFire
-            {
-                shortcuts[] = {2};
-                class Params
-                {
-                    expression = "{[_x] call pl_open_fire} forEach (hcSelected player)";
-                };
-                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Open Fire</t";
-                shortcutsAction = "CommandingMenu2";
-                command = -5;
-                show = "1";
-                enable = "HCNotEmpty";
-            };
-            class Pl_HoldFire
-            {
-                shortcuts[] = {3};
-                class Params
-                {
-                    expression = "{[_x] call pl_hold_fire} forEach (hcSelected player)";
-                };
-                title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Hold Fire</t";
-                shortcutsAction = "CommandingMenu3";
-                command = -5;
-                show = "1";
-                enable = "HCNotEmpty";
-            };
-
-            class PlSeperator8
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
             class Stealth
             {
                 shortcuts[] = {4};
@@ -927,26 +886,26 @@ class RscHCGroupRootMenu
 
             class OpenFire
             {
-                shortcuts[] = {6};
+                shortcuts[] = {7};
                 class Params
                 {
                     expression = "{[_x] call pl_open_fire} forEach (hcSelected player)";
                 };
                 title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Open Fire</t";
-                shortcutsAction = "CommandingMenu6";
+                shortcutsAction = "CommandingMenu7";
                 command = -5;
                 show = "0";
                 enable = "HCNotEmpty";
             };
             class HoldFire
             {
-                shortcuts[] = {7};
+                shortcuts[] = {8};
                 class Params
                 {
                     expression = "{[_x] call pl_hold_fire} forEach (hcSelected player)";
                 };
                 title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Hold Fire</t";
-                shortcutsAction = "CommandingMenu7";
+                shortcutsAction = "CommandingMenu8";
                 command = -5;
                 show = "0";
                 enable = "HCNotEmpty";
@@ -1022,7 +981,7 @@ class RscHCGroupRootMenu
                     expression = "[15] call pl_spawn_vic_speed";
                 };
                 title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> 15 km/h</t";
-                shortcutsAction = "CommandingMenu4";
+                shortcutsAction = "CommandingMenu6";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -1035,7 +994,7 @@ class RscHCGroupRootMenu
                     expression = "[30] call pl_spawn_vic_speed";
                 };
                 title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> 30 km/h</t";
-                shortcutsAction = "CommandingMenu5";
+                shortcutsAction = "CommandingMenu7";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -1048,7 +1007,7 @@ class RscHCGroupRootMenu
                     expression = "[50] call pl_spawn_vic_speed";
                 };
                 title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> 50 km/h</t";
-                shortcutsAction = "CommandingMenu6";
+                shortcutsAction = "CommandingMenu8";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -1061,7 +1020,20 @@ class RscHCGroupRootMenu
                     expression = "[5000] call pl_spawn_vic_speed";
                 };
                 title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Max</t";
-                shortcutsAction = "CommandingMenu7";
+                shortcutsAction = "CommandingMenu9";
+                command = -5;
+                show = "";
+                enable = "HCNotEmpty";
+            };
+            class PlAutoSpeed
+            {
+                shortcuts[]={10};
+                class Params
+                {
+                    expression = "[] call pl_toggle_auto_speed";
+                };
+                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Auto Speed</t";
+                shortcutsAction = "CommandingMenu10";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -1189,6 +1161,19 @@ class RscHCGroupRootMenu
                 };
                 title = "<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\diamond_ca.paa'/><t> Diamond</t>";
                 shortcutsAction = "CommandingMenu9";
+                command = -5;
+                show = "";
+                enable = "HCNotEmpty";
+            };
+            class plAutoFormation
+            {
+                shortcuts[] = {11};
+                class Params
+                {
+                    expression = "[] call pl_toggle_auto_formation";
+                };
+                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Auto Formation</t";
+                shortcutsAction = "CommandingMenu11";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
@@ -2232,6 +2217,44 @@ class CfgMarkers
         texture="\Plmod\gfx\marta\n_s_truck_sup_pl.paa";
     };
 
+    class o_f_truck_rep_pl: o_f_tank_pl
+    {
+        name="Truck Repair Opfor";
+        icon="\Plmod\gfx\marta\o_f_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_truck_rep_pl.paa";
+    };
+    class o_s_truck_rep_pl: o_f_tank_pl
+    {
+        name="Truck Repair Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_truck_rep_pl.paa";
+    };
+    class b_f_truck_rep_pl: b_f_tank_pl
+    {
+        name="Truck Repair Blufor";
+        icon="\Plmod\gfx\marta\b_f_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_truck_rep_pl.paa";
+    };
+    class b_s_truck_rep_pl: b_f_tank_pl
+    {
+        name="Truck Repair Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_truck_rep_pl.paa";
+    };
+    class n_f_truck_rep_pl: n_f_tank_pl
+    {
+        name="Truck Repair Independet";
+        icon="\Plmod\gfx\marta\n_f_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_truck_rep_pl.paa";
+    };
+    class n_s_truck_rep_pl: n_f_tank_pl
+    {
+        name="Truck Repair Independet Suspected";
+        icon="\Plmod\gfx\marta\n_s_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_truck_rep_pl.paa";
+    };
+
+
     class b_f_t_inf_pl: b_f_tank_pl
     {
         name="Inf Team Blufor";
@@ -2255,6 +2278,12 @@ class CfgMarkers
         name="Inf Squad Blufor Suspected";
         icon="\Plmod\gfx\marta\b_s_s_inf_pl.paa";
         texture="\Plmod\gfx\marta\b_s_s_inf_pl.paa";
+    };
+    class b_eng_pl: b_f_tank_pl
+    {
+        name="Engineer Blufor";
+        icon="\Plmod\gfx\marta\b_eng_pl.paa";
+        texture="\Plmod\gfx\marta\b_eng_pl.paa";
     };
 
     class o_f_t_inf_pl: o_f_tank_pl
@@ -2281,6 +2310,12 @@ class CfgMarkers
         icon="\Plmod\gfx\marta\o_s_s_inf_pl.paa";
         texture="\Plmod\gfx\marta\o_s_s_inf_pl.paa";
     };
+    class o_eng_pl: o_f_tank_pl
+    {
+        name="Engineer Opfor";
+        icon="\Plmod\gfx\marta\o_eng_pl.paa";
+        texture="\Plmod\gfx\marta\o_eng_pl.paa";
+    };
 
     class n_f_t_inf_pl: n_f_tank_pl
     {
@@ -2306,6 +2341,12 @@ class CfgMarkers
         icon="\Plmod\gfx\marta\n_s_s_inf_pl.paa";
         texture="\Plmod\gfx\marta\n_s_s_inf_pl.paa";
     };
+    class n_eng_pl: n_f_tank_pl
+    {
+        name="Engineer Independent";
+        icon="\Plmod\gfx\marta\n_eng_pl.paa";
+        texture="\Plmod\gfx\marta\n_eng_pl.paa";
+    };
 
     class unknown_f_pl: n_f_tank_pl
     {
@@ -2318,6 +2359,256 @@ class CfgMarkers
         name="Unknown Suspected";
         icon="\Plmod\gfx\marta\unknown_s_pl.paa";
         texture="\Plmod\gfx\marta\unknown_s_pl.paa";
+    };
+};
+
+class cfgGroupIcons
+{
+    class Flag
+    {
+        name = "Flag";
+        icon = "\A3\ui_f\data\map\markers\system\dummy_ca.paa";
+        color[] = {1, 0, 0, 1};
+        size = 32;
+        shadow = 1;
+        scope = 1;
+    };
+    class b_unknown: Flag
+    {
+        name = "Unknown";
+        icon = "\A3\ui_f\data\map\markers\nato\b_unknown.paa";
+        texture = "\A3\ui_f\data\map\markers\nato\b_unknown.paa";
+        side = 1;
+        size = 29;
+        scope = 1;
+        shadow = 0;
+        color[] = {"(profilenamespace getvariable ['Map_BLUFOR_R',0])", "(profilenamespace getvariable ['Map_BLUFOR_G',1])", "(profilenamespace getvariable ['Map_BLUFOR_B',1])", "(profilenamespace getvariable ['Map_BLUFOR_A',0.8])"};
+        markerClass = "NATO_BLUFOR";
+        showEditorMarkerColor = 1;
+    };
+    class o_unknown: b_unknown
+    {
+        icon = "\A3\ui_f\data\map\markers\nato\o_unknown.paa";
+        texture = "\A3\ui_f\data\map\markers\nato\o_unknown.paa";
+        side = 0;
+        color[] = {"(profilenamespace getvariable ['Map_OPFOR_R',0])", "(profilenamespace getvariable ['Map_OPFOR_G',1])", "(profilenamespace getvariable ['Map_OPFOR_B',1])", "(profilenamespace getvariable ['Map_OPFOR_A',0.8])"};
+        markerClass = "NATO_OPFOR";
+    };
+    class n_unknown: b_unknown
+    {
+        icon = "\A3\ui_f\data\map\markers\nato\n_unknown.paa";
+        texture = "\A3\ui_f\data\map\markers\nato\n_unknown.paa";
+        side = 1;
+        color[] = {"(profilenamespace getvariable ['Map_Independent_R',0])", "(profilenamespace getvariable ['Map_Independent_G',1])", "(profilenamespace getvariable ['Map_Independent_B',1])", "(profilenamespace getvariable ['Map_Independent_A',0.8])"};
+        markerClass = "NATO_Independent";
+    };
+
+    class b_f_tank_pl: b_unknown
+    {
+        name="Heavy Tank Blufor";
+        icon="\Plmod\gfx\marta\b_f_tank_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_tank_pl.paa";
+    };
+    class b_f_apctr_pl: b_unknown
+    {
+        name="APC Tracked Blufor";
+        icon="\Plmod\gfx\marta\b_f_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_apctr_pl.paa";
+    };
+    class b_f_apcwe_pl: b_unknown
+    {
+        name="APC Wheeled Blufor";
+        icon="\Plmod\gfx\marta\b_f_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_apcwe_pl.paa";
+    };
+    class b_f_truck_pl: b_unknown
+    {
+        name="Truck Blufor";
+        icon="\Plmod\gfx\marta\b_f_truck_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_truck_pl.paa";
+    };
+    class b_f_truck_sup_pl: b_unknown
+    {
+        name="Truck Support Blufor";
+        icon="\Plmod\gfx\marta\b_f_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_truck_sup_pl.paa";
+    };
+    class b_f_truck_rep_pl: b_unknown
+    {
+        name="Truck Repair Blufor";
+        icon="\Plmod\gfx\marta\b_f_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_truck_rep_pl.paa";
+    };
+
+    class b_f_t_inf_pl: b_unknown
+    {
+        name="Inf Team Blufor";
+        icon="\Plmod\gfx\marta\b_f_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_t_inf_pl.paa";
+    };
+    class b_f_s_inf_pl: b_unknown
+    {
+        name="Inf Squad Blufor";
+        icon="\Plmod\gfx\marta\b_f_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_s_inf_pl.paa";
+    };
+    class b_eng_pl: b_unknown
+    {
+        name="Engineer Independent";
+        icon="\Plmod\gfx\marta\b_eng_pl.paa";
+        texture="\Plmod\gfx\marta\b_eng_pl.paa";
+    };
+
+    class o_f_tank_pl: o_unknown
+    {
+        name="Heavy Tank Opfor";
+        icon="\Plmod\gfx\marta o_f_tank_pl.paa";
+        texture="\Plmod\gfx\marta o_f_tank_pl.paa";
+    };
+    class o_f_apctr_pl: o_unknown
+    {
+        name="APC Tracked Opfor";
+        icon="\Plmod\gfx\marta o_f_apctr_pl.paa";
+        texture="\Plmod\gfx\marta o_f_apctr_pl.paa";
+    };
+    class o_f_apcwe_pl: o_unknown
+    {
+        name="APC Wheeled Opfor";
+        icon="\Plmod\gfx\marta o_f_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta o_f_apcwe_pl.paa";
+    };
+    class o_f_truck_pl: o_unknown
+    {
+        name="Truck Opfor";
+        icon="\Plmod\gfx\marta o_f_truck_pl.paa";
+        texture="\Plmod\gfx\marta o_f_truck_pl.paa";
+    };
+    class o_f_truck_sup_pl: o_unknown
+    {
+        name="Truck Support Opfor";
+        icon="\Plmod\gfx\marta o_f_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta o_f_truck_sup_pl.paa";
+    };
+        class o_f_truck_rep_pl: o_unknown
+    {
+        name="Truck Repair Opfor";
+        icon="\Plmod\gfx\marta o_f_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta o_f_truck_rep_pl.paa";
+    };
+
+    class o_f_t_inf_pl: o_unknown
+    {
+        name="Inf Team Opfor";
+        icon="\Plmod\gfx\marta\o_f_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_t_inf_pl.paa";
+    };
+    class o_f_s_inf_pl: o_unknown
+    {
+        name="Inf Squad Opfor";
+        icon="\Plmod\gfx\marta\o_f_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_s_inf_pl.paa";
+    };
+    class o_eng_pl: o_unknown
+    {
+        name="Engineer Independent";
+        icon="\Plmod\gfx\marta\o_eng_pl.paa";
+        texture="\Plmod\gfx\marta\o_eng_pl.paa";
+    };
+
+    class n_f_tank_pl: n_unknown
+    {
+        name="Heavy Tank Independet";
+        icon="\Plmod\gfx\marta n_f_tank_pl.paa";
+        texture="\Plmod\gfx\marta n_f_tank_pl.paa";
+    };
+    class n_f_apctr_pl: n_unknown
+    {
+        name="APC Tracked Independet";
+        icon="\Plmod\gfx\marta n_f_apctr_pl.paa";
+        texture="\Plmod\gfx\marta n_f_apctr_pl.paa";
+    };
+    class n_f_apcwe_pl: n_unknown
+    {
+        name="APC Wheeled Independet";
+        icon="\Plmod\gfx\marta n_f_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta n_f_apcwe_pl.paa";
+    };
+    class n_f_truck_pl: n_unknown
+    {
+        name="Truck Independet";
+        icon="\Plmod\gfx\marta n_f_truck_pl.paa";
+        texture="\Plmod\gfx\marta n_f_truck_pl.paa";
+    };
+    class n_f_truck_sup_pl: n_unknown
+    {
+        name="Truck Repair Independet";
+        icon="\Plmod\gfx\marta n_f_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta n_f_truck_sup_pl.paa";
+    };
+    class n_f_truck_rep_pl: n_unknown
+    {
+        name="Truck repport Independet";
+        icon="\Plmod\gfx\marta n_f_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta n_f_truck_rep_pl.paa";
+    };
+
+    class n_f_t_inf_pl: n_unknown
+    {
+        name="Inf Team Independet";
+        icon="\Plmod\gfx\marta\n_f_t_inf_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_t_inf_pl.paa";
+    };
+    class n_f_s_inf_pl: n_unknown
+    {
+        name="Inf Squad Independet";
+        icon="\Plmod\gfx\marta\o_f_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_s_inf_pl.paa";
+    };
+    class n_eng_pl: n_unknown
+    {
+        name="Engineer Independent";
+        icon="\Plmod\gfx\marta\n_eng_pl.paa";
+        texture="\Plmod\gfx\marta\n_eng_pl.paa";
+    };
+
+    class b_recon_add_pl: Flag
+    {
+        name = "Recon add B";
+        icon="\Plmod\gfx\marta\b_recon_add_pl.paa";
+        texture="\Plmod\gfx\marta\b_recon_add_pl.paa";
+        side = 1;
+        size = 29;
+        scope = 1;
+        shadow = 0;
+        color[] = {0,0,0,1};
+        markerClass = "NATO_BLUFOR";
+        showEditorMarkerColor = 1;
+    };
+    class o_recon_add_pl: Flag
+    {
+        name = "Recon add O";
+        icon="\Plmod\gfx\marta\o_recon_add_pl.paa";
+        texture="\Plmod\gfx\marta\o_recon_add_pl.paa";
+        side = 1;
+        size = 29;
+        scope = 1;
+        shadow = 0;
+        color[] = {0,0,0,1};
+        markerClass = "NATO_BLUFOR";
+        showEditorMarkerColor = 1;
+    };
+    class n_recon_add_pl: Flag
+    {
+        name = "Recon add N";
+        icon="\Plmod\gfx\marta\n_recon_add_pl.paa";
+        texture="\Plmod\gfx\marta\n_recon_add_pl.paa";
+        side = 1;
+        size = 29;
+        scope = 1;
+        shadow = 0;
+        color[] = {0,0,0,1};
+        markerClass = "NATO_BLUFOR";
+        showEditorMarkerColor = 1;
     };
 };
 class RscSubmenu;
@@ -2720,7 +3011,7 @@ class CfgSounds {
 //         {
 //         coefMax = 1;
 //         coefMin = 1;
-//         color[] = {"(profilenamespace getvariable ['IGUI_TEXT_RGB_R',0])","(profilenamespace getvariable ['IGUI_TEXT_RGB_G',1])","(profilenamespace getvariable ['IGUI_TEXT_RGB_B',1])","(profilenamespace getvariable ['IGUI_TEXT_RGB_A',0.8])"};
+//         color[] = {"(profilenamespace getvariable ['IGUI_TEXT_RGo_R',0])","(profilenamespace getvariable ['IGUI_TEXT_RGB_G',1])","(profilenamespace getvariable ['IGUI_TEXT_RGB_B',1])","(profilenamespace getvariable ['IGUI_TEXT_RGB_A',0.8])"};
 //         colorCanceled[] = {0.7,0.7,0.7,1};
 //         colorCreated[] = {1,1,1,1};
 //         colorDone[] = {0.7,1,0.3,1};

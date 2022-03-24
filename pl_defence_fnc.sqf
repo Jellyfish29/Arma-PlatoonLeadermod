@@ -775,17 +775,15 @@ pl_defend_position = {
         _covers = [];
     };
 
-    private _validLosPos = [];
+    // private _validLosPos = [];
 
     private _losOffset = 2;
     private _maxLos = 0;
     private _losStartLine = _cords getPos [2, _watchDir];
-    if !(_validPos isEqualTo []) then {
-        _losStartLine = (_validPos#0);
-    };
+    private _validLosPos = [];
     private _accuracy = 30;
-    if !(_buildings isEqualTo []) then {
-        _accuracy = 12;
+    if ([_losStartLine] call pl_is_city) then {
+        _accuracy = 10;
     };
 
     for "_j" from 0 to _accuracy do {
@@ -800,21 +798,19 @@ pl_defend_position = {
 
         _losPos = [_losPos, 1] call pl_convert_to_heigth_ASL;
 
-        if !([_losPos] call pl_is_indoor) then {
-            private _losCount = 0;
-            for "_l" from 10 to 510 step 50 do {
+        private _losCount = 0;
+        for "_l" from 10 to 510 step 50 do {
 
-                _checkPos = _losPos getPos [_l, _watchDir];
-                _checkPos = [_checkPos, 1] call pl_convert_to_heigth_ASL;
-                _vis = lineIntersectsSurfaces [_losPos, _checkPos, objNull, objNull, true, 1, "VIEW"];
+            _checkPos = _losPos getPos [_l, _watchDir];
+            _checkPos = [_checkPos, 1] call pl_convert_to_heigth_ASL;
+            _vis = lineIntersectsSurfaces [_losPos, _checkPos, objNull, objNull, true, 1, "VIEW"];
 
-                if !(_vis isEqualTo []) exitWith {};
+            if !(_vis isEqualTo []) exitWith {};
 
-                _losCount = _losCount + 1;
-            };
-            if (isNull (roadAt _losPos)) then {
-                _validLosPos pushback [_losPos, _losCount];
-            };
+            _losCount = _losCount + 1;
+        };
+        if (isNull (roadAt _losPos)) then {
+            _validLosPos pushback [_losPos, _losCount];
         };
     };
 
@@ -1047,7 +1043,7 @@ pl_at_defence = {
     waitUntil {sleep 0.5;  time >= time or !(_group getVariable ["onTask", true]) };
     if !(_group getVariable ["onTask", true]) exitWith {};
 
-    _watchPos = (getPos _atSoldier) getPos [150, _defenceDir];
+    _watchPos = (getPos _atSoldier) getPos [50, _defenceDir];
 
     while {alive _atSoldier and _group getVariable ["onTask", true]} do {
 
@@ -1061,7 +1057,7 @@ pl_at_defence = {
         };
 
         // _vics = nearestObjects [_watchPos, ["Car", "Tank"], 300, true];
-        _vics = _watchPos nearEntities [["Car", "Tank"], 300];
+        _vics = _watchPos nearEntities [["Car", "Tank"], 150];
 
         _targets = [];
         {
