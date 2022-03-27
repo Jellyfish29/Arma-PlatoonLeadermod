@@ -183,7 +183,7 @@ pl_repair = {
 
         if (_repairCargo <= 0) exitWith {hint "No more Supplies left!"};
 
-        if (visibleMap) then {
+        if (visibleMap or !(isNull findDisplay 2000)) then {
             pl_show_dead_vehicles = true;
             pl_show_dead_vehicles_pos = getPos _engVic;
             pl_show_damaged_vehicles = true;
@@ -197,7 +197,14 @@ pl_repair = {
                 hint "";
                 onMapSingleClick "";
             };
-            while {!pl_mapClicked} do {sleep 0.1;};
+            while {!pl_mapClicked} do {
+                if (visibleMap) then {
+                    pl_repair_cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    pl_repair_cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
+                sleep 0.1;
+            };
 
             pl_mapClicked = false;
             _cords = pl_repair_cords;
@@ -359,7 +366,7 @@ pl_repair = {
 
 pl_repair_bridge = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_cords", "_engineer", "_bridges", "_bridgeMarkers"];
+    private ["_cords", "_engineer", "_bridges", "_bridgeMarkers", "_mPos"];
 
     _engineer = {
     if (getNumber ( configFile >> "CfgVehicles" >> typeOf _x >> "engineer" ) isEqualTo 1) exitWith {_x};
@@ -368,7 +375,7 @@ pl_repair_bridge = {
 
     if (isNull _engineer) exitWith {hint format ["%1 has no Engineer!", groupId _group]};
 
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
 
         _markerName = createMarker ["pl_charge_range_marker2", [0,0,0]];
         _markerName setMarkerColor "colorOrange";
@@ -398,7 +405,11 @@ pl_repair_bridge = {
         };
 
         while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
             if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
                 _markerName setMarkerPos _mPos;
             };

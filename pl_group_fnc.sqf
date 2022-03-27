@@ -251,6 +251,36 @@ pl_show_group_icon = {
     };
 };
 
+pl_change_inf_icons = {
+    params ["_group"];
+
+    if (_group == (group player)) exitWith {};
+
+    private _size = "s";
+    if ((count (units _group)) < 6) then {_size = "t"};
+
+    _icon = format ["f_%1_inf_pl", _size];
+
+    private _engineers = 0;
+    private _medics = 0;
+    {
+        if (_x getUnitTrait "explosiveSpecialist" or _x getUnitTrait "engineer") then {
+            _engineers = _engineers + 1;
+        };
+        if (_x getUnitTrait "medic") then {
+            _medics = _medics + 1;
+        };
+    } forEach (units _group);
+
+    if (_engineers >= 2) then {_icon = format ["f_%1_eng_pl", _size]};
+    if (_medics >= 2) then {
+        _icon = format ["f_%1_med_pl", _size];
+        _group setVariable ["pl_set_as_medical", true];
+    };
+
+    [_group, _icon] call pl_change_group_icon;
+};
+
 pl_hc_mech_inf_icon_changer = {
     params ["_group"];
     private ["_tester", "_unitText", "_unitSide", "_sideLetter", "_groupIcon"];
@@ -379,53 +409,92 @@ pl_voice_radio_answer = {
    };
 };
 
+// pl_stringReplace = {
+//     params["_str", "_find", "_replace"];
+    
+//     private _return = "";
+//     private _len = count _find;    
+//     private _pos = _str find _find;
+
+//     while {(_pos != -1) && (count _str > 0)} do {
+//         _return = _return + (_str select [0, _pos]) + _replace;
+        
+//         _str = (_str select [_pos+_len]);
+//         _pos = _str find _find;
+//     };    
+//     _return + _str;
+// };
+
 
 
 pl_change_to_vic_symbols = {
-    params ["_group"];
+    params ["_group", ["_force", false]];
 
     sleep 1;
 
     if (vehicle (leader _group) != leader _group) then {
         private _vic = vehicle (leader _group);
 
-        if (_group == group player) exitWith {};
-        if (_vic isKindOf "Air") exitWith {};
-        if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) exitwith {};
-        if ((((assignedVehicleRole (leader _group)) select 0) isEqualTo "cargo" or ((assignedVehicleRole (leader _group)) select 0) isEqualTo "turret") and (leader _group) != commander _vic and (leader _group) != gunner _vic) exitWith {};
+        if (_group == group player and !_force) exitWith {};
+        if (_vic isKindOf "Air" and !_force) exitWith {};
+        if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1 and !_force) exitwith {};
+        if ((((assignedVehicleRole (leader _group)) select 0) isEqualTo "cargo" or ((assignedVehicleRole (leader _group)) select 0) isEqualTo "turret") and (leader _group) != commander _vic and (leader _group) != gunner _vic and !_force) exitWith {};
 
         private _unitText = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular");
         private _status = "f";
         private _symbolType = "b_inf";
 
-
         switch (_unitText) do {
             case "truck" : {
-                _symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status];
+                _symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status];
+                if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {_symbolType = format ["%1_%2_truck_med_pl", pl_side_prefix, _status]} else {
                 if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {;
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_symbolType = format ["%1_%2_truck_rep_pl", pl_side_prefix, _status]}}};
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_symbolType = format ["%1_%2_truck_rep_pl", pl_side_prefix, _status]}}}};
             };
             case "car" : {
                 _symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status];
+                if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {_symbolType = format ["%1_%2_truck_med_pl", pl_side_prefix, _status]} else {
                 if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {;
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_symbolType = format ["%1_%2_truck_rep_pl", pl_side_prefix, _status]}}};
-        }; 
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_symbolType = format ["%1_%2_truck_rep_pl", pl_side_prefix, _status]}}}};
+            };
+            case "MRAP" : {
+                _symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status];
+                if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {_symbolType = format ["%1_%2_truck_med_pl", pl_side_prefix, _status]};
+            };
+            case "alpha victor (MRAP)" : {
+                _symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status];
+                if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {_symbolType = format ["%1_%2_truck_med_pl", pl_side_prefix, _status]};
+            }; 
             case "tank" : {
                 _symbolType = format ["%1_%2_tank_pl", pl_side_prefix, _status];
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 6) then {_symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status]};
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) >= 6 and !(["mbt", typeOf _vic] call BIS_fnc_inString)) then {
+                    if ([_vic] call pl_is_ifv) then {
+                        _symbolType = format ["%1_%2_ifvtr_pl", pl_side_prefix, _status];
+                    } else {
+                        _symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status];
+                    };
+                } else {
+                if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {_symbolType = format ["%1_%2_tank_med_pl", pl_side_prefix, _status]} else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_symbolType = format ["%1_%2_tank_rep_pl", pl_side_prefix, _status]} else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_symbolType = format ["%1_%2_tank_sup_pl", pl_side_prefix, _status]}}}};
             };
             case "APC" : {
-                _symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status];
-                if (_vic isKindOf "Car") then {_symbolType = format ["%1_%2_apcwe_pl", pl_side_prefix, _status]};
+                if ([_vic] call pl_is_ifv) then {
+                    _symbolType = format ["%1_%2_ifvtr_pl", pl_side_prefix, _status];
+                    if (_vic isKindOf "Car") then {_symbolType = format ["%1_%2_ifvwe_pl", pl_side_prefix, _status]};
+                } else {
+                    _symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status];
+                    if (_vic isKindOf "Car") then {_symbolType = format ["%1_%2_apcwe_pl", pl_side_prefix, _status]};
+                };
             };
             default {_symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status]};
         };
 
-        if (_unitText == "tank" and !(["apctr", _symbolType] call BIS_fnc_inString)) then {
-            if ([_vic] call pl_is_apc) then {_symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status];}
-        };
+        // if (_unitText == "tank" and !(["apctr", _symbolType] call BIS_fnc_inString) and !(["ifvtr", _symbolType] call BIS_fnc_inString)) then {
+        //     if ([_vic] call pl_is_apc) then {_symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status]};
+        // };
 
         _group setVariable ["pl_custom_icon", _symbolType];
         clearGroupIcons _group;
@@ -435,9 +504,9 @@ pl_change_to_vic_symbols = {
 
 
 
-// {
-//     [_x] call pl_change_to_vic_symbols;
-// } forEach (allGroups select {side _x == playerSide});
+{
+    [_x] spawn pl_change_to_vic_symbols;
+} forEach (allGroups select {side _x == playerSide});
 
 
 _playerIcon = format ["%1_%2", [group player] call pl_get_side_prefix, "hq"];

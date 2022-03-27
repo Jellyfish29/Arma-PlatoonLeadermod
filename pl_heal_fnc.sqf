@@ -416,7 +416,7 @@ pl_injured_drag = {
 
 pl_ccp = {
     params [["_group", hcSelected player select 0], ["_isMedevac", false], ["_escort", nil], ["_reviveRange", 650], ["_healRange", 35], ["_medic", nil]];
-    private ["_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP", "_marker3D"];
+    private ["_mPos", "_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP", "_marker3D"];
 
     // _group = hcSelected player select 0;
     // if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
@@ -457,7 +457,7 @@ pl_ccp = {
             _markerNameOuter setMarkerAlpha 0.35;
             _markerNameOuter setMarkerSize [pl_ccp_size, pl_ccp_size];
 
-            if (visibleMap) then {
+            if (visibleMap or !(isNull findDisplay 2000)) then {
                 hint "Select CCP Position on Map";
                 onMapSingleClick {
                     pl_ccp_cords = _pos;
@@ -470,7 +470,11 @@ pl_ccp = {
                 player enableSimulation false;
 
                 while {!pl_mapClicked} do {
-                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                    if (visibleMap) then {
+                        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                    } else {
+                        _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                    };
                     _markerNameOuter setMarkerPos _mPos;
                     _markerNameCCP setMarkerPos _mPos;
                     if (inputAction "MoveForward" > 0) then {pl_ccp_size = pl_ccp_size + 20; sleep 0.05};

@@ -12,7 +12,7 @@ pl_attack_mode = "normal";
 
 
 pl_suppressive_fire_position = {
-    private ["_markerName", "_cords", "_targets", "_pos", "_units", "_leader", "_area"];
+    private ["_markerName", "_cords", "_targets", "_pos", "_units", "_leader", "_area", "_mPos"];
 
     _group = (hcSelected player) select 0;
 
@@ -43,7 +43,7 @@ pl_suppressive_fire_position = {
     _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
 
     _markerName setMarkerSize [pl_suppress_area_size, pl_suppress_area_size];
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
         _message = "Select Position <br /><br />
             <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>30 Seconds</t> <br />
             <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>CONTINUOUS</t> <br />
@@ -63,7 +63,11 @@ pl_suppressive_fire_position = {
 
         while {!pl_mapClicked} do {
             // sleep 0.1;
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
             if ((_mPos distance2D (leader _group)) <= _rangelimiter) then {
                 _markerName setMarkerPos _mPos;
             };
@@ -234,11 +238,17 @@ pl_suppressive_fire_position = {
 
 pl_assault_position = {
     params ["_group", ["_taskPlanWp", []]];
-    private ["_leftPos", "_rightPos", "_markerPhaselineName", "_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_attackMode", "_fastAtk", "_tacticalAtk"];
+    private ["_mPos", "_leftPos", "_rightPos", "_markerPhaselineName", "_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_attackMode", "_fastAtk", "_tacticalAtk"];
 
     pl_sweep_area_size = 35;
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
+
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader _group] call pl_open_tac_forced;
+        };
+    };
 
     _markerName = format ["%1sweeper", _group];
     createMarker [_markerName, [0,0,0]];
@@ -274,90 +284,80 @@ pl_assault_position = {
     _markerPhaselineName setMarkerAlpha 0.7;
     _markerPhaselineName setMarkerSize [pl_sweep_area_size, 0.5];
 
-
-    if (visibleMap) then {
-        _message = "Select Assault Location <br /><br />
-            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>In Foramtion</t> <br />
-            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CQB</t> <br />
-            <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>FAST</t> <br />
-            <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
-        hint parseText _message;
-        onMapSingleClick {
-            pl_sweep_cords = _pos;
-            // if (_shift) then {pl_cancel_strike = true};
-            pl_attack_mode = "normal";
-            if (_shift) then {pl_attack_mode = "tactical"};
-            if (_alt) then {pl_attack_mode = "fast"};
-            pl_mapClicked = true;
-            hintSilent "";
-            onMapSingleClick "";
-        };
-
-        private _rangelimiterCenter = getPos (leader _group);
-        if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
-
-        player enableSimulation false;
-
-        while {!pl_mapClicked} do {
-            // sleep 0.1;
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-
-            if (inputAction "MoveForward" > 0) then {pl_sweep_area_size = pl_sweep_area_size + 5; sleep 0.05};
-            if (inputAction "MoveBack" > 0) then {pl_sweep_area_size = pl_sweep_area_size - 5; sleep 0.05};
-            _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
-            if (pl_sweep_area_size >= 120) then {pl_sweep_area_size = 120};
-            if (pl_sweep_area_size <= 5) then {pl_sweep_area_size = 5};
-
-            if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
-                _markerName setMarkerPos _mPos;
-
-                if (_mPos distance2D (leader _group) > pl_sweep_area_size + 20) then {
-                    _phaseDir = _mPos getDir _rangelimiterCenter;
-                    _phasePos = _mPos getPos [pl_sweep_area_size + 10, _phaseDir];
-                    _markerPhaselineName setMarkerPos _phasePos;
-                    _markerPhaselineName setMarkerDir _phaseDir;
-                    _markerPhaselineName setMarkerSize [pl_sweep_area_size + 10, 0.5];
-
-                    _arrowPos = _phasePos getPos [15, _phaseDir];
-                    _arrowDir = _phaseDir - 180;
-                    _arrowDis = ((leader _group) distance2D _mPos) / 2;
-
-                    _arrowMarkerName setMarkerPos _arrowPos;
-                    _arrowMarkerName setMarkerDir _arrowDir;
-                    _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
-                } else {
-                    _arrowMarkerName setMarkerSize [0,0];
-                    _markerPhaselineName setMarkerSize [0,0];
-                };
-            };
-
-
-        };
-
-        player enableSimulation true;
-
-        pl_mapClicked = false;
-        deleteMarker _markerBorderName;
-        _cords = getMarkerPos _markerName;
-        _markerName setMarkerPos _cords;
-        _markerName setMarkerBrush "Border";
-
-        _rightPos = _cords getPos [pl_sweep_area_size, 90];
-        _leftPos = _cords getPos [pl_sweep_area_size, 270];
-        pl_draw_text_array pushBack ["ENY", _leftPos, 0.02, pl_side_color_rgb];
-        pl_draw_text_array pushBack ["ENY", _rightPos, 0.02, pl_side_color_rgb];
-    }
-    else
-    {
-        _building = cursorTarget;
-        if !(isNil "_building") then {
-            _cords = getPos _building;
-        }
-        else
-        {
-            _cords = screenToWorld [0.5,0.5];
-        };
+    _message = "Select Assault Location <br /><br />
+        <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>In Foramtion</t> <br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CQB</t> <br />
+        <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>FAST</t> <br />
+        <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
+    hint parseText _message;
+    onMapSingleClick {
+        pl_sweep_cords = _pos;
+        // if (_shift) then {pl_cancel_strike = true};
+        pl_attack_mode = "normal";
+        if (_shift) then {pl_attack_mode = "tactical"};
+        if (_alt) then {pl_attack_mode = "fast"};
+        pl_mapClicked = true;
+        hintSilent "";
+        onMapSingleClick "";
     };
+
+    private _rangelimiterCenter = getPos (leader _group);
+    if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
+
+    player enableSimulation false;
+
+    while {!pl_mapClicked} do {
+        // sleep 0.1;
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+
+        if (inputAction "MoveForward" > 0) then {pl_sweep_area_size = pl_sweep_area_size + 5; sleep 0.05};
+        if (inputAction "MoveBack" > 0) then {pl_sweep_area_size = pl_sweep_area_size - 5; sleep 0.05};
+        _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
+        if (pl_sweep_area_size >= 120) then {pl_sweep_area_size = 120};
+        if (pl_sweep_area_size <= 5) then {pl_sweep_area_size = 5};
+
+        if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
+            _markerName setMarkerPos _mPos;
+
+            if (_mPos distance2D (leader _group) > pl_sweep_area_size + 20) then {
+                _phaseDir = _mPos getDir _rangelimiterCenter;
+                _phasePos = _mPos getPos [pl_sweep_area_size + 10, _phaseDir];
+                _markerPhaselineName setMarkerPos _phasePos;
+                _markerPhaselineName setMarkerDir _phaseDir;
+                _markerPhaselineName setMarkerSize [pl_sweep_area_size + 10, 0.5];
+
+                _arrowPos = _phasePos getPos [15, _phaseDir];
+                _arrowDir = _phaseDir - 180;
+                _arrowDis = ((leader _group) distance2D _mPos) / 2;
+
+                _arrowMarkerName setMarkerPos _arrowPos;
+                _arrowMarkerName setMarkerDir _arrowDir;
+                _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
+            } else {
+                _arrowMarkerName setMarkerSize [0,0];
+                _markerPhaselineName setMarkerSize [0,0];
+            };
+        };
+
+
+    };
+
+    player enableSimulation true;
+
+    pl_mapClicked = false;
+    deleteMarker _markerBorderName;
+    _cords = getMarkerPos _markerName;
+    _markerName setMarkerPos _cords;
+    _markerName setMarkerBrush "Border";
+
+    _rightPos = _cords getPos [pl_sweep_area_size, 90];
+    _leftPos = _cords getPos [pl_sweep_area_size, 270];
+    pl_draw_text_array pushBack ["ENY", _leftPos, 0.02, pl_side_color_rgb];
+    pl_draw_text_array pushBack ["ENY", _rightPos, 0.02, pl_side_color_rgb];
 
     _attackMode = pl_attack_mode;
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa";

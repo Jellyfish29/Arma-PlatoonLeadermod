@@ -8,24 +8,34 @@ pl_show_supplies_pos = [0,0,0];
 pl_rearm_supplies = [];
 
 pl_rearm = {
-    private ["_group", "_cords", "_targetBox"];
+    private ["_group", "_cords", "_targetBox", "_mPos"];
 
     _group = (hcSelected player) select 0;
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
         pl_show_supplies_pos = getPos (leader _group);
         pl_show_supllies = true;
         hint "Select Box on Map";
         onMapSingleClick {
             pl_mapClicked = true;
-            pl_show_supplies_pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            
             pl_rearm_supplies = pl_show_supplies_pos nearSupplies 150 select {!(_x isKindOf "Man")};
             pl_rearm_pos = _pos;
             onMapSingleClick "";
         };
-        while {!pl_mapClicked} do {sleep 0.1};
+        while {!pl_mapClicked} do {
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
+            
+            pl_show_supplies_pos = _mPos;
+            
+            sleep 0.1
+        };
         pl_show_supllies = false;
         pl_mapClicked = false;
         _cords = pl_rearm_pos;
@@ -64,6 +74,7 @@ pl_rearm = {
     _boxName = getText (configFile >> "CfgVehicles" >> typeOf _targetBox >> "displayName");
     if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Resupplying at %2", (groupId _group), _boxName]};
     if (pl_enable_map_radio) then {[_group, format ["...Resupplying at %1", _boxName], 15] call pl_map_radio_callout};
+
     {    
         [_x, _targetBox] spawn {
             params ["_unit", "_targetBox"];
@@ -80,29 +91,45 @@ pl_rearm = {
             waitUntil {sleep 0.5; ((_unit distance2D _targetBox) < 8) or unitReady _unit or !((group _unit) getVariable ["onTask", true]) or !alive _unit};
 
             if ((group _unit) getVariable ["onTask", true]) then {
-                _unit action ["rearm",_targetBox];
-                _secWeapon = _unit getVariable ["pl_sec_weapon", []];
-                if !(_secWeapon isEqualTo []) then {
-                    _launcher = _secWeapon#0;
-                    _missile = _secWeapon#1;
-                    if (secondaryWeapon _unit == "") then {
-                        _launcherSplit = _launcher splitString "_"; 
-                        _launcherSplit = _launcherSplit - ["Loaded"];
-                        _launcher = _launcherSplit joinString "_";
 
-                        if (_launcher in ((getWeaponCargo _targetBox)#0)) then {
-                            _unit addWeapon _launcher;
-                            _unit addSecondaryWeaponItem _missile;
-                        };
-                    }
-                    else
-                    {
-                        if (_missile in ((getMagazineCargo _targetBox)#0)) then {
-                            _unit addSecondaryWeaponItem _missile;
-                            _targetBox removeMagazine _missile;
+
+                private _ammoCargo = _targetBox getVariable ["pl_supplies", 0];
+                if (_ammoCargo > 0 and _unit != player) then {
+                    _loadout = _unit getVariable "pl_loadout";
+                    if !((getUnitLoadout _unit) isEqualTo _loadout) then {
+                        _unit setUnitLoadout [_loadout, true];
+                        _ammoCargo = _ammoCargo - 1;
+                    };
+                    if (_unit getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
+                        _unit setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
+                    };
+                    _targetBox setVariable ["pl_supplies", _ammoCargo];
+                } else {
+                    _unit action ["rearm",_targetBox];
+                    _secWeapon = _unit getVariable ["pl_sec_weapon", []];
+                    if !(_secWeapon isEqualTo []) then {
+                        _launcher = _secWeapon#0;
+                        _missile = _secWeapon#1;
+                        if (secondaryWeapon _unit == "") then {
+                            _launcherSplit = _launcher splitString "_"; 
+                            _launcherSplit = _launcherSplit - ["Loaded"];
+                            _launcher = _launcherSplit joinString "_";
+
+                            if (_launcher in ((getWeaponCargo _targetBox)#0)) then {
+                                _unit addWeapon _launcher;
+                                _unit addSecondaryWeaponItem _missile;
+                            };
+                        }
+                        else
+                        {
+                            if (_missile in ((getMagazineCargo _targetBox)#0)) then {
+                                _unit addSecondaryWeaponItem _missile;
+                                _targetBox removeMagazine _missile;
+                            };
                         };
                     };
                 };
+
 
                 _unit enableAI "AUTOCOMBAT";
                 _unit setVariable ["pl_finished_rearm", true];
@@ -214,7 +241,7 @@ pl_supply_point = {
     _group setBehaviour "AWARE";
 
     sleep 2;
-    [_group, "support"] call pl_change_group_icon;
+    // [_group, "support"] call pl_change_group_icon;
     // delay to geive _ammoBearer Time to disembark
     sleep 4;
 
@@ -395,8 +422,6 @@ pl_rearm_point = {
 
     private _isAPC = [_vic] call pl_is_apc;
 
-    player sideChat (str _isAPC);
-
     // check if vehicle is supply vehicle
     if (!(_isAPC) and !(_vic isKindOf "Car")) exitWith {hint "Requires APC or Supply Vehicle"};
 
@@ -476,7 +501,7 @@ pl_rearm_point = {
         _x disableAI "TARGET";
         _x disableAI "PATH";
     } forEach (units _group);
-    _group setBehaviour "SAFE";
+    // _group setBehaviour "SAFE";
     _vic setVariable ["pl_is_rearm_point", true];
 
     sleep 2;

@@ -221,15 +221,19 @@ pl_watch_dir = {
     // order group to watch direction and vehicles to turn in direction
 
     params ["_group", ["_dir", ""]];
-    private ["_watchDir", "_watchPos", "_groupPos"];
+    private ["_mPos", "_watchDir", "_watchPos", "_groupPos"];
 
 
     if (_dir isEqualTo "") then {
         if (pl_enable_beep_sound) then {playSound "beep"};
         // [_group, "confirm", 1] call pl_voice_radio_answer;
-        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
         _groupPos = getPos (leader _group);
-        _watchDir = [_cords, _groupPos] call BIS_fnc_dirTo;
+        _watchDir = _groupPos getDir _mPos;
     }
     else
     {
@@ -237,9 +241,9 @@ pl_watch_dir = {
     };
 
     _leader = leader _group;
-        if (_leader == vehicle _leader) then {
+    if (_leader == vehicle _leader) then {
         _group setFormDir _watchDir;
-        _watchDir = [(_watchDir - 180)] call pl_angle_switcher;
+        _watchDir = _watchDir - 180;
         _watchPos = [1000*(sin _watchDir), 1000*(cos _watchDir), 0] vectorAdd _groupPos;
         {
             _x doWatch _watchPos;
@@ -248,7 +252,7 @@ pl_watch_dir = {
     else
     {
         _vic = vehicle _leader;
-        _pos = [_vic, (_watchDir - 180)] call pl_get_turn_vehicle;
+        _pos = _watchDir - 180;
         _vic doMove _pos;
     };
 };

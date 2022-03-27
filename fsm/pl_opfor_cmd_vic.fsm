@@ -20,7 +20,7 @@ item15[] = {"delay",4,218,847.261963,-78.652802,937.261963,-28.652802,0.000000,"
 item16[] = {"ally_dead__",4,218,686.676758,86.780945,776.676758,136.780945,0.000000,"ally dead ?"};
 item17[] = {"enemy___50m",4,218,274.935944,73.693939,364.935944,123.693939,5.000000,"enemy < 50m"};
 item18[] = {"enemy___75m",4,218,272.020325,322.878784,362.020325,372.878784,0.000000,"enemy < 75m"};
-item19[] = {"enemy___400m",4,218,274.467712,137.123138,364.467712,187.123138,4.000000,"enemy < 400m"};
+item19[] = {"enemy___400m",4,4314,274.467712,137.123138,364.467712,187.123138,4.000000,"enemy < 400m"};
 item20[] = {"is_cargo_",4,218,-45.114990,653.071594,44.885010,703.071594,10.000000,"is cargo?"};
 item21[] = {"is_tank_and__near",4,218,274.328278,191.226501,364.328278,241.226501,2.000000,"is tank and " \n "near support"};
 item22[] = {"nearby_Inf_",4,218,270.736145,249.858643,360.736145,299.858643,1.000000,"nearby" \n "Inf?"};
@@ -59,8 +59,8 @@ link31[] = {19,3};
 link32[] = {20,8};
 link33[] = {21,3};
 link34[] = {22,3};
-globals[] = {0.000000,0,0,0,0,640,480,1,39,6316128,1,-214.411682,738.046997,816.306152,-329.235931,735,884,1};
-window[] = {2,-1,-1,-1,-1,889,130,1570,130,3,753};
+globals[] = {0.000000,0,0,0,0,640,480,1,39,6316128,1,-13.804626,746.015259,482.516418,-244.572937,1300,1244,1};
+window[] = {2,-1,-1,-1,-1,1097,338,1778,338,3,1318};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -371,8 +371,8 @@ class FSM
                                         priority = 4.000000;
                                         to="mobile";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"_targetdistance < 400 and !(_cargoGroups isEqualto []);"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (_targetdistance < 300 or ((leader _grp) knowsAbout _target) > 0.15) then {" \n
+                                        condition=/*%FSM<CONDITION""">*/"_targetdistance < 550 and !(_cargoGroups isEqualto []);"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
                                          "	[_grp, _vic, _cargo, _cargoGroups] spawn pl_opfor_drop_cargo;" \n
                                          "	_cargo = [];" \n
                                          "	_cargoGroups = [];" \n
@@ -380,10 +380,6 @@ class FSM
                                          "	if (pl_debug) then {" \n
                                          "   	 systemchat format [""%1: vic_drop_cargo"", groupId _grp];" \n
                                          "	};" \n
-                                         "} else {" \n
-                                         "	_time = _time + 3;" \n
-                                         "};" \n
-                                         "" \n
                                          "" \n
                                          "	" \n
                                          ""/*%FSM</ACTION""">*/;

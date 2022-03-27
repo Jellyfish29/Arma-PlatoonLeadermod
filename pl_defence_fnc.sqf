@@ -151,7 +151,7 @@ pl_find_cover_allways = {
 pl_deploy_static = false;
 
 pl_garrison = {
-    private ["_building", "_buildingOld", "_buildingMarker"];
+    private ["_mPos", "_building", "_buildingOld", "_buildingMarker"];
   
     private _group = (hcSelected player) select 0;
 
@@ -188,7 +188,11 @@ pl_garrison = {
         _buildingMarker = "";
         _buildingOld = objNull;
         while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
 
             if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
                 _building = nearestBuilding _mPos;
@@ -320,10 +324,9 @@ pl_360 = {
     } forEach _units;
 };
 
-
 pl_defend_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []] , ["_cords", []], ["_watchDir", 0]];
-    private ["_medicPos", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_doorPos", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord"];
+    private ["_mPos", "_medicPos", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_doorPos", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord"];
 
 
 
@@ -331,7 +334,14 @@ pl_defend_position = {
     _buildings = [];
     private _markerDirName = "";
 
-    if (visibleMap and (_cords isEqualTo [])) then {
+    if (_cords isEqualTo []) then {
+
+        if !(visibleMap) then {
+            if (isNull findDisplay 2000) then {
+                [leader _group] call pl_open_tac_forced;
+            };
+        };
+
         hintSilent "";
 
         _markerAreaName = format ["%1garrison%2", _group, random 2];
@@ -375,10 +385,15 @@ pl_defend_position = {
             onMapSingleClick "";
         };
 
+
         player enableSimulation false;
 
         while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
             if (inputAction "MoveForward" > 0) then {pl_garrison_area_size = pl_garrison_area_size + 5; sleep 0.05};
             if (inputAction "MoveBack" > 0) then {pl_garrison_area_size = pl_garrison_area_size - 5; sleep 0.05};
             if (pl_garrison_area_size >= 55) then {pl_garrison_area_size = 55};
@@ -430,7 +445,12 @@ pl_defend_position = {
         // pl_show_watchpos_selector = true;
 
         while {!pl_mapClicked} do {
-            _watchDir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
+            _watchDir = _cords getDir _mPos;
             _markerDirName setMarkerDir _watchDir;
             _markerAreaName setMarkerDir _watchDir;
             _defenceWatchPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
@@ -474,21 +494,7 @@ pl_defend_position = {
         };
 
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
-
     };
-    // else
-    // {
-    //     _cords = screenToWorld [0.5,0.5];
-    //     _watchDir = ((leader _group) getDir player) - 180;
-    //     _defenceAreaSize = 10;
-    //     pl_360_area = true;
-    //     _markerDirName = format ["defenceArea%1", _group];
-    //     createMarker [_markerDirName, _cords];
-    //     _markerDirName setMarkerType "mil_circle";
-    //     _markerDirName setMarkerColor pl_side_color;
-    //     _markerAreaName setMarkerPos _cords;
-    //     _markerDirName setMarkerSize [0.5, 0.5];
-    // };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
 

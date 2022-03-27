@@ -21,7 +21,7 @@ pl_getIn_vehicle = {
     // _group = hcSelected player select 0;
     _groupLen = count (units _group);
 
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
         if (_taskPlanWp isEqualTo []) then {
             pl_show_vehicles_pos = getPos (leader _group);
         } else {
@@ -31,8 +31,8 @@ pl_getIn_vehicle = {
         hint "Select TRANSPORT on Map";
         onMapSingleClick {
             pl_mapClicked = true;
-            pl_vic_pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            pl_vics = nearestObjects [pl_vic_pos, ["Car", "Truck", "Tank", "Air"], 50, true];
+            pl_vic_pos = _pos;
+            pl_vics = nearestObjects [_pos, ["Car", "Truck", "Tank", "Air"], 50, true];
             hintSilent "";
             onMapSingleClick "";
         };
@@ -292,16 +292,19 @@ pl_unload_at_position_planed = {
     _vic = vehicle (leader _group);
     _driver = driver _vic;
     _vicGroup = group _driver;
-    _cargo = fullCrew [_vic, "cargo", false];
+    _crew = crew _vic;
+    _cargo = _crew - (units _vicGroup);
+    player sideChat str _crew;
+    // _cargo = fullCrew [_vic, "cargo", false];
 
     private _attached = _vicGroup getVariable ["pl_attached_infGrp", grpNull];
     if !(isNull _attached) exitWith {[_vicGroup, _attached, _taskPlanWp] spawn pl_detach_inf_planed};
 
     private _cargoGroups = [];
     {
-        _unit = _x select 0;
+        _unit = _x;
         if (!(_unit in (units _vicGroup)) and !(_unit in (units (group player)))) then {
-            _cargoGroups pushBack (group (_x select 0));
+            _cargoGroups pushBack (group _unit);
         };
     } forEach _cargo;
 
@@ -334,7 +337,7 @@ pl_unload_at_position_planed = {
 
     doStop _vic;
     {
-        _unit = _x select 0;
+        _unit = _x;
         if !(_unit in (units _vicGroup)) then {
             unassignVehicle _unit;
             doGetOut _unit;
@@ -352,7 +355,7 @@ pl_unload_at_position_planed = {
             if !(_cGroup getVariable ["pl_is_recon", false]) then {
                 [_cGroup] call pl_show_group_icon;
             } else {
-                [_cGroup, "recon"] call pl_change_group_icon;
+                [_cGroup, "f_s_recon_pl"] call pl_change_group_icon;
                 _cGroup setVariable ["pl_show_info", true];
                 player hcSetGroup [_cGroup];
             };
@@ -391,6 +394,14 @@ pl_unload_at_position_planed = {
 };
 
 pl_convoy = {
+    private ["_mPos"];
+
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader (_groups#0)] call pl_open_tac_forced;
+        };
+    };
+
     private _allgroups = hcSelected player;
     private _groups = +_allGroups select {((assignedVehicleRole (leader _x))#0) != "cargo"};
 
@@ -413,14 +424,18 @@ pl_convoy = {
     hintSilent "Select DESTINATION on MAP";
     onMapSingleClick {
         pl_mapClicked = true;
-        pl_lz_cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-        pl_lz_marker_cords = pl_lz_cords;
+        pl_lz_cords = _pos;
+        pl_lz_marker_cords = _pos;
         // if (_shift) then {pl_cancel_strike = true};
         hintSilent "";
         onMapSingleClick "";
     };
     while {!pl_mapClicked} do {
-        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
 
         _road = [_mPos, 50] call BIS_fnc_nearestRoad;
         if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
@@ -618,6 +633,7 @@ pl_convoy = {
             _x disableAI "AUTOCOMBAT";
         } forEach (units _group);
         _group setBehaviourStrong "SAFE";
+        [getPos _vic, 10] call pl_clear_obstacles;
         _vic doMove (_passigPoints#0);
         _vic setDestination [(_passigPoints#0),"VEHICLE PLANNED" , true];
 
@@ -690,6 +706,7 @@ pl_convoy = {
                         if ((speed _vic) <= 0  and (_group getVariable ["onTask", true]) and (speed _forward) >= 5) then {
                             doStop _vic:
                             sleep 0.3;
+                            [getPos _vic, 20] call pl_clear_obstacles;
                             _group setBehaviourStrong "SAFE";
                             _group setVariable ["pl_draw_convoy", true];
                             // _vic setVariable ["pl_phasing", true];
@@ -763,6 +780,7 @@ pl_convoy = {
                         if ((speed _vic) <= 0 and (_group getVariable ["onTask", true])) then {
                             // [_group] call pl_reset;
                             doStop _vic;
+                            [getPos _vic, 20] call pl_clear_obstacles;
                             sleep 0.3;
                             _group setBehaviourStrong "SAFE";
                             _group setVariable ["pl_draw_convoy", true];
@@ -804,6 +822,7 @@ pl_convoy = {
 };
 
 pl_line_up_on_road = {
+    private ["_mPos"];
 
     private _allgroups = hcSelected player;
     
@@ -828,14 +847,18 @@ pl_line_up_on_road = {
     hintSilent "Select ROAD";
     onMapSingleClick {
         pl_mapClicked = true;
-        pl_lz_cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-        pl_lz_marker_cords = pl_lz_cords;
+        pl_lz_cords = _pos;
+        pl_lz_marker_cords = _pos;
         // if (_shift) then {pl_cancel_strike = true};
         hintSilent "";
         onMapSingleClick "";
     };
     while {!pl_mapClicked} do {
-        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
 
         _road = [_mPos, 50] call BIS_fnc_nearestRoad;
         if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
@@ -1053,12 +1076,12 @@ pl_crew_vehicle = {
     private ["_group", "_targetVic", "_groupLen"];
     _group = hcSelected player select 0;
 
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
         pl_show_vehicles_pos = getPos (leader _group);
         pl_show_vehicles = true;
         onMapSingleClick {
             pl_mapClicked = true;
-            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            _cords = _pos;
             pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank", "Air"], 10, true];
             onMapSingleClick "";
         };
@@ -1097,6 +1120,14 @@ pl_crew_vehicle = {
         } forEach (units _group);
         if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Crewing %2", groupId _group, getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")]};
         if (pl_enable_map_radio) then {[_group, format ["Crewing %1", getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")], 25] call pl_map_radio_callout};
+
+        [_group] spawn {
+            params ["_group"];
+
+            waitUntil {sleep 0.5; !(isNull objectParent (leader _group))};
+
+            [_group, true] spawn pl_change_to_vic_symbols;
+        };
     }
     else
     {
@@ -1113,6 +1144,14 @@ pl_crew_vehicle_now = {
         [_x] allowGetIn true;
         [_x] orderGetIn true;
     } forEach (units _group);
+
+    [_group] spawn {
+        params ["_group"];
+
+        waitUntil {sleep 0.5; !(isNull objectParent (leader _group))};
+
+        [_group, true] spawn pl_change_to_vic_symbols;
+    };    
 };
     
 pl_left_vehicles = [];
@@ -1152,6 +1191,7 @@ pl_leave_vehicle = {
     _group setVariable ["pl_has_cargo", false];
     _group setVariable ["setSpecial", false];
     _group setVariable ["onTask", false];
+    [_group] call pl_change_inf_icons;
 };
 
 pl_spawn_leave_vehicle = {
@@ -1174,7 +1214,7 @@ pl_attach_inf = {
 
     pl_attach_form = false;
   
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
         pl_follow_array_other_setup = pl_follow_array_other_setup + [_group];
         pl_show_vehicles_pos = getPos (leader _group);
         pl_show_vehicles = true;
@@ -1187,7 +1227,7 @@ pl_attach_inf = {
 
         onMapSingleClick {
             pl_mapClicked = true;
-            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            _cords = _pos;
             pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank"], 10, true];
             if (_shift) then {pl_attach_form = "File"};
             if (_alt) then {pl_attach_form = "Diamond"};
@@ -1299,8 +1339,14 @@ pl_attach_inf = {
 };
 
 pl_air_insertion = {
-    private ["_cords", "_lzPos", "_helipad", "_rtbPos"];
-    
+    private ["_cords", "_lzPos", "_helipad", "_rtbPos", "_mPos"];
+
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader (_groups#0)] call pl_open_tac_forced;
+        };
+    };
+
     private _allGroups = hcSelected player;
 
     private _groups = [];
@@ -1313,6 +1359,7 @@ pl_air_insertion = {
     private _pps = [];
     private _ppMarkers = [];
     pl_confirm_lz = false;
+
     while {!pl_confirm_lz} do {
 
         onMapSingleClick {
@@ -1330,7 +1377,11 @@ pl_air_insertion = {
         _ppMarkers pushback _ppM;
 
         while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
             _ppM setMarkerPos _mPos;
         };
 
@@ -1364,6 +1415,7 @@ pl_air_insertion = {
     private _posOffsetStep = 40;
 
     for "_i" from 0 to (count _groups) - 1 do {
+        
         _group = _groups#_i;
         player hcRemoveGroup _group;
         _group setVariable ["onTask", true];

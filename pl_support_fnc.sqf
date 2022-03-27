@@ -337,7 +337,7 @@ pl_arty = {
 };
 
 pl_fire_on_map_arty = {
-    private ["_cords", "_ammoType", "_eh", "_markerName", "_centerMarkerName", "_eta", "_battery", "_guns", "_volleys", "_isHc", "_ammoTypestr"];
+    private ["_mpos", "_cords", "_ammoType", "_eh", "_markerName", "_centerMarkerName", "_eta", "_battery", "_guns", "_volleys", "_isHc", "_ammoTypestr"];
 
     _markerName = createMarker [str (random 4), [0,0,0]];
     _markerName setMarkerColor pl_side_color;
@@ -359,7 +359,7 @@ pl_fire_on_map_arty = {
     _centerMarkerName setMarkerText format ["%1 %4 / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, _ammoTypestr];
     _centerMarkerName setMarkerColor pl_side_color;
 
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
 
         _message = "Select STRIKE Location <br /><br />
         <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
@@ -374,7 +374,11 @@ pl_fire_on_map_arty = {
             onMapSingleClick "";
         };
         while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
             _markerName setMarkerPos _mPos;
             _centerMarkerName setMarkerPos _mPos;
         };

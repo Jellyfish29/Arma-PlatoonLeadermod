@@ -4,20 +4,54 @@ pl_draw_formation_mouse = false;
 pl_draw_vic_advance_wp_array = [];
 pl_draw_sync_wp_array = [];
 
-
-pl_march = {
+pl_set_waypoint = {
     params ["_group"];
-    private ["_cords", "_f"], "_mwp";
+    private ["_cords"];
 
-    if (visibleMap) then {
-        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+        if (visibleMap) then {
+            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
     }
     else
     {
         _cords = screenToWorld [0.5,0.5];
     };
 
-    if (vehicle (leader _group) != (leader _group)) exitWith {[_group, _cords] spawn pl_vic_advance};
+    [_group] call pl_reset;
+    sleep 0.2;
+
+    _group addWaypoint [_cords, 0];
+};
+
+// {if ((count (waypoints _x)) == 0) then {
+//     [_x, false] spawn pl_reset}
+// } forEach (hcSelected player);
+//  playSound 'beep';
+//   if (count (hcSelected player) > 1 and (!pl_draw_formation_mouse)) then {
+//     [hcSelected player, true] spawn pl_move_as_formation
+// };
+// if (count (hcSelected player) <= 1) then {['MOVE',_pos,_is3D,hcselected player,true] call BIS_HC_path_menu;
+
+pl_march = {
+    params [["_group", (hcSelected player)#0]];
+    private ["_cords", "_f"], "_mwp";
+
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+        if (visibleMap) then {
+            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+    }
+    else
+    {
+        _cords = screenToWorld [0.5,0.5];
+    };
+
+    // if (vehicle (leader _group) != (leader _group)) exitWith {[_group, _cords] spawn pl_vic_advance};
 
     if (isNil {_group getVariable "pl_on_march"}) then {
         [_group] call pl_reset;
@@ -28,8 +62,8 @@ pl_march = {
 
 
         // _group setVariable ["onTask", true];
-        _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", "\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"];
+        // _group setVariable ["setSpecial", true];
+        // _group setVariable ["specialIcon", "\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"];
         _group setVariable ["pl_on_march", true];
 
         {
@@ -38,7 +72,7 @@ pl_march = {
         (leader _group) limitSpeed 14;
         // _group setFormation "FILE";
         _group setBehaviour "AWARE";
-        // if ((vehicle (leader _group)) != (leader _group)) then {
+        // if ((vehicle (leader _group)) != (leader _group)) then {leader _group
             
 
         // };
@@ -46,10 +80,15 @@ pl_march = {
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
 
+        if (vehicle (leader _group) != (leader _group)) then {
+            vehicle (leader _group) doMove _cords;
+            vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
+        };
+
         sleep 1;
         waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setVariable ["pl_on_march", nil];
-        _group setVariable ["setSpecial", false];
+        // _group setVariable ["setSpecial", false];
         {
             _x enableAI "AUTOCOMBAT";
         } forEach (units _group);
@@ -96,8 +135,12 @@ pl_bounding_squad = {
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
-    if (visibleMap) then {
-        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+        if (visibleMap) then {
+            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
     }
     else
     {
@@ -339,7 +382,11 @@ pl_move_as_formation = {
     params [["_groups", hcSelected player], ["_firstCall", false]];
     private ["_cords", "_wpPos", "_pos1", "_pos2", "_syncWps", "_infIncluded"];
 
-    if !(visibleMap) exitWith {hint "Open Map to order Formation Move"};
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader _group] call pl_open_tac_forced;
+        };
+    };
 
     _infIncluded = {
         if (vehicle (leader _x) == leader _x) exitWith {true};
@@ -384,11 +431,17 @@ pl_move_as_formation = {
         // _x setBehaviourStrong "COMBAT";
     } forEach (_groups) - [_formationLeaderGroup];
 
-    _formationLeaderGroup setBehaviourStrong "COMBAT";
+    // _formationLeaderGroup setBehaviourStrong "COMBAT";
     // draw Indicator and wait for mouseclick;
-    pl_draw_formation_mouse = true;
 
-    if (_firstCall) then {showCommandingMenu ""; sleep 0.4};
+    if (_firstCall) then {
+        showCommandingMenu "";
+        {
+            if ((count (waypoints _x)) == 0) then {[_x, false] spawn pl_reset};
+        } forEach _groups;
+        sleep 0.5;
+     };
+    pl_draw_formation_mouse = true;
 
     waitUntil {inputAction "defaultAction" > 0 or inputAction "zoomTemp" > 0};
 
@@ -407,7 +460,11 @@ pl_move_as_formation = {
         } forEach _groups;
     };
 
-    _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    if (visibleMap) then {
+        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    } else {
+        _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+    };
 
     // calc new Move position relativ ro mouseposition and add Waypoints
     _syncWps = [];
@@ -459,8 +516,12 @@ pl_rush = {
     params ["_group"];
     private ["_targets", "_cords"];
 
-    if (visibleMap) then {
-        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+        if (visibleMap) then {
+            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
     }
     else
     {

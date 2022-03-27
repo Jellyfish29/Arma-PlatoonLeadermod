@@ -916,6 +916,7 @@ pl_reset_group = {
 
     _newGroup setGroupId [_groupId];
     player hcSetGroup [_newGroup];
+    [_newGroup] call pl_change_inf_icons;
 };
 
 
@@ -1157,6 +1158,7 @@ pl_viv_trans_set_up = {
 pl_inf_trans_set_up = {
     params ["_group"];
     _targetVic = vehicle (leader _group);
+    [_group] call pl_change_inf_icons;
     // (group (driver _targetVic)) setVariable ["setSpecial", true];
     // (group (driver _targetVic)) setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
     (group (driver _targetVic)) setVariable ["pl_has_cargo", true];
@@ -1275,6 +1277,8 @@ pl_start_set_up = {
                 // if ((vehicle _leader) isKindOf "Air" and pl_enable_auto_air_remove) then {
                 //     player hcRemoveGroup _x;
                 // };
+            } else {
+                [_x] call pl_change_inf_icons;
             };
 
             sleep 0.2;
@@ -1283,9 +1287,9 @@ pl_start_set_up = {
                 [_x, true] spawn pl_recon;
             };
 
-            if (_x getVariable ["pl_set_as_medical", false]) then {
-                [_x, "med"] call pl_change_group_icon;
-            };
+            // if (_x getVariable ["pl_set_as_medical", false]) then {
+            //     [_x, "med"] call pl_change_group_icon;
+            // };
 
             [_x] spawn pl_reset;
 

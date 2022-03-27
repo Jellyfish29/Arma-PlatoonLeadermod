@@ -329,6 +329,12 @@ pl_friendly_check = {
 
 pl_clear_obstacles = {
     params ["_pos", "_radius"];
+    
+    {
+        if (!(canMove _x) or ({alive _x} count (crew _x)) <= 0) then {
+            deleteVehicle _x;
+        };
+    } forEach (vehicles select {(_x distance2D _pos) < _radius});
 
     {
          deleteVehicle _x;
@@ -358,7 +364,45 @@ pl_is_apc = {
     _isAPCtr = {
         if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
         false
-    } forEach ["m113", "bmp", "m2a2", "m2a3", "mtlb", "bmd", "amv", "apc", "ifv", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer", "Puma"];
+    } forEach ["m113", "rhino", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer", "Puma"];
     _isAPCtr
 
+};
+
+pl_get_caliber = {
+    params ["_string"];
+    private _caliber = "";
+    private _numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
+    for "_i" from 0 to (count _string) - 1 do {
+        private _c = _string select [_i, 2];
+        if (_c == "mm") exitWith {
+            for "_j" from (_i - 1) to 0  step -1 do {
+                _num = _string select [_j, 1];
+                if (_num in _numbers) then {
+                    _caliber = _num + _caliber;
+                };
+            };
+        };
+    };
+    if (_caliber == "" ) then {_caliber = "0"};
+    parsenumber _caliber
+};
+
+
+pl_has_cannon = {
+    params ["_vic"];
+    private _weapons = _vic weaponsTurret [0];
+
+    _return = {
+        if (["CANNON", toUpper _x] call BIS_fnc_inString) exitWith {true};
+        false
+    } forEach _weapons;
+    _return;
+};
+
+pl_is_ifv = {
+    params ["_vic"];
+    if (([_vic] call pl_has_cannon or ([(_vic weaponsTurret [0])#0] call pl_get_caliber) >= 20) and !(["mbt", typeOf _vic] call BIS_fnc_inString)) exitwith {true};
+    false
 };

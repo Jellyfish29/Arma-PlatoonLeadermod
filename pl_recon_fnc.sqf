@@ -32,11 +32,12 @@ pl_recon = {
 
     // sealth, holdfire, recon icon
     // _group setBehaviour "STEALTH";
-    // if (vehicle (leader _group) != (leader _group)) then {
-    //     [_group, "recon_add_pl"] call pl_change_group_icon;
-    // } else {
-    //     [_group, "recon"] call pl_change_group_icon;
-    // };
+    if (vehicle (leader _group) == (leader _group)) then {
+        private _size = "s";
+        if ((count (units _group)) < 6) then {_size = "t"};
+        [_group, format ["f_%1_recon_pl", _size]] call pl_change_group_icon;
+    };
+
     _group setVariable ["pl_recon_area_size", pl_recon_area_size_default];
 
     // _group setCombatMode "GREEN";
@@ -207,10 +208,11 @@ Pl_marta = {
     private _sideColor = "colorOpfor";
     private _sideColorRGB = [0.5,0,0,0.5];
     private _side = side _leader;
-    switch (_opfGrp getVariable ["pl_opf_side", _side]) do { 
-        case west : {_sideColor = "colorBlufor"; _sideColorRGB = [0,0.3,0.6,0.5]}; 
-        case east : {_sideColor = "colorOpfor"; _sideColorRGB = [0.5,0,0,0.5]};
-        case resistance : {_sideColor = "colorIndependent"; _sideColorRGB = [0,0.5,0,0.5]};
+    private _sidePrefix = "o";
+    switch (_opfGrp getVariable ["pl_opf_side", sideEmpty]) do { 
+        case west : {_sideColor = "colorBlufor"; _sideColorRGB = [0,0.3,0.6,0.5]; _sidePrefix = "b";}; 
+        case east : {_sideColor = "colorOpfor"; _sideColorRGB = [0.5,0,0,0.5]; _sidePrefix = "o";};
+        case resistance : {_sideColor = "colorIndependent"; _sideColorRGB = [0,0.5,0,0.5]; _sidePrefix = "n";};
         default {_sideColor = "exit"; _sideColorRGB = [0.5,0,0,0.5];}; 
     };
 
@@ -236,44 +238,52 @@ Pl_marta = {
 
             if (_vic isKindOf "Air") then {_markerTypeType = "", _markerSize = 0};
 
+            
             switch (_unitText) do {
                 case "truck" : {
-                    _markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status];
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {;
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_rep_pl", pl_opfor_prefix, _status]}}};
+                    _markerTypeType = format ["%1_%2_truck_pl", _sidePrefix, _status];
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_markerTypeType = format ["%1_%2_truck_sup_pl", _sidePrefix, _status]} else {
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", _sidePrefix, _status]} else {;
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", _sidePrefix, _status]}}};
                 };
                 case "car" : {
-                    _markerTypeType = format ["%1_%2_truck_pl", pl_opfor_prefix, _status];
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", pl_opfor_prefix, _status]} else {;
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_rep_pl", pl_opfor_prefix, _status]}}};
-            }; 
+                    _markerTypeType = format ["%1_%2_truck_pl", _sidePrefix, _status];
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_markerTypeType = format ["%1_%2_truck_sup_pl", _sidePrefix, _status]} else {
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", _sidePrefix, _status]} else {;
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_markerTypeType = format ["%1_%2_truck_sup_pl", _sidePrefix, _status]}}};
+                }; 
                 case "tank" : {
-                    _markerTypeType = format ["%1_%2_tank_pl", pl_opfor_prefix, _status];
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 6) then {_markerTypeType = format ["%1_%2_apctr_pl", pl_opfor_prefix, _status]};
+                    _markerTypeType = format ["%1_%2_tank_pl", _sidePrefix, _status];
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) >= 6 and !(["mbt", typeOf _vic] call BIS_fnc_inString)) then {
+                        if ([_vic] call pl_is_ifv) then {
+                            _markerTypeType = format ["%1_%2_ifvtr_pl", _sidePrefix, _status];
+                        } else {
+                            _markerTypeType = format ["%1_%2_apctr_pl", _sidePrefix, _status];
+                        };
+                    };
                 };
                 case "APC" : {
-                    _markerTypeType = format ["%1_%2_apctr_pl", pl_opfor_prefix, _status];
-                    if (_vic isKindOf "Car") then {_markerTypeType = format ["%1_%2_apcwe_pl", pl_opfor_prefix, _status]};
+                    if ([_vic] call pl_is_ifv) then {
+                        _markerTypeType = format ["%1_%2_ifvtr_pl", _sidePrefix, _status];
+                        if (_vic isKindOf "Car") then {_markerTypeType = format ["%1_%2_ifvwe_pl", _sidePrefix, _status]};
+                    } else {
+                        _markerTypeType = format ["%1_%2_apctr_pl", _sidePrefix, _status];
+                        if (_vic isKindOf "Car") then {_markerTypeType = format ["%1_%2_apcwe_pl", _sidePrefix, _status]};
+                    };
                 };
-                default {_markerTypeType = format ["%1_%2_truck_pl", pl_opfor_prefix, _status]};
+                default {_markerTypeType = format ["%1_%2_truck_pl", _sidePrefix, _status]};
             };
-
-            if (_unitText == "tank" and !(["apctr", _markerTypeType] call BIS_fnc_inString)) then {
-                if ([_vic] call pl_is_apc) then {_markerTypeType = format ["%1_%2_apctr_pl", pl_opfor_prefix, _status];}
-            };
-            
-            if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) then {_markerTypeType = format ["%1_art", pl_opfor_prefix]};
+                
+            if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) then {_markerTypeType = format ["%1_art", _sidePrefix]};
 
 
         } else {
             if (count (units _opfGrp) <= 6) then {
                 // inf Team
-                _markerTypeType = format ["%1_%2_t_inf_pl", pl_opfor_prefix, _status];
+                _markerTypeType = format ["%1_%2_t_inf_pl", _sidePrefix, _status];
             } else {
                 // Inf Squad
-                _markerTypeType = format ["%1_%2_s_inf_pl", pl_opfor_prefix, _status];
+                _markerTypeType = format ["%1_%2_s_inf_pl", _sidePrefix, _status];
             };
         };
 

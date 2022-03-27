@@ -2,7 +2,7 @@ pl_engineering_markers = [];
 
 pl_mine_clearing = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_cords", "_engineer", "_mines", "_watchdir"];
+    private ["_cords", "_engineer", "_mines", "_watchdir", "_mPos"];
 
     // _group = (hcSelected player) select 0;
 
@@ -12,6 +12,12 @@ pl_mine_clearing = {
     } forEach (units _group);
 
     if (isNull _engineer) exitWith {hint "No mineclearing equipment"};
+
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader _group] call pl_open_tac_forced;
+        };
+    };
 
     pl_mine_sweep_area_size = 35;
 
@@ -35,63 +41,70 @@ pl_mine_clearing = {
     _markerBorderName setMarkerAlpha 0.8;
     _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
 
-    if (visibleMap) then {
-        _message = "Select Search Area <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>
-        <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
-        hint parseText _message;
-        onMapSingleClick {
-            pl_sweep_cords = _pos;
-            if (_shift) then {pl_cancel_strike = true};
-            pl_mapClicked = true;
-            hintSilent "";
-            onMapSingleClick "";
-        };
-
-        player enableSimulation false;
-
-        while {!pl_mapClicked} do {
-            // sleep 0.1;
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
-                _markerName setMarkerPos _mPos;
-            };
-            if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
-            if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
-            _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
-            if (pl_mine_sweep_area_size >= 100) then {pl_mine_sweep_area_size = 100};
-            if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
-        };
-
-        // player enableSimulation true;
-        pl_mapClicked = false;
-        _cords = getMarkerPos _markerName;
-
-        onMapSingleClick {
-            pl_mapClicked = true;
-            if (_shift) then {pl_cancel_strike = true};
-            // if (_alt) then {pl_mine_type = "APERSBoundingMine"};
-            onMapSingleClick "";
-        };
-
-        // player enableSimulation false;
-
-        while {!pl_mapClicked} do {
-            _watchDir = (_cords getdir ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition));
-            _markerName setMarkerDir (_watchDir + 90);
-            if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
-            if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
-            _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
-            if (pl_mine_sweep_area_size >= 100) then {pl_mine_sweep_area_size = 100};
-            if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
-        };
-
-        player enableSimulation true;
-
-        pl_mapClicked = false;
-        _markerName setMarkerAlpha 0.3;
-        deleteMarker _markerBorderName;
+    _message = "Select Search Area <br /><br />
+    <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>
+    <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
+    hint parseText _message;
+    onMapSingleClick {
+        pl_sweep_cords = _pos;
+        if (_shift) then {pl_cancel_strike = true};
+        pl_mapClicked = true;
+        hintSilent "";
+        onMapSingleClick "";
     };
+
+    player enableSimulation false;
+
+    while {!pl_mapClicked} do {
+        // sleep 0.1;
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+        if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+            _markerName setMarkerPos _mPos;
+        };
+        if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
+        if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
+        _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
+        if (pl_mine_sweep_area_size >= 100) then {pl_mine_sweep_area_size = 100};
+        if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
+    };
+
+    // player enableSimulation true;
+    pl_mapClicked = false;
+    _cords = getMarkerPos _markerName;
+
+    onMapSingleClick {
+        pl_mapClicked = true;
+        if (_shift) then {pl_cancel_strike = true};
+        // if (_alt) then {pl_mine_type = "APERSBoundingMine"};
+        onMapSingleClick "";
+    };
+
+    // player enableSimulation false;
+
+    while {!pl_mapClicked} do {
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+        _watchDir = _cords getdir _mPos;
+        _markerName setMarkerDir (_watchDir + 90);
+        if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
+        if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
+        _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
+        if (pl_mine_sweep_area_size >= 100) then {pl_mine_sweep_area_size = 100};
+        if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
+    };
+
+    player enableSimulation true;
+
+    pl_mapClicked = false;
+    _markerName setMarkerAlpha 0.3;
+    deleteMarker _markerBorderName;
 
     private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa";
 
@@ -219,11 +232,16 @@ pl_mine_spacing = 4;
 
 pl_lay_mine_field = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_group", "_exSpecialist", "_cords", "_areaMarker", "_watchDir", "_mineMarkers", "_neededMines", "_minePositions", "_usedMines", "_mineType", "_origPos", "_availableMines", "_text"];
+    private ["_mPos", "_group", "_exSpecialist", "_cords", "_areaMarker", "_watchDir", "_mineMarkers", "_neededMines", "_minePositions", "_usedMines", "_mineType", "_origPos", "_availableMines", "_text"];
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry Only Task!"};
 
-    if !(visibleMap) exitWith {hint "Open Map to lay Mine field"};
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader _group] call pl_open_tac_forced;
+        };
+    };;
+
     _exSpecialist = {
         if (_x getUnitTrait "explosiveSpecialist") exitWith {_x};
         objNull
@@ -284,7 +302,11 @@ pl_lay_mine_field = {
     player enableSimulation false;
 
     while {!pl_mapClicked} do {
-        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
         _watchDir = getPos (leader _group) getDir _mPos;
         if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
             _areaMarker setMarkerPos _mPos;
@@ -331,7 +353,12 @@ pl_lay_mine_field = {
     player enableSimulation false;
 
     while {!pl_mapClicked} do {
-        _watchDir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+        _watchDir = _cords getDir _mPos;
         _areaMarker setMarkerDir _watchDir;
         if (inputAction "MoveForward" > 0) then {pl_mine_field_size = pl_mine_field_size + _mineFieldSize; sleep 0.05};
         if (inputAction "MoveBack" > 0) then {pl_mine_field_size = pl_mine_field_size - _mineFieldSize; sleep 0.05};
@@ -489,7 +516,7 @@ pl_groups_with_charges = [];
 
 pl_place_charge = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_cords", "_exSpecialist", "_availableMines", "_markerName"];
+    private ["_mPos", "_cords", "_exSpecialist", "_availableMines", "_markerName"];
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry Only Task!"};
 
@@ -502,7 +529,7 @@ pl_place_charge = {
 
     _availableMines = _exSpecialist getVariable ["pl_virtual_mines", 0];
 
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
         hintSilent "";
         hint "Select MINE position on MAP (SHIFT + LMB to cancel)";
         pl_show_obstacles = true;
@@ -535,7 +562,11 @@ pl_place_charge = {
         };
 
         while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
             if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
                 _markerName setMarkerPos _mPos;
             };
@@ -656,6 +687,16 @@ pl_detonate_charges = {
         _charge = _x;
         // remove Vehicle wrec
         {
+            if (!(canMove _x) or ({alive _x} count (crew _x)) <= 0) then {
+                [_x] spawn {
+                    params ["_vic"];
+                    _vic setDamage 1;
+                    sleep 5;
+                    deleteVehicle _vic;
+                };
+            };
+        } forEach (vehicles select {(_x distance2D _charge) < 25});
+        {
              deleteVehicle _x;
         } forEach (allDead select {(_x distance2D _charge) < 25});
         // remove Fences
@@ -691,7 +732,7 @@ pl_detonate_charges = {
 
 pl_destroy_bridge = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_cords", "_exSpecialist", "_bridges", "_bridgeMarkers", "_wp", "_charge"];
+    private ["_mPos", "_cords", "_exSpecialist", "_bridges", "_bridgeMarkers", "_wp", "_charge"];
 
     _exSpecialist = {
         if (_x getUnitTrait "explosiveSpecialist" and ((_x getVariable ["pl_virtual_mines", 0]) > 0)) exitWith {_x};
@@ -700,51 +741,54 @@ pl_destroy_bridge = {
 
     if (isNull _exSpecialist) exitWith {hint format ["%1 has no Engineer!", groupId _group]};
 
-    if (visibleMap) then {
-
-        _markerName = createMarker ["pl_charge_range_marker2", [0,0,0]];
-        _markerName setMarkerColor "colorOrange";
-        _markerName setMarkerShape "ELLIPSE";
-        _markerName setMarkerBrush "Border";
-        _markerName setMarkerSize [30, 30];
-
-        private _rangelimiter = 60;
-
-        private _markerBorderName = str (random 2);
-        private _borderMarkerPos = getPos (leader _group);
-        if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
-        createMarker [_markerBorderName, _borderMarkerPos];
-        _markerBorderName setMarkerShape "ELLIPSE";
-        _markerBorderName setMarkerBrush "Border";
-        _markerBorderName setMarkerColor "colorOrange";
-        _markerBorderName setMarkerAlpha 0.8;
-        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
-
-        hint "Select on MAP";
-        onMapSingleClick {
-            pl_repair_cords = _pos;
-            pl_mapClicked = true;
-            if (_shift) then {pl_cancel_strike = true};
-            hint "";
-            onMapSingleClick "";
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader _group] call pl_open_tac_forced;
         };
-
-        while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
-                _markerName setMarkerPos _mPos;
-            };
-        };
-
-        pl_mapClicked = false;
-        _cords = getMarkerPos _markerName;
-        deleteMarker _markerName;
-        deleteMarker _markerBorderName;
-    }
-    else
-    {
-        _cords = screenToWorld [0.5, 0.5];
     };
+
+    _markerName = createMarker ["pl_charge_range_marker2", [0,0,0]];
+    _markerName setMarkerColor "colorOrange";
+    _markerName setMarkerShape "ELLIPSE";
+    _markerName setMarkerBrush "Border";
+    _markerName setMarkerSize [30, 30];
+
+    private _rangelimiter = 60;
+
+    private _markerBorderName = str (random 2);
+    private _borderMarkerPos = getPos (leader _group);
+    if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+    createMarker [_markerBorderName, _borderMarkerPos];
+    _markerBorderName setMarkerShape "ELLIPSE";
+    _markerBorderName setMarkerBrush "Border";
+    _markerBorderName setMarkerColor "colorOrange";
+    _markerBorderName setMarkerAlpha 0.8;
+    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+    hint "Select on MAP";
+    onMapSingleClick {
+        pl_repair_cords = _pos;
+        pl_mapClicked = true;
+        if (_shift) then {pl_cancel_strike = true};
+        hint "";
+        onMapSingleClick "";
+    };
+
+    while {!pl_mapClicked} do {
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+        if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+            _markerName setMarkerPos _mPos;
+        };
+    };
+
+    pl_mapClicked = false;
+    _cords = getMarkerPos _markerName;
+    deleteMarker _markerName;
+    deleteMarker _markerBorderName;
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
