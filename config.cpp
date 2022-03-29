@@ -660,20 +660,6 @@ class RscHCGroupRootMenu
             //     enable="0";
             //     speechId=0;
             // };
-            class PlSeperator11
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
             class PlSuppressArea
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Suppress Position</t>";
@@ -690,21 +676,36 @@ class RscHCGroupRootMenu
                 speechId=0;
                 cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
             };
-            // class PlFieldOfFire
+            // class PlSeperator11
             // {
-            //     title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\rifle_ca.paa'/><t> Set Field of Fire</t>";
-            //     shortcuts[]={6};
+            //     title="";
+            //     shortcuts[]={};
             //     submenu="";
-            //     command=-5;
+            //     command=-1;
             //     class params
             //     {
-            //         expression="[] spawn pl_field_of_fire";
+            //         expression="";
             //     };
-            //     show="HCIsLeader";
-            //     enable="HCNotEmpty";
+            //     show="1";
+            //     enable="1";
             //     speechId=0;
-            //     cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
             // };
+            class Pldisengage
+            {
+                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa'/><t> Disengage</t>";
+                shortcuts[]={5};
+                shortcutsAction = "CommandingMenu5";
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_disengage";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+                cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
+            };
             class PlSeperator21
             {
                 title="";
@@ -722,8 +723,8 @@ class RscHCGroupRootMenu
             class PlGarrisonB
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>";
-                shortcuts[]={5};
-                shortcutsAction = "CommandingMenu5";
+                shortcuts[]={6};
+                shortcutsAction = "CommandingMenu6";
                 submenu="";
                 command=-5;
                 class params
@@ -749,26 +750,26 @@ class RscHCGroupRootMenu
             //     speechId=0;
             //     cursorTexture="\A3\ui_f\data\igui\cfg\cursors\attack_ca.paa";
             // };
-            class PlSeperator5
-            {
-                title="";
-                shortcuts[]={};
-                submenu="";
-                command=-1;
-                class params
-                {
-                    expression="";
-                };
-                show="1";
-                enable="1";
-                speechId=0;
-            };
+            // class PlSeperator5
+            // {
+            //     title="";
+            //     shortcuts[]={};
+            //     submenu="";
+            //     command=-1;
+            //     class params
+            //     {
+            //         expression="";
+            //     };
+            //     show="1";
+            //     enable="1";
+            //     speechId=0;
+            // };
             
             class PlAttachInf
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Attach/Detach Infantry</t";
-                shortcuts[]={6};
-                shortcutsAction = "CommandingMenu6";
+                shortcuts[]={7};
+                shortcutsAction = "CommandingMenu7";
                 submenu="";
                 command=-5;
                 class params
@@ -796,8 +797,8 @@ class RscHCGroupRootMenu
             class PlComEng
             {
                 title="<img color='#e5e500' image='\Plmod\gfx\b_engineer.paa'/><t> Combat Engineering Tasks</t>";
-                shortcuts[]={7};
-                shortcutsAction = "CommandingMenu7";
+                shortcuts[]={8};
+                shortcutsAction = "CommandingMenu8";
                 menu="#USER:pl_combat_engineer";
                 command=-5;
                 class params

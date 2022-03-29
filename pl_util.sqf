@@ -103,8 +103,12 @@ pl_bounding_move_team = {
         {
             doStop _unit;
             [_unit, false] call pl_enable_force_move;
-            _unit disableAI "PATH";
-            _unit setUnitPos _unitPos;
+            if (_unitPos isEqualTo "COVER") then {
+                [_unit, getPos _unit, getDir _unit, 15, false] spawn pl_find_cover;
+            } else {
+                _unit disableAI "PATH";
+                _unit setUnitPos _unitPos;
+            };
         };
     };
     if (({currentCommand _x isEqualTo "MOVE"} count (_team select {alive _x and !(_x getVariable ["pl_wia", false])})) == 0 or ({(_x distance2D _wpPos) < 15} count _team > 0) or (waypoints _group isEqualTo [])) exitWith {true};
@@ -199,9 +203,9 @@ pl_not_reachable_escape = {
 
 
 pl_is_forest = {
-    params ["_pos"];
+    params ["_tpos"];
 
-    _trees = nearestTerrainObjects [_pos, ["Tree"], 50, false, true];
+    _trees = nearestTerrainObjects [_tpos, ["Tree"], 50, false, true];
 
     if (count _trees > 25) exitWith {true};
 
@@ -226,8 +230,8 @@ pl_is_indoor = {
 };
 
 pl_is_city = {
-    params ["_pos"];
-    _buildings = nearestTerrainObjects [_pos, ["House"], 50, false, true];
+    params ["_cpos"];
+    _buildings = nearestTerrainObjects [_cpos, ["House"], 50, false, true];
     if (count _buildings >= 3) exitWith {true};
     false
 };
@@ -321,7 +325,7 @@ pl_friendly_check = {
     // _m setMarkerColor "colorGreen";
     
     _distance = _unit distance2D _pos; 
-    _allies = (_pos nearEntities [["Man", "Car", "Tank"], 10 + (_distance * 0.25)]) select {side _x == side _unit};
+    _allies = (_pos nearEntities [["Man", "Car", "Tank"], 25 + (_distance * 0.25)]) select {side _x == side _unit};
     // player sideChat str _allies;
     if !(_allies isEqualTo []) exitWith {true};
     false
@@ -371,6 +375,8 @@ pl_is_apc = {
 
 pl_get_caliber = {
     params ["_string"];
+
+    if (isNil "_string") exitWith {0};
     private _caliber = "";
     private _numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
@@ -394,6 +400,7 @@ pl_has_cannon = {
     params ["_vic"];
     private _weapons = _vic weaponsTurret [0];
 
+    if (_weapons isEqualTo []) exitWith {false};
     _return = {
         if (["CANNON", toUpper _x] call BIS_fnc_inString) exitWith {true};
         false

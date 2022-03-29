@@ -332,7 +332,20 @@ pl_ccp_revive_action = {
 };
 
 pl_injured_drag = {
-    params ["_dragger", "_unit", "_ccpPos"];
+    params ["_dragger", "_unit", "_ccpPos", ["_moveTo", false]];
+
+    if (_moveTo) then {
+        private _movePos = getPosASL _unit;
+        _movePos = [0.5 - (random 1), 0.5 - (random 1)] vectorAdd _movePos;
+        _dragger doMove _movePos;
+        _dragger setDestination [_movePos,"LEADER DIRECT", true];
+        _dragger disableAI "AUTOCOMBAT";
+        _dragger setCombatBehaviour "AWARE";
+
+        sleep 0.5;
+
+        waitUntil {sleep 0.5; (unitReady _dragger) or ((_dragger distance2D _unit) < 2) or !((group _dragger) getVariable ["onTask", true]) or (!alive _unit) or (!alive _dragger) or (_dragger getVariable ["pl_wia", false])};
+    };
 
     // [ _unit ] remoteExec [ "dam_unit playMove _anim;_fnc_wake", 2 ];
     // _unit setUnconscious false;
@@ -361,8 +374,9 @@ pl_injured_drag = {
 
     detach _dragger;
 
-    _unit attachTo [_dragger, [0, 1.2, 0]];
+    _unit attachTo [_dragger, [0, 1.15, 0]];
     _unit setDir 180;
+    _unit allowDamage false;
 
     _dummygrp = createGroup [civilian, true];
     _dummygrp setSpeedMode "LIMITED";
@@ -383,9 +397,9 @@ pl_injured_drag = {
     _dummy enableSimulation true;
     // _dummy forceSpeed 0.5;
     sleep 0.3;
-    [_dragger, _dummy, true] call BIS_fnc_attachToRelative;
-    // _dragger attachTo [_dummy, [0, -0.2, 0]]; 
-    // _dragger setDir 180;
+    // [_dragger, _dummy, true] call BIS_fnc_attachToRelative;
+    _dragger attachTo [_dummy, [0, -0.2, 0]]; 
+    _dragger setDir 180;
 
     sleep 0.2,
         
@@ -393,7 +407,7 @@ pl_injured_drag = {
     _dragger disableAI "ANIM";
     _dummy doMove _ccpPos;
 
-    waitUntil {sleep 0.5; !alive _unit or !alive _dragger or (lifeState _dragger isEqualTo "INCAPACITATED") or (_dragger distance2D _ccpPos) < 8 or ((group _dragger) getVariable ["pl_stop_event", false]) or !((group _dragger) getVariable ["onTask", false])};
+    waitUntil {sleep 0.5; !alive _unit or !alive _dragger or (lifeState _dragger isEqualTo "INCAPACITATED") or (_dragger distance2D _ccpPos) < 4 or ((group _dragger) getVariable ["pl_stop_event", false]) or !((group _dragger) getVariable ["onTask", false])};
 
     doStop _dummy;
     detach _unit;
@@ -401,6 +415,7 @@ pl_injured_drag = {
     detach _dummy;
     deleteVehicle _dummy;
     _dragger enableAI "ANIM";
+    _unit allowDamage true;
     _unit switchmove "";
     _unit setUnconscious true;
     _anim = selectRandom [

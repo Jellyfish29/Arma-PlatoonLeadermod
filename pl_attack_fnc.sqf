@@ -576,6 +576,8 @@ pl_assault_position = {
     for "_i" from count waypoints _group - 1 to 0 step -1 do {
         deleteWaypoint [_group, _i];
     };
+
+    private _breakingPoint = round (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) / 2);
     
     if ((count _targets) == 0) then {
         private _n = 0;
@@ -607,7 +609,7 @@ pl_assault_position = {
     {
         sleep 0.2;
         missionNamespace setVariable [format ["targets_%1", _group], _targets];
-        private _time = time + 120;
+        private _time = time + 180;
 
         private _n = 1;
         private _buddy = objNull;
@@ -772,7 +774,7 @@ pl_assault_position = {
             sleep 0.1;
         } forEach (units _group);
 
-        waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
+        waitUntil {sleep 0.5; ({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) <= _breakingPoint or time > _time or !(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
     };
 
 
@@ -804,14 +806,21 @@ pl_assault_position = {
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;
         sleep 1;
-        if (pl_enable_beep_sound) then {playSound "beep"};
-        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Assault complete", (groupId _group)]};
-        if (pl_enable_map_radio) then {[_group, "...Assault Complete!", 20] call pl_map_radio_callout};
-        [_group, "atk_complete", 1] call pl_voice_radio_answer;
-        if (_tacticalAtk) then {
-            {
-                [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
-            } forEach (units _group);
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        if (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) > _breakingPoint) then {
+            if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Assault complete", (groupId _group)]};
+            if (pl_enable_map_radio) then {[_group, "...Assault Complete!", 20] call pl_map_radio_callout};
+            [_group, "atk_complete", 1] call pl_voice_radio_answer;
+            if (_tacticalAtk) then {
+                {
+                    [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
+                } forEach (units _group);
+            };
+        } else {
+            if (pl_enable_beep_sound) then {playSound "radioina"};
+            if (pl_enable_map_radio) then {[_group, "...Falling Back!", 20] call pl_map_radio_callout};
+            if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Falling Back", (groupId _group)]};
+            [_group] spawn pl_disengage;
         };
     };
 };

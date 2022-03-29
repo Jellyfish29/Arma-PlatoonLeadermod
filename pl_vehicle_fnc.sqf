@@ -294,7 +294,6 @@ pl_unload_at_position_planed = {
     _vicGroup = group _driver;
     _crew = crew _vic;
     _cargo = _crew - (units _vicGroup);
-    player sideChat str _crew;
     // _cargo = fullCrew [_vic, "cargo", false];
 
     private _attached = _vicGroup getVariable ["pl_attached_infGrp", grpNull];

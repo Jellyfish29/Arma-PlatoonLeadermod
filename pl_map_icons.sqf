@@ -276,7 +276,7 @@ pl_draw_group_info = {
                     ];
                 };
                 if ((vehicle (leader _x)) != leader _x) then {
-                    _vicPos = [(_pos select 0), (_pos select 1) + (pl_map_scale_y * 1.5)];
+                    _vicPos = [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 1.25)];
                     _vicColor = [vehicle (leader _x)] call pl_get_vic_health;
                     _vicDir = getDir (vehicle (leader _x));
                     _vicIcon = '\A3\ui_f\data\map\MapControl\viewtower_CA.paa';
@@ -291,7 +291,7 @@ pl_draw_group_info = {
                         2
                     ];
                     _vicSpeedLimit = vehicle (leader _x) getVariable 'pl_speed_limit';
-                    _vicSpeedPos = [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 1.5)];
+                    _vicSpeedPos = [(_pos select 0), (_pos select 1) + (pl_map_scale_y * 1.25)];
                     _vicSpeedColor = [0.9, 0.9, 0.9,1];
                     switch (_vicSpeedLimit) do { 
                         case '50' : {_vicSpeedColor = [0.4,1,0.2,1]}; 
@@ -1328,7 +1328,24 @@ pl_draw_planed_wps = {
     "]; // "
 };
 
-// [] call pl_draw_planed_wps;
+pl_draw_disengage_array = [];
+pl_draw_disengage = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                    _pos1 = getPos (vehicle (leader (_x#0)));
+                    _pos2 = _x#1;
+                    _display drawLine [
+                        _pos1,
+                        _pos2,
+                        pl_side_color_rgb
+                    ];
+
+            } forEach pl_draw_disengage_array;
+    "]; // "
+};
+
 
 pl_init_map_icons = {
     [findDisplay 12 displayCtrl 51] call pl_draw_group_info;
@@ -1364,6 +1381,7 @@ pl_init_map_icons = {
     [findDisplay 12 displayCtrl 51] call pl_draw_mg_fire_indicator;
     [findDisplay 12 displayCtrl 51] call pl_mark_supllies;
     [findDisplay 12 displayCtrl 51] call pl_show_charges;
+    [findDisplay 12 displayCtrl 51] call pl_draw_disengage;
 };
 
 [] call pl_init_map_icons;
@@ -1403,6 +1421,7 @@ addMissionEventHandler ["Loaded", {
     [findDisplay 12 displayCtrl 51] call pl_draw_mg_fire_indicator;
     [findDisplay 12 displayCtrl 51] call pl_mark_supllies;
     [findDisplay 12 displayCtrl 51] call pl_show_charges;
+    [findDisplay 12 displayCtrl 51] call pl_draw_disengage;
 }];
 
 
@@ -1478,6 +1497,7 @@ pl_show_tac_map_icons = {
     [findDisplay 2000 displayCtrl 2000] call pl_draw_mg_fire_indicator;
     [findDisplay 2000 displayCtrl 2000] call pl_mark_supllies;
     [findDisplay 2000 displayCtrl 2000] call pl_show_charges;
+    [findDisplay 2000 displayCtrl 2000] call pl_draw_disengage;
 };
 
 pl_last_tac_zoom = 0.1;
@@ -1488,7 +1508,7 @@ pl_open_tac_map = {
     // setGroupIconsVisible [true,false]; 
     if !(isNull findDisplay 2000) exitWith {
         pl_last_tac_zoom = ctrlMapScale (findDisplay 2000 displayCtrl 2000);
-        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [1.4, 0.65];
+        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [1.08, 0.58];
         (findDisplay 2000) closeDisplay 1;
         playSound "HintCollapse";
         // ctrlDelete (uiNamespace getVariable "pl_pouch_gfx");

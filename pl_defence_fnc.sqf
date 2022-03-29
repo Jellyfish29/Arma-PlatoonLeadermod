@@ -324,6 +324,156 @@ pl_360 = {
     } forEach _units;
 };
 
+pl_disengage = {
+    params [["_group", (hcSelected player) select 0]];
+
+    private _enemy = (leader _group) findNearestEnemy getPos (leader _group);
+
+    if (isNull _enemy) exitWith {hint "Group not in Combat"};
+
+    private _allyUnits = allUnits+vehicles select {side _x == playerSide};
+    _allyUnits = _allyUnits - (units _group);
+    private _ally = ([_allyUnits, [], {_x distance2D (leader _group)}, "ASCEND"] call BIS_fnc_sortBy)#0;
+
+    private _retreatDistance = 200;
+    if (((leader _group) distance2D _ally) < 250) then {
+        _retreatDistance = ((leader _group) distance2D _ally) + 80;
+    };
+
+    if (vehicle (leader _group) != leader _group) then { _retreatDistance = _retreatDistance + 100};
+
+    if ([getpos (leader _group)] call pl_is_city) then {_retreatDistance = _retreatDistance / 2};
+
+    private _enemyDir = (leader _group) getDir _enemy;
+    private _allyDir = (leader _group) getDir _ally;
+    private _retreatPos = (getPos (leader _group)) getPos [_retreatDistance, _enemyDir - 180];
+
+    _retreatPos findEmptyPosition [0, 25, typeOf (vehicle (leader _group))];
+
+    private _markerDirName = format ["delayDir%1%2", _group, random 1];
+    createMarker [_markerDirName, _retreatPos];
+    _markerDirName setMarkerPos _retreatPos;
+    _markerDirName setMarkerType "marker_position_eny";
+    _markerDirName setMarkerColor pl_side_color;
+    _markerDirName setMarkerDir _enemyDir;
+
+    pl_draw_disengage_array pushBack [_group, _retreatPos];
+
+    [_group, "confirm", 1] call pl_voice_radio_answer;
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa";
+    _group setVariable ["onTask", true];
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", _icon];
+    {
+        _x setUnitTrait ["camouflageCoef", 0.5, true];
+        _x setVariable ["pl_damage_reduction", true];
+    } forEach (units _group);
+
+    if (vehicle (leader _group) == leader _group) then {
+
+        private _units = (units _group) select {alive _x};
+        private _injured = _units select {lifeState _x isEqualTo "INCAPACITATED" or (_x getVariable ["pl_wia", false])};
+
+        if (count _injured > 0) then {
+
+            (leader _group) disableAI "AUTOCOMBAT";
+            (leader _group) disableAI "TARGET";
+            (leader _group) disableAI "AUTOTARGET";
+            (leader _group) setCombatBehaviour "AWARE";
+            (leader _group) doMove _retreatPos;
+            (leader _group) setDestination [_retreatPos,"LEADER DIRECT", true];
+            [leader _group, "SmokeShellMuzzle"] call BIS_fnc_fire;
+
+            private _dragScripts = []; 
+            private _restUnits = _units - _injured - [leader _group];
+            private _draggers = [];
+
+            for "_i" from 0 to (count _injured) - 1 do {
+                if ((count _restUnits) - 1 >= _i) then {
+                    _unit = _injured#_i;
+                    _dragger = ([_restUnits, [], {_x distance2D _unit}, "ASCEND"] call BIS_fnc_sortBy)#0;
+                    _draggers pushBack _dragger;
+                    [_dragger, "SmokeShellMuzzle"] call BIS_fnc_fire;
+                    _injured deleteAt (_injured find _unit);
+                    _restUnits deleteAt (_restUnits find _dragger);
+                    _dragScripts pushBack ([_dragger, _unit, _retreatPos, true] spawn pl_injured_drag);
+                };
+            };
+
+            private _ii = 0;
+            {
+                if (_ii <= (count _draggers) - 1) then {
+                    _x disableAI "AUTOCOMBAT";
+                    _x setCombatBehaviour "AWARE";
+                    doStop _x;
+                    _x doFollow (_draggers#_ii);
+                    [_x, _draggers#_ii] spawn {
+                        params ["_unit", "_escortTarget"];
+                        while {(group _unit) getVariable ["onTask", false]} do {
+
+                            if (!(alive _escortTarget) or (_escortTarget getVariable ["pl_wia", false])) exitWith {_x doFollow (leader (group _unit))};
+
+                            sleep 0.5;
+                        };
+                    };
+                    _ii = _ii + 1;
+                } else {
+                    _x disableAI "AUTOCOMBAT";
+                    _x setCombatBehaviour "AWARE";
+                    _x disableAI "AUTOTARGET";
+                    _x doFollow (leader _group);
+                };
+            } forEach _restUnits;
+
+            waitUntil {sleep 0.5; ({!(scriptDone _x)} count _dragScripts) <= 0 or ({alive _x} count _units) <= 0};
+
+        } else {
+            _group setCombatMode "BLUE";
+            _group setVariable ["pl_combat_mode", true];
+            _group setSpeedMode "FULL";
+            [leader _group, "SmokeShellMuzzle"] call BIS_fnc_fire;
+
+            {
+                _x disableAI "AUTOCOMBAT";
+                _x disableAI "TARGET";
+                _x disableAI "AUTOTARGET";
+                _x setCombatBehaviour "AWARE";
+                _x doMove _retreatPos;
+                _x setDestination [_retreatPos,"LEADER DIRECT", true];
+            } forEach _units;
+
+            waitUntil {sleep 0.5; ({_x distance2D _retreatPos < 10} count _units) > 0 or !(_group getVariable ["onTask", false])};
+
+            _group setCombatMode "YELLOW";
+            _group setVariable ["pl_combat_mode", false];
+        };
+
+
+    } else {
+        private _vic = vehicle (leader _group);
+        [_vic, "SmokeLauncher"] call BIS_fnc_fire;
+
+        _vic doMove _retreatPos;
+        _vic setDestination [_retreatPos,"VEHICLE PLANNED" , true];
+        waitUntil {sleep 0.5, unitReady _vic or !alive _vic};
+    };
+
+    sleep 1;
+    if (_group getVariable ["onTask", false]) then {
+        [_group, [], _retreatPos, _enemyDir] spawn pl_defend_position;
+    };
+    pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _retreatPos]];
+    deleteMarker _markerDirName;
+};
+
 pl_defend_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []] , ["_cords", []], ["_watchDir", 0]];
     private ["_mPos", "_medicPos", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_doorPos", "_allPos", "_validPos", "_units", "_unit", "_pos", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord"];
@@ -494,11 +644,23 @@ pl_defend_position = {
         };
 
         if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
+
+        _defenceAreaSize = pl_garrison_area_size;
+    } else {
+        _defenceAreaSize = pl_garrison_area_size;
+        _buildings = nearestTerrainObjects [_cords, ["BUILDING", "RUIN", "HOUSE"], _defenceAreaSize, true];
+
+        _markerDirName = format ["delayDir%1", _group];
+        createMarker [_markerDirName, _cords];
+        _markerDirName setMarkerPos _cords;
+        _markerDirName setMarkerType "marker_position";
+        _markerDirName setMarkerColor pl_side_color;
+        _markerDirName setMarkerDir _watchDir;
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
 
-    _defenceAreaSize = pl_garrison_area_size;
+    
     // if ((count _validBuildings == 0)) exitWith {hint "No buildings in Area!"; deleteMarker _markerAreaName; deleteMarker _markerDirName;};
 
 
@@ -525,8 +687,7 @@ pl_defend_position = {
     _watchPos = _cords getPos [1000, _watchDir];
     [_watchPos, 1] call pl_convert_to_heigth_ASL;
 
-
-    // _buildings = nearestTerrainObjects [_cords, ["BUILDING", "RUIN", "HOUSE"], _defenceAreaSize, true];
+    
     _validBuildings = [];
     {
         if (count ([_x] call BIS_fnc_buildingPositions) >= 2) then {
@@ -842,7 +1003,7 @@ pl_defend_position = {
     private _mgIdx = 0;
     private _losIdx = 0;
     private _debugMColor = "colorBlack";
-    _pos = [];
+    private _defPos = [];
 
     for "_i" from 0 to (count _units) - 1 step 1 do {
         private _cover = false;
@@ -851,7 +1012,7 @@ pl_defend_position = {
 
         // move to optimal Pos first
         if (_i < (count _validPos)) then {
-            _pos = _validPos#_i;
+            _defPos = _validPos#_i;
             _unit = _units#_i;
             _debugMColor = "colorBlue";
         }
@@ -864,14 +1025,14 @@ pl_defend_position = {
             if (_buildings isEqualTo []) then {
                 _dirOffset = 90;
                 if (_i % 2 == 0) then {_dirOffset = -90};
-                _pos = [_posOffset *(sin (_watchDir + _dirOffset)), _posOffset *(cos (_watchDir + _dirOffset)), 0] vectorAdd _cords;
+                _defPos = [_posOffset *(sin (_watchDir + _dirOffset)), _posOffset *(cos (_watchDir + _dirOffset)), 0] vectorAdd _cords;
                 if (_i % 2 == 0) then {_posOffset = _posOffset + _posOffsetStep};
                 _debugMColor = "colorBlue";
             }
             else
             {
                 if (_losIdx > (count _validLosPos) - 1) then {_losIdx = 1};
-                _pos = (_validLosPos#_losIdx)#0;
+                _defPos = (_validLosPos#_losIdx)#0;
                 _losIdx = _losIdx + 2;
                 _debugMColor = "colorOrange";
             };
@@ -896,9 +1057,9 @@ pl_defend_position = {
                 };
                 _posCandidates = [_posCandidates, [], {_x distance2D _cords}, "DESCEND"] call BIS_fnc_sortBy;
                 if (_medicPos isEqualTo []) then {
-                    _pos = ([_posCandidates, [], {[objNull, "VIEW", objNull] checkVisibility [_x, [_x getPos [50, _watchDir], 0.5] call pl_convert_to_heigth_ASL]}, "DESCEND"] call BIS_fnc_sortBy)#0;
+                    _defPos = ([_posCandidates, [], {[objNull, "VIEW", objNull] checkVisibility [_x, [_x getPos [50, _watchDir], 0.5] call pl_convert_to_heigth_ASL]}, "DESCEND"] call BIS_fnc_sortBy)#0;
                 } else {
-                    _pos = _medicPos;
+                    _defPos = _medicPos;
                     _cover = true;
                 };
             };
@@ -906,79 +1067,79 @@ pl_defend_position = {
 
         // select Best Mg Pos
         if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun") then {
-            _pos = (_mgPos#_mgIdx);
+            _defPos = (_mgPos#_mgIdx);
             _mgIdx = _mgIdx + 1;
             _debugMColor = "colorRed";
         };
 
-        // if (_unit == (leader _group) and !(_buildings isEqualTo []) and (_pos distance2D _cords) > 20) then {
-        //     _pos = _cords findEmptyPosition [0, 25, typeOf _unit];
+        // if (_unit == (leader _group) and !(_buildings isEqualTo []) and (_defPos distance2D _cords) > 20) then {
+        //     _defPos = _cords findEmptyPosition [0, 25, typeOf _unit];
         //     _cover = true;
         //     _debugMColor = "colorYellow";
         // };
 
-        if (_pos isEqualTo []) then {
-            _pos = selectRandom _covers;
+        if (_defPos isEqualTo []) then {
+            _defPos = selectRandom _covers;
             _debugMColor = "colorGrey";
         };
 
-        _pos = ATLToASL _pos;
+        _defPos = ATLToASL _defPos;
         private _unitPos = "UP";
-        if !([_pos] call pl_is_indoor) then {
+        if !([_defPos] call pl_is_indoor) then {
             // _unitPos = "MIDDLE";
             _cover = true;
         };
-        _checkPos = [10*(sin _watchDir), 10*(cos _watchDir), 1] vectorAdd _pos;
-        _crouchPos = [0, 0, 1] vectorAdd _pos;
+        _checkPos = [10*(sin _watchDir), 10*(cos _watchDir), 1] vectorAdd _defPos;
+        _crouchPos = [0, 0, 1] vectorAdd _defPos;
         _vis = lineIntersectsSurfaces [_crouchPos, _checkPos, objNull, objNull, true, 1, "VIEW"];
         if (_vis isEqualTo []) then {
             _unitPos = "MIDDLE";
             // _watchPos = _checkPos;
         };
-        _checkPos = [10*(sin _watchDir), 10*(cos _watchDir), 0.2] vectorAdd _pos;
-        _vis = lineIntersectsSurfaces [_pos, _checkPos, objNull, objNull, true, 1, "VIEW"];
+        _checkPos = [10*(sin _watchDir), 10*(cos _watchDir), 0.2] vectorAdd _defPos;
+        _vis = lineIntersectsSurfaces [_defPos, _checkPos, objNull, objNull, true, 1, "VIEW"];
         if (_vis isEqualTo []) then {
             _unitPos = "DOWN";
             // _watchPos = _checkPos;
         };
 
-        _pos = ASLToATL _pos;
+        _defPos = ASLToATL _defPos;
 
-        // _m = createMarker [str (random 1), _pos];
+        // _m = createMarker [str (random 1), _defPos];
         // _m setMarkerType "mil_dot";
         // _m setMarkerSize [0.5, 0.5];
         // _m setMarkerColor _debugMColor;
 
-        // _helper = createVehicle ["Sign_Sphere25cm_F", _pos, [], 0, "none"];
+        // _helper = createVehicle ["Sign_Sphere25cm_F", _defPos, [], 0, "none"];
         // _helper setObjectTexture [0,'#(argb,8,8,3)color(0,1,0,1)'];
 
-        [_unit, _pos, _watchPos, _unitWatchDir, _unitPos, _cover, _cords, _defenceAreaSize, _defenceWatchPos, _watchDir, _atEscord, _medic, _markerDirName] spawn {
-            params ["_unit", "_pos", "_watchPos", "_unitWatchDir", "_unitPos", "_cover", "_cords", "_defenceAreaSize", "_defenceWatchPos", "_defenceDir", "_atEscord", "_medic", ["_markerDirName", ""]];
+        [_unit, _defPos, _watchPos, _unitWatchDir, _unitPos, _cover, _cords, _defenceAreaSize, _defenceWatchPos, _watchDir, _atEscord, _medic, _markerDirName] spawn {
+            params ["_unit", "_defPos", "_watchPos", "_unitWatchDir", "_unitPos", "_cover", "_cords", "_defenceAreaSize", "_defenceWatchPos", "_defenceDir", "_atEscord", "_medic", ["_markerDirName", ""]];
 
-            // _m = createMarker [str (random 1), _pos];
+            // _m = createMarker [str (random 1), _defPos];
             // _m setMarkerType "mil_dot";
             // _m setMarkerSize [0.5, 0.5];
 
 
-            _unit setVariable ["pl_def_pos", _pos, true];
+            _unit setVariable ["pl_def_pos", _defPos, true];
             _unit disableAI "AUTOCOMBAT";
             _unit disableAI "AUTOTARGET";
             _unit disableAI "TARGET";
             _unit setUnitTrait ["camouflageCoef", 0.7, true];
             _unit setVariable ["pl_damage_reduction", true];
             // _unit disableAI "FSM";
-            _unit doMove _pos;
-            _unit setDestination [_pos, "LEADER DIRECT", true];
+            _unit doMove _defPos;
+            _unit setDestination [_defPos, "LEADER DIRECT", true];
             sleep 1;
             private _counter = 0;
-            while {alive _unit and ((group _unit) getVariable ["onTask", true])} do {
-                sleep 0.5;
-                _dest = [_unit, _pos, _counter] call pl_position_reached_check;
-                if (_dest#0) exitWith {};
-                _pos = _dest#1;
-                _counter = _dest#2;
-            };
-            // waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
+            // while {alive _unit and ((group _unit) getVariable ["onTask", true])} do {
+            //     sleep 0.5;
+            //     _dest = [_unit, _defPos, _counter] call pl_position_reached_check;
+            //     if (_dest#0) exitWith {};
+            //     _defPos = _dest#1;
+            //     _counter = _dest#2;
+            // };
+            waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
             _unit enableAI "AUTOCOMBAT";
             _unit enableAI "AUTOTARGET";
             _unit enableAI "TARGET";
@@ -991,14 +1152,14 @@ pl_defend_position = {
             }
             else
             {
-                if ([_pos] call pl_is_forest or [_pos] call pl_is_city) then {
+                if ([_defPos] call pl_is_forest or [_defPos] call pl_is_city) then {
                     [_unit, _watchPos, _unitWatchDir, 3, false] spawn pl_find_cover;
                 } else {
                     [_unit, _watchPos, _unitWatchDir, 10, false] spawn pl_find_cover;
                 };
             };
             if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
-                [_unit, group _unit, _cords, _defenceAreaSize, _defenceDir, _pos, _atEscord] spawn pl_at_defence;
+                [_unit, group _unit, _cords, _defenceAreaSize, _defenceDir, _defPos, _atEscord] spawn pl_at_defence;
                 sleep 0.1;
                 // _m setMarkerColor "colorOrange";
             };
@@ -1007,7 +1168,7 @@ pl_defend_position = {
                 // _m setMarkerColor "colorRed";
             };
             if (_unit == _medic) then {
-                [(group _unit), _unit, _pos] spawn pl_defence_ccp;
+                [(group _unit), _unit, _defPos] spawn pl_defence_ccp;
                 // _m setMarkerColor "colorGreen";
             };
             if (_unit == (leader (group _unit)) and _markerDirName != "") then {
@@ -1018,7 +1179,9 @@ pl_defend_position = {
 
     // hint (str _allPos);
 
-    waitUntil {sleep 0.5; !(_group getVariable ["onTask", true])};
+    private _breakingPoint = round (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) / 2);
+
+    waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or ({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) <= _breakingPoint};
 
     // deleteMarker _markerAreaName;
     deleteMarker _markerDirName;
@@ -1036,9 +1199,16 @@ pl_defend_position = {
         _group leaveVehicle _x;
     } forEach _weapons;
 
-    {
+    if (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) <= _breakingPoint) then {
+        if (pl_enable_beep_sound) then {playSound "radioina"};
+        if (pl_enable_map_radio) then {[_group, "...Falling Back!", 20] call pl_map_radio_callout};
+        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Falling Back", (groupId _group)]};
+        [_group] spawn pl_disengage;
+    };
+
+    // {
         // pl_draw_building_array = pl_draw_building_array - [[_group, _x]];
-    } forEach _validBuildings;
+    // } forEach _validBuildings;
 };
 
 pl_at_defence = {
@@ -1156,10 +1326,12 @@ pl_at_defence = {
                 };
             };
 
+
             pl_at_attack_array = pl_at_attack_array - [[_atSoldier, _target, _atEscord]];
             _atSoldier setVariable ['pl_is_at', false];
             _atEscord setVariable ['pl_is_at', false];
             _atSoldier doTarget objNull;
+
             if (!alive _target or (count (crew _target) == 0)) then {
                 {
 
@@ -1214,7 +1386,7 @@ pl_defence_suppression = {
     while {_group getVariable ["onTask", false]} do {
         waitUntil {sleep 0.5; !(_group getVariable ["pl_hold_fire", false])};
         // _allTargets = nearestObjects [_watchPos, ["Man", "Car"], 350, true];
-        _enemyTargets = (_watchPos nearEntities [["Man", "Car"], 350]) select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and ((leader _group) knowsAbout _x) > 0};
+        _enemyTargets = (_watchPos nearEntities [["Man", "Car"], 275]) select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and ((leader _group) knowsAbout _x) > 0};
         if (count _enemyTargets > 0) then {
             _firers = [];
             {

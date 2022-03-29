@@ -167,7 +167,7 @@ pl_opfor_dynamic_cover = {
 	(leader _grp) playActionNow "GestureCover";
 	if ([getPos (leader _grp)] call pl_is_city) then {
 		{
-			[_x, _movePos, _watchDir, 20, false] spawn pl_opfor_find_cover;
+			[_x, _movePos, getdir _x, 20, false] spawn pl_opfor_find_cover;
 		} forEach (units _grp);
 	} else {
 		[_grp, _targetDir] call pl_opfor_form_line;

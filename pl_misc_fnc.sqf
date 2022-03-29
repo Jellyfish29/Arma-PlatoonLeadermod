@@ -36,6 +36,7 @@ pl_reset = {
         _unit limitSpeed 5000;
         _unit forceSpeed -1;
         _unit doWatch objNull;
+        _unit allowDamage true;
         if (vehicle _unit == _unit) then {
             _unit doFollow (leader _group);
         };

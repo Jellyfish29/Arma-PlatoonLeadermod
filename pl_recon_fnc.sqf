@@ -209,10 +209,11 @@ Pl_marta = {
     private _sideColorRGB = [0.5,0,0,0.5];
     private _side = side _leader;
     private _sidePrefix = "o";
-    switch (_opfGrp getVariable ["pl_opf_side", sideEmpty]) do { 
-        case west : {_sideColor = "colorBlufor"; _sideColorRGB = [0,0.3,0.6,0.5]; _sidePrefix = "b";}; 
-        case east : {_sideColor = "colorOpfor"; _sideColorRGB = [0.5,0,0,0.5]; _sidePrefix = "o";};
-        case resistance : {_sideColor = "colorIndependent"; _sideColorRGB = [0,0.5,0,0.5]; _sidePrefix = "n";};
+
+    switch (_opfGrp getVariable ["pl_opf_side", side _opfGrp]) do { 
+        case west : {_sideColor = "colorBlufor"; _sideColorRGB = [0,0.3,0.6,0.5]; _sidePrefix = "b"}; 
+        case east : {_sideColor = "colorOpfor"; _sideColorRGB = [0.5,0,0,0.5]; _sidePrefix = "o"};
+        case resistance : {_sideColor = "colorIndependent"; _sideColorRGB = [0,0.5,0,0.5]; _sidePrefix = "n"};
         default {_sideColor = "exit"; _sideColorRGB = [0.5,0,0,0.5];}; 
     };
 
@@ -223,7 +224,6 @@ Pl_marta = {
     if (((random 1) < 0.5 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.15 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
 
         _unitText = getText (configFile >> "CfgVehicles" >> typeOf (vehicle (leader _opfGrp)) >> "textSingular");
-
 
         private _status = "f";
         if !(_reveal) then {
