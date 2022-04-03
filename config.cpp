@@ -690,22 +690,22 @@ class RscHCGroupRootMenu
             //     enable="1";
             //     speechId=0;
             // };
-            class Pldisengage
-            {
-                title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa'/><t> Disengage</t>";
-                shortcuts[]={5};
-                shortcutsAction = "CommandingMenu5";
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_disengage";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-                cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
-            };
+            // class Pldisengage
+            // {
+            //     title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa'/><t> Disengage</t>";
+            //     shortcuts[]={5};
+            //     shortcutsAction = "CommandingMenu5";
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="{[_x] spawn pl_disengage} forEach (hcSelected player)";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            //     cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
+            // };
             class PlSeperator21
             {
                 title="";
@@ -2565,6 +2565,80 @@ class CfgMarkers
         texture="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
     };
 
+    class o_f_tankaa_pl: o_f_tank_pl
+    {
+        name="AA Tank Opfor";
+        icon="\Plmod\gfx\marta\o_f_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_tankaa_pl.paa";
+    };
+    class o_s_tankaa_pl: o_f_tank_pl
+    {
+        name="AA Tank Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_tankaa_pl.paa";
+    };
+    class b_f_tankaa_pl: b_f_tank_pl
+    {
+        name="AA Tank Blufor";
+        icon="\Plmod\gfx\marta\b_f_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_tankaa_pl.paa";
+    };
+    class b_s_tankaa_pl: b_f_tank_pl
+    {
+        name="AA Tank Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_tankaa_pl.paa";
+    };
+    class n_f_tankaa_pl: n_f_tank_pl
+    {
+        name="AA Tank Independent";
+        icon="\Plmod\gfx\marta\n_f_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_tankaa_pl.paa";
+    };
+    class n_s_tankaa_pl: n_f_tank_pl
+    {
+        name="AA Tank Independent Suspected";
+        icon="\Plmod\gfx\marta\n_s_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_tankaa_pl.paa";
+    };
+
+    class o_f_artgun_pl: o_f_tank_pl
+    {
+        name="SP Howitzer Opfor";
+        icon="\Plmod\gfx\marta\o_f_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_artgun_pl.paa";
+    };
+    class o_s_artgun_pl: o_f_tank_pl
+    {
+        name="SP Howitzer Opfor Suspected";
+        icon="\Plmod\gfx\marta\o_s_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\o_s_artgun_pl.paa";
+    };
+    class b_f_artgun_pl: b_f_tank_pl
+    {
+        name="SP Howitzer Blufor";
+        icon="\Plmod\gfx\marta\b_f_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_artgun_pl.paa";
+    };
+    class b_s_artgun_pl: b_f_tank_pl
+    {
+        name="SP Howitzer Blufor Suspected";
+        icon="\Plmod\gfx\marta\b_s_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_artgun_pl.paa";
+    };
+    class n_f_artgun_pl: n_f_tank_pl
+    {
+        name="SP Howitzer Independent";
+        icon="\Plmod\gfx\marta\n_f_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_artgun_pl.paa";
+    };
+    class n_s_artgun_pl: n_f_tank_pl
+    {
+        name="SP Howitzer Independent Suspected";
+        icon="\Plmod\gfx\marta\n_s_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\n_s_artgun_pl.paa";
+    };
+
     class unknown_f_pl: n_f_tank_pl
     {
         name="Unknown";
@@ -2692,6 +2766,18 @@ class cfgGroupIcons
         icon="\Plmod\gfx\marta\b_f_tank_sup_pl.paa";
         texture="\Plmod\gfx\marta\b_f_tank_sup_pl.paa";
     };
+    class b_f_tankaa_sup_pl: b_unknown_pl
+    {
+        name="AA Tank support Blufor";
+        icon="\Plmod\gfx\marta\b_f_tankaa_sup_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_tankaa_sup_pl.paa";
+    };
+    class b_f_artgun_sup_pl: b_unknown_pl
+    {
+        name="Howitzer Blufor";
+        icon="\Plmod\gfx\marta\b_f_artgun_sup_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_artgun_sup_pl.paa";
+    };
 
     class b_f_t_inf_pl: b_unknown_pl
     {
@@ -2778,7 +2864,6 @@ class cfgGroupIcons
         icon="\Plmod\gfx\marta b_f_planea_pl.paa";
         texture="\Plmod\gfx\marta b_f_planea_pl.paa";
     };
-
 
     class o_f_tank_pl: o_unknown_pl
     {
@@ -2875,6 +2960,18 @@ class cfgGroupIcons
         name="tank support Independet";
         icon="\Plmod\gfx\marta o_f_planea_pl.paa";
         texture="\Plmod\gfx\marta o_f_planea_pl.paa";
+    };
+    class o_f_tankaa_pl: o_unknown_pl
+    {
+        name="AA Tank Opfor";
+        icon="\Plmod\gfx\marta o_f_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta o_f_tankaa_pl.paa";
+    };
+    class o_f_artgun_pl: o_unknown_pl
+    {
+        name="Howitzer Opfor";
+        icon="\Plmod\gfx\marta o_f_artgun_pl.paa";
+        texture="\Plmod\gfx\marta o_f_artgun_pl.paa";
     };
 
     class o_f_t_inf_pl: o_unknown_pl
@@ -3035,6 +3132,18 @@ class cfgGroupIcons
         name="tank support Independet";
         icon="\Plmod\gfx\marta n_f_planea_pl.paa";
         texture="\Plmod\gfx\marta n_f_planea_pl.paa";
+    };
+    class n_f_tankaa_pl: n_unknown_pl
+    {
+        name="AA Tank Independet";
+        icon="\Plmod\gfx\marta n_f_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta n_f_tankaa_pl.paa";
+    };
+    class n_f_artgun_pl: n_unknown_pl
+    {
+        name="Howitzer Independet";
+        icon="\Plmod\gfx\marta n_f_artgun_pl.paa";
+        texture="\Plmod\gfx\marta n_f_artgun_pl.paa";
     };
 
     class n_f_t_inf_pl: n_unknown_pl

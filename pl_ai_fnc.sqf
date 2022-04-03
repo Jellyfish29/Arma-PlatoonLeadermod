@@ -609,6 +609,8 @@ pl_vehicle_setup = {
     params ["_vic"];
 
     if (_vic isKindOf "Air") exitWith {};
+ 
+    if ((([_vic] call BIS_fnc_objectType)#1) == "StaticWeapon") exitWith {};
 
     _vic setUnloadInCombat [false, false];
     _vic allowCrewInImmobile true;
@@ -750,6 +752,8 @@ pl_vehicle_setup = {
     _vic setVariable ["pl_vic_inv", _vicInv];
 };
 
+pl_active_opfor_vic_grps = [];
+
 pl_ai_setUp_loop = {
     while {pl_hc_active} do {
         {
@@ -759,9 +763,15 @@ pl_ai_setUp_loop = {
             }
             else
             {
-                // _x limitSpeed 45;
-                _x setUnloadInCombat [true, false];
-                _x allowCrewInImmobile true;
+                if (([(side _x), playerside] call BIS_fnc_sideIsEnemy) and side _x != civilian) then {
+                    if (pl_opfor_enhanced_ai) then {
+                        if !(_x getVariable ["pl_opfor_ai_enabled", false]) then {
+                            (group (driver _x)) execFSM "Plmod\fsm\pl_opfor_cmd_vic_2.fsm";
+                            pl_active_opfor_vic_grps pushback (group (driver _x));
+                            (group (driver _x)) setVariable ["pl_opfor_ai_enabled", true];
+                        };
+                    };
+                };
             };
         } forEach vehicles;
 
@@ -800,13 +810,9 @@ pl_ai_setUp_loop = {
                 };
 
                 if (pl_opfor_enhanced_ai) then {
-                    if !(_x getVariable ["pl_opfor_ai_enabled", false]) then {
+                    if (!(_x getVariable ["pl_opfor_ai_enabled", false]) and !(_x in pl_active_opfor_vic_grps)) then {
                         _x setVariable ["pl_opfor_ai_enabled", true];
-                        if (vehicle (leader _x) == (leader _x)) then {
-                            _x execFSM "\Plmod\fsm\pl_opfor_cmd.fsm";
-                        } else {
-                            _x execFSM "\Plmod\fsm\pl_opfor_cmd_vic.fsm";
-                        };
+                        _x execFSM "Plmod\fsm\pl_opfor_cmd_inf_2.fsm";
                     };
                 };
             };

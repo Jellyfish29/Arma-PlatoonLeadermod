@@ -1505,6 +1505,8 @@ pl_last_tac_pos = getPos player;
 
 pl_open_tac_map = {
 
+    if (visibleMap) exitwith {};
+
     // setGroupIconsVisible [true,false]; 
     if !(isNull findDisplay 2000) exitWith {
         pl_last_tac_zoom = ctrlMapScale (findDisplay 2000 displayCtrl 2000);
@@ -1521,8 +1523,8 @@ pl_open_tac_map = {
 
     // with uiNamespace do {
     //     pl_pouch_gfx = findDisplay 2000 ctrlCreate ["RscPicture", -1];
-    //     pl_pouch_gfx ctrlSetPosition [0.5237812 * safezoneW + safezoneX,0.234 * safezoneH + safezoneY,1,1 ];
-    //     pl_pouch_gfx ctrlSetText "plmod\gfx\pl_map_pouch1.paa";
+    //     pl_pouch_gfx ctrlSetPosition [0.385 * safezoneW + safezoneX, -0.009 * safezoneH + safezoneY,2.5,2.5 ];
+    //     pl_pouch_gfx ctrlSetText "plmod\gfx\pl_mapbag_1.paa";
     //     pl_pouch_gfx ctrlCommit 0;
     // };
 
@@ -1534,6 +1536,23 @@ pl_open_tac_map = {
 
     [] call pl_show_tac_map_icons;
 };
+
+// ////////////////////////////////////////////////////////
+// // GUI EDITOR OUTPUT START (by Jellyfish, v1.063, #Jaluly)
+// ////////////////////////////////////////////////////////
+
+// class RscFrame_1800: RscFrame
+// {
+//     idc = 1800;
+//     x = 0.658579 * safezoneW + safezoneX;
+//     y = 0.105138 * safezoneH + safezoneY;    
+//     w = 0.343589 * safezoneW;
+//     h = 0.902541 * safezoneH;
+// };
+// ////////////////////////////////////////////////////////
+// // GUI EDITOR OUTPUT END
+// ////////////////////////////////////////////////////////
+
 
 
 
@@ -1549,7 +1568,7 @@ pl_open_tac_forced = {
     // with uiNamespace do {
     //     pl_pouch_gfx = findDisplay 2000 ctrlCreate ["RscPicture", -1];
     //     pl_pouch_gfx ctrlSetPosition [0.5237812 * safezoneW + safezoneX,0.234 * safezoneH + safezoneY,1,1 ];
-    //     pl_pouch_gfx ctrlSetText "plmod\gfx\pl_map_pouch1.paa";
+    //     pl_pouch_gfx ctrlSetText "plmod\gfx\pl_mapmag_1.paa";
     //     pl_pouch_gfx ctrlCommit 0;
     // };
 

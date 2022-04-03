@@ -264,7 +264,7 @@ pl_dismount_cargo = {
         };
     } forEach _cargo;
 
-    _group setFormation "STAG COLUMN";
+    // _group setFormation "STAG COLUMN";
     _vic lockCargo true;
 
     waitUntil {sleep 0.5; !(_group getVariable ["pl_is_dismounted", false])};
@@ -348,6 +348,7 @@ pl_unload_at_position_planed = {
     private _cargoPers = [];
     {
         _cGroup = _x;
+        [_x] spawn pl_reset;
         // moveOut (leader _x);
         if !(_cGroup getVariable ["pl_show_info", false]) then {
             // [_cGroup] call pl_show_group_icon;
@@ -695,14 +696,14 @@ pl_convoy = {
                     if (_distance > 40 and (speed _vic) < 8) then {
                         _vic limitSpeed 1000;
                     };
-                    if ((speed _vic) == 0 or _distance > 300) then {
+                    if ((speed _vic) <= 3) then {
                         _time = time + 20;
                         if !(_startReset) then {
                             _time = time + 3;
                             _startReset = true;
                         };
                         waitUntil {sleep 0.5; speed _vic > 5 or time > _time or !(_group getVariable ["onTask", true])};
-                        if ((speed _vic) <= 0  and (_group getVariable ["onTask", true]) and (speed _forward) >= 5) then {
+                        if ((speed _vic) <= 3  and (_group getVariable ["onTask", true]) and (speed _forward) >= 5) then {
                             doStop _vic:
                             sleep 0.3;
                             [getPos _vic, 20] call pl_clear_obstacles;
@@ -773,10 +774,10 @@ pl_convoy = {
                         _vic setDestination [(_passigPoints#_ppidx),"VEHICLE PLANNED" , true];
                     };
 
-                    if ((speed _vic) == 0) then {
+                    if ((speed _vic) <= 3) then {
                         _time = time + 6;
                         waitUntil {sleep 0.5; speed _vic > 5 or time > _time or !(_group getVariable ["onTask", true])};
-                        if ((speed _vic) <= 0 and (_group getVariable ["onTask", true])) then {
+                        if ((speed _vic) <= 3 and (_group getVariable ["onTask", true])) then {
                             // [_group] call pl_reset;
                             doStop _vic;
                             [getPos _vic, 20] call pl_clear_obstacles;

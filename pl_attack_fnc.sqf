@@ -818,9 +818,12 @@ pl_assault_position = {
             };
         } else {
             if (pl_enable_beep_sound) then {playSound "radioina"};
-            if (pl_enable_map_radio) then {[_group, "...Falling Back!", 20] call pl_map_radio_callout};
-            if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Falling Back", (groupId _group)]};
-            [_group] spawn pl_disengage;
+            if (pl_enable_map_radio) then {[_group, "...Assault failed!", 20] call pl_map_radio_callout};
+            if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Assault failed", (groupId _group)]};
+            // [_group] spawn pl_disengage;
+            {
+                [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
+            } forEach (units _group);
         };
     };
 };

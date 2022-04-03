@@ -231,8 +231,8 @@ pl_is_indoor = {
 
 pl_is_city = {
     params ["_cpos"];
-    _buildings = nearestTerrainObjects [_cpos, ["House"], 50, false, true];
-    if (count _buildings >= 3) exitWith {true};
+    _buildings = nearestTerrainObjects [_cPos, ["House"], 75, false, true];
+    if (count _buildings >= 2) exitWith {true};
     false
 };
 
@@ -279,6 +279,16 @@ pl_angle_switcher = {
         _a = _a + 360;
     };
     _a
+};
+
+pl_nearestRoad = {
+    params ["_center", "_radius", ["_blackList", []]];
+
+    private _roads = _center nearRoads _radius;
+
+    _validRoads = _roads select {!(((getRoadInfo _x)#0) in _blackList)};
+
+    ([_validRoads, [], {(getpos _x) distance2D _center}, "ASCEND"] call BIS_fnc_sortBy)#0  
 };
 
 pl_find_highest_point = {

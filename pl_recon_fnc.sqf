@@ -219,7 +219,6 @@ Pl_marta = {
 
     if (_sideColor == "exit") exitWith {};
 
-
     // 50 % chance to create Marker
     if (((random 1) < 0.5 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.15 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
 

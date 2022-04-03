@@ -247,9 +247,9 @@ pl_ccp_revive_action = {
     if (_group getVariable [_waitVar, true] and (alive _healTarget) and (alive _medic) and !(_medic getVariable ["pl_wia", false]) and ((_medic distance2D _healTarget) <= 5)) then {
         // _medic setUnitPos "MIDDLE";
 
-        _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500 or (_ccpPos distance2D _healTarget) >= 200};
-        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0) then {
-            if ((_ccpPos distance2D _healTarget) > _minDragRange) then {
+        _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500};
+        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0  ) then {
+            if ((_ccpPos distance2D _healTarget) > _minDragRange and ((_ccpPos distance2D _healTarget) < 200)) then {
                 _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
                 waitUntil {sleep 0.5; scriptDone _dragScript};
             };
@@ -310,9 +310,12 @@ pl_ccp_revive_action = {
 
         if !(_ccpPos isEqualTo []) then {
             _medic doMove _ccpPos;
-            _escort doFollow _medic;
+            _medic setDestination [_ccpPos, "LEADER DIRECT", true];
+            _escort doMove _ccpPos;
+            _escort setDestination [_ccpPos, "LEADER DIRECT", true];
         } else {
             _medic doFollow (leader (group _medic));
+            _escort doFollow (leader (group _medic));
         };
         _escort enableAI "AUTOCOMBAT";
         _escort enableAI "FSM";
@@ -453,9 +456,9 @@ pl_ccp = {
         };
     } forEach (units _group);
     // _escort = nil;
-    // player sideChat "erstens is da";
+
     if !(isNil "_medic") then {
-        // player sideChat "Medic is da";
+
         if !(_medic getVariable ["pl_wia", false]) then {
 
             pl_ccp_size = 300;
@@ -537,7 +540,7 @@ pl_ccp = {
 
 
             pl_ccp_set = true;
-            if (count (units _group) > 2) then {
+            if (count (units _group) > 3) then {
                 {
                     if (_x != _medic and _x != (leader _group) and !(_x getVariable "pl_wia") and (alive _x)) exitWith {
                         _escort = _x;
@@ -582,12 +585,6 @@ pl_ccp = {
             }
             else
             {
-                sleep 0.5;
-                _ambPos = [random 2, random 2] vectorAdd _ccpPos;
-                _medKit = "Item_Medikit" createVehicle _ambPos;
-                sleep 0.5;
-                _medGarbage = "MedicalGarbage_01_3x3_v1_F" createVehicle _ambPos;
-                sleep 1;
                 _medic doMove _ccpPos;
                 _medic setDestination [_ccpPos, "LEADER DIRECT", true];
             };
@@ -621,16 +618,12 @@ pl_ccp = {
                     };
                 } forEach (_healTargets select {side _x isEqualTo playerSide});
                 sleep 1;
-                // if ((_medic distance2D _ccpPos) > 20) then {
-                //     _medic doMove _ccpPos;
-                //     if !(isNil "_escort") then {
-                //         _escort doMove _ccpPos;
-                //     };
-                // };
-                // _medic enableAI "AUTOCOMBAT";
-                // _medic enableAI "AUTOTARGET";
-                // _medic enableAI "TARGET";
-                // _medic enableAI "FSM";
+                if ((_medic distance2D _ccpPos) < 10) then {
+                    doStop _medic;
+                    if !(isNil "_escort") then {
+                        doStop _escort;
+                    };
+                };
             };
 
             _group setVariable ["setSpecial", false];
@@ -647,10 +640,6 @@ pl_ccp = {
             deleteMarker _markerNameInner;
             pl_active_ccps = pl_active_ccps - [_ccpPos];
             // [_marker3D] call pl_remove_3d_icon;
-            if !(isNil "_medKit") then {
-                deleteVehicle _medKit;
-                deleteVehicle _medGarbage;
-            };
             pl_ccp_set = false;
 
             if (vehicle (leader _group) != leader _group and _group != (group player)) then {

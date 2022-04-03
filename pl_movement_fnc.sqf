@@ -55,7 +55,7 @@ pl_march = {
 
     if (isNil {_group getVariable "pl_on_march"}) then {
         [_group] call pl_reset;
-        sleep 0.2;
+        // sleep 0.2;
 
         // if (pl_enable_beep_sound) then {playSound "beep"};
         [_group, "confirm", 1] call pl_voice_radio_answer;

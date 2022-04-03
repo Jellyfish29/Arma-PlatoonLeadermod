@@ -43,9 +43,9 @@ pl_get_has_static = {
 
 
 pl_static_unpack = {
-    params ["_group", "_weaponPos", "_targetPos"];
+    params ["_supportUnits", "_group", "_weaponPos", "_targetPos"];
 
-    private _supportUnits = units _group;
+    // private _supportUnits = units _group;
     if ((count _supportUnits) < 2) exitWith {[false, []]};
     private _gunner = 
     {

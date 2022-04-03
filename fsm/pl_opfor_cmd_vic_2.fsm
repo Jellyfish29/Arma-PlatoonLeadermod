@@ -1,0 +1,451 @@
+/*%FSM<COMPILE "scriptedFSM.cfg, pl_opfor_cmd_vic_2">*/
+/*%FSM<HEAD>*/
+/*
+item0[] = {"Start",0,250,97.142822,-31.562500,187.142822,18.437500,0.000000,"Start"};
+item1[] = {"immobile",4,218,-32.825409,182.706161,57.174591,232.706161,2.000000,"immobile"};
+item2[] = {"mobile",4,218,273.451263,194.993927,363.451263,244.993927,1.000000,"mobile"};
+item3[] = {"In_Position",2,250,-32.528198,317.265503,57.471878,373.904907,0.000000,"In Position"};
+item4[] = {"mobile",2,250,405.506531,200.366150,495.506531,250.366150,0.000000,"mobile"};
+item5[] = {"has_Cargo",4,218,777.501160,64.028259,867.501160,114.028259,0.000000,"has Cargo"};
+item6[] = {"no_Cargo",4,218,862.838135,288.360046,952.838013,338.360046,0.000000,"no Cargo"};
+item7[] = {"Combat",4,218,543.823975,200.365784,633.823975,250.365784,0.000000,"Combat"};
+item8[] = {"in_Combat",2,250,676.612244,202.578857,766.612244,252.578857,0.000000,"in Combat"};
+item9[] = {"Check",2,250,1185.654663,5.912476,1275.654663,55.912476,0.000000,"Check"};
+item10[] = {"Loop",2,250,924.271790,12.763931,1014.271423,62.763931,0.000000,"Loop"};
+item11[] = {"Delay",4,218,1039.422729,79.536285,1129.422485,129.536285,0.000000,"Delay"};
+item12[] = {"Return",8,218,1048.289795,-59.910843,1138.289673,-9.910843,0.000000,"Return"};
+item13[] = {"Unload_",4,218,1188.593262,151.188416,1278.593262,201.188416,1.000000,"Unload?"};
+item14[] = {"Dismount_Support",3,250,1042.239502,150.341187,1132.239380,200.341187,0.000000,"Dismount" \n "Support"};
+item15[] = {"cargo_Dead",4,218,903.583984,149.848053,993.584045,199.848053,0.000000,"cargo" \n "Dead"};
+item16[] = {"Check_1",2,250,1351.587280,328.865143,1441.587280,378.865173,0.000000,"Check"};
+item17[] = {"Loop_1",2,250,1033.744507,347.231171,1123.744507,397.231140,0.000000,"Loop"};
+item18[] = {"Delay",4,218,1203.915649,358.452911,1293.915649,408.452942,0.000000,"Delay"};
+item19[] = {"Return",8,218,1199.591187,211.045303,1289.591309,261.045441,0.000000,"Return"};
+item20[] = {"__150m",4,218,1201.487915,282.321167,1291.487915,332.321167,3.000000,"<150m"};
+item21[] = {"no_Wp",4,218,1200.515625,497.820007,1290.515869,547.820129,2.000000,"no Wp"};
+item22[] = {"__alive",4,218,550.202148,658.916199,640.202148,708.916199,10.000000,"!alive"};
+item23[] = {"End",1,250,545.877991,774.071045,635.877991,824.071045,0.000000,"End"};
+link0[] = {0,1};
+link1[] = {0,2};
+link2[] = {1,3};
+link3[] = {2,4};
+link4[] = {3,2};
+link5[] = {4,7};
+link6[] = {4,22};
+link7[] = {5,10};
+link8[] = {6,17};
+link9[] = {7,8};
+link10[] = {8,5};
+link11[] = {8,6};
+link12[] = {9,12};
+link13[] = {9,13};
+link14[] = {10,11};
+link15[] = {10,22};
+link16[] = {11,9};
+link17[] = {12,10};
+link18[] = {13,14};
+link19[] = {14,15};
+link20[] = {14,22};
+link21[] = {15,8};
+link22[] = {16,19};
+link23[] = {16,20};
+link24[] = {16,21};
+link25[] = {17,18};
+link26[] = {17,22};
+link27[] = {18,16};
+link28[] = {19,17};
+link29[] = {20,17};
+link30[] = {21,4};
+link31[] = {22,23};
+globals[] = {0.000000,0,0,0,0,640,480,1,32,6316128,1,43.191154,1508.780518,945.924561,-352.646057,1404,1244,1};
+window[] = {2,-1,-1,-1,-1,1107,78,1997,78,3,1422};
+*//*%FSM</HEAD>*/
+class FSM
+{
+        fsmName = "pl_opfor_cmd_vic_2";
+        class States
+        {
+                /*%FSM<STATE "Start">*/
+                class Start
+                {
+                        name = "Start";
+                        itemno = 0;
+                        init = /*%FSM<STATEINIT""">*/"private [""_time"", ""_cargo"", ""_cargoGroups"", ""_targets"", ""_targetDistance""];" \n
+                         "" \n
+                         "private _grp = _this;" \n
+                         "private _vic = vehicle (leader _grp);" \n
+                         "" \n
+                         "if (_vic isKindof ""Air"") exitwith {};" \n
+                         "" \n
+                         "private _side = side (leader _grp);" \n
+                         "_vic limitspeed 35;" \n
+                         "_vic setUnloadInCombat [false, false];" \n
+                         "_vic allowCrewInImmobile true;" \n
+                         "_grp allowFleeing 0;" \n
+                         "" \n
+                         "private _crewClassName = getText (configFile >> ""CfgVehicles"" >> typeOf _vic >> ""crew"");"/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "immobile">*/
+                                class immobile
+                                {
+                                        itemno = 1;
+                                        priority = 2.000000;
+                                        to="In_Position";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"(currentWaypoint _grp) >= count (waypoints _grp) and ((leader _grp) checkAIFeature ""PATH"");" \n
+                                         ""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "mobile">*/
+                                class mobile
+                                {
+                                        itemno = 2;
+                                        priority = 1.000000;
+                                        to="mobile";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"(currentWaypoint _grp) < count (waypoints _grp) and (leader _grp) checkAIFeature ""PATH"";"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_time = time + 3 + (random 2);"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "In_Position">*/
+                class In_Position
+                {
+                        name = "In_Position";
+                        itemno = 3;
+                        init = /*%FSM<STATEINIT""">*/"[_grp] spawn pl_opfor_vic_suppress_cont;"/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "mobile">*/
+                                class mobile
+                                {
+                                        itemno = 2;
+                                        priority = 1.000000;
+                                        to="mobile";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"(currentWaypoint _grp) < count (waypoints _grp) and (leader _grp) checkAIFeature ""PATH"";"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_time = time + 3 + (random 2);"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "mobile">*/
+                class mobile
+                {
+                        name = "mobile";
+                        itemno = 4;
+                        init = /*%FSM<STATEINIT""">*/"_cargo = (crew _vic) - (units _grp);" \n
+                         "_cargoGroups = [];" \n
+                         "if !(_cargo isEqualto []) then {" \n
+                         "	{" \n
+                         "    	if !(_x in (units _grp)) then {" \n
+                         "      	  _cargoGroups pushBack (group _x);" \n
+                         "   	 };" \n
+                         "	} forEach _cargo;" \n
+                         "	_cargoGroups = _cargoGroups arrayIntersect _cargoGroups;" \n
+                         "};" \n
+                         "" \n
+                         ""/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "__alive">*/
+                                class __alive
+                                {
+                                        itemno = 22;
+                                        priority = 10.000000;
+                                        to="End";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp)) or !(canMove _vic);" \n
+                                         ""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Combat">*/
+                                class Combat
+                                {
+                                        itemno = 7;
+                                        priority = 0.000000;
+                                        to="in_Combat";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"behaviour (leader _grp) == ""COMBAT"";"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "in_Combat">*/
+                class in_Combat
+                {
+                        name = "in_Combat";
+                        itemno = 8;
+                        init = /*%FSM<STATEINIT""">*/"_vic limitspeed 25;" \n
+                         ""/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "no_Cargo">*/
+                                class no_Cargo
+                                {
+                                        itemno = 6;
+                                        priority = 0.000000;
+                                        to="Loop_1";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"_cargoGroups isEqualto []"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_time = time + 3 + (random 1);" \n
+                                         "_vic setUnloadInCombat [true, true];"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "has_Cargo">*/
+                                class has_Cargo
+                                {
+                                        itemno = 5;
+                                        priority = 0.000000;
+                                        to="Loop";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"!(_cargoGroups isEqualto []);"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_time = time + 3 + (random 1);"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "Check">*/
+                class Check
+                {
+                        name = "Check";
+                        itemno = 9;
+                        init = /*%FSM<STATEINIT""">*/"_targets = (((getPos (leader _grp)) nearEntities [[""Man"", ""Car"", ""Tank""], 1000]) select {side _x == playerSide});" \n
+                         "if !(_targets isEqualto []) then {" \n
+                         "	_target = ([_targets, [], {(leader _grp) distance2D _x}, ""ASCEND""] call BIS_fnc_sortBy)#0;" \n
+                         "	_targetdistance = _vic distance2D _target;" \n
+                         "} else {" \n
+                         "	_targetdistance = 1000;" \n
+                         "};"/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "Unload_">*/
+                                class Unload_
+                                {
+                                        itemno = 13;
+                                        priority = 1.000000;
+                                        to="Dismount_Support";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"_targetdistance < 700 or !(canMove _vic);"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"[_grp, _vic, _cargo, _cargoGroups] spawn pl_opfor_drop_cargo;" \n
+                                         "_time = _time + 20;"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Return">*/
+                                class Return
+                                {
+                                        itemno = 12;
+                                        priority = 0.000000;
+                                        to="Loop";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_time = time + 2 + (random 1);"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "Loop">*/
+                class Loop
+                {
+                        name = "Loop";
+                        itemno = 10;
+                        init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "__alive">*/
+                                class __alive
+                                {
+                                        itemno = 22;
+                                        priority = 10.000000;
+                                        to="End";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp)) or !(canMove _vic);" \n
+                                         ""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Delay">*/
+                                class Delay
+                                {
+                                        itemno = 11;
+                                        priority = 0.000000;
+                                        to="Check";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"time >= _time;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "Dismount_Support">*/
+                class Dismount_Support
+                {
+                        name = "Dismount_Support";
+                        itemno = 14;
+                        init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "__alive">*/
+                                class __alive
+                                {
+                                        itemno = 22;
+                                        priority = 10.000000;
+                                        to="End";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp)) or !(canMove _vic);" \n
+                                         ""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "cargo_Dead">*/
+                                class cargo_Dead
+                                {
+                                        itemno = 15;
+                                        priority = 0.000000;
+                                        to="in_Combat";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"({alive _x} count _cargo) <= 0;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "Check_1">*/
+                class Check_1
+                {
+                        name = "Check_1";
+                        itemno = 16;
+                        init = /*%FSM<STATEINIT""">*/"private _alliedInf = ((getPos (leader _grp)) nearEntities [[""Man""], 100]) select {side _x == _side and alive _x};" \n
+                         "" \n
+                         "_targets = (((getPos (leader _grp)) nearEntities [[""Man"", ""Car"", ""Tank""], 1000]) select {side _x == playerSide});" \n
+                         "if !(_targets isEqualto []) then {" \n
+                         "	_target = ([_targets, [], {(leader _grp) distance2D _x}, ""ASCEND""] call BIS_fnc_sortBy)#0;" \n
+                         "	_targetdistance = _vic distance2D _target;" \n
+                         "} else {" \n
+                         "	_targetdistance = 1000;" \n
+                         "};" \n
+                         "" \n
+                         "" \n
+                         ""/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "__150m">*/
+                                class __150m
+                                {
+                                        itemno = 20;
+                                        priority = 3.000000;
+                                        to="Loop_1";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"_targetdistance < 150;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_vic forceSpeed 0;" \n
+                                         "_time = time + 80;" \n
+                                         "[_grp] call pl_opfor_vic_suppress;"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "no_Wp">*/
+                                class no_Wp
+                                {
+                                        itemno = 21;
+                                        priority = 2.000000;
+                                        to="mobile";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"((currentWaypoint _grp) >= count (waypoints _grp)) and _targetdistance >= 1000;" \n
+                                         ""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"[_grp] spawn pl_opfor_attack_closest_enemy;" \n
+                                         ""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Return">*/
+                                class Return
+                                {
+                                        itemno = 19;
+                                        priority = 0.000000;
+                                        to="Loop_1";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_time = time + 2 + (random 1);" \n
+                                         "_vic forceSpeed -1;"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "Loop_1">*/
+                class Loop_1
+                {
+                        name = "Loop_1";
+                        itemno = 17;
+                        init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "__alive">*/
+                                class __alive
+                                {
+                                        itemno = 22;
+                                        priority = 10.000000;
+                                        to="End";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"!alive _vic or (_grp getVariable [""pl_opfor_retreat"", false]) or (vehicle (leader _grp) == (leader _grp)) or !(canMove _vic);" \n
+                                         ""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Delay">*/
+                                class Delay
+                                {
+                                        itemno = 18;
+                                        priority = 0.000000;
+                                        to="Check_1";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"time >= _time;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "End">*/
+                class End
+                {
+                        name = "End";
+                        itemno = 23;
+                        init = /*%FSM<STATEINIT""">*/"pl_active_opfor_vic_grps deleteAt (pl_active_opfor_vic_grps find _grp);" \n
+                         "" \n
+                         "if (vehicle (leader _grp) == (leader _grp) and typeOf (vehicle (leader _grp)) == _crewClassName) then {" \n
+                         "	[_grp] call pl_opfor_surrender;" \n
+                         "};"/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                        };
+                };
+                /*%FSM</STATE>*/
+        };
+        initState="Start";
+        finalStates[] =
+        {
+                "End",
+        };
+};
+/*%FSM</COMPILE>*/
