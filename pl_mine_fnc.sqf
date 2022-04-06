@@ -113,8 +113,17 @@ pl_mine_clearing = {
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+        if (vehicle (leader _group) != leader _group) then {
+            if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
+            } else {
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+            };
+        } else {
+            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
+        };
         _group setVariable ["pl_disembark_finished", nil];
+
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
@@ -143,7 +152,7 @@ pl_mine_clearing = {
     } forEach (units _group);
 
     {
-        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+        [_x, 15, getDir _x] spawn pl_find_cover;
     } forEach (units _group) - [_engineer] - [_escort];
 
     _engineer disableAI "AUTOCOMBAT";
@@ -392,8 +401,17 @@ pl_lay_mine_field = {
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+        if (vehicle (leader _group) != leader _group) then {
+            if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
+            } else {
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+            };
+        } else {
+            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
+        };
         _group setVariable ["pl_disembark_finished", nil];
+
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
@@ -453,7 +471,7 @@ pl_lay_mine_field = {
     } forEach (units _group);
 
     {
-        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+        [_x, 15, getDir _x] spawn pl_find_cover;
     } forEach (units _group) - [_exSpecialist] - [_escort];
 
     _exSpecialist disableAI "AUTOCOMBAT";
@@ -599,8 +617,17 @@ pl_place_charge = {
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
-        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+        if (vehicle (leader _group) != leader _group) then {
+            if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
+            } else {
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+            };
+        } else {
+            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
+        };
         _group setVariable ["pl_disembark_finished", nil];
+
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
@@ -630,7 +657,7 @@ pl_place_charge = {
     } forEach (units _group);
 
     {
-        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+        [_x, 15, getDir _x] spawn pl_find_cover;
     } forEach (units _group) - [_exSpecialist] - [_escort];
 
     _exSpecialist disableAI "AUTOCOMBAT";
@@ -829,7 +856,7 @@ pl_destroy_bridge = {
     } forEach (units _group);
 
     {
-        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+        [_x, 15, getDir _x] spawn pl_find_cover;
     } forEach (units _group) - [_exSpecialist] - [_escort];
 
     _exSpecialist disableAI "AUTOCOMBAT";

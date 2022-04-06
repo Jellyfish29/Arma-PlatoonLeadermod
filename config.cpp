@@ -3757,11 +3757,13 @@ class pl_RscMap
     {
         class Map: pl_RscMapControl
         {
-            shadow = 0;
+            shadow = 1;
             moveOnEdges = 0;
             idc = 2000;
-            x = 0.60572 * safezoneW + safezoneX;
-            y = 0.170948 * safezoneH + safezoneY;
+            // x = 0.60572 * safezoneW + safezoneX;
+            // y = 0.170948 * safezoneH + safezoneY;
+            x = 0.198125 * safezoneW + safezoneX;
+            y = 0.472 * safezoneH + safezoneY;
             w = 0.383234 * safezoneW;
             h = 0.808527 * safezoneH;
         };

@@ -42,13 +42,8 @@ addMissionEventHandler ["EntityKilled",{
             } forEach _crew;
 
             {
-                if !(_x getVariable ["pl_is_recon", false]) then {
-                    [_x] call pl_show_group_icon;
-                } else {
-                    [_x, "recon"] call pl_change_group_icon;
-                    _x setVariable ["pl_show_info", true];
-                    player hcSetGroup [_x];
-                };
+                [_x] call pl_show_group_icon;
+                [_x] call pl_change_inf_icons;
                 [_x] spawn pl_reset;
             } forEach _cargoGroups;
 
@@ -70,16 +65,16 @@ addMissionEventHandler ["EntityKilled",{
 
             [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives] spawn pl_create_new_vic;
             
+        } else {
+
+            if (_killed getVariable ["pl_has_cmd_fsm", false]) then {
+                [_killed] spawn {
+                    (_this#0) setVariable ["pl_just_destroyed", true];
+                    sleep 10;
+                    (_this#0) setVariable ["pl_just_destroyed", nil];
+                };
+            };
         };
-        // else
-        // {
-        //     _groupId = groupId group driver _killed;
-        //     if (pl_enable_beep_sound) then {playSound "radioina"};
-        //     if (pl_enable_chat_radio) then {player sideChat format ["%1 has been destroyed", _groupId]};
-        //     if (pl_enable_map_radio) then {[group (driver _killed), "...Ahhh", 10] call pl_map_radio_callout};
-        //     [group driver _killed, "damaged", 1] call pl_voice_radio_answer;
-        // };
-    // };
 }];
 
 pl_create_new_vic = {
@@ -469,7 +464,7 @@ pl_repair_bridge = {
     } forEach (units _group);
 
     {
-        [_x, getPos _x, _x getDir _cords, 15, false] spawn pl_find_cover;
+        [_x, 15, getDir _x] spawn pl_find_cover;
     } forEach (units _group) - [_engineer] - [_escort];
 
     _engineer disableAI "AUTOCOMBAT";

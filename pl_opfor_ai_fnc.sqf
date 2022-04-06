@@ -152,7 +152,6 @@ pl_opfor_advance = {
 		_grp setFormation "LINE";
 		_grp setSpeedMode "NORMAL";
 		_grp allowFleeing 0.2;
-		
 	};
 };
 
@@ -170,7 +169,7 @@ pl_opfor_defend_position = {
 
     _grp setvariable ["pl_opf_in_pos", true];
 
-    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank", "Truck"], 600]) select {(side _x) == playerSide and ((leader _grp) knowsAbout _x) > 0});
+    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank", "Truck"], 1500]) select {(side _x) == playerSide and ((leader _grp) knowsAbout _x) > 0});
     if (count _targets > 0) then {
         private _target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
         _units = units _grp;
@@ -534,6 +533,8 @@ pl_opfor_defend_position = {
 
             if (!(alive _unit) or isNil "_defPos") exitWith {};
             if (vehicle _unit != _unit) exitWith {};
+
+            waitUntil {sleep 0.5; unitReady _unit or !alive _unit};
 
             // _m = createMarker [str (random 1), _defPos];
             // _m setMarkerType "mil_dot";
@@ -1005,7 +1006,7 @@ pl_opfor_vic_suppress_cont = {
 	while {alive _vic and (speed _vic) <= 5} do {
         waitUntil {sleep 1, (behaviour (leader _grp)) == "COMBAT"};
 		[_grp] call pl_opfor_vic_suppress;
-		sleep 15;
+		sleep 30;
 	};
 };
 

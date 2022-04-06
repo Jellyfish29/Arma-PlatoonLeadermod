@@ -581,7 +581,7 @@ pl_rush = {
                 _unit enableAI "TARGET";
                 _unit enableAI "AUTOTARGET";
                 // _unit doFollow (leader _group);
-                [_unit, getPos _unit, _dir, 25, false] spawn pl_find_cover;
+                [_unit, 25, _dir] spawn pl_find_cover;
             };
 
         } forEach (units _group);

@@ -1,6 +1,6 @@
 pl_recon_active = false;
 pl_recon_group = grpNull;
-pl_recon_area_size_default = 800;
+pl_recon_area_size_default = 1000;
 pl_active_recon_groups = [];
 pl_enable_vanilla_marta = false;
 
@@ -13,45 +13,28 @@ pl_recon = {
 
     if (_group == (group player)) exitWith {hint "Player group can´t be designated as Recon Group!";};
 
-    // turn off recon mode
-    // if (pl_recon_active and _group == pl_recon_group) exitWith {pl_recon_active = false; pl_recon_group = grpNull};
-    // if (_group getVariable ["pl_is_recon", false]) exitWith {_group setVariable ["pl_is_recon", false]};
-
-    // check if another group is in Recon
-    // if (pl_recon_active) exitWith {hint "Only one GROUP can be designated as Recon";};
     if (pl_recon_count >= 2) exitWith {hint "Only THREE Groups can be designated as Recon";};
-
-    // pl_recon_active = true;
-    // pl_recon_group = _group;
 
     _group setVariable ["pl_is_recon", true];
     if !(_preSet) then {pl_recon_count = pl_recon_count + 1; if (pl_enable_beep_sound) then {playSound "beep"}};
 
-    // [_group] call pl_reset;
-    // sleep 0.2;
+    private _size = "s";
+    if ((count (units _group)) < 6) then {_size = "t"};
 
-    // sealth, holdfire, recon icon
-    // _group setBehaviour "STEALTH";
-    if (vehicle (leader _group) == (leader _group)) then {
-        private _size = "s";
-        if ((count (units _group)) < 6) then {_size = "t"};
+    if (vehicle (leader _group) != leader _group) then {
+        if !((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+            [_group, format ["f_%1_recon_pl", _size]] call pl_change_group_icon;
+            [_group] call pl_hide_group_icon;
+        };
+    } else {
         [_group, format ["f_%1_recon_pl", _size]] call pl_change_group_icon;
-    };
-
+    }; 
     _group setVariable ["pl_recon_area_size", pl_recon_area_size_default];
 
-    // _group setCombatMode "GREEN";
-    // _group setVariable ["pl_hold_fire", true];
-    // _group setVariable ["pl_combat_mode", true];
-
-    // chosse intervall
     _intelInterval = 45;
 
-    // stop leader to get full recon size
     sleep 0.5;
-    // doStop (leader _group);
-    
-    // create Recon area Marker
+
     _markerName = createMarker [format ["reconArea%1", _group], getPos (leader _group)];
     _markerName setMarkerColor "colorBlue";
     _markerName setMarkerShape "ELLIPSE";
@@ -72,7 +55,7 @@ pl_recon = {
             _bonus = 0;
             _markerName setMarkerPos (getPos (leader _group));
             if !(((currentWaypoint _group) < count (waypoints _group))) then {
-                _bonus = 200;
+                _bonus = 400;
                 // Get height of Group and compare to average sorrounding Height to get Bounus Vision Range
                 _height = getTerrainHeightASL (getPos (leader _group));
                 _interval = 12;
@@ -99,12 +82,8 @@ pl_recon = {
             };
             _h = _group getVariable "pl_recon_area_size";
             _markerName setMarkerSize [_h, _h];
-            // if (([_group getVariable ["pl_custom_icon", ""], "add"] call BIS_fnc_inString) and isNull objectParent (leader _group)) then {
-            //     [_group, "recon"] call pl_change_group_icon;
-            // };
-            // if (([_group getVariable ["pl_custom_icon", ""], "recon"] call BIS_fnc_inString) and !(isNull objectParent (leader _group))) then {
-            //     [_group, "recon_add_pl"] call pl_change_group_icon;
-            // };
+            if (({alive _x} count (units _group)) <= 0) exitWith {};
+                
             sleep 1;
         };
         _group setVariable ["pl_recon_area_size", nil];
@@ -127,37 +106,19 @@ pl_recon = {
                 if ((_reconGrpLeader knowsAbout _leader) > 0.105) then {_reveal = true};
                 [_opfGrp, _reveal] call Pl_marta;
             };
-            // else
-            // {
-            //     if ((_opfGrp getVariable ["pl_active_recon_markers", []]) isNotEqualTo []) then {
-            //         {
-            //             _x setMarkerAlpha 0.6;
-            //             _x setMarkerColor "colorGrey";
-            //         } forEach (_opfGrp getVariable "pl_active_recon_markers");
-            //     };
-            // };
         } forEach (allGroups select {([(side _x), playerside] call BIS_fnc_sideIsEnemy) and alive (leader _x)});
 
-        // intervall
         _time = time + _intelInterval;
         waitUntil {sleep 1; time >= _time or !(_group getVariable ["pl_is_recon", false])};
-        // cancel recon if leader dead
-        // delete all markers of dead groups
-
 
         if !(alive (leader _group)) exitWith {_group setVariable ["pl_is_recon", false]; pl_recon_count = pl_recon_count - 1;};
 
     };
 
-    // rest variables
-    // pl_recon_active = false;
+    pl_recon_count = pl_recon_count - 1;
     deleteMarker _markerName;
     pl_active_recon_groups = pl_active_recon_groups - [_group];
     _group setVariable ["MARTA_customIcon", nil];
-
-    // _group setCombatMode "YELLOW";
-    // _group setVariable ["pl_hold_fire", false];
-    // _group setVariable ["pl_combat_mode", false];
 };
 
 
@@ -235,8 +196,8 @@ Pl_marta = {
         if !(isNull objectParent (leader _opfGrp)) then {
             private _vic = vehicle (leader _opfGrp);
 
+            if !((leader _opfGrp) == commander (vehicle (leader _opfGrp)) or (leader _opfGrp) == driver (vehicle (leader _opfGrp)) or (leader _opfGrp) == gunner (vehicle (leader _opfGrp))) exitwith {};
             if (_vic isKindOf "Air") then {_markerTypeType = "", _markerSize = 0};
-
             
             switch (_unitText) do {
                 case "truck" : {
@@ -253,7 +214,7 @@ Pl_marta = {
                 }; 
                 case "tank" : {
                     _markerTypeType = format ["%1_%2_tank_pl", _sidePrefix, _status];
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) >= 6 and !(["mbt", typeOf _vic] call BIS_fnc_inString)) then {
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) >= 2 and !(["mbt", typeOf _vic] call BIS_fnc_inString)) then {
                         if ([_vic] call pl_is_ifv) then {
                             _markerTypeType = format ["%1_%2_ifvtr_pl", _sidePrefix, _status];
                         } else {

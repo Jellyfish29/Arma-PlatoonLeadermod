@@ -217,13 +217,13 @@ pl_getIn_vehicle = {
                 _group setVariable ["onTask", false];
                 // _group setVariable ["setSpecial", false];
                 (group (driver _targetVic)) setVariable ["pl_has_cargo", true];
-                if !(_group getVariable ["pl_is_recon", false]) then {
+                // if !(_group getVariable ["pl_is_recon", false]) then {
                     [_group] call pl_hide_group_icon;
-                } else {
-                    [_group, "recon_add_pl"] call pl_change_group_icon;
-                    _group setVariable ["pl_show_info", false];
-                    player hcRemoveGroup _group;
-                };
+                // } else {
+                //     [_group, "recon_add_pl"] call pl_change_group_icon;
+                //     _group setVariable ["pl_show_info", false];
+                //     player hcRemoveGroup _group;
+                // };
                 // _group setVariable ["pl_show_info", false];
                 // if !(_targetVic isKindOf "Air") then {
                 // };
@@ -335,35 +335,24 @@ pl_unload_at_position_planed = {
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
     doStop _vic;
-    {
-        _unit = _x;
-        if !(_unit in (units _vicGroup)) then {
-            unassignVehicle _unit;
-            doGetOut _unit;
-            [_unit] allowGetIn false;
-            // doStop _unit;
-        };
-    } forEach _cargo;
 
     private _cargoPers = [];
     {
         _cGroup = _x;
-        [_x] spawn pl_reset;
-        // moveOut (leader _x);
+        // moveOut (leader _cGroup);
         if !(_cGroup getVariable ["pl_show_info", false]) then {
-            // [_cGroup] call pl_show_group_icon;
-            if !(_cGroup getVariable ["pl_is_recon", false]) then {
-                [_cGroup] call pl_show_group_icon;
-            } else {
-                [_cGroup, "f_s_recon_pl"] call pl_change_group_icon;
-                _cGroup setVariable ["pl_show_info", true];
-                player hcSetGroup [_cGroup];
-            };
+            [_cGroup] call pl_show_group_icon;
         };
         _cGroup leaveVehicle _vic;
         {
             _cargoPers pushBack _x;
+            unassignVehicle _x;
+            doGetOut _x;
+            [_x] allowGetIn false;
+            doStop _x;
+            _x doFollow (leader _cGroup);
         } forEach (units _cGroup);
+
     } forEach _cargoGroups;
 
 
@@ -373,23 +362,24 @@ pl_unload_at_position_planed = {
     waitUntil {sleep 0.5; (({vehicle _x != _x} count _cargoPers) == 0) or (!alive _vic)};
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
+
+    sleep 2;
+    waitUntil {sleep 0.5; ({unitReady _x} count _cargoPers) == (count _cargoPers)};
+    sleep 2;
     _vic setVariable ["pl_on_transport", nil];
     _vicGroup setVariable ["pl_has_cargo", false];
-    sleep 1;
-    waitUntil {sleep 0.5; ({unitReady _x} count _cargoPers) == (count _cargoPers)};
-    sleep 1;
     {
         _x setVariable ["pl_disembark_finished", true];
     } forEach _cargoGroups;
 
     [_cargoGroups] spawn {
         params ["_cargoGroups"],
-        sleep 2;
+        sleep 5;
         {
             _x setVariable ["pl_disembark_finished", nil];
         } forEach _cargoGroups;
     };
-    sleep 1;
+    // waitUntil {sleep 0.5; ({unitReady _x} count _cargoPers) == (count _cargoPers)};
     [_group] spawn pl_reset;
 };
 
@@ -1175,6 +1165,14 @@ pl_leave_vehicle = {
             _cargoGroups pushBackUnique (group (_x select 0));
         };
     } forEach _cargo;
+    
+    {
+        unassignVehicle _x;
+        doGetOut _x;
+        [_x] allowGetIn false;
+        doStop _x;
+        _x doFollow (leader _cGroup);
+    } forEach (crew _vic);
 
     {
         if !(_x getVariable ["pl_show_info", false]) then {
@@ -1189,8 +1187,9 @@ pl_leave_vehicle = {
     };
     _group leaveVehicle _vic;
     _group setVariable ["pl_has_cargo", false];
-    _group setVariable ["setSpecial", false];
-    _group setVariable ["onTask", false];
+    // _group setVariable ["setSpecial", false];
+    // _group setVariable ["onTask", false];
+
     [_group] call pl_change_inf_icons;
 };
 

@@ -765,7 +765,7 @@ pl_ai_setUp_loop = {
             {
                 if (([(side _x), playerside] call BIS_fnc_sideIsEnemy) and side _x != civilian) then {
                     if (pl_opfor_enhanced_ai) then {
-                        if !(_x getVariable ["pl_opfor_ai_enabled", false]) then {
+                        if !((group (driver _x)) getVariable ["pl_opfor_ai_enabled", false]) then {
                             (group (driver _x)) execFSM "Plmod\fsm\pl_opfor_cmd_vic_2.fsm";
                             pl_active_opfor_vic_grps pushback (group (driver _x));
                             (group (driver _x)) setVariable ["pl_opfor_ai_enabled", true];
@@ -1177,13 +1177,13 @@ pl_inf_trans_set_up = {
         _x assignAsCargo _targetVic;
     } forEach (units _group);
     [units _group] allowGetIn true; //false;
-    if !(_group getVariable ["pl_is_recon", false]) then {
+    // if !(_group getVariable ["pl_is_recon", false]) then {
         [_group] call pl_hide_group_icon;
-    } else {
-        [_group, "recon_add_pl"] call pl_change_group_icon;
-        _group setVariable ["pl_show_info", false];
-        player hcRemoveGroup _group;
-    };
+    // } else {
+        // [_group, "recon_add_pl"] call pl_change_group_icon;
+        // _group setVariable ["pl_show_info", false];
+        // player hcRemoveGroup _group;
+    // };
 };
 
 
@@ -1293,9 +1293,9 @@ pl_start_set_up = {
                 [_x, true] spawn pl_recon;
             };
 
-            // if (_x getVariable ["pl_set_as_medical", false]) then {
-            //     [_x, "med"] call pl_change_group_icon;
-            // };
+            if (_x getVariable ["pl_set_as_medical", false]) then {
+                [_x, "f_t_med_pl"] call pl_change_group_icon;
+            };
 
             [_x] spawn pl_reset;
 
