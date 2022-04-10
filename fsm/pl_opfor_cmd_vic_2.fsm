@@ -8,7 +8,7 @@ item3[] = {"In_Position",2,250,-32.528198,317.265503,57.471878,373.904907,0.0000
 item4[] = {"mobile",2,250,405.506531,200.366150,495.506531,250.366150,0.000000,"mobile"};
 item5[] = {"has_Cargo",4,218,777.501160,64.028259,867.501160,114.028259,0.000000,"has Cargo"};
 item6[] = {"no_Cargo",4,218,862.838135,288.360046,952.838013,338.360046,0.000000,"no Cargo"};
-item7[] = {"Combat",4,4314,543.823975,200.365784,633.823975,250.365784,0.000000,"Combat"};
+item7[] = {"Combat",4,218,543.823975,200.365784,633.823975,250.365784,0.000000,"Combat"};
 item8[] = {"in_Combat",2,250,676.612244,202.578857,766.612244,252.578857,0.000000,"in Combat"};
 item9[] = {"Check",2,250,1213.461182,4.800217,1303.461182,54.800217,0.000000,"Check"};
 item10[] = {"Loop",2,250,924.271790,12.763931,1014.271423,62.763931,0.000000,"Loop"};
@@ -19,14 +19,15 @@ item14[] = {"Dismount_Support",3,250,1042.239502,150.341187,1132.239380,200.3411
 item15[] = {"cargo_Dead",4,218,903.583984,149.848053,993.584045,199.848053,0.000000,"cargo" \n "Dead"};
 item16[] = {"Check_1",2,250,1351.587280,328.865143,1441.587280,378.865173,0.000000,"Check"};
 item17[] = {"Loop_1",2,250,1033.744507,347.231171,1123.744507,397.231140,0.000000,"Loop"};
-item18[] = {"Delay",4,218,1199.871216,428.222137,1289.871216,478.222168,0.000000,"Delay"};
+item18[] = {"Delay",4,218,1203.652466,497.230438,1293.652466,547.230469,0.000000,"Delay"};
 item19[] = {"Return",8,218,1199.591187,211.045303,1289.591309,261.045441,0.000000,"Return"};
-item20[] = {"__150m",4,218,1201.487915,282.321167,1291.487915,332.321167,3.000000,"<150m"};
-item21[] = {"no_Wp",4,218,1200.515625,497.820007,1290.515869,547.820129,2.000000,"no Wp"};
+item20[] = {"__150m",4,218,1201.487915,282.321167,1291.487915,332.321167,5.000000,"<150m"};
+item21[] = {"no_Wp",4,218,1204.296875,566.828308,1294.297119,616.828430,2.000000,"no Wp"};
 item22[] = {"__alive",4,218,550.202148,658.916199,640.202148,708.916199,10.000000,"!alive"};
-item23[] = {"End",1,250,545.877991,774.071045,635.877991,824.071045,0.000000,"End"};
-item24[] = {"___1000____damag",4,218,1200.476929,357.146088,1290.476929,407.146088,3.000000,"< 1000 +  damage"};
+item23[] = {"End",1,4346,545.877991,774.071045,635.877991,824.071045,0.000000,"End"};
+item24[] = {"___1000____damag",4,218,1204.258179,426.154388,1294.258179,476.154388,4.000000,"< 1000 +  damage"};
 item25[] = {"Unload_Panic",4,218,1126.306641,64.432007,1216.306641,114.432007,1.000000,"Unload" \n "Panic"};
+item26[] = {"Near_Inf",4,218,1202.433228,352.274719,1292.433228,402.274719,3.000000,"Near Inf"};
 link0[] = {0,1};
 link1[] = {0,2};
 link2[] = {1,3};
@@ -54,17 +55,19 @@ link23[] = {16,19};
 link24[] = {16,20};
 link25[] = {16,21};
 link26[] = {16,24};
-link27[] = {17,18};
-link28[] = {17,22};
-link29[] = {18,16};
-link30[] = {19,17};
-link31[] = {20,17};
-link32[] = {21,4};
-link33[] = {22,23};
-link34[] = {24,17};
-link35[] = {25,14};
-globals[] = {0.000000,0,0,0,0,640,480,1,34,6316128,1,216.720886,1144.900391,833.765686,-261.708679,749,884,1};
-window[] = {2,-1,-1,-1,-1,1107,78,1997,78,3,767};
+link27[] = {16,26};
+link28[] = {17,18};
+link29[] = {17,22};
+link30[] = {18,16};
+link31[] = {19,17};
+link32[] = {20,17};
+link33[] = {21,4};
+link34[] = {22,23};
+link35[] = {24,17};
+link36[] = {25,14};
+link37[] = {26,17};
+globals[] = {0.000000,0,0,0,0,640,480,1,35,6316128,1,-243.492279,1776.023926,1399.957153,-253.945465,1519,1244,1};
+window[] = {2,-1,-1,-1,-1,1341,312,2231,312,3,1537};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -235,7 +238,7 @@ class FSM
                 {
                         name = "Check";
                         itemno = 9;
-                        init = /*%FSM<STATEINIT""">*/"_alliedDeadVics = (nearestObjects [getPos (leader _grp), [""Car"", ""Tank"", ""Truck""], 350]) select {(_x getVariable [""pl_has_cmd_fsm"", false]) and !alive _x};" \n
+                        init = /*%FSM<STATEINIT""">*/"_alliedDeadVics = (nearestObjects [getPos (leader _grp), [""Car"", ""Tank"", ""Truck""], 300]) select {(_x getVariable [""pl_has_cmd_fsm"", false]) and !alive _x};" \n
                          "" \n
                          "_targets = (((getPos (leader _grp)) nearEntities [[""Man"", ""Car"", ""Tank""], 1000]) select {side _x == playerSide});" \n
                          "if !(_targets isEqualto []) then {" \n
@@ -254,7 +257,7 @@ class FSM
                                         priority = 1.000000;
                                         to="Dismount_Support";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"_targetdistance < 700 or !(canMove _vic);" \n
+                                        condition=/*%FSM<CONDITION""">*/"_targetdistance < 500 or !(canMove _vic);" \n
                                          "" \n
                                          ""/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"[_grp, _vic, _cargo, _cargoGroups] spawn pl_opfor_drop_cargo;" \n
@@ -371,7 +374,7 @@ class FSM
                 {
                         name = "Check_1";
                         itemno = 16;
-                        init = /*%FSM<STATEINIT""">*/"_alliedInf = ((getPos (leader _grp)) nearEntities [[""Man""], 100]) select {side _x == _side and alive _x};" \n
+                        init = /*%FSM<STATEINIT""">*/"_alliedInf = ((getPos (leader _grp)) nearEntities [[""Man""], 200]) select {side _x == _side and alive _x};" \n
                          "" \n
                          "_targets = (((getPos (leader _grp)) nearEntities [[""Man"", ""Car"", ""Tank""], 1000]) select {side _x == playerSide});" \n
                          "if !(_targets isEqualto []) then {" \n
@@ -390,10 +393,10 @@ class FSM
                                 class __150m
                                 {
                                         itemno = 20;
-                                        priority = 3.000000;
+                                        priority = 5.000000;
                                         to="Loop_1";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"_targetdistance < 150;"/*%FSM</CONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"_targetdistance < 150 and (_alliedInf isEqualto []);"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_vic forceSpeed 0;" \n
                                          "{_x disableAI ""PATH""} forEach (units _grp);" \n
                                          "_time = time + 80;" \n
@@ -408,7 +411,7 @@ class FSM
                                 class ___1000____damag
                                 {
                                         itemno = 24;
-                                        priority = 3.000000;
+                                        priority = 4.000000;
                                         to="Loop_1";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"_targetdistance < 1000 and (damage _vic) > (_damage + 0.3);"/*%FSM</CONDITION""">*/;
@@ -422,6 +425,19 @@ class FSM
                                          "if (pl_debug) then {" \n
                                          "    systemchat format [""%1: Stop damaged"", groupId _grp];" \n
                                          "};"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Near_Inf">*/
+                                class Near_Inf
+                                {
+                                        itemno = 26;
+                                        priority = 3.000000;
+                                        to="Loop_1";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"!(_alliedInf isEqualto [])"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_vic limitSpeed 10;" \n
+                                         "" \n
+                                         "_time = time + 20;"/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "no_Wp">*/

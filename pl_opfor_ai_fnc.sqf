@@ -653,7 +653,7 @@ pl_opfor_flanking_move = {
 
 	sleep 0.5;
 
-    _units = allUnits select {side _x == playerSide and alive _x};
+    _units = allUnits select {side _x == playerSide and alive _x and hcLeader (group _x) == player};
     _units = [_units, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
     _knownUnits = _units select {((leader _grp) knowsAbout _x) > 0.1};
     
@@ -708,7 +708,7 @@ pl_opfor_attack_closest_enemy = {
 	// params ["_grp"];
 
 
-    _units = allUnits select {side _x == playerSide and alive _x};
+    _units = allUnits select {side _x == playerSide and alive _x and hcLeader (group _x) == player};
     _units = [_units, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
     _knownUnits = _units select {((leader _grp) knowsAbout _x) > 0.1};
     

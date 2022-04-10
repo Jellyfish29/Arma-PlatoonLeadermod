@@ -38,6 +38,8 @@ pl_reset = {
         _unit doWatch objNull;
         _unit allowDamage true;
         if (vehicle _unit == _unit) then {
+            _unit setPosASL (getPosASL _unit);
+            _unit setDestination [getpos _unit, "LEADER DIRECT", false];
             _unit doFollow (leader _group);
         };
     } forEach (units _group);
@@ -59,10 +61,13 @@ pl_reset = {
     // reset Healing
     // _group setVariable ["pl_healing_active", nil];
 
+    _group setVariable ["pl_in_position", nil];
+    _group setVariable ["pl_disembark_finished", nil];
+    _group setVariable ["onTask", false];
+
     // if group is not leading a formation reset Task
     if !(!(_isNotWp) and (_group getVariable ["pl_formation_leader", false])) then {
 
-        _group setVariable ["onTask", false];
 
         // if group is not transporting Infantry reset special Icon
         if !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa") then {
@@ -92,12 +97,12 @@ pl_reset = {
         };
 
         // cancel planend tasks for loaded inf groups
-        _cargo = fullCrew [_vic, "cargo", false];
+        _cargo = (crew _vic) - (units _group);
         _cargoGroups = [];
         {
-            _unit = _x select 0;
+            _unit = _x;
             if !(_unit in (units _group)) then {
-                _cargoGroups pushBack (group (_x select 0));
+                _cargoGroups pushBack (group _unit);
             };
         } forEach _cargo;
 

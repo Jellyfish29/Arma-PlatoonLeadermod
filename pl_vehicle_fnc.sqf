@@ -10,7 +10,7 @@ pl_convoy_pos = 0;
 pl_convoy_array = [];
 pl_draw_convoy_array = [];
 pl_convoy_path_marker = [];
-pl_convoy_speed = 30;
+pl_convoy_speed = 35;
 pl_convoy_max_distance = 3500;
 
 
@@ -217,6 +217,7 @@ pl_getIn_vehicle = {
                 _group setVariable ["onTask", false];
                 // _group setVariable ["setSpecial", false];
                 (group (driver _targetVic)) setVariable ["pl_has_cargo", true];
+                _group setVariable ["pl_disembark_finished", false];
                 // if !(_group getVariable ["pl_is_recon", false]) then {
                     [_group] call pl_hide_group_icon;
                 // } else {
@@ -349,9 +350,18 @@ pl_unload_at_position_planed = {
             unassignVehicle _x;
             doGetOut _x;
             [_x] allowGetIn false;
-            doStop _x;
-            _x doFollow (leader _cGroup);
+            // doStop _x;
+            if (_x != (leader _cGroup)) then {
+                _x doFollow (leader _cGroup);
+            } else {
+                _x doMove ((getpos _vic) getPos [10, (getdir _vic) - 180]);
+                _x setDestination [(getpos _vic) getPos [10, (getdir _vic) - 180], "LEADER DIRECT", true];
+            };
+            _x disableAI "AUTOCOMBAT";
         } forEach (units _cGroup);
+        _cGroup setBehaviourStrong "AWARE";
+
+        
 
     } forEach _cargoGroups;
 
@@ -363,13 +373,17 @@ pl_unload_at_position_planed = {
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
 
-    sleep 2;
-    waitUntil {sleep 0.5; ({unitReady _x} count _cargoPers) == (count _cargoPers)};
-    sleep 2;
     _vic setVariable ["pl_on_transport", nil];
     _vicGroup setVariable ["pl_has_cargo", false];
+    sleep 2;
+    _time = time + 30;
+    waitUntil {sleep 0.5; ({unitReady _x} count _cargoPers) == (count _cargoPers) or time >= _time};
+    sleep 2;
     {
         _x setVariable ["pl_disembark_finished", true];
+        {
+            _x enableAI "AUTOTARGET";
+        } forEach (units _x);
     } forEach _cargoGroups;
 
     [_cargoGroups] spawn {
@@ -377,6 +391,7 @@ pl_unload_at_position_planed = {
         sleep 5;
         {
             _x setVariable ["pl_disembark_finished", nil];
+            
         } forEach _cargoGroups;
     };
     // waitUntil {sleep 0.5; ({unitReady _x} count _cargoPers) == (count _cargoPers)};
@@ -393,7 +408,8 @@ pl_convoy = {
     };
 
     private _allgroups = hcSelected player;
-    private _groups = +_allGroups select {((assignedVehicleRole (leader _x))#0) != "cargo"};
+    // private _groups = +_allGroups select {((assignedVehicleRole (leader _x))#0) != "cargo"};
+    private _groups = +_allGroups;
 
     private _markerRPName = format ["convoyrp%1%2",random 2];
     createMarker [_markerRPName, [0,0,0]];
@@ -459,7 +475,7 @@ pl_convoy = {
         //     (_this#0) spawn pl_reset;
         // };
         _r1 = [getPos (vehicle (leader _x)) , 50,[]] call BIS_fnc_nearestRoad;
-        if (isNull _r1) then {
+        if (isNull _r1 or (vehicle (leader _x)) == (leader _x)) then {
             _groups deleteAt (_groups find _x)
         } else {
             _path = [_r1, _r2] call pl_convoy_parth_find;
@@ -683,7 +699,7 @@ pl_convoy = {
                         _vic forceSpeed 0;
                         _vic limitSpeed 0;
                     };
-                    if (_distance > 40 and (speed _vic) < 8) then {
+                    if (_distance > 150) then {
                         _vic limitSpeed 1000;
                     };
                     if ((speed _vic) <= 3) then {
@@ -692,8 +708,8 @@ pl_convoy = {
                             _time = time + 3;
                             _startReset = true;
                         };
-                        waitUntil {sleep 0.5; speed _vic > 5 or time > _time or !(_group getVariable ["onTask", true])};
-                        if ((speed _vic) <= 3  and (_group getVariable ["onTask", true]) and (speed _forward) >= 5) then {
+                        waitUntil {sleep 0.5; ((speed _vic > 5 or time > _time) and (speed _forward) >= 5 and (_vic distance2d _forward) >= 50) or !(_group getVariable ["onTask", true]) or !(_convoyLeaderGroup getVariable ["onTask", true])};
+                        if ((speed _vic) < 5 and (speed _forward) >= 5 and (_vic distance2d _forward) >= 48 and (_group getVariable ["onTask", true]) and (_convoyLeaderGroup getVariable ["onTask", true])) then {
                             doStop _vic:
                             sleep 0.3;
                             [getPos _vic, 20] call pl_clear_obstacles;
@@ -1158,11 +1174,12 @@ pl_leave_vehicle = {
     if (isNull _vic) exitWith {hint "Group is not crewing a Vehicle!"};
 
     _cargo = fullCrew [_vic, "cargo", false];
+    _cargo = (crew _vic) - (units _group);
     _cargoGroups = [];
     {
-        _unit = _x select 0;
+        _unit = _x;
         if !(_unit in (units _group)) then {
-            _cargoGroups pushBackUnique (group (_x select 0));
+            _cargoGroups pushBackUnique (group _unit);
         };
     } forEach _cargo;
     
@@ -1171,7 +1188,7 @@ pl_leave_vehicle = {
         doGetOut _x;
         [_x] allowGetIn false;
         doStop _x;
-        _x doFollow (leader _cGroup);
+        _x doFollow (leader _x);
     } forEach (crew _vic);
 
     {

@@ -82,9 +82,11 @@ pl_recon = {
             };
             _h = _group getVariable "pl_recon_area_size";
             _markerName setMarkerSize [_h, _h];
-            if (({alive _x} count (units _group)) <= 0) exitWith {};
+            // if (({alive _x} count (units _group)) <= 0) exitWith {};
+            if (isNull _grp) exitWith {};
                 
             sleep 1;
+            }
         };
         _group setVariable ["pl_recon_area_size", nil];
     };
@@ -151,20 +153,11 @@ Pl_marta = {
     _leader = leader _opfGrp;
     if (vehicle _leader != _leader and ((assignedVehicleRole _leader)#0) == "cargo") exitWith {};
 
-    _callsign = groupId _opfGrp;
+    private _callsign = groupId _opfGrp;
     private _markerNameArrow = format ["intelMarkerArrow%1", _opfGrp];
     private _markerNameGroup = format ["intelMarkerGroup%1", _opfGrp];
     private _markerNameStrength = format ["intelMarkerStrength%1", _opfGrp];
     private _markerNameOpfTactic = format ["interMarkerOpfTactic%1", _opfGrp];
-
-    private _setTacMarker = false;
-    private _tacMarkerType = "";
-    switch (_opfGrp getVariable ["pl_opf_tac_marker", ""]) do { 
-        case "" : {_setTacMarker = false; _tacMarkerType = ""}; 
-        case "position" : {_setTacMarker = true; _tacMarkerType = "marker_position_eny"};
-        case "attack" : {_setTacMarker = true; _tacMarkerType = "marker_std_atk"};
-        default {_setTacMarker = false; _tacMarkerType = ""}; 
-    };
 
     private _sideColor = "colorOpfor";
     private _sideColorRGB = [0.5,0,0,0.5];
@@ -184,6 +177,7 @@ Pl_marta = {
     if (((random 1) < 0.5 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.15 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
 
         _unitText = getText (configFile >> "CfgVehicles" >> typeOf (vehicle (leader _opfGrp)) >> "textSingular");
+        private _exit = false;
 
         private _status = "f";
         if !(_reveal) then {
@@ -196,8 +190,8 @@ Pl_marta = {
         if !(isNull objectParent (leader _opfGrp)) then {
             private _vic = vehicle (leader _opfGrp);
 
-            if !((leader _opfGrp) == commander (vehicle (leader _opfGrp)) or (leader _opfGrp) == driver (vehicle (leader _opfGrp)) or (leader _opfGrp) == gunner (vehicle (leader _opfGrp))) exitwith {};
-            if (_vic isKindOf "Air") then {_markerTypeType = "", _markerSize = 0};
+            if !((leader _opfGrp) == commander (vehicle (leader _opfGrp)) or (leader _opfGrp) == driver (vehicle (leader _opfGrp)) or (leader _opfGrp) == gunner (vehicle (leader _opfGrp))) exitwith {_exit = true;};
+            if (_vic isKindOf "Air") then {_exit = true;};
             
             switch (_unitText) do {
                 case "truck" : {
@@ -247,6 +241,8 @@ Pl_marta = {
             };
         };
 
+        if (_exit) exitwith {};
+
         private _opfDir = -1;
         if ((currentWaypoint _opfGrp) < count (waypoints _opfGrp) and (waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp)) distance2D _leader) > 50) then {
             _wp = waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp));
@@ -282,7 +278,7 @@ Pl_marta = {
         //     _opfGrp setVariable ["pl_opf_tac_marker", "position"];
         // };
 
-        if (_setTacMarker) then {
+        if (_opfGrp getVariable ["pl_opf_in_pos", false]) then {
 
             if !(_markerNameOpfTactic in ((pl_marta_dic get _callsign)#1)) then {
 
@@ -295,26 +291,23 @@ Pl_marta = {
                     private _targetPos = getPos _target;
                     private _targetDir = _leader getDir _targetPos;
                     private _tacMarkerPos = (getPos _leader) getPos [6, _targetDir];
-                    if ((_opfGrp getVariable ["pl_opf_tac_marker", ""]) == "attack") then {
-                        _tacMarkerPos = (getPos _leader) getPos [((getPos _leader) distance2D _targetPos) / 2, _targetDir];
-                    };
                      createMarker [_markerNameOpfTactic, _tacMarkerPos];
-                    _markerNameOpfTactic setMarkerType _tacMarkerType;
+                    _markerNameOpfTactic setMarkerType "marker_position_eny";
                     _markerNameOpfTactic setMarkerColor _sideColor;
                     _markerNameOpfTactic setMarkerDir _targetDir;
-                    _markerNameOpfTactic setMarkerSize [0.7, 0.7];
+                    _markerNameOpfTactic setMarkerSize [0.85, 0.85];
 
                     pl_marta_dic set [_callsign, [_opfGrp, [_markerNameGroup, _markerNameStrength, _markerNameOpfTactic]]];
                 };
             } else {
-                if ((_opfGrp getVariable ["pl_opf_tac_marker", ""]) == "position") then {_markerNameOpfTactic setMarkerPos (getPos _leader)};
+                _markerNameOpfTactic setMarkerPos (getPos _leader);
             };     
         } else {
             deleteMarker _markerNameOpfTactic;
             pl_marta_dic set [_callsign, [_opfGrp, [_markerNameGroup, _markerNameStrength]]];
         };
 
-        _opfGrp setVariable ["pl_active_recon_markers", [_markerNameGroup, _markerNameStrength, _markerNameOpfTactic]];
+        // _opfGrp setVariable ["pl_active_recon_markers", [_markerNameGroup, _markerNameStrength, _markerNameOpfTactic]];
     };
 };
 
@@ -342,28 +335,63 @@ pl_marta_spotrep = {
 };
 
 pl_marta_cleanup = {
-    params ["_grp"];
+    params ["_grp", ["_report", false]];
     _callsign = groupId _grp;
 
     if (_callsign in pl_marta_dic) then {
         _markers = (pl_marta_dic get _callsign)#1;
-        {
-            deleteMarker _x;
-        } forEach _markers;
-        pl_marta_dic deleteat (_callsign);
-    };
+        if (_report) then {
+            [_grp, _markers, _callsign] spawn {
+                params ["_grp", "_markers", "_callsign"];
+                private _sideColor = "colorOpfor";
+                switch (_grp getVariable ["pl_opf_side", side _grp]) do { 
+                    case west : {_sideColor = "colorBlufor"}; 
+                    case east : {_sideColor = "colorOpfor"};
+                    case resistance : {_sideColor = "colorIndependent"};
+                    default {_sideColor = "colorOpfor";}; 
+                };
 
-    if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat (_callsign)};
+                _markerName = createMarker [str (random 4), getPos (leader _grp)];
+                _markerName setMarkerSize [0.8, 0.8];
+                _markerName setMarkerType "mil_destroy";
+                _markerName setMarkerColor _sideColor;
+                _markerName setMarkerShadow false;
+                _markerName setMarkerDir 45;
+                {
+                    _x setMarkerAlpha 0.5;
+                } forEach _markers;
+
+                sleep 30;
+
+                {
+                    deleteMarker _x;
+                } forEach _markers;
+                pl_marta_dic deleteat (_callsign);
+                if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
+                deleteMarker _markerName;
+                // deleteGroup _grp;
+                _grp setvariable ["pl_marta_clean", nil];
+            };
+        } else {
+            {
+                deleteMarker _x;
+            } forEach _markers;
+            pl_marta_dic deleteat (_callsign);
+            if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
+        };
+    };
+    // if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat (_callsign)};
 };
 
 pl_marta_cleanup_loop = {
     
-    while {sleep 0.5; true} do {
+    while {true} do {
         {
             _key = _x;
             _grp = _y#0;
             _markers = _y#1;
-            if ({alive _x} count (units _grp) < 1) then {
+            // if ((({alive _x} count (units _grp) < 1 and !(_grp getvariable ["pl_marta_clean", false])) or (isNull _grp))) then {
+            if ((({alive _x} count (units _grp) < 1) or (isNull _grp))) then {
                 {
                     deleteMarker _x;
                 } forEach _markers;
@@ -372,7 +400,7 @@ pl_marta_cleanup_loop = {
             };
         } forEach pl_marta_dic;
 
-        sleep 5;
+        sleep 10;
     };
 };
 

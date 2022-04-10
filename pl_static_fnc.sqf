@@ -88,6 +88,7 @@ pl_static_unpack = {
     {
         _gunner = _this#0;
         _weapon = _this#1;
+        _weapon setUnitTrait ["camouflageCoef", 0, true];
         [_gunner] allowGetIn true;
         _gunner assignAsGunner _weapon;
         _gunner moveInGunner _weapon;
@@ -104,7 +105,7 @@ pl_static_unpack = {
         _gunner disableAI "AUTOCOMBAT";
         _gunner disableAI "AUTOTARGET";
         _gunner disableAI "TARGET";
-        _gunner setUnitTrait ["camouflageCoef", 0.7, true];
+        _gunner setUnitTrait ["camouflageCoef", 0, true];
         _gunner setVariable ["pl_damage_reduction", true];
         // _gunner disableAI "FSM";
         _gunner doMove _weaponPos;

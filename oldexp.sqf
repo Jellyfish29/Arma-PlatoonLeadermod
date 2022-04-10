@@ -2688,3 +2688,113 @@ pl_assault_position = {
         };
     };
 };
+
+
+
+
+pl_mouse_marker_dic = createHashMap;
+pl_mouse_marker = [];
+
+pl_create_mouse_marker = {
+    params ["_relPos", "_type", "_size", ["_color", pl_side_color_rgb]];
+
+    pl_mouse_marker = [_relPos, _type, _color, _size];
+
+    while {!pl_mapClicked} do {sleep 0.1};
+    pl_mouse_marker = [];
+};
+
+
+pl_marker_dic = createHashMap;
+pl_create_marker = {
+    params ["_pos", "_type", "_size", "_dir", ["_color", pl_side_color_rgb]];
+
+    _key = str (random 2) + (str _pos);
+
+    pl_marker_dic set [_key, [_type, _color, _size, _pos, _dir]];
+
+    _key
+};
+
+pl_delete_marker = {
+    params ["_key"];
+
+    pl_marker_dic deleteAt _key;
+};
+
+
+
+
+
+
+
+pl_draw_marker = {
+    params ["_display"];
+
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+
+        {
+            _icon = _y#0;
+            _color = _y#1;
+            _size = _y#2;
+            _pos = _y#3;
+            _dir = _y#4;
+
+            _display drawIcon [
+                _icon,
+                _color,
+                _pos,
+                _size,
+                _size,
+                _dir,
+                '',
+                2
+            ];
+        } forEach pl_marker_dic;
+    "]; // "  
+};
+
+
+[findDisplay 12 displayCtrl 51] call pl_draw_marker;
+
+
+[getpos player, "plmod\gfx\pl_position", 40, getdir player] call pl_create_marker;
+
+[getpos player, "plmod\gfx\pl_position", 40] spawn pl_create_mouse_marker;
+
+
+pl_draw_mouse_marker = {
+    params ["_display"];
+
+    _display ctrlAddEventHandler ["Draw","
+
+        if !(pl_mouse_marker isEqualTo []) then {
+            _display = _this#0;
+
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if !(visibleMap) then {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
+            _icon = pl_mouse_marker#1;
+            _color = pl_mouse_marker#2;
+            _size = pl_mouse_marker#3;
+
+            _dir = (pl_mouse_marker#0) getdir _mPos;
+
+            _display drawIcon [
+                _icon,
+                _color,
+                _mPos,
+                _size,
+                _size,
+                _dir,
+                '',
+                2
+            ];
+        };
+    "]; // "  
+};
+
+
+[findDisplay 12 displayCtrl 51] call pl_draw_mouse_marker;

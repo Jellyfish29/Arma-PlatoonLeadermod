@@ -172,7 +172,7 @@ pl_suppressive_fire_position = {
 
 pl_assault_position = {
     params ["_group", ["_taskPlanWp", []]];
-    private ["_mPos", "_leftPos", "_rightPos", "_markerPhaselineName", "_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_attackMode", "_fastAtk", "_tacticalAtk"];
+    private ["_mPos", "_leftPos", "_rightPos", "_markerPhaselineName", "_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_fastAtk", "_tacticalAtk"];
 
     pl_sweep_area_size = 35;
 
@@ -329,7 +329,7 @@ pl_assault_position = {
 
     pl_draw_text_array pushBack ["SEIZE", _cords, 0.025, pl_side_color_rgb]; 
 
-    [_group, "confirm", 1] call pl_voice_radio_answer;
+    [_group, "attack", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
 
     sleep 0.5;
@@ -484,8 +484,8 @@ pl_assault_position = {
             _x enableAI "AUTOCOMBAT";
             _x enableAI "FSM";
             _x forceSpeed 12;
-            [_x, _group, _area, _cords, _attackMode] spawn {
-                params ["_unit", "_group", "_area", "_cords", "_attackMode"];
+            [_x, _group, _area, _cords] spawn {
+                params ["_unit", "_group", "_area", "_cords"];
                 private ["_movePos", "_target"];
 
                 while {sleep 0.5; (count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {

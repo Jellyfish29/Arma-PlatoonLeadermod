@@ -52,7 +52,7 @@ pl_reveal_targets = {
     {
         _t = _x;
         {
-            if (((leader _x) distance2D _leader) < pl_radio_range) then {
+            if (((leader _x) distance2D _leader) < ((group _leader) getVariable ["pl_radio_range_custom", pl_radio_range])) then {
                 _x reveal _t;
             };
         } forEach (allGroups select {side _x isEqualTo playerSide});
@@ -78,7 +78,7 @@ pl_share_info_opfor = {
             [_targets, (leader _group)] call pl_reveal_targets_opfor;
         };
 
-        sleep 10;
+        sleep 30;
     };
 };
 
@@ -106,6 +106,18 @@ pl_reveal_targets_opfor = {
             };
         } forEach (allGroups select {side _x != playerSide});
     } forEach _targets;
+};
+
+pl_forget_targets = {
+    params ["_group", ["_infoTimeOut", 30]];
+
+    {
+        _group forgetTarget _x;
+    } forEach allUnits;
+
+    _group setVariable ["pl_radio_range_custom", 0];
+    sleep _infoTimeOut;
+    _group setVariable ["pl_radio_range_custom", nil];
 };
 
 
@@ -226,6 +238,8 @@ pl_player_report = {
 
 pl_enemy_destroyed_report = {
     params ["_unit", "_killer", "_group"];
+
+    _group setvariable ["pl_marta_clean", true];
     _typeStr = "Infantry Unit";
     if (vehicle _unit != _unit) then {
         _vic = vehicle _unit;
@@ -243,10 +257,11 @@ pl_enemy_destroyed_report = {
         if (isNil {_group getVariable "pl_death_reported"}) then {
             _gridPos = mapGridPosition _unit;
             _group setVariable ["pl_death_reported", true];
-            if (pl_enable_beep_sound) then {playSound "beep"};
+            // if (pl_enable_beep_sound) then {playSound "beep"};
             if (pl_enable_chat_radio) then {_killer sideChat format ["%1 destroyed enemy %2", groupId (group _killer), _typeStr]};
             if (pl_enable_map_radio) then {[group _killer, format ["...destroyed enemy %1", _typeStr], 15] call pl_map_radio_callout};
-            [_group, "destroyed", 1] call pl_voice_radio_answer;
+            [group _killer, "destroyed", 1] call pl_voice_radio_answer;
+            [_group, true] spawn pl_marta_cleanup;
         };
     };
 };
@@ -534,62 +549,13 @@ pl_set_up_ai = {
 
     [_group] call pl_ammo_bearer;
     if (_group != (group player)) then {[_group] spawn pl_auto_formation};
+        
     _magCountAll = 0;
-    {     
-        if ((_x != player) or !(_x in switchableUnits)) then {
-            _x unassignItem "Binocular";
-            _x removeWeapon "Binocular";
-            _x unassignItem "Rangefinder";
-            _x removeWeapon "Rangefinder";
-        };
-        if (_x getVariable ["pl_special_force", false]) then {
-            [_x] spawn pl_special_forces_skills;
-        };
-        // _mags = magazines _x;
-        // _mag = [];
-        // if ((primaryWeapon _x) != "") then {
-        //     _mag = getArray (configFile >> "CfgWeapons" >> (primaryWeapon _x) >> "magazines");
-        // };
+    {    
         _primary = primaryWeapon _x;
         _standartMagAmount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})} count magazines _x) + 1;
-        // if !(_mag isEqualto []) then {
-        //     private _magCount = 0;
-        //     {
-        //         _m = _x;
-        //         {
-        //             if ((_m isEqualto _x)) then {
-        //                 _magCount = _magCount + 1;
-        //             };
-        //         } forEach _mag;
-        //     } forEach _mags;
-        // };
         _magCountAll = _magCountAll + _standartMagAmount;
-        _x setVariable ["pl_wia", false];
-        _x setVariable ["pl_unstuck_cd", 0];
-        _laodout = getUnitLoadout _x;
-        _x setVariable ["pl_loadout", _laodout];
-
-        if (_x getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
-            _x setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
-        };
-
-        if (secondaryWeapon _x != "") then {
-            _launcher = secondaryWeapon _x;
-            _missile = (getArray (configFile >> "CfgWeapons" >> (secondaryWeapon _x) >> "magazines")) select 0;
-            _x setVariable ["pl_sec_weapon", [_launcher, _missile]];
-        };
-        
-        if (pl_auto_crouch_enabled) then {
-            [_x] spawn pl_auto_crouch;
-        };
-
-        if (pl_fire_indicator_enabled) then {
-            [_x] call pl_add_unit_fire_indicator;
-        };
-
-        if (pl_enabled_medical) then {
-            [_x] call pl_medical_setup; 
-        };
+        [_x, _group] call pl_set_up_single_unit;
     } forEach (units _group);
 
     if ((count (units _group)) > 1) then {
@@ -713,7 +679,7 @@ pl_vehicle_setup = {
                 [_grp, "f_truck_rep_pl"] call pl_change_group_icon;
             };
         } else {
-            if (([_vic] call pl_is_apc) or _vic isKindOf "Car") then {
+            if (([_vic] call pl_is_apc) or ([_vic] call pl_is_ifv) or _vic isKindOf "Car") then {
                 _vic setVariable ["pl_supplies", 40];
             };
         };
@@ -752,6 +718,45 @@ pl_vehicle_setup = {
     _vic setVariable ["pl_vic_inv", _vicInv];
 };
 
+pl_set_up_single_unit = {
+    params ["_unit", "_group"];  
+    if ((_x != player) or !(_x in switchableUnits)) then {
+        _x unassignItem "Binocular";
+        _x removeWeapon "Binocular";
+        _x unassignItem "Rangefinder";
+        _x removeWeapon "Rangefinder";
+    };
+    if (_x getVariable ["pl_special_force", false]) then {
+        [_x] spawn pl_special_forces_skills;
+    };
+    _x setVariable ["pl_wia", false];
+    _x setVariable ["pl_unstuck_cd", 0];
+    _laodout = getUnitLoadout _x;
+    _x setVariable ["pl_loadout", _laodout];
+
+    if (_x getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
+        _x setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
+    };
+
+    if (secondaryWeapon _x != "") then {
+        _launcher = secondaryWeapon _x;
+        _missile = (getArray (configFile >> "CfgWeapons" >> (secondaryWeapon _x) >> "magazines")) select 0;
+        _x setVariable ["pl_sec_weapon", [_launcher, _missile]];
+    };
+    
+    if (pl_auto_crouch_enabled) then {
+        [_x] spawn pl_auto_crouch;
+    };
+
+    if (pl_fire_indicator_enabled) then {
+        [_x] call pl_add_unit_fire_indicator;
+    };
+
+    if (pl_enabled_medical) then {
+        [_x] call pl_medical_setup; 
+    }; 
+};
+
 pl_active_opfor_vic_grps = [];
 
 pl_ai_setUp_loop = {
@@ -786,7 +791,7 @@ pl_ai_setUp_loop = {
                     if (isNil {(leader _x) getVariable "PlContactRepEnabled"}) then {
                         [_x, false] spawn pl_contact_report;
                     };
-                    if (isNil {_x getVariable "aiSetUp"}) then {
+                    if !(_x getVariable ["aiSetUp", false]) then {
                         [_x] call pl_set_up_ai;
                     };
                     // unit Reset loop
@@ -1171,12 +1176,13 @@ pl_inf_trans_set_up = {
     _group setVariable ["onTask", false];
     _group setVariable ["setSpecial", false];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
+    _group setVariable ["pl_disembark_finished", false];
     [_group, true] call pl_contact_report;
     // _group setVariable ["pl_show_info", false];
-    {
-        _x assignAsCargo _targetVic;
-    } forEach (units _group);
-    [units _group] allowGetIn true; //false;
+    // {
+    //     _x assignAsCargo _targetVic;
+    // } forEach (units _group);
+    // [units _group] allowGetIn true; //false;
     // if !(_group getVariable ["pl_is_recon", false]) then {
         [_group] call pl_hide_group_icon;
     // } else {
@@ -1275,6 +1281,8 @@ pl_start_set_up = {
                         [_x] call pl_inf_trans_set_up;
                     };
                     // [_x, true] spawn pl_contact_report;
+                } else {
+                    [_x] spawn pl_reset;
                 };
                 if !(isNull (isVehicleCargo (vehicle _leader))) then {
                     [_x] call pl_viv_trans_set_up;
@@ -1285,6 +1293,7 @@ pl_start_set_up = {
                 // };
             } else {
                 [_x] call pl_change_inf_icons;
+                [_x] spawn pl_reset;
             };
 
             sleep 0.2;
@@ -1296,8 +1305,6 @@ pl_start_set_up = {
             if (_x getVariable ["pl_set_as_medical", false]) then {
                 [_x, "f_t_med_pl"] call pl_change_group_icon;
             };
-
-            [_x] spawn pl_reset;
 
         } forEach (allGroups select {side _x isEqualTo playerSide});
     };

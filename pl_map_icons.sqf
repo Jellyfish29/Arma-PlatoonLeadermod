@@ -1113,20 +1113,22 @@ pl_mark_obstacles = {
         if (pl_show_obstacles) then {
             {
                 _obstacle = _x;
-                _icon = '\A3\ui_f\data\map\mapControl\bunker_ca.paa';
-                _size = 15;
-                if (_x isKindOf 'Tank' or _x isKindOf 'Car') then {
-                    _icon = getText (configfile >> 'CfgVehicles' >> typeof _x >> 'icon');
-                    _size = 30;
+                if !(isHidden _obstacle) then {
+                    _icon = '\A3\ui_f\data\map\mapControl\bunker_ca.paa';
+                    _size = 15;
+                    if (_x isKindOf 'Tank' or _x isKindOf 'Car') then {
+                        _icon = getText (configfile >> 'CfgVehicles' >> typeof _x >> 'icon');
+                        _size = 30;
+                    };
+                    _display drawIcon [
+                        _icon,
+                        [0.92,0.24,0.07,1],
+                        getPosVisual _obstacle,
+                        _size,
+                        _size,
+                        getDirVisual _obstacle
+                    ]
                 };
-                _display drawIcon [
-                    _icon,
-                    [0.92,0.24,0.07,1],
-                    getPosVisual _obstacle,
-                    _size,
-                    _size,
-                    getDirVisual _obstacle
-                ]
             } forEach ((pl_show_obstacles_pos nearObjects 90) select {['fence', typeOf _x] call BIS_fnc_inString or ['barrier', typeOf _x] call BIS_fnc_inString or ['wall', typeOf _x] call BIS_fnc_inString or ['sand', typeOf _x] call BIS_fnc_inString or ['bunker', typeOf _x] call BIS_fnc_inString or ['wire', typeOf _x] call BIS_fnc_inString}) + (allDead - allDeadMen);
         };
     "]; // "
@@ -1510,7 +1512,7 @@ pl_open_tac_map = {
     // setGroupIconsVisible [true,false]; 
     if !(isNull findDisplay 2000) exitWith {
         pl_last_tac_zoom = ctrlMapScale (findDisplay 2000 displayCtrl 2000);
-        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [1.08, 0.58];
+        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [-0.38, 0.95];
         (findDisplay 2000) closeDisplay 1;
         playSound "HintCollapse";
         // ctrlDelete (uiNamespace getVariable "pl_pouch_gfx");
@@ -1536,25 +1538,6 @@ pl_open_tac_map = {
 
     [] call pl_show_tac_map_icons;
 };
-
-////////////////////////////////////////////////////////
-// GUI EDITOR OUTPUT START (by Clemens, v1.063, #Jegaza)
-////////////////////////////////////////////////////////
-
-class RscFrame_1800: RscFrame
-{
-    idc = 1800;
-    x = 0.198125 * safezoneW + safezoneX;
-    y = 0.472 * safezoneH + safezoneY;
-    w = 0.60375 * safezoneW;
-    h = 0.532 * safezoneH;
-};
-////////////////////////////////////////////////////////
-// GUI EDITOR OUTPUT END
-////////////////////////////////////////////////////////
-
-
-
 
 pl_open_tac_forced = {
     params ["_pos"];

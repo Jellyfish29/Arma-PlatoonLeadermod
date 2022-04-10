@@ -150,12 +150,12 @@ class RscHCGroupRootMenu
         };
         class Empty3
         {
-            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa'/><t> Rusch/Fallback</t>";
+            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa'/><t> Disengage</t>";
             shortcuts[]={};
             command=-5;
             class Params
             {
-                expression="{[_x] spawn pl_rush} forEach hcSelected player";
+                expression="{[_x] spawn pl_disengage} forEach hcSelected player";
             };
             show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -2843,135 +2843,135 @@ class cfgGroupIcons
     class b_f_heli_pl: b_unknown_pl
     {
         name="Helicopter Blufor";
-        icon="\Plmod\gfx\marta b_f_heli_pl.paa";
-        texture="\Plmod\gfx\marta b_f_heli_pl.paa";
+        icon="\Plmod\gfx\marta\b_f_heli_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_heli_pl.paa";
     };
     class b_f_heliatk_pl: b_unknown_pl
     {
         name="Helicopter Attack Blufor";
-        icon="\Plmod\gfx\marta b_f_heliatk_pl.paa";
-        texture="\Plmod\gfx\marta b_f_heliatk_pl.paa";
+        icon="\Plmod\gfx\marta\b_f_heliatk_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_heliatk_pl.paa";
     };
     class b_f_helic_pl: b_unknown_pl
     {
         name="Helicopter Cargo Blufor";
-        icon="\Plmod\gfx\marta b_f_helic_pl.paa";
-        texture="\Plmod\gfx\marta b_f_helic_pl.paa";
+        icon="\Plmod\gfx\marta\b_f_helic_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_helic_pl.paa";
     };
     class b_f_planea_pl: b_unknown_pl
     {
         name="Plane Attack Blufor";
-        icon="\Plmod\gfx\marta b_f_planea_pl.paa";
-        texture="\Plmod\gfx\marta b_f_planea_pl.paa";
+        icon="\Plmod\gfx\marta\b_f_planea_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_planea_pl.paa";
     };
 
     class o_f_tank_pl: o_unknown_pl
     {
         name="Heavy Tank Opfor";
-        icon="\Plmod\gfx\marta o_f_tank_pl.paa";
-        texture="\Plmod\gfx\marta o_f_tank_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_tank_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_tank_pl.paa";
     };
     class o_f_apctr_pl: o_unknown_pl
     {
         name="APC Tracked Opfor";
-        icon="\Plmod\gfx\marta o_f_apctr_pl.paa";
-        texture="\Plmod\gfx\marta o_f_apctr_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_apctr_pl.paa";
     };
     class o_f_apcwe_pl: o_unknown_pl
     {
         name="APC Wheeled Opfor";
-        icon="\Plmod\gfx\marta o_f_apcwe_pl.paa";
-        texture="\Plmod\gfx\marta o_f_apcwe_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_apcwe_pl.paa";
     };
     class o_f_ifvtr_pl: o_unknown_pl
     {
         name="ifv Tracked Opfor";
-        icon="\Plmod\gfx\marta o_f_ifvtr_pl.paa";
-        texture="\Plmod\gfx\marta o_f_ifvtr_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_ifvtr_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_ifvtr_pl.paa";
     };
     class o_f_ifvwe_pl: o_unknown_pl
     {
         name="ifv Wheeled Opfor";
-        icon="\Plmod\gfx\marta o_f_ifvwe_pl.paa";
-        texture="\Plmod\gfx\marta o_f_ifvwe_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_ifvwe_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_ifvwe_pl.paa";
     };
     class o_f_truck_pl: o_unknown_pl
     {
         name="Truck Opfor";
-        icon="\Plmod\gfx\marta o_f_truck_pl.paa";
-        texture="\Plmod\gfx\marta o_f_truck_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_truck_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_truck_pl.paa";
     };
     class o_f_truck_sup_pl: o_unknown_pl
     {
         name="Truck Support Opfor";
-        icon="\Plmod\gfx\marta o_f_truck_sup_pl.paa";
-        texture="\Plmod\gfx\marta o_f_truck_sup_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_truck_sup_pl.paa";
     };
     class o_f_truck_rep_pl: o_unknown_pl
     {
         name="Truck Repair Opfor";
-        icon="\Plmod\gfx\marta o_f_truck_rep_pl.paa";
-        texture="\Plmod\gfx\marta o_f_truck_rep_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_truck_rep_pl.paa";
     };
     class o_f_truck_med_pl: o_unknown_pl
     {
         name="Truck medical Opfor";
-        icon="\Plmod\gfx\marta o_f_truck_med_pl.paa";
-        texture="\Plmod\gfx\marta o_f_truck_med_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_truck_med_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_truck_med_pl.paa";
     };
     class o_f_tank_rep_pl: o_unknown_pl
     {
         name="tank Repair Opfor";
-        icon="\Plmod\gfx\marta o_f_tank_rep_pl.paa";
-        texture="\Plmod\gfx\marta o_f_tank_rep_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_tank_rep_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_tank_rep_pl.paa";
     };
     class o_f_tank_med_pl: o_unknown_pl
     {
         name="tank medical Opfor";
-        icon="\Plmod\gfx\marta o_f_tank_med_pl.paa";
-        texture="\Plmod\gfx\marta o_f_tank_med_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_tank_med_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_tank_med_pl.paa";
     };
     class o_f_tank_sup_pl: o_unknown_pl
     {
         name="tank support Opfor";
-        icon="\Plmod\gfx\marta o_f_tank_sup_pl.paa";
-        texture="\Plmod\gfx\marta o_f_tank_sup_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_tank_sup_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_tank_sup_pl.paa";
     };
     class o_f_heli_pl: o_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta o_f_heli_pl.paa";
-        texture="\Plmod\gfx\marta o_f_heli_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_heli_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_heli_pl.paa";
     };
     class o_f_heliatk_pl: o_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta o_f_heliatk_pl.paa";
-        texture="\Plmod\gfx\marta o_f_heliatk_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_heliatk_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_heliatk_pl.paa";
     };
     class o_f_helic_pl: o_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta o_f_helic_pl.paa";
-        texture="\Plmod\gfx\marta o_f_helic_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_helic_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_helic_pl.paa";
     };
     class o_f_planea_pl: o_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta o_f_planea_pl.paa";
-        texture="\Plmod\gfx\marta o_f_planea_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_planea_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_planea_pl.paa";
     };
     class o_f_tankaa_pl: o_unknown_pl
     {
         name="AA Tank Opfor";
-        icon="\Plmod\gfx\marta o_f_tankaa_pl.paa";
-        texture="\Plmod\gfx\marta o_f_tankaa_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_tankaa_pl.paa";
     };
     class o_f_artgun_pl: o_unknown_pl
     {
         name="Howitzer Opfor";
-        icon="\Plmod\gfx\marta o_f_artgun_pl.paa";
-        texture="\Plmod\gfx\marta o_f_artgun_pl.paa";
+        icon="\Plmod\gfx\marta\o_f_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_artgun_pl.paa";
     };
 
     class o_f_t_inf_pl: o_unknown_pl
@@ -3040,110 +3040,110 @@ class cfgGroupIcons
     {
         size = 24;
         name="Heavy Tank Independet";
-        icon="\Plmod\gfx\marta n_f_tank_pl.paa";
-        texture="\Plmod\gfx\marta n_f_tank_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_tank_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_tank_pl.paa";
     };
     class n_f_apctr_pl: n_unknown_pl
     {
         name="APC Tracked Independet";
-        icon="\Plmod\gfx\marta n_f_apctr_pl.paa";
-        texture="\Plmod\gfx\marta n_f_apctr_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_apctr_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_apctr_pl.paa";
     };
     class n_f_apcwe_pl: n_unknown_pl
     {
         name="APC Wheeled Independet";
-        icon="\Plmod\gfx\marta n_f_apcwe_pl.paa";
-        texture="\Plmod\gfx\marta n_f_apcwe_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_apcwe_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_apcwe_pl.paa";
     };
     class n_f_ifvtr_pl: n_unknown_pl
     {
         name="ifv Tracked Independet";
-        icon="\Plmod\gfx\marta n_f_ifvtr_pl.paa";
-        texture="\Plmod\gfx\marta n_f_ifvtr_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_ifvtr_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_ifvtr_pl.paa";
     };
     class n_f_ifvwe_pl: n_unknown_pl
     {
         name="ifv Wheeled Independet";
-        icon="\Plmod\gfx\marta n_f_ifvwe_pl.paa";
-        texture="\Plmod\gfx\marta n_f_ifvwe_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_ifvwe_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_ifvwe_pl.paa";
     };
     class n_f_truck_pl: n_unknown_pl
     {
         name="Truck Independet";
-        icon="\Plmod\gfx\marta n_f_truck_pl.paa";
-        texture="\Plmod\gfx\marta n_f_truck_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_truck_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_truck_pl.paa";
     };
     class n_f_truck_sup_pl: n_unknown_pl
     {
         name="Truck Repair Independet";
-        icon="\Plmod\gfx\marta n_f_truck_sup_pl.paa";
-        texture="\Plmod\gfx\marta n_f_truck_sup_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_truck_sup_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_truck_sup_pl.paa";
     };
     class n_f_truck_rep_pl: n_unknown_pl
     {
         name="Truck repport Independet";
-        icon="\Plmod\gfx\marta n_f_truck_rep_pl.paa";
-        texture="\Plmod\gfx\marta n_f_truck_rep_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_truck_rep_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_truck_rep_pl.paa";
     };
     class n_f_truck_med_pl: n_unknown_pl
     {
         name="Truck medical Independet";
-        icon="\Plmod\gfx\marta n_f_truck_med_pl.paa";
-        texture="\Plmod\gfx\marta n_f_truck_med_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_truck_med_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_truck_med_pl.paa";
     };
     class n_f_tank_med_pl: n_unknown_pl
     {
         name="tank medical Independet";
-        icon="\Plmod\gfx\marta n_f_tank_med_pl.paa";
-        texture="\Plmod\gfx\marta n_f_tank_med_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_tank_med_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_tank_med_pl.paa";
     };
     class n_f_tank_rep_pl: n_unknown_pl
     {
         name="tank repair Independet";
-        icon="\Plmod\gfx\marta n_f_tank_rep_pl.paa";
-        texture="\Plmod\gfx\marta n_f_tank_rep_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_tank_rep_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_tank_rep_pl.paa";
     };
     class n_f_tank_sup_pl: n_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta n_f_tank_sup_pl.paa";
-        texture="\Plmod\gfx\marta n_f_tank_sup_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_tank_sup_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_tank_sup_pl.paa";
     };
     class n_f_heli_pl: n_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta n_f_heli_pl.paa";
-        texture="\Plmod\gfx\marta n_f_heli_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_heli_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_heli_pl.paa";
     };
     class n_f_heliatk_pl: n_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta n_f_heliatk_pl.paa";
-        texture="\Plmod\gfx\marta n_f_heliatk_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_heliatk_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_heliatk_pl.paa";
     };
     class n_f_helic_pl: n_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta n_f_helic_pl.paa";
-        texture="\Plmod\gfx\marta n_f_helic_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_helic_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_helic_pl.paa";
     };
     class n_f_planea_pl: n_unknown_pl
     {
         name="tank support Independet";
-        icon="\Plmod\gfx\marta n_f_planea_pl.paa";
-        texture="\Plmod\gfx\marta n_f_planea_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_planea_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_planea_pl.paa";
     };
     class n_f_tankaa_pl: n_unknown_pl
     {
         name="AA Tank Independet";
-        icon="\Plmod\gfx\marta n_f_tankaa_pl.paa";
-        texture="\Plmod\gfx\marta n_f_tankaa_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_tankaa_pl.paa";
     };
     class n_f_artgun_pl: n_unknown_pl
     {
         name="Howitzer Independet";
-        icon="\Plmod\gfx\marta n_f_artgun_pl.paa";
-        texture="\Plmod\gfx\marta n_f_artgun_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_artgun_pl.paa";
     };
 
     class n_f_t_inf_pl: n_unknown_pl
@@ -3760,12 +3760,10 @@ class pl_RscMap
             shadow = 1;
             moveOnEdges = 0;
             idc = 2000;
-            // x = 0.60572 * safezoneW + safezoneX;
-            // y = 0.170948 * safezoneH + safezoneY;
-            x = 0.198125 * safezoneW + safezoneX;
-            y = 0.472 * safezoneH + safezoneY;
-            w = 0.383234 * safezoneW;
-            h = 0.808527 * safezoneH;
+            x = -0.000156274 * safezoneW + safezoneX;
+            y = 0.511 * safezoneH + safezoneY;
+            w = 0.28875 * safezoneW;
+            h = 0.484 * safezoneH;
         };
     };
     access = 0;
@@ -3787,3 +3785,4 @@ class CfgVehicles
         };
     };
 };
+

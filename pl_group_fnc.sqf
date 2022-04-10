@@ -381,6 +381,7 @@ pl_voice_radio_answer = {
    // own KIA: SentUnitKilled
    // vic damaged: SentDammageCritical
    // Attack completed: SentClear
+   // panic: SentEndangered
    if (pl_enable_voice_radio) then {
 
         private _answerVoiceLine = "";
@@ -388,10 +389,12 @@ pl_voice_radio_answer = {
             case "confirm" : {_answerVoiceLine = selectRandom ["SentConfirmAttack", "SentConfirmOther", "SentSupportConfirm"]};
             case "suppress" : {_answerVoiceLine = selectRandom ["SentConfirmSuppress"]}; 
             case "contact" : {_answerVoiceLine = selectRandom ["SentEnemyContact", "SentOpenFireInCombat"]};
-            case "kia" : {_answerVoiceLine = "SentUnitKilled"}; 
+            case "kia" : {_answerVoiceLine = selectRandom ["SentUnitKilled", "SentUnitKilled", "SentEndangered"]}; 
             case "destroyed" : {_answerVoiceLine = "SentObjectDestroyedUnknown"}; 
-            case "damaged" : {_answerVoiceLine = "SentDammageCritical"}; 
-            case "atk_complete" : {_answerVoiceLine = "SentClear"}; 
+            case "damaged" : {_answerVoiceLine = selectRandom ["SentDammageCritical", "SentEndangered"]}; 
+            case "atk_complete" : {_answerVoiceLine = "SentClear"};
+            case "attack" : {_answerVoiceLine = "SentNotifyAttack"};
+            case "wia" : {_answerVoiceLine = "SentHealthCritical"};
             default {_answerVoiceLine = ""};
         };
 

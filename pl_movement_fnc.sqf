@@ -54,28 +54,22 @@ pl_march = {
     // if (vehicle (leader _group) != (leader _group)) exitWith {[_group, _cords] spawn pl_vic_advance};
 
     if (isNil {_group getVariable "pl_on_march"}) then {
-        [_group] call pl_reset;
-        // sleep 0.2;
+
+        if (_group getVariable ["onTask", false]) then {
+            [_group] spawn pl_reset;
+            sleep 0.5;
+            [_group] spawn pl_reset;
+            sleep 0.5;
+        } else {
+            {
+                _x enableAI "PATH";
+                _x setUnitPos "AUTO";
+                _x forceSpeed -1;
+            } forEach (units _group);
+        };
 
         // if (pl_enable_beep_sound) then {playSound "beep"};
-        [_group, "confirm", 1] call pl_voice_radio_answer;
-
-
-        // _group setVariable ["onTask", true];
-        // _group setVariable ["setSpecial", true];
-        // _group setVariable ["specialIcon", "\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"];
-        _group setVariable ["pl_on_march", true];
-
-        {
-            _x disableAI "AUTOCOMBAT";
-        } forEach (units _group);
-        (leader _group) limitSpeed 14;
-        // _group setFormation "FILE";
-        _group setBehaviour "AWARE";
-        // if ((vehicle (leader _group)) != (leader _group)) then {leader _group
-            
-
-        // };
+        // [_group, "confirm", 1] call pl_voice_radio_answer;
 
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
@@ -85,6 +79,16 @@ pl_march = {
             vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
         };
 
+        sleep 0.2;
+
+        _group setVariable ["pl_on_march", true];
+        {
+            _x disableAI "AUTOCOMBAT";
+        } forEach (units _group);
+        (leader _group) limitSpeed 14;
+        // _group setFormation "FILE";
+        _group setBehaviour "AWARE";
+
         sleep 1;
         waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setVariable ["pl_on_march", nil];
@@ -93,8 +97,6 @@ pl_march = {
             _x enableAI "AUTOCOMBAT";
         } forEach (units _group);
         (leader _group) limitSpeed 5000;
-
-        // if (_group getVariable ["onTask", true] and !(_group getVariable ["pl_task_planed", false])) then {[_group] call pl_reset;};
         
     }
     else
@@ -336,16 +338,16 @@ pl_follow = {
                     _leader = leader _x;
                     _relPos = _x getVariable "pl_rel_pos";
                     if (vehicle _leader != _leader) then {
-                        // (vehicle _leader) limitSpeed (speed player) + 5;
-                        if ((speed (vehicle _leader)) < 1) then {
+                        (vehicle _leader) limitSpeed (speed player) + 5;
+                        if ((speed (vehicle _leader)) > 1) then {
                             _newPos = [((getPos _leader) select 0) + ((_posOffset select 0) * 15), ((getPos _leader) select 1) + ((_posOffset select 1) * 15)];
                             (vehicle _leader) doMove _newPos;
-                            (vehicle _leader) setDestination [_newPos,"VEHICLE PLANNED" , true];
+                            (vehicle _leader) setDestination [_newPos, "VEHICLE PLANNED" , false];
                         };
-                        if ((speed player) < 1) then {
+                        if ((speed player) > 1) then {
                             _newPos = [((getPos player) select 0) + (_relPos select 0), ((getPos player) select 1) + (_relPos select 1)];
                             (vehicle _leader) doMove _newPos;
-                            (vehicle _leader) setDestination [_newPos,"VEHICLE PLANNED" , true];
+                            (vehicle _leader) setDestination [_newPos, "VEHICLE PLANNED" , false];
                         };
                     }
                     else

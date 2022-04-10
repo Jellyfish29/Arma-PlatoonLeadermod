@@ -480,6 +480,7 @@ pl_fire_on_map_arty = {
     {
         _x addMagazineTurret [_ammoType, [-1]];
         _x removeEventHandler ["Fired", _eh];
+        _x setVehicleAmmo 1;
     } forEach _guns;
 };
 

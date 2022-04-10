@@ -317,8 +317,13 @@ pl_supply_point = {
                             if (vehicle (leader _targetGrp) != leader _targetGrp) then {
                                 if (_ammoCargo > 0) then {
                                     vehicle (leader _targetGrp) setVehicleAmmo 1;
-                                    vehicle (leader _targetGrp) setDamage 0;
-                                    _ammoCargo = _ammoCargo - 5;
+                                    if (getDammage vehicle (leader _targetGrp) > 0) then {
+                                        vehicle (leader _targetGrp) setDamage 0;
+                                        _ammoCargo = _ammoCargo - 5;
+                                    };
+                                    if (([vehicle (leader _targetGrp)] call pl_is_apc) or ([vehicle (leader _targetGrp)] call pl_is_ifv) or vehicle (leader _targetGrp) isKindOf "Car") then {
+                                        vehicle (leader _targetGrp) setVariable ["pl_supplies", 40];
+                                    };
                                 };
                             }; 
 
@@ -347,14 +352,7 @@ pl_supply_point = {
                                             _newUnit = _targetGrp createUnit [_type, getPos _vic,[],0, "NONE"];
                                             _newUnit setUnitLoadout _loadout;
                                             _newUnit doFollow (leader _targetGrp);
-                                            _newUnit setVariable ["pl_wia", false];
-                                            _newUnit setVariable ["pl_unstuck_cd", 0];
-                                            [_newUnit] spawn pl_auto_crouch;
-                                            _newUnit setVariable ["pl_loadout", _loadout];
-                                            _newUnit setSkill pl_ai_skill;
-                                            if (pl_enabled_medical) then {
-                                                [_newUnit] call pl_medical_setup; 
-                                            };
+                                            [_newUnit, _targetGrp] call pl_set_up_single_unit;
                                             _reinforced = _reinforced + 1;
                                         };
                                     };
@@ -421,9 +419,10 @@ pl_rearm_point = {
     _vic = vehicle (leader _group);
 
     private _isAPC = [_vic] call pl_is_apc;
+    private _isIFV = [_vic] call pl_is_ifv;
 
     // check if vehicle is supply vehicle
-    if (!(_isAPC) and !(_vic isKindOf "Car")) exitWith {hint "Requires APC or Supply Vehicle"};
+    if (!(_isAPC) and !(_isIFV) and !(_vic isKindOf "Car")) exitWith {hint "Requires APC or Supply Vehicle"};
 
     // get current Ammo Cargo of Vic and calc _ammoStep -> per one inve refill -2% Supplies
     _ammoCargo = _vic getVariable ["pl_supplies", 0];
