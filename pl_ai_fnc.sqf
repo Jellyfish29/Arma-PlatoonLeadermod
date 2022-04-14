@@ -720,40 +720,40 @@ pl_vehicle_setup = {
 
 pl_set_up_single_unit = {
     params ["_unit", "_group"];  
-    if ((_x != player) or !(_x in switchableUnits)) then {
-        _x unassignItem "Binocular";
-        _x removeWeapon "Binocular";
-        _x unassignItem "Rangefinder";
-        _x removeWeapon "Rangefinder";
+    if ((_unit != player) or !(_unit in switchableUnits)) then {
+        _unit unassignItem "Binocular";
+        _unit removeWeapon "Binocular";
+        _unit unassignItem "Rangefinder";
+        _unit removeWeapon "Rangefinder";
     };
-    if (_x getVariable ["pl_special_force", false]) then {
-        [_x] spawn pl_special_forces_skills;
+    if (_unit getVariable ["pl_special_force", false]) then {
+        [_unit] spawn pl_special_forces_skills;
     };
-    _x setVariable ["pl_wia", false];
-    _x setVariable ["pl_unstuck_cd", 0];
-    _laodout = getUnitLoadout _x;
-    _x setVariable ["pl_loadout", _laodout];
+    _unit setVariable ["pl_wia", false];
+    _unit setVariable ["pl_unstuck_cd", 0];
+    _laodout = getUnitLoadout _unit;
+    _unit setVariable ["pl_loadout", _laodout];
 
-    if (_x getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
-        _x setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
+    if (_unit getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
+        _unit setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
     };
 
-    if (secondaryWeapon _x != "") then {
-        _launcher = secondaryWeapon _x;
-        _missile = (getArray (configFile >> "CfgWeapons" >> (secondaryWeapon _x) >> "magazines")) select 0;
-        _x setVariable ["pl_sec_weapon", [_launcher, _missile]];
+    if (secondaryWeapon _unit != "") then {
+        _launcher = secondaryWeapon _unit;
+        _missile = (getArray (configFile >> "CfgWeapons" >> (secondaryWeapon _unit) >> "magazines")) select 0;
+        _unit setVariable ["pl_sec_weapon", [_launcher, _missile]];
     };
     
     if (pl_auto_crouch_enabled) then {
-        [_x] spawn pl_auto_crouch;
+        [_unit] spawn pl_auto_crouch;
     };
 
     if (pl_fire_indicator_enabled) then {
-        [_x] call pl_add_unit_fire_indicator;
+        [_unit] call pl_add_unit_fire_indicator;
     };
 
     if (pl_enabled_medical) then {
-        [_x] call pl_medical_setup; 
+        [_unit] call pl_medical_setup; 
     }; 
 };
 

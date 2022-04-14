@@ -332,15 +332,16 @@ pl_task_plan_menu = [
 
 pl_task_plan_menu_unloaded_inf = [
     ['Task Plan', true],
-    [parseText "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Add Waypoints</t>", [2], '', -5, [['expression', '["addwp"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] spawn pl_task_planer_unload_inf']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [3], '', -5, [['expression', '["assault"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>", [4], '', -5, [['expression', '["defend"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Add Waypoints</t>", [4], '', -5, [['expression', '["addwp"] spawn pl_task_planer_unload_inf']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [5], '', -5, [['expression', '["mine"] spawn pl_task_planer_unload_inf']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [6], '', -5, [['expression', '["clearmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [7], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    ['', [], '', -1, [['expression', '']], '1', '1']
+    ['', [], '', -1, [['expression', '']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ccp_marker.paa"/><t> Set Up Casualty Collection Point</t>', [8], '', -5, [['expression', '["ccp"] spawn pl_task_planer_unload_inf']], '1', '1']
 ];
 
 
@@ -348,11 +349,11 @@ pl_task_plan_menu_unloaded_inf = [
 pl_change_icon_menu = 
 [
     ['Nato Markers',true],
-    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_inf.paa'/><t> Infantry</t>", [2], '', -5, [['expression', '{[_x, "inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_inf.paa'/><t> Infantry</t>", [2], '', -5, [['expression', '{[_x, "f_s_inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_armor.paa'/><t> Armor</t>", [3], '', -5, [['expression', '{[_x, "armor"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_mech_inf.paa'/><t> Mech Inf</t>", [4], '', -5, [['expression', '{[_x, "mech_inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_motor_inf.paa'/><t> Mot Inf</t>", [5], '', -5, [['expression', '{[_x, "motor_inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_recon.paa'/><t> Recon</t>", [6], '', -5, [['expression', '{[_x, "recon"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_recon.paa'/><t> Recon</t>", [6], '', -5, [['expression', '{[_x, "f_s_recon"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_maint.paa'/><t> Maintenance</t>", [7], '', -5, [['expression', '{[_x, "maint"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_support.paa'/><t> Support</t>", [8], '', -5, [['expression', '{[_x, "support"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_antiair.paa'/><t> Anti Air</t>", [9], '', -5, [['expression', '{[_x, "antiair"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],

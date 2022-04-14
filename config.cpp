@@ -3760,14 +3760,15 @@ class pl_RscMap
             shadow = 1;
             moveOnEdges = 0;
             idc = 2000;
-            x = -0.000156274 * safezoneW + safezoneX;
-            y = 0.511 * safezoneH + safezoneY;
-            w = 0.28875 * safezoneW;
-            h = 0.484 * safezoneH;
+            x = 0.00499997 * safezoneW + safezoneX;
+            y = 0.137 * safezoneH + safezoneY;
+            w = 0.639375 * safezoneW;
+            h = 0.77 * safezoneH;
         };
     };
     access = 0;
 };
+
 
 class CfgVehicles
 {

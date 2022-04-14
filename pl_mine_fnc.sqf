@@ -181,14 +181,14 @@ pl_mine_clearing = {
             _mine = _mines#0;
             _pos = getPosATL _mine;
             _engineer doMove _pos;
-            _escort doFollow _engineer;
+            _escort doMove _pos;
 
             sleep 0.5;
 
-            waitUntil {sleep 0.5; ((_engineer distance2D _pos) < 1) or (unitReady _engineer) or !(_group getVariable ["onTask", true])};
+            waitUntil {sleep 0.5; ((_engineer distance2D _pos) < 2) or !(_group getVariable ["onTask", true])};
 
             if !(_group getVariable ["onTask", true]) exitWith {};
-
+            if ((_engineer distance2D _pos) > 2) then {continue};
             _cm = createMarker [str (random 3), getPos _mine];
             _cm setMarkerType "mil_triangle";
             _cm setMarkerSize [0.4, 0.4];

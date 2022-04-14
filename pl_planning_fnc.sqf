@@ -101,6 +101,7 @@ pl_task_planer_unload_inf = {
         case "mine" : {[_group, _wp] spawn pl_lay_mine_field; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
         case "clearmine" : {[_group, _wp] spawn pl_mine_clearing; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"};
         case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
+        case "ccp" : {[_group, false, objNull, 100, 25, objNull, _wp] spawn pl_ccp; _icon = "\Plmod\gfx\pl_ccp_marker.paa"};
         default {}; 
     };
 

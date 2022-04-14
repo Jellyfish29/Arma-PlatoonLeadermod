@@ -285,7 +285,7 @@ pl_repair = {
             // [_group, "maint"] call pl_change_group_icon;
             // add Task Icon to wp
             pl_draw_planed_task_array pushBack [_wp, _icon];
-            if (pl_enable_beep_sound) then {playSound "beep"};
+            // if (pl_enable_beep_sound) then {playSound "beep"};
             // leader _group sideChat format ["%1 is moving to damaged vehicle, over", (groupId _group)];
             sleep 4;
             waitUntil {sleep 0.5; !alive _engVic or (unitReady _engVic) or !(_group getVariable ["onTask", true])};
@@ -322,18 +322,22 @@ pl_repair = {
                     _unitText = getText (configFile >> "CfgVehicles" >> typeOf _toRepairVic>> "textSingular");
                     if (_toRepairVic isKindOf "Tank" or _unitText isEqualTo "APC") then {
                         _vicGroup = createVehicleCrew _toRepairVic;
+                        sleep 0.1;
+                        _vicGroup setGroupId [_vicGroupId];
+                        sleep  0.1;
+                        [_vicGroup] spawn pl_set_up_ai;
+                        sleep 4;
+                        player hcSetGroup [_vicGroup];
+                        [_vicGroup] spawn pl_reset;
+                        sleep 1;
+                        if (pl_enable_beep_sound) then {playSound "radioina"};
+                        if (pl_enable_chat_radio) then {(leader _vicGroup) sideChat format ["%1 is back up and fully operational", (groupId _vicGroup)]};
+                        if (pl_enable_map_radio) then {[_vicGroup, "...We are back up!", 20] call pl_map_radio_callout};
+                    } else {
+                        if (pl_enable_beep_sound) then {playSound "radioina"};
+                        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Repairs Completeted", (groupId _group)]};
+                        if (pl_enable_map_radio) then {[_group, "...Repairs Completeted", 20] call pl_map_radio_callout};
                     };
-                    sleep 0.1;
-                    _vicGroup setGroupId [_vicGroupId];
-                    sleep  0.1;
-                    [_vicGroup] spawn pl_set_up_ai;
-                    sleep 4;
-                    player hcSetGroup [_vicGroup];
-                    [_vicGroup] spawn pl_reset;
-                    sleep 1;
-                    if (pl_enable_beep_sound) then {playSound "beep"};
-                    if (pl_enable_chat_radio) then {(leader _vicGroup) sideChat format ["%1 is back up and fully operational", (groupId _vicGroup)]};
-                    if (pl_enable_map_radio) then {[_vicGroup, "...We are back up!", 20] call pl_map_radio_callout};
 
                     _group setVariable ["onTask", false];
                     _group setVariable ["setSpecial", false];

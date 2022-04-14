@@ -148,8 +148,8 @@ pl_rearm = {
     } forEach (units _group);
 };
 
-pl_supply_area = 70;
-pl_supply_point_active = false;
+pl_supply_area = 50;
+pl_active_supply_points = [];
 pl_supply_draw_array = [];
 
 pl_supply_point = {
@@ -157,7 +157,7 @@ pl_supply_point = {
     private ["_group", "_cords", "_suppliedGroups", "_ammoBearer", "_toSupplyGroups", "_toSupplyGroups", "_ammoCargo", "_marker3D"];
 
     // if already supply point exit
-    if (pl_supply_point_active) exitWith {hint "Only on Supply Point!"};
+    // if (pl_supply_point_active) exitWith {hint "Only on Supply Point!"};
 
     // check if vehicle group
     if (vehicle (leader _group) == (leader _group)) exitWith {hint "Requires Supply Vehicle!"};
@@ -174,6 +174,13 @@ pl_supply_point = {
         if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: No Ammo left!", groupId _group]};
         if (pl_enable_map_radio) then {[_group, "...No Ammo left", 15] call pl_map_radio_callout};
     };
+
+    private _valid = true;
+    {
+        if (((getPos _vic) distance2D _x) < pl_supply_area * 2) exitWith {_valid = false};
+    } forEach pl_active_supply_points;
+
+    if !(_valid) exitwith {hint "Too close to another supply point"};
 
 
     // Taskplanning
@@ -192,18 +199,24 @@ pl_supply_point = {
     // setup Variables
     _suppliedGroups = [_group];
     _toSupplyGroups = [];
-    _ammoBearer = leader _group;
-    pl_supply_point_active = true;
+    if (count (units _group) > 1) then {
+        _ammoBearer = ((units _group) - [leader _group])#0;
+    } else {
+        _ammoBearer = leader _group;
+    };
+
+    _cords = getPos (leader _group);
+    pl_active_supply_points pushBack _cords;
 
     // Setup Markers
-    _areaMarkerName = createMarker ["supply_point_area", getPos (leader _group)];
+    _areaMarkerName = createMarker [format ["supply_point_area_%1", random 3], getPos (leader _group)];
     _areaMarkerName setMarkerShape "ELLIPSE";
     _areaMarkerName setMarkerBrush "SolidBorder";
     _areaMarkerName setMarkerColor pl_side_color;
     _areaMarkerName setMarkerAlpha 0.15;
     _areaMarkerName setMarkerSize [pl_supply_area, pl_supply_area];
 
-    _pointMarkerName = createMarker ["supply_point_center", (getPos (leader _group)) getPos [7, 0]];
+    _pointMarkerName = createMarker [format ["supply_point_center_%1", random 3], (getPos (leader _group)) getPos [7, 0]];
     _pointMarkerName setMarkerType "marker_r3p";
     _pointMarkerName setMarkerColor pl_side_color;
     // _pointMarkerName setMarkerText "SP/MCP";
@@ -223,7 +236,7 @@ pl_supply_point = {
 
     sleep 0.5;
 
-    _cords = getPos (leader _group);
+    
 
     [_group] call pl_leave_vehicle;
 
@@ -241,7 +254,7 @@ pl_supply_point = {
     _group setBehaviour "AWARE";
 
     sleep 2;
-    // [_group, "support"] call pl_change_group_icon;
+    [_group, "support"] call pl_change_group_icon;
     // delay to geive _ammoBearer Time to disembark
     sleep 4;
 
@@ -259,6 +272,13 @@ pl_supply_point = {
         // _anim = selectRandom ["WATCH", "WATCH1", "WATCH2"];
         // [_x, _anim, "ASIS"] call BIS_fnc_ambientAnimCombat;
     } forEach (units _group) - [_ammoBearer];
+
+
+    {
+        if (((leader _x) distance2D _vic) <= pl_supply_area and !(_x getVariable ["pl_is_support", false])) then {
+            _suppliedGroups pushBackUnique _x;
+        };
+    } forEach (allGroups select {side _x == playerSide});
 
     // Supply Loop -> Supllies every Group in Range once while actice
     while {(_group getVariable ["onTask", true] and (alive _ammoBearer))} do {
@@ -306,8 +326,9 @@ pl_supply_point = {
                                         _ammoCargo = _ammoCargo - 1;
                                     };
                                 };
-                                if (_x getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
+                                if (_x getUnitTrait "explosiveSpecialist" and ((_x getVariable ["pl_virtual_mines", 0]) < pl_max_mines_per_explo) and pl_virtual_mines_enabled) then {
                                     _x setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
+                                    _ammoCargo = _ammoCargo - 1;
                                 };
                                 // heal Unit
                                 _x setDamage 0;
@@ -386,6 +407,8 @@ pl_supply_point = {
                 };
             };
         } forEach _toSupplyGroups;
+
+        sleep 2;
     };
 
     // subtract used ammo from _vic
@@ -396,7 +419,7 @@ pl_supply_point = {
     _group setVariable ["setSpecial", false];
     _group setVariable ["pl_is_support", false];
     _ammoBearer setVariable ["pl_is_ccp_medic", false];
-    pl_supply_point_active = false;
+    pl_active_supply_points deleteAt (pl_active_supply_points find _cords);
     deleteMarker _areaMarkerName;
     deleteMarker _pointMarkerName;
     // [_marker3D] call pl_remove_3d_icon;
@@ -544,8 +567,9 @@ pl_rearm_point = {
                                 _ammoCargo = _ammoCargo - 1;
                             };
                         };
-                        if (_x getUnitTrait "explosiveSpecialist" and pl_virtual_mines_enabled) then {
+                        if (_x getUnitTrait "explosiveSpecialist" and ((_x getVariable ["pl_virtual_mines", 0]) < pl_max_mines_per_explo) and pl_virtual_mines_enabled) then {
                             _x setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
+                            _ammoCargo = _ammoCargo - 1;
                         };
                     } forEach (units _targetGrp);
                 };
@@ -572,4 +596,33 @@ pl_rearm_point = {
     // [_marker3D] call pl_remove_3d_icon;
 
     [_group, _vic] spawn pl_crew_vehicle_now;
+};
+
+pl_rearm_in_transport = {
+    params ["_targetGrp", "_vic"];
+
+    private _ammoCargo = _vic getVariable ["pl_supplies", 0];
+    if (_ammoCargo <= 0) exitWith {};
+
+    sleep 5;
+
+    {
+        if (_ammoCargo > 0 and _x != player) then {
+            _loadout = _x getVariable "pl_loadout";
+            if !((getUnitLoadout _x) isEqualTo _loadout) then {
+                _x setUnitLoadout [_loadout, true];
+                _ammoCargo = _ammoCargo - 1;
+            };
+        };
+        if (_x getUnitTrait "explosiveSpecialist" and ((_x getVariable ["pl_virtual_mines", 0]) < pl_max_mines_per_explo) and pl_virtual_mines_enabled) then {
+            _x setVariable ["pl_virtual_mines", pl_max_mines_per_explo];
+            _ammoCargo = _ammoCargo - 1;
+        };
+        _x setDamage 0;
+        _time = time + 5;
+        waitUntil {time >= _time or !(_vic getVariable ["pl_has_cargo", false]) or !alive _vic};
+        if !(_vic getVariable ["pl_has_cargo", false] or !alive _vic) exitWith {};
+    } forEach (units _targetGrp);
+
+    _vic setVariable ["pl_supplies", _ammoCargo];
 };

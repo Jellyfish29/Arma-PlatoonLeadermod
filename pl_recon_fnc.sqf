@@ -49,7 +49,7 @@ pl_recon = {
 
     // check if group is moving --> change area size + force stealth
     [_group, _markerName] spawn {
-    params ["_group", "_markerName"];
+        params ["_group", "_markerName"];
 
         while {_group getVariable ["pl_is_recon", false]} do {
             _bonus = 0;
@@ -75,18 +75,15 @@ pl_recon = {
 
                 // Set Bonus Range
                 _group setVariable ["pl_recon_area_size", pl_recon_area_size_default + (_reconHeight * 20) + _bonus];
-            }
-            else
-            {
+            } else {
                 _group setVariable ["pl_recon_area_size", pl_recon_area_size_default];
             };
             _h = _group getVariable "pl_recon_area_size";
             _markerName setMarkerSize [_h, _h];
             // if (({alive _x} count (units _group)) <= 0) exitWith {};
-            if (isNull _grp) exitWith {};
+            if (isNull _group) exitWith {};
                 
             sleep 1;
-            }
         };
         _group setVariable ["pl_recon_area_size", nil];
     };
@@ -113,7 +110,7 @@ pl_recon = {
         _time = time + _intelInterval;
         waitUntil {sleep 1; time >= _time or !(_group getVariable ["pl_is_recon", false])};
 
-        if !(alive (leader _group)) exitWith {_group setVariable ["pl_is_recon", false]; pl_recon_count = pl_recon_count - 1;};
+        if !(alive (leader _group)) exitWith {_group setVariable ["pl_is_recon", false]; pl_recon_count = pl_recon_count - 1};
 
     };
 
@@ -174,7 +171,7 @@ Pl_marta = {
     if (_sideColor == "exit") exitWith {};
 
     // 50 % chance to create Marker
-    if (((random 1) < 0.5 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.15 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
+    if (((random 1) < 0.35 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.1 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
 
         _unitText = getText (configFile >> "CfgVehicles" >> typeOf (vehicle (leader _opfGrp)) >> "textSingular");
         private _exit = false;

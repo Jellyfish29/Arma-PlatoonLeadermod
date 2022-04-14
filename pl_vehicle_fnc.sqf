@@ -215,19 +215,10 @@ pl_getIn_vehicle = {
             else
             {
                 _group setVariable ["onTask", false];
-                // _group setVariable ["setSpecial", false];
                 (group (driver _targetVic)) setVariable ["pl_has_cargo", true];
                 _group setVariable ["pl_disembark_finished", false];
-                // if !(_group getVariable ["pl_is_recon", false]) then {
-                    [_group] call pl_hide_group_icon;
-                // } else {
-                //     [_group, "recon_add_pl"] call pl_change_group_icon;
-                //     _group setVariable ["pl_show_info", false];
-                //     player hcRemoveGroup _group;
-                // };
-                // _group setVariable ["pl_show_info", false];
-                // if !(_targetVic isKindOf "Air") then {
-                // };
+                [_group] call pl_hide_group_icon;
+                [_group, _targetVic] spawn pl_rearm_in_transport;
             };
         };
     }

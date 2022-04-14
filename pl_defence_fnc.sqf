@@ -23,7 +23,7 @@ pl_find_cover = {
     if (_cords isEqualTo []) then {
         _cords = getPos _unit
     };
-    _covers = nearestTerrainObjects [_cords, pl_valid_covers, _radius, true, true];
+    _covers = (nearestTerrainObjects [_cords, pl_valid_covers, _radius, true, true]) select {!(isObjectHidden _x)};
     _watchPos = _cords getPos [1000, _watchDir];
 
     private _setUnitPos = {
