@@ -236,18 +236,18 @@ pl_hide_group_icon = {
 };
 
 pl_show_group_icon = {
-    params ["_group", ["_type", "inf"]];
+    params ["_group", ["_type", "inf"], ["_setHc", true]];
 
     _cIcon = _group getVariable ["pl_custom_icon", ""];
     _prefix = [_group] call pl_get_side_prefix;
     _group setVariable ["pl_show_info", true];
-    player hcSetGroup [_group];
     if !(_cIcon isEqualTo "") then {
         _group addGroupIcon [_cIcon];
-    }
-    else
-    {
+    } else {
         _group addGroupIcon [format ["%1_%2", _prefix, _type]]; 
+    };
+    if (_setHc) then {
+        player hcSetGroup [_group];
     };
 };
 

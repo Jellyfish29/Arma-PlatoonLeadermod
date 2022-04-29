@@ -285,9 +285,10 @@ pl_unload_at_position_planed = {
     _driver = driver _vic;
     _vicGroup = group _driver;
     _crew = crew _vic;
-    _cargo = _crew - (units _vicGroup);
+    private _cargo = _crew - (units _vicGroup);
     // _cargo = fullCrew [_vic, "cargo", false];
 
+    // if (count _cargo == 0) exitWith {hint "No Cargo to Unload"}
     private _attached = _vicGroup getVariable ["pl_attached_infGrp", grpNull];
     if !(isNull _attached) exitWith {[_vicGroup, _attached, _taskPlanWp] spawn pl_detach_inf_planed};
 
@@ -333,7 +334,7 @@ pl_unload_at_position_planed = {
         _cGroup = _x;
         // moveOut (leader _cGroup);
         if !(_cGroup getVariable ["pl_show_info", false]) then {
-            [_cGroup] call pl_show_group_icon;
+            [_cGroup, "inf", false] call pl_show_group_icon;
         };
         _cGroup leaveVehicle _vic;
         {
@@ -356,11 +357,13 @@ pl_unload_at_position_planed = {
 
     } forEach _cargoGroups;
 
-
     [_group, "confirm", 1] call pl_voice_radio_answer;
 
-
     waitUntil {sleep 0.5; (({vehicle _x != _x} count _cargoPers) == 0) or (!alive _vic)};
+
+    {
+        player hcSetGroup [_x];
+    } forEach _cargoGroups;
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
 
@@ -373,7 +376,7 @@ pl_unload_at_position_planed = {
     {
         _x setVariable ["pl_disembark_finished", true];
         {
-            _x enableAI "AUTOTARGET";
+            _x enableAI "AUTOCOMBAT";
         } forEach (units _x);
     } forEach _cargoGroups;
 
@@ -1070,16 +1073,16 @@ pl_spawn_vic_speed = {
 };
 
 pl_crew_vehicle = {
-    private ["_group", "_targetVic", "_groupLen"];
-    _group = hcSelected player select 0;
+    params [["_group", hcSelected player select 0], ["_taskPlanWp", []]];
+    private ["_targetVic", "_groupLen"];
 
     if (visibleMap or !(isNull findDisplay 2000)) then {
         pl_show_vehicles_pos = getPos (leader _group);
+        if !(_taskPlanWp isEqualTo []) then {pl_show_vehicles_pos = waypointPosition _taskPlanWp};
         pl_show_vehicles = true;
         onMapSingleClick {
             pl_mapClicked = true;
-            _cords = _pos;
-            pl_vics = nearestObjects [_cords, ["Car", "Truck", "Tank", "Air"], 10, true];
+            pl_vics = nearestObjects [_pos, ["Car", "Truck", "Tank", "Air"], 10, true];
             onMapSingleClick "";
         };
         while {!pl_mapClicked} do {sleep 0.1};
@@ -1091,8 +1094,32 @@ pl_crew_vehicle = {
         pl_vics = [cursorTarget];
     };
     _targetVic = pl_vics select 0;
+
     if (isNil "_targetVic") exitWith {hint "No available vehicle!"};
 
+    private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa";
+
+    if (count _taskPlanWp != 0) then {
+
+        private _wPos = waypointPosition _taskPlanWp;
+        private _cords = getPos _targetVic;
+
+        pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+        
+        waitUntil {(((leader _group) distance2D _wPos) < 20) or !(_group getVariable ["pl_task_planed", false])};
+
+        // deleteWaypoint [_group, _taskPlanWp#1];
+
+        if !(_group getVariable ["pl_task_planed", false]) then {
+            pl_cancel_strike = true;
+            [group (driver _targetVic)] call pl_execute;
+        }; // deleteMarker
+        _group setVariable ["pl_task_planed", false];
+
+        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -1154,7 +1181,7 @@ pl_crew_vehicle_now = {
 pl_left_vehicles = [];
 
 pl_leave_vehicle = {
-    params ["_group"];
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
     private ["_vic"];
 
     _vic = {
@@ -1164,9 +1191,38 @@ pl_leave_vehicle = {
 
     if (isNull _vic) exitWith {hint "Group is not crewing a Vehicle!"};
 
+    if (count _taskPlanWp != 0) then {
+
+        _wpPos = waypointPosition _taskPlanWp;
+        _wpPos = +_wpPos;
+
+        pl_draw_unload_inf_task_plan_icon_array pushBack [_group, _wpPos];
+
+        waitUntil {(((leader _group) distance2D (waypointPosition _taskPlanWp)) < 20) or !(_group getVariable ["pl_task_planed", false])};
+
+
+        // deleteWaypoint [_group, _taskPlanWp#1];
+
+        if !(_group getVariable ["pl_task_planed", false]) then {
+            pl_cancel_strike = true;
+            pl_draw_unload_inf_task_plan_icon_array = pl_draw_unload_inf_task_plan_icon_array - [[_group, _wpPos]];
+        }; // deleteMarker
+
+        if !(_group getVariable ["pl_unload_task_planed", false]) then {
+            _group setVariable ["pl_task_planed", false];
+        };
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+
     _cargo = fullCrew [_vic, "cargo", false];
     _cargo = (crew _vic) - (units _group);
     _cargoGroups = [];
+
+    {
+        _x disableAI "AUTOCOMBAT";
+    } forEach (units _group);
+
     {
         _unit = _x;
         if !(_unit in (units _group)) then {
@@ -1198,7 +1254,25 @@ pl_leave_vehicle = {
     // _group setVariable ["setSpecial", false];
     // _group setVariable ["onTask", false];
 
+
+    // _vic setVariable ["pl_on_transport", nil];
+    // _group setVariable ["pl_has_cargo", false];
+    waitUntil {sleep 0.5; vehicle (leader _group) == (leader _group)};
     [_group] call pl_change_inf_icons;
+    sleep 2;
+    _time = time + 30;
+    waitUntil {sleep 0.5; ({unitReady _x} count (units _group)) == (count (units _group)) or time >= _time};
+    sleep 2;
+
+    {
+        _x enableAI "AUTOCOMBAT";
+    } forEach (units _group);
+
+    _group setVariable ["pl_disembark_finished", true];
+
+    sleep 5;
+
+    _group setVariable ["pl_disembark_finished", nil]; 
 };
 
 pl_spawn_leave_vehicle = {

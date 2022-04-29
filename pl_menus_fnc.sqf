@@ -312,22 +312,51 @@ pl_show_battery_menu = {
 };
 
 
+// pl_task_plan_menu = [
+//     ['Task Plan', true],
+//     [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_std_atk.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] call pl_task_planer']], '1', '1'],
+//     [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] call pl_task_planer']], '1', '1'],
+//     ['', [], '', -1, [['expression', '']], '1', '1'],
+//     [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ccp_marker.paa"/><t> Set Up Casualty Collection Point</t>', [4], '', -5, [['expression', '["ccp"] call pl_task_planer']], '1', '1'],
+//     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up SP/MCP</t>', [5], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
+//     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover/Repair Vehicle</t>', [6], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
+//     ['', [], '', -1, [['expression', '']], '1', '1'],
+//     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [7], '', -5, [['expression', '["mine"] call pl_task_planer']], '1', '1'],
+//     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [8], '', -5, [['expression', '["mineclear"] call pl_task_planer']], '1', '1'],
+//     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [9], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
+//     ['', [], '', -1, [['expression', '']], '1', '1'],
+//     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"/><t> Crew/Leave Vehicle</t>', [10], '', -5, [['expression', '[] call pl_crew_leave_switch']], '1', '1'],
+//     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Load/Unload Cargo</t>', [11], '', -5, [['expression', '[] call pl_load_unload_switch']], '1', '1']
+
+// ];
+
 //    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"/><t> Set Up Aid Station</t>', [5], '', -5, [['expression', '["aid"] call pl_task_planer']], '1', '1'],
 pl_task_plan_menu = [
     ['Task Plan', true],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_std_atk.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] call pl_task_planer']], '1', '1'],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up SP/MCP</t>', [4], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover/Repair Vehicle</t>', [5], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_css_task.paa"/><t> Combat Service Suppport Tasks</t>', [4], '#USER:pl_task_plan_menu_css_sub', -5, [['expression', '']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [6], '', -5, [['expression', '["mine"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [7], '', -5, [['expression', '["mineclear"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [8], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_eng_task.paa"/><t> Combat Engineering Tasks</t>', [5], '#USER:pl_task_plan_menu_eng_sub', -5, [['expression', '']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"/><t> Load Cargo</t>', [9], '', -5, [['expression', '["load"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Unload Cargo</t>', [10], '', -5, [['expression', '["unload"] call pl_task_planer']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"/><t> Crew/Leave Vehicle</t>', [6], '', -5, [['expression', '[] call pl_crew_leave_switch']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Load/Unload Cargo</t>', [7], '', -5, [['expression', '[] call pl_load_unload_switch']], '1', '1']
 
+];
+
+pl_task_plan_menu_eng_sub = [
+    ['Task Plan Combat Engineering', true],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [2], '', -5, [['expression', '["mine"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [3], '', -5, [['expression', '["mineclear"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [4], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1']
+];
+
+pl_task_plan_menu_css_sub = [
+    ['Task Plan CSS', true],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ccp_marker.paa"/><t> Set Up Casualty Collection Point</t>', [2], '', -5, [['expression', '["ccp"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Set Up SP/MCP</t>', [3], '', -5, [['expression', '["resupply"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"/><t> Recover/Repair Vehicle</t>', [4], '', -5, [['expression', '["recover"] call pl_task_planer']], '1', '1']
 ];
 
 pl_task_plan_menu_unloaded_inf = [
@@ -343,6 +372,8 @@ pl_task_plan_menu_unloaded_inf = [
     ['', [], '', -1, [['expression', '']], '1', '1'],
     [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ccp_marker.paa"/><t> Set Up Casualty Collection Point</t>', [8], '', -5, [['expression', '["ccp"] spawn pl_task_planer_unload_inf']], '1', '1']
 ];
+
+
 
 
 

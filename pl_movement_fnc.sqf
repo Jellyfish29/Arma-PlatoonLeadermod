@@ -554,7 +554,7 @@ pl_rush = {
         _group setCombatMode "BLUE";
         _group setVariable ["pl_combat_mode", true];
 
-        pl_draw_planed_task_array pushBack [_wp, _icon];
+        // pl_draw_planed_task_array pushBack [_wp, _icon];
 
         {
             _unit = _x;
@@ -568,13 +568,14 @@ pl_rush = {
             private _startPos = getPos _unit;
             private _dir = _cords getDir _startPos;
 
-            private _targets = _x targetsQuery [objNull, sideUnknown, "", [], 0];
-            private _count = count _targets;
+            // private _targets = _x targetsQuery [objNull, sideUnknown, "", [], 0];
+            // private _count = count _targets;
                 
-            for [{private _i = 0}, {_i < _count}, {_i = _i + 1}] do {
-                private _y = _targets select _i;
-                _x forgetTarget (_y select 1);
-            };
+            // for [{private _i = 0}, {_i < _count}, {_i = _i + 1}] do {
+            //     private _y = _targets select _i;
+            //     _x forgetTarget (_y select 1);
+            // };
+            [_group, 30] spawn pl_forget_targets;
             
             [_unit, _group, _cords, _dir] spawn {
                 params ["_unit", "_group", "_cords", "_dir"];
@@ -597,7 +598,7 @@ pl_rush = {
         _group setVariable ["pl_combat_mode", false];
         _group setSpeedMode "NORMAL";
         _group setCombatMode "YELLOW";
-        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+        // pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
         // leader _group sideChat "We reached Fall Back Position, Over";
     }
     else

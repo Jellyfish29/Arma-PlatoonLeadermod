@@ -41,6 +41,19 @@ pl_get_has_static = {
     false
 };
 
+pl_toggle_static = {
+    params [["_group", (hcSelected player) select 0]];
+
+    if !([_group] call pl_get_has_static) exitWith {hint "NO Static Weapon in Group"};
+
+    if (_group getVariable ["pl_allow_static", false]) exitWith {
+        _group setVariable ["pl_allow_static", nil];
+        hint "Set to NOT Deploy";
+    };
+    _group setVariable ["pl_allow_static", true];
+    hint "Set to Deploy";
+};
+
 
 pl_static_unpack = {
     params ["_supportUnits", "_group", "_weaponPos", "_targetPos"];
@@ -116,8 +129,7 @@ pl_static_unpack = {
             sleep 0.5;
             _dest = [_gunner, _weaponPos, _counter] call pl_position_reached_check;
             if (_dest#0) exitWith {};
-            _weaponPos = _dest#1;
-            _counter = _dest#2;
+            _counter = _dest#1;
         };
         // waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable ["onTask", true])};
         _gunner enableAI "AUTOCOMBAT";

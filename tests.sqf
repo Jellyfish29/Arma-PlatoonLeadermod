@@ -291,3 +291,5 @@ pl_ccp_revive_action = {
     _escort enableAI "FSM";
     _escort setVariable ["pl_engaging", nil];
 };
+
+{unitReady _x} count (units (group cursorObject))

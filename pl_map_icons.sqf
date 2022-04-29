@@ -261,7 +261,7 @@ pl_draw_group_info = {
                     ];
                 };
                 if (_x getVariable ['pl_healing_active', false]) then {
-                    _healingPos = [(_pos select 0) - (pl_map_scale_x * 1.8), _pos select 1];
+                    _healingPos = [(_pos select 0) - (pl_map_scale_x * 1.9), _pos select 1];
                     _color = [0.9,0.9,0,1];
                     if (_x getVariable ['pl_on_hold', false]) then {_color = [0.92,0.24,0.07,1];};
                     _display drawIcon [

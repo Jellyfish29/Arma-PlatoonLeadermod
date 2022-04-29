@@ -114,7 +114,7 @@ pl_mine_clearing = {
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
         if (vehicle (leader _group) != leader _group) then {
-            if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+            if !(_group getVariable ["pl_unload_task_planed", false]) then {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
             } else {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
@@ -129,6 +129,7 @@ pl_mine_clearing = {
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
+        _group setVariable ["pl_unload_task_planed", false];
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
@@ -174,6 +175,8 @@ pl_mine_clearing = {
     _mines = ([_mines, [], {_x distance2D _watchPos}, "DESCEND"] call BIS_fnc_sortBy);
     // _engineer forceSpeed 1;
     // _escort forceSpeed 1;
+
+    waitUntil {sleep 0.5; unitReady _engineer or !alive _engineer};
 
     if (count _mines > 0) then {
         while {count _mines > 0} do {
@@ -283,7 +286,7 @@ pl_lay_mine_field = {
     _areaMarker setMarkerShape "RECTANGLE";
     // _areaMarker setMarkerBrush "Cross";
     _areaMarker setMarkerBrush "SolidBorder";
-    _areaMarker setMarkerColor pl_side_color;
+    _areaMarker setMarkerColor "colorGreen";
     _areaMarker setMarkerAlpha 0.8;
     _areaMarker setMarkerSize [pl_mine_field_size, 1];
     pl_engineering_markers pushBack _areaMarker;
@@ -402,7 +405,7 @@ pl_lay_mine_field = {
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
         if (vehicle (leader _group) != leader _group) then {
-            if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+            if !(_group getVariable ["pl_unload_task_planed", false]) then {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
             } else {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
@@ -415,6 +418,7 @@ pl_lay_mine_field = {
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
+        _group setVariable ["pl_unload_task_planed", false];
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
@@ -489,6 +493,8 @@ pl_lay_mine_field = {
 
     reverse _minePositions;
 
+    waitUntil {sleep 0.5; unitReady _exSpecialist or !alive _exSpecialist};
+
     {
         _exSpecialist doMove _x;
         _escort doFollow _exSpecialist;
@@ -506,9 +512,9 @@ pl_lay_mine_field = {
         _exSpecialist setUnitPos "Auto";
 
         _cm = createMarker [str (random 3), getPos _mine];
-        _cm setMarkerType "mil_triangle";
+        _cm setMarkerType "mil_dot";
         _cm setMarkerSize [0.4, 0.4];
-        _cm setMarkerColor pl_side_color;
+        _cm setMarkerColor "colorGreen";
         _cm setMarkerShadow false;
         pl_engineering_markers pushBack _cm;
 
@@ -618,7 +624,7 @@ pl_place_charge = {
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
         if (vehicle (leader _group) != leader _group) then {
-            if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+           if !(_group getVariable ["pl_unload_task_planed", false]) then {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
             } else {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
@@ -631,6 +637,7 @@ pl_place_charge = {
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
+        _group setVariable ["pl_unload_task_planed", false];
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
@@ -673,6 +680,8 @@ pl_place_charge = {
         _x setUnitPosWeak "MIDDLE";
     } forEach [_exSpecialist, _escort];
     pl_at_attack_array pushBack [_exSpecialist, _cords, _escort];
+
+    waitUntil {sleep 0.5; unitReady _exSpecialist or !alive _exSpecialist};
 
     _exSpecialist doMove _cords;
     _escort doFollow _exSpecialist;

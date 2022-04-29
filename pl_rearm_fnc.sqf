@@ -84,6 +84,9 @@ pl_rearm = {
             _pos = getPosATL _targetBox;
             _finalPos = _pos findEmptyPosition [0, 8];
             if (_finalPos isEqualTo []) then {_finalPos = _pos};
+
+            waitUntil {sleep 0.5; unitReady _unit or !alive _unit};
+
             _unit doMove _finalPos;
 
             sleep 1;

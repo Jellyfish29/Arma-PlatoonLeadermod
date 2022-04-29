@@ -37,7 +37,10 @@ pl_task_planer = {
         case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         case "unload" : {[_group, _wp] spawn pl_unload_at_position_planed; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
         case "load" : {[_group, _wp] spawn pl_getIn_vehicle; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+        case "crew" : {[_group, _wp] spawn pl_crew_vehicle; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+        case "leave" : {[_group, _wp] spawn pl_leave_vehicle; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
         case "mineclear" : {[_group, _wp] spawn pl_mine_clearing; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
+        case "ccp" : {[_group, false, objNull, 100, 25, objNull, _wp] spawn pl_ccp; _icon = "\Plmod\gfx\pl_ccp_marker.paa"};
         default {}; 
     };
 
@@ -161,6 +164,7 @@ pl_add_wp_planed = {
     // remove Arrow indicator
     // pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _startWp, _icon]];
 
+    _group setVariable ["pl_unload_task_planed", false];
     if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
     _group setVariable ["pl_task_planed", false];
 
@@ -223,5 +227,31 @@ pl_cancel_planed_task = {
                 deleteWaypoint [_x, _i];
             };
         } forEach _cargoGroups;
+    };
+};
+
+pl_load_unload_switch = {
+    _logic = player getvariable "BIS_HC_scope";
+    _wp = _logic getvariable "WPover";
+    if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan Task!"};
+    _group = _wp select 0;
+
+    if (isNull objectParent (leader _group)) then {
+        ["load"] call pl_task_planer;
+    } else {
+        ["unload"] call pl_task_planer;
+    };
+};
+
+pl_crew_leave_switch = {
+    _logic = player getvariable "BIS_HC_scope";
+    _wp = _logic getvariable "WPover";
+    if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan Task!"};
+    _group = _wp select 0;
+
+    if (isNull objectParent (leader _group)) then {
+        ["crew"] call pl_task_planer;
+    } else {
+        ["leave"] call pl_task_planer;
     };
 };

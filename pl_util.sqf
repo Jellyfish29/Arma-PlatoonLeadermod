@@ -155,34 +155,19 @@ pl_enable_force_move = {
 
 pl_position_reached_check = {
     params ["_unit", "_movePos", "_counter"];
-    private ["_counter"];
 
     if ((_unit distance2D _movePos) > 4) then {
-        if ((currentCommand _unit isNotEqualTo "MOVE" or ((speed _unit) == 0)) and (_counter % 3) == 0) then {
-            doStop _unit;
-            _unit setUnitPosWeak "UP";
-
-            // _unit setPosATL ([-1 + (random 2), -1 + (random 2), 0] vectorAdd (getPosATLVisual _unit));
-            _unit playActionNow "WalkF";
+        if ((((currentCommand _unit) isNotEqualTo "MOVE") or ((speed _unit) == 0))) then {
+            // _unit setUnitPosWeak "UP";
             _movePos = [-1 + (random 2), -1 + (random 2), 0] vectorAdd _movePos;
             _unit doMove _movePos;
-            _unit setDestination [_movePos, "LEADER DIRECT", true];
             _counter = _counter + 1;
-            if (_counter == 15) then {
-                _pos = (getPos _unit) findEmptyPosition [0, 10, typeOf _unit];
-                _unit setPos _pos;
-            };
         };
     };
-    if (_counter >= 21) then {
-        doStop _unit;
-        _movePos = _movePos findEmptyPosition [0, _counter + 5, typeOf _unit];
-        _unit doMove _movePos;
-    };
 
-    if (((_unit distance2D _movePos) < 2 and currentCommand _unit isNotEqualTo "MOVE") or _counter > 20) exitWith {[true, _movePos, _counter]};
+    if ((_unit distance2D _movePos) < 4 or _counter >= 30) exitWith {[true, _counter]};
 
-    [false, _movePos, _counter];
+    [false, _counter]
 };
 
 pl_not_reachable_escape = {

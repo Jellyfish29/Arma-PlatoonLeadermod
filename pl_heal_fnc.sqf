@@ -120,9 +120,9 @@ pl_heal_group = {
                 // _reviveTargets = (getPos leader _group) nearObjects ["Man", 50];
 
                 // double check !!!
-                if !(_group getVariable ["onTask", true]) then {
+                if !(_group getVariable ["onTask", false]) then {
                     sleep 1;
-                    if !(_group getVariable ["onTask", true]) then {
+                    if !(_group getVariable ["onTask", false]) then {
                         {
                             _enemySides = [side player] call BIS_fnc_enemySides;
                             // _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
@@ -149,11 +149,11 @@ pl_heal_group = {
                             };
                         } forEach (units _group);
                         // _medic setVariable ["pl_is_ccp_medic", true];
+                        _medic setVariable ["pl_is_ccp_medic", false];
                     };
                 };
                 _time = time + 10;
                 waitUntil {sleep 0.5; time > _time or !(_group getVariable "pl_healing_active") or !alive _medic or (_medic getVariable ["pl_wia", false])};
-                _medic setVariable ["pl_is_ccp_medic", false];
             };
 
             sleep 1;
@@ -517,15 +517,17 @@ pl_ccp = {
         _ccpPos = getPos (leader _group);
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; pl_ccp_set = false;};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; deleteMarker _markerNameOuter; deleteMarker _markerNameInner; pl_ccp_set = false;};
+
+    private _icon = "\Plmod\gfx\pl_ccp_marker.paa";
 
     if (count _taskPlanWp != 0) then {
 
         // add Arrow indicator
-        pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+        pl_draw_planed_task_array_wp pushBack [_ccpPos, _taskPlanWp, _icon];
 
         if (vehicle (leader _group) != leader _group) then {
-            if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+            if !(_group getVariable ["pl_unload_task_planed", false]) then {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
             } else {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
@@ -536,13 +538,14 @@ pl_ccp = {
         _group setVariable ["pl_disembark_finished", nil];
 
         // remove Arrow indicator
-        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_ccpPos, _taskPlanWp, _icon]];
 
+        _group setVariable ["pl_unload_task_planed", false];
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; pl_ccp_set = false;};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; deleteMarker _markerNameOuter; deleteMarker _markerNameInner; pl_ccp_set = false;};
 
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
@@ -565,7 +568,7 @@ pl_ccp = {
     };
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", "\Plmod\gfx\pl_ccp_marker.paa"];
+    _group setVariable ["specialIcon", _icon];
 
     
     private _units = units _group;

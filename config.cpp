@@ -155,7 +155,7 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="{[_x] spawn pl_disengage} forEach hcSelected player";
+                expression="{[_x] spawn pl_rush} forEach hcSelected player";
             };
             show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -615,7 +615,7 @@ class RscHCGroupRootMenu
         {
             class OpenFire
             {
-                title="<img color='#e5e500' image='\Plmod\gfx\pl_std_atk.paa'/><t> Assault Position</t>";
+                title="<img color='#e5e500' image='\Plmod\gfx\pl_std_atk.paa'/><t> Attack Position</t>";
                 shortcuts[]={2};
                 shortcutsAction = "CommandingMenu1";
                 submenu="";
@@ -723,7 +723,7 @@ class RscHCGroupRootMenu
             class PlGarrisonB
             {
                 title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>";
-                shortcuts[]={6};
+                shortcuts[]={5};
                 shortcutsAction = "CommandingMenu6";
                 submenu="";
                 command=-5;
@@ -767,8 +767,8 @@ class RscHCGroupRootMenu
             
             class PlAttachInf
             {
-                title="<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\n_mech_inf.paa'/><t> Attach/Detach Infantry</t";
-                shortcuts[]={7};
+                title="<img color='#e5e500' image='\Plmod\gfx\pl_mech_task.paa'/><t> Attach/Detach Infantry</t";
+                shortcuts[]={6};
                 shortcutsAction = "CommandingMenu7";
                 submenu="";
                 command=-5;
@@ -796,8 +796,8 @@ class RscHCGroupRootMenu
             };
             class PlComEng
             {
-                title="<img color='#e5e500' image='\Plmod\gfx\b_engineer.paa'/><t> Combat Engineering Tasks</t>";
-                shortcuts[]={8};
+                title="<img color='#e5e500' image='\Plmod\gfx\pl_eng_task.paa'/><t> Combat Engineering Tasks</t>";
+                shortcuts[]={7};
                 shortcutsAction = "CommandingMenu8";
                 menu="#USER:pl_combat_engineer";
                 command=-5;
@@ -824,6 +824,20 @@ class RscHCGroupRootMenu
             //     enable="HCNotEmpty";
             //     speechId=0;
             // };
+            class PlToggleStatic
+            {
+                title="<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Static Delpoy</t";
+                shortcuts[]={11};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="{[_x] call pl_toggle_static} forEach (hcSelected player)";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
         };
         title = "Combat Tasking";
         access = 0;
@@ -3156,8 +3170,8 @@ class cfgGroupIcons
     class n_f_s_inf_pl: n_f_t_inf_pl
     {
         name="Inf Squad Independet";
-        icon="\Plmod\gfx\marta\o_f_s_inf_pl.paa";
-        texture="\Plmod\gfx\marta\o_f_s_inf_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_s_inf_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_s_inf_pl.paa";
     };
     class n_f_t_recon_pl: n_f_t_inf_pl
     {
@@ -3180,8 +3194,8 @@ class cfgGroupIcons
     class n_f_s_eng_pl: n_f_t_inf_pl
     {
         name="Eng Squad Independet";
-        icon="\Plmod\gfx\marta\o_f_s_eng_pl.paa";
-        texture="\Plmod\gfx\marta\o_f_s_eng_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_s_eng_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_s_eng_pl.paa";
     };
     class n_f_t_med_pl: n_f_t_inf_pl
     {
@@ -3192,8 +3206,8 @@ class cfgGroupIcons
     class n_f_s_med_pl: n_f_t_inf_pl
     {
         name="med Squad Independet";
-        icon="\Plmod\gfx\marta\o_f_s_med_pl.paa";
-        texture="\Plmod\gfx\marta\o_f_s_med_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_s_med_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_s_med_pl.paa";
     };
     class n_f_t_aa_pl: n_f_t_inf_pl
     {
@@ -3204,8 +3218,8 @@ class cfgGroupIcons
     class n_f_s_aa_pl: n_f_t_inf_pl
     {
         name="aa Squad Independet";
-        icon="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
-        texture="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
+        icon="\Plmod\gfx\marta\n_f_s_aa_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_s_aa_pl.paa";
     };
 
     class b_recon_add_pl: Flag
@@ -3760,10 +3774,10 @@ class pl_RscMap
             shadow = 1;
             moveOnEdges = 0;
             idc = 2000;
-            x = 0.00499997 * safezoneW + safezoneX;
-            y = 0.137 * safezoneH + safezoneY;
-            w = 0.639375 * safezoneW;
-            h = 0.77 * safezoneH;
+            x = 0.371094 * safezoneW + safezoneX;
+            y = 0.159 * safezoneH + safezoneY;
+            w = 0.629062 * safezoneW;
+            h = 0.759 * safezoneH;
         };
     };
     access = 0;

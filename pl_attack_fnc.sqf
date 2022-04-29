@@ -31,19 +31,21 @@ pl_suppressive_fire_position = {
     _markerName setMarkerColor "colorOrange";
     _markerName setMarkerAlpha 0.2;
 
-    private _rangelimiter = 500;
-    if (vehicle (leader _group) != (leader _group)) then { _rangelimiter = 1000};
-
-    _markerBorderName = str (random 2);
-    createMarker [_markerBorderName, getPos (leader _group)];
-    _markerBorderName setMarkerShape "ELLIPSE";
-    _markerBorderName setMarkerBrush "Border";
-    _markerBorderName setMarkerColor "colorOrange";
-    _markerBorderName setMarkerAlpha 0.8;
-    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
 
     _markerName setMarkerSize [pl_suppress_area_size, pl_suppress_area_size];
     if (visibleMap or !(isNull findDisplay 2000)) then {
+
+        private _rangelimiter = 500;
+        if (vehicle (leader _group) != (leader _group)) then { _rangelimiter = 1000};
+
+        _markerBorderName = str (random 2);
+        createMarker [_markerBorderName, getPos (leader _group)];
+        _markerBorderName setMarkerShape "ELLIPSE";
+        _markerBorderName setMarkerBrush "Border";
+        _markerBorderName setMarkerColor "colorOrange";
+        _markerBorderName setMarkerAlpha 0.8;
+        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+        
         _message = "Select Position <br /><br />
             <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>30 Seconds</t> <br />
             <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />
@@ -297,7 +299,7 @@ pl_assault_position = {
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
 
         if (vehicle (leader _group) != leader _group) then {
-            if ((leader _group) == commander (vehicle (leader _group)) or (leader _group) == driver (vehicle (leader _group)) or (leader _group) == gunner (vehicle (leader _group))) then {
+            if !(_group getVariable ["pl_unload_task_planed", false]) then {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
             } else {
                 waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
@@ -312,12 +314,14 @@ pl_assault_position = {
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
+        _group setVariable ["pl_unload_task_planed", false];
     };
 
     if (pl_cancel_strike) exitWith {
         pl_cancel_strike = false;
         deleteMarker _markerName;
         deleteMarker _markerPhaselineName;
+        deleteMarker _arrowMarkerName;
         pl_draw_text_array = pl_draw_text_array - [["ENY", _leftPos, 0.02, pl_side_color_rgb]];
         pl_draw_text_array = pl_draw_text_array - [["ENY", _rightPos, 0.02, pl_side_color_rgb]];
      };
@@ -481,6 +485,7 @@ pl_assault_position = {
         private _n = 1;
         private _buddy = objNull;
         {
+            waitUntil {sleep 0.5; unitReady _x or !alive _x};
             _x enableAI "AUTOCOMBAT";
             _x enableAI "FSM";
             _x forceSpeed 12;

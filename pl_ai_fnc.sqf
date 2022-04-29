@@ -529,6 +529,7 @@ pl_set_up_ai = {
     _group setVariable ["pl_show_info", true];
     _group setVariable ["pl_hold_fire", false];
     _group setVariable ["pl_killed_units", []];
+    _group setVariable ["pl_allow_static", true];
     _groupComposition = [];
 
     if (pl_enable_map_radio) then {
