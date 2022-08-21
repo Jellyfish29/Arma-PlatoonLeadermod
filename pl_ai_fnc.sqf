@@ -289,11 +289,13 @@ pl_auto_formation = {
     private ["_dest", "_distance"];
 
     // if (vehicle (leader _group) != (leader _group)) exitWith {};
+    waitUntil {sleep 1; vehicle (leader _group) == (leader _group)};
     _group setVariable ["pl_choose_auto_formation", true];
 
     _group setFormation "LINE";
     while {sleep 0.5; {alive _x} count (units _group) > 0} do {
 
+        waitUntil {sleep 1; vehicle (leader _group) == (leader _group)};
         waitUntil {sleep 1; !(_group getVariable ["pl_vic_attached", false]) and (_group getVariable ["pl_choose_auto_formation", false])};
 
         if ([getPos (leader _group)] call pl_is_city) then {
