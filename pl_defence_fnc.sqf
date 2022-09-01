@@ -662,6 +662,9 @@ pl_defend_position = {
 
     // player sideRadio "SentCmdHide";
     [_group, "confirm", 1] call pl_voice_radio_answer;
+    // if !(isNull findDisplay 2000) then {
+    //     [] spawn {sleep 0.5; (findDisplay 2000) closeDisplay 1};
+    // };
 
     // waitUntil {_group getVariable ["pl_disembark_finished", true]};
 

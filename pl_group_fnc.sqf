@@ -334,7 +334,10 @@ pl_remote_camera_in = {
     params ["_leader"];
 
     player setVariable ["pl_camera_mode", cameraView];
-    _leader switchCamera "GROUP";  
+    _leader switchCamera "GROUP";
+    openMap [false, false];
+    // [getPos _leader] spawn pl_open_tac_forced;
+
 };
 
 pl_spawn_cam = {
@@ -343,7 +346,8 @@ pl_spawn_cam = {
 
 pl_remote_camera_out = {
 
-    player switchCamera (player getVariable ["pl_camera_mode", "INTERNAL"]);  
+    player switchCamera (player getVariable ["pl_camera_mode", "INTERNAL"]);
+    // [] spawn pl_open_tac_map;
 };
 
 pl_add_all_groups = {

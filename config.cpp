@@ -729,7 +729,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="{[] psawn pl_garrison";
+                    expression="[] spawn pl_garrison";
                 };
                 show="1";
                 enable="HCNotEmpty";
@@ -3763,6 +3763,26 @@ class pl_RscMapControl
     };
 };
 
+// class pl_RscMap
+// // RscDisplayMainMap
+// {
+//     idd = 2000;
+//     class controls
+//     {
+//         class Map: pl_RscMapControl
+//         {
+//             shadow = 1;
+//             moveOnEdges = 0;
+//             idc = 2000;
+//             x = 0.371094 * safezoneW + safezoneX;
+//             y = 0.159 * safezoneH + safezoneY;
+//             w = 0.629062 * safezoneW;
+//             h = 0.759 * safezoneH;
+//         };
+//     };
+//     access = 0;
+// };
+
 class pl_RscMap
 // RscDisplayMainMap
 {
@@ -3774,14 +3794,25 @@ class pl_RscMap
             shadow = 1;
             moveOnEdges = 0;
             idc = 2000;
-            x = 0.371094 * safezoneW + safezoneX;
-            y = 0.159 * safezoneH + safezoneY;
-            w = 0.629062 * safezoneW;
-            h = 0.759 * safezoneH;
+            x = 0.1 * safezoneW + safezoneX;
+            y = 0.1 * safezoneH + safezoneY;
+            w = 0.232031 * safezoneW;
+            h = 0.286 * safezoneH;
         };
     };
     access = 0;
 };
+
+/* #Niqyka
+$[
+    1.063,
+    ["asfasf",[[0,0,1,1],0.025,0.04,"GUI_GRID"],0,0,0],
+    [1800,"",[2,"",[0.333333,0.286195,0.1,0.1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],"","-1"],[]],
+    [1801,"",[1,"",["0.46865 * safezoneW + safezoneX","0.33852 * safezoneH + safezoneY","0.232031 * safezoneW","0.286 * safezoneH"],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],"","-1"],[]]
+]
+*/
+
+
 
 
 class CfgVehicles

@@ -1512,7 +1512,8 @@ pl_open_tac_map = {
     // setGroupIconsVisible [true,false]; 
     if !(isNull findDisplay 2000) exitWith {
         pl_last_tac_zoom = ctrlMapScale (findDisplay 2000 displayCtrl 2000);
-        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.1, 0.5];
+        // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.1, 0.5];
+        // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
         (findDisplay 2000) closeDisplay 1;
         playSound "HintCollapse";
         // ctrlDelete (uiNamespace getVariable "pl_pouch_gfx");
@@ -1530,7 +1531,8 @@ pl_open_tac_map = {
     //     pl_pouch_gfx ctrlCommit 0;
     // };
 
-    (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, pl_last_tac_zoom, pl_last_tac_pos];
+    // (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, pl_last_tac_zoom, pl_last_tac_pos];
+    (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
     ctrlMapAnimCommit (findDisplay 2000 displayCtrl 2000);
     sleep 0.1;
 
@@ -1538,6 +1540,7 @@ pl_open_tac_map = {
 
     [] call pl_show_tac_map_icons;
 };
+
 
 pl_open_tac_forced = {
     params ["_pos"];
