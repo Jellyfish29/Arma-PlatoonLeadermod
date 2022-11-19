@@ -11,10 +11,12 @@ pl_sweep_area_size = 35;
 pl_attack_mode = "normal";
 
 
-pl_suppressive_fire_position = {
-    private ["_markerName", "_cords", "_targets", "_pos", "_units", "_leader", "_area", "_mPos"];
 
-    _group = (hcSelected player) select 0;
+pl_suppressive_fire_position = {
+    params [["_group", (hcSelected player) select 0], ["_sfpPos", []]];
+    private ["_markerName", "_cords", "_targets", "_pos", "_units", "_leader", "_area", "_mPos", "_markerPosName", "_leaderPos"];
+
+    // _group = (hcSelected player) select 0;
 
     // if (({(currentCommand _x) isEqualTo "Suppress"} count (units _group)) > 0 and (_group getVariable ["pl_is_suppressing", false])) exitWith {_group setVariable ["pl_is_suppressing", false]};
 
@@ -30,16 +32,18 @@ pl_suppressive_fire_position = {
     _markerName setMarkerBrush "SolidBorder";
     _markerName setMarkerColor "colorOrange";
     _markerName setMarkerAlpha 0.2;
-
-
     _markerName setMarkerSize [pl_suppress_area_size, pl_suppress_area_size];
-    if (visibleMap or !(isNull findDisplay 2000)) then {
 
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+        _leaderPos = getPos (leader _group);
+        if !(_sfpPos isEqualTo []) then {
+            _leaderPos = _sfpPos;
+        };
         private _rangelimiter = 500;
         if (vehicle (leader _group) != (leader _group)) then { _rangelimiter = 1000};
 
         _markerBorderName = str (random 2);
-        createMarker [_markerBorderName, getPos (leader _group)];
+        createMarker [_markerBorderName, _leaderPos];
         _markerBorderName setMarkerShape "ELLIPSE";
         _markerBorderName setMarkerBrush "Border";
         _markerBorderName setMarkerColor "colorOrange";
@@ -61,6 +65,10 @@ pl_suppressive_fire_position = {
 
         player enableSimulation false;
 
+        if !(_sfpPos isEqualTo []) then {
+            pl_show_watchpos_selector = true;
+        };
+
         while {!pl_mapClicked} do {
             // sleep 0.1;
             if (visibleMap) then {
@@ -68,7 +76,7 @@ pl_suppressive_fire_position = {
             } else {
                 _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
             };
-            if ((_mPos distance2D (leader _group)) <= _rangelimiter) then {
+            if ((_mPos distance2D _leaderPos) <= _rangelimiter) then {
                 _markerName setMarkerPos _mPos;
             };
             // _markerName setMarkerPos _mPos;
@@ -78,6 +86,8 @@ pl_suppressive_fire_position = {
             if (pl_suppress_area_size >= 150) then {pl_suppress_area_size = 150};
             if (pl_suppress_area_size <= 10) then {pl_suppress_area_size = 10};
         };
+
+        pl_show_watchpos_selector = false;
 
         player enableSimulation true;
 
@@ -94,12 +104,46 @@ pl_suppressive_fire_position = {
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
 
+
+    if !(_sfpPos isEqualTo []) then {
+
+        pl_at_targets_indicator pushBack [_sfpPos, _cords];
+
+        waitUntil {sleep 0.5; !(_group getVariable ["pl_task_planed", false])};
+
+        sleep 2;
+        if (vehicle (leader _group) == (leader _group)) then {
+
+            waitUntil {(({_x getVariable ["pl_in_position", false]} count (units _group)) == count (units _group)) or !(_group getVariable ["onTask", false])};
+            if !(_group getVariable ["onTask", false]) exitWith {pl_cancel_strike = true};
+        } else {
+            waitUntil {(_group getVariable ["pl_in_position", false]) or !(_group getVariable ["onTask", false])};
+            if !(_group getVariable ["onTask", false]) exitWith {pl_cancel_strike = true};
+        };
+        pl_at_targets_indicator = pl_at_targets_indicator - [[_sfpPos, _cords]];
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+
+    if (_group getVariable ["pl_in_position", false]) then {
+        _markerPosName = format ["defenceAreaDir%1", _group];
+        _markerPosName setMarkerType "marker_sfp";
+    } else {
+        _markerPosName  = format ["afp%1", _group];
+        createMarker [_markerPosName , getPos (vehicle (leader _group))];
+        _markerPosName setMarkerDir ((leader _group) getDir _cords);
+        _markerPosName  setMarkerType "marker_afp";
+        _markerPosName  setMarkerColor pl_side_color;
+    };   
+
+    
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa";
-    [_group, "suppress", 1] call pl_voice_radio_answer;
     _leader = leader _group;
+    pl_draw_suppression_array pushBack [_cords, _leader, false, _icon];
+    [_group, "suppress", 1] call pl_voice_radio_answer;
+    
 
     _group setVariable ["pl_is_suppressing", true];
-
     // check if enemy in Area
     // _allTargets = nearestObjects [_cords, ["Man", "Car", "Truck", "Tank"], _area, true];
     _getTargets = {
@@ -131,8 +175,6 @@ pl_suppressive_fire_position = {
     };
 
     private _units = (units _group);
-    
-    pl_draw_suppression_array pushBack [_cords, _leader, false, _icon];
 
     if (leader _group != vehicle (leader _group)) then {
         [vehicle (leader _group)] call pl_load_he;
@@ -168,13 +210,19 @@ pl_suppressive_fire_position = {
     };
 
     deleteMarker _markerName;
+    if (_group getVariable ["pl_in_position", false]) then {
+        _markerPosName = format ["defenceAreaDir%1", _group];
+        _markerPosName setMarkerType "marker_position";
+    } else {
+        deleteMarker _markerPosName;
+    };
 
     pl_draw_suppression_array = pl_draw_suppression_array - [[_cords, _leader, false, _icon]];
 };
 
 pl_assault_position = {
     params ["_group", ["_taskPlanWp", []]];
-    private ["_mPos", "_leftPos", "_rightPos", "_markerPhaselineName", "_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_fastAtk", "_tacticalAtk"];
+    private ["_mPos", "_leftPos", "_rightPos", "_markerPhaselineName", "_cords", "_limiter", "_targets", "_markerName", "_wp", "_icon", "_formation", "_fastAtk", "_tacticalAtk", "_breakingPoint", "_startPos", "_area"];
 
     pl_sweep_area_size = 35;
 
@@ -285,6 +333,7 @@ pl_assault_position = {
     _cords = getMarkerPos _markerName;
     _markerName setMarkerPos _cords;
     _markerName setMarkerBrush "Border";
+    _area = pl_sweep_area_size;
 
     _rightPos = _cords getPos [pl_sweep_area_size, 90];
     _leftPos = _cords getPos [pl_sweep_area_size, 270];
@@ -300,12 +349,15 @@ pl_assault_position = {
 
         if (vehicle (leader _group) != leader _group) then {
             if !(_group getVariable ["pl_unload_task_planed", false]) then {
-                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
+                // waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
+                waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
             } else {
-                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+                // waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+                waitUntil {sleep 0.5; ((_group getVariable ["pl_execute_plan", false]) and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
             };
         } else {
-            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
+            // waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
         };
         _group setVariable ["pl_disembark_finished", nil];
 
@@ -315,6 +367,7 @@ pl_assault_position = {
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
         _group setVariable ["pl_unload_task_planed", false];
+        _group setVariable ["pl_execute_plan", nil];
     };
 
     if (pl_cancel_strike) exitWith {
@@ -347,6 +400,8 @@ pl_assault_position = {
     _group setVariable ["specialIcon", _icon];
     _group setVariable ["pl_is_attacking", true];
 
+    _startPos = getPos (leader _group);
+
     (leader _group) limitSpeed 15;
 
     _markerName setMarkerPos _cords;
@@ -354,6 +409,7 @@ pl_assault_position = {
     {
         _x disableAI "AUTOCOMBAT";
         _x setVariable ["pl_damage_reduction", true];
+        _x setHit ["legs", 0];
     } forEach (units _group);
 
     _wp = _group addWaypoint [_cords, 0];
@@ -361,6 +417,8 @@ pl_assault_position = {
     _machinegunner = objNull;
 
     _group setBehaviour "AWARE";
+    (leader _group) limitSpeed 12;
+    // (leader _group) doMove (_cords findEmptyPosition [0, _area, typeOf _x]);
 
     {
         _pos = _cords findEmptyPosition [0, pl_sweep_area_size, typeOf _x];
@@ -374,8 +432,6 @@ pl_assault_position = {
             _reachable = [_unit, _pos, 20] call pl_not_reachable_escape;
         };
     } forEach (units _group);
-
-    _area = pl_sweep_area_size;
     
     _vics = _cords nearEntities [["Car", "Tank", "Truck"], _area];
 
@@ -384,7 +440,7 @@ pl_assault_position = {
     // waitUntil {sleep 0.5; (({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) > 0) or !(_group getVariable ["onTask", true])};
     while {(({(_x distance _cords) < (_area + _atkTriggerDistance)} count (units _group)) == 0) and (_group getVariable ["onTask", true])} do {
 
-        if (_cords distance2D (leader _group) > pl_sweep_area_size + 20) then {
+        if (_cords distance2D (leader _group) > _area + 20) then {
             _phaseDir = (leader _group) getDir _cords;
             _markerPhaselineName setMarkerDir _phaseDir;
 
@@ -434,50 +490,35 @@ pl_assault_position = {
 
     missionNamespace setVariable [format ["targetBuildings_%1", _group], _targetBuildings];
 
-
     {
         _targets pushBack _x;
     } forEach (_vics select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
 
     _targets = [_targets, [], {(leader _group) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy;
 
-
-
-    [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
-    sleep 0.1;
-    for "_i" from count waypoints _group - 1 to 0 step -1 do {
-        deleteWaypoint [_group, _i];
-    };
-
-    private _breakingPoint = round (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) / 2);
+    // private _breakingPoint = round (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) * 0.66);
+    _breakingPoint = round (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) * 0.66);
+    // hint str _breakingPoint;
     
     if ((count _targets) == 0) then {
-        private _n = 0;
-        private _pos = [_cords, 1, _area, 0, 0, 0, 0] call BIS_fnc_findSafePos;;
-        {
-            if (_n % 2 == 0) then {
-                _pos = [_cords, 1, _area, 0, 0, 0, 0] call BIS_fnc_findSafePos;
-            };
-            _x doMove _pos;
-            _x setDestination [_pos, "FORMATION PLANNED", false];
-            _n = _n + 1;
-        } forEach (units _group);
 
-        (leader _group) doMove _cords;
-        _time = time + 20 + _area;
-        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _time) or (leader _group) distance2D _cords < 5};
-        _group setCombatMode "YELLOW";
-        _group setVariable ["pl_combat_mode", false];
-        if (_group getVariable ["onTask", true]) then {
-            {
-                [_x, _cords, 30] spawn pl_find_cover_allways;
-            } forEach (units _group);
-        };
-        _minDelay = time + 20;
-        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _minDelay)};
+        // {
+        //     _x doFollow (leader _group);
+        // } forEach (units _group);
+
+        // (leader _group) doMove _cords;
+        _time = time + 5;
+        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _time) or (leader _group) distance2D _cords < 10};
     }
     else
     {
+
+        [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
+        sleep 0.1;
+        for "_i" from count waypoints _group - 1 to 0 step -1 do {
+            deleteWaypoint [_group, _i];
+        };
+
         sleep 0.2;
         missionNamespace setVariable [format ["targets_%1", _group], _targets];
         private _time = time + 180;
@@ -485,7 +526,7 @@ pl_assault_position = {
         private _n = 1;
         private _buddy = objNull;
         {
-            waitUntil {sleep 0.5; unitReady _x or !alive _x};
+            // waitUntil {sleep 0.5; unitReady _x or !alive _x};
             _x enableAI "AUTOCOMBAT";
             _x enableAI "FSM";
             _x forceSpeed 12;
@@ -514,13 +555,14 @@ pl_assault_position = {
                                     _checkPos = _lineStartPos getPos [_lineOffsetHorizon, _atkDir + 90];
                                     _lineOffsetHorizon = _lineOffsetHorizon + ((_area + 100) / 60);
 
-                                    _checkPos = [_checkPos, 1.5] call pl_convert_to_heigth_ASL;
+                                    _checkPos = [_checkPos, 1.579] call pl_convert_to_heigth_ASL;
 
                                     // _m = createMarker [str (random 1), _checkPos];
                                     // _m setMarkerType "mil_dot";
                                     // _m setMarkerSize [0.2, 0.2];
 
-                                    _vis = lineIntersectsSurfaces [_checkPos, aimPos _target, _target, vehicle _target, true, 1, "VIEW"];
+                                    _vis = lineIntersectsSurfaces [_checkPos, AGLToASL (unitAimPosition _target), _target, vehicle _target, true, 1, "VIEW"];
+                                    // _vis2 = [_target, "VIEW", _target] checkVisibility [_checkPos, AGLToASL (unitAimPosition _target)];
                                     if (_vis isEqualTo []) then {
                                             _pointDir = _target getDir _checkPos;
                                             if (_pointDir >= (_targetDir - 75) and _pointDir <= (_targetDir + 75)) then {
@@ -541,7 +583,8 @@ pl_assault_position = {
                             if (count _checkPosArray > 0 and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
 
 
-                                _movePos = ([_checkPosArray, [], {_target distance2D _x}, "DESCEND"] call BIS_fnc_sortBy) select 0;
+                                // _movePos = ([_checkPosArray, [], {_target distance2D _x}, "DESCEND"] call BIS_fnc_sortBy) select 0;
+                                _movePos = ([_checkPosArray, [], {_unit distance2D _x}, "ASCEND"] call BIS_fnc_sortBy) select 0;
                                 _unit doMove _movePos;
                                 _unit setDestination [_movePos, "FORMATION PLANNED", false];
                                 pl_at_attack_array pushBack [_unit, _target, objNull];
@@ -554,18 +597,22 @@ pl_assault_position = {
                                 _unit disableAi "AIMINGERROR";
                                 _unit setVariable ["pl_engaging", true];
                                 _unit setVariable ['pl_is_at', true];
+                                _unit doWatch _target;
 
-                                _time = time + ((_unit distance _movePos) / 1.6 + 20);
+                                _time = time + (_unit distance _movePos) + 20;
                                 sleep 0.5;
+                                _unit reveal [_target, 3];
                                 waitUntil {sleep 0.5; (time >= _time or unitReady _unit or !alive _unit or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true]) or !alive _target or (count (crew _target) == 0))};
-                                _unit reveal [_target, 4];
 
-                                // doStop _unit;
+                                doStop _unit;
+                                // _unit selectWeapon (secondaryWeapon _unit);
+                                sleep 0.5;
                                 _unit doTarget _target;
                                 waitUntil {sleep 0.5; !(_group getVariable ["pl_hold_fire", false]) or !alive _unit or _unit getVariable["pl_wia", false] or !alive _target};
                                 _unit doFire _target;
-                                _time = 6;
-                                waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", false]) or !alive _target};
+                                _fired = _unit fireAtTarget [_target, secondaryWeapon _unit];
+                                _time = time + 5;
+                                waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", false]) or !alive _target or _fired};
                                 // pl_at_attack_array = pl_at_attack_array - [[_unit, _movePos]];
                                 if (alive _target) then {_unit setVariable ['pl_is_at', false]; pl_at_attack_array = pl_at_attack_array - [[_unit, _target, objNull]]; continue};
                                 if !(alive _target or !alive _unit or _unit getVariable ["pl_wia", false]) then {_target setVariable ["pl_at_enaged_by", nil]};
@@ -614,6 +661,9 @@ pl_assault_position = {
                             doStop _unit;
                             if (alive _unit) exitWith {};
                         }
+                    } else {
+                        [_unit, 15, _unit getDir _cords] spawn pl_find_cover;
+                        waitUntil {sleep 0.5; ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true]))};
                     };
 
                     if ((!alive _unit) or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true])) exitWith {};
@@ -622,9 +672,8 @@ pl_assault_position = {
             sleep 0.1;
         } forEach (units _group);
 
-        waitUntil {sleep 0.5; ({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) <= _breakingPoint or time > _time or !(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
+        waitUntil {sleep 0.5; (({alive _x and !((lifeState _x) isEqualTo "INCAPACITATED")} count (units _group)) <= _breakingPoint) or (time > _time) or !(_group getVariable ["onTask", true]) or ({!alive _x} count (missionNamespace getVariable format ["targets_%1", _group]) == count (missionNamespace getVariable format ["targets_%1", _group]))};
     };
-
 
     missionNamespace setVariable [format ["targets_%1", _group], nil];
     _group setVariable ["pl_is_attacking", false];
@@ -652,21 +701,24 @@ pl_assault_position = {
         [_group] call pl_reset;
         sleep 1;
         // if (pl_enable_beep_sound) then {playSound "beep"};
-        if (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) > _breakingPoint) then {
-            if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Assault complete", (groupId _group)]};
-            if (pl_enable_map_radio) then {[_group, "...Assault Complete!", 20] call pl_map_radio_callout};
-            [_group, "atk_complete", 1] call pl_voice_radio_answer;
-            {
-                [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
-            } forEach (units _group);
-        } else {
+        if (({alive _x and !((lifeState _x) isEqualTo "INCAPACITATED")} count (units _group)) <= _breakingPoint) then {
             if (pl_enable_beep_sound) then {playSound "radioina"};
             if (pl_enable_map_radio) then {[_group, "...Assault failed!", 20] call pl_map_radio_callout};
             if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Assault failed", (groupId _group)]};
-            // [_group] spawn pl_disengage;
-            {
-                [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
-            } forEach (units _group);
+
+            [_group, _startPos, true] spawn pl_disengage;
+            // {
+            //     [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
+            // } forEach (units _group);
+        } else {
+            if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Assault complete", (groupId _group)]};
+            if (pl_enable_map_radio) then {[_group, "...Assault Complete!", 20] call pl_map_radio_callout};
+            [_group, "atk_complete", 1] call pl_voice_radio_answer;
+            // {
+            //     [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
+            // } forEach (units _group);
+            [_group, [], _cords, _startPos getDir _cords, false, false, _area] spawn pl_defend_position;
+
         };
     };
 };

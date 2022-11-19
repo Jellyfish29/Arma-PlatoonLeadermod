@@ -1614,8 +1614,7 @@ pl_reworked_bis_pack = {
 
     private _err_badWeapon = 
     {
-        ["Bad static weapon! Static weapon should exist and not be packed or broken"] call BIS_fnc_error;
-        nil
+        ["Bad static weapon! Static weapon should exist and not be packed or broken"] call BIS_fnc_errora        nil
     };
 
     if (_group isEqualType objNull) then {_group = group _group};
@@ -2798,3 +2797,626 @@ pl_draw_mouse_marker = {
 
 
 [findDisplay 12 displayCtrl 51] call pl_draw_mouse_marker;
+
+dyn_place_player = {
+    params ["_pos", "_dest"];
+    private ["_startPos", "_infGroups", "_vehicles", "_roads", "_road", "_roadsPos", "_dir", "_roadPos"];
+    _startPos = getMarkerPos "spawn_start";
+    deleteMarker "spawn_start";
+    _infGroups = [];
+    _vehicles = nearestObjects [_startPos,["LandVehicle"],200];
+    {
+        if(((_startPos distance2D (leader _x)) < 300) and !(vehicle (leader _x) in _vehicles)) then {
+            _infGroups pushBack _x;
+        }
+    } forEach (allGroups select {side _x isEqualTo playerSide});
+
+    // _roads = _pos nearRoads 300;
+    
+
+    _road = [_pos, 300] call BIS_fnc_nearestRoad;
+    _usedRoads = [];
+    // reverse _vehicles;
+
+    _roadsPos = [];
+    _roadBlackList = [];
+    for "_i" from 0 to (count _vehicles) - 1 step 1 do {
+        // _road = ((roadsConnectedTo _road) - [_road]) select 0;
+        // if !(_road in _roadBlackList) then {
+        //     _roadBlackList pushBack _road;
+        //     _roadPos = getPos _road;
+        //     _near = roadsConnectedTo _road;
+        //     _near = [_near, [], {(getPos _x) distance2D _dest}, "DESCEND"] call BIS_fnc_sortBy;
+        //     _dir = (getPos (_near#0)) getDir (getPos _road);
+        //     _roadsPos pushBack [_roadPos, _dir];
+        // } else {
+
+        // };
+        _road = ([roadsConnectedTo _road, [], {(getpos _x) distance2D _dest}, "DESCEND"] call BIS_fnc_sortBy)#0;
+
+        if (isNil "_road" or isNull _road) then {
+            _roadPos = [[[_pos, 150]], ["water"]] call BIS_fnc_randomPos;
+            _roadPos = _roadPos findEmptyPosition [0, 50, typeOf (_vehicles#_i)];
+            _dir = _pos getDir _dest;
+        } else {
+            _roadPos = getPos _road;
+            _info = getRoadInfo _road;    
+            _endings = [_info#6, _info#7];
+            _endings = [_endings, [], {_x distance2D _dest}, "ASCEND"] call BIS_fnc_sortBy;
+            _dir = (_endings#1) getDir (_endings#0);
+        };
+
+        if !((_vehicles#_i) setVehiclePosition [_roadPos, [], 0, "NONE"]) then {
+            _roadPos = [[[_pos, 150]], ["water"]] call BIS_fnc_randomPos;
+            _roadPos = _roadPos findEmptyPosition [0, 50, typeOf (_vehicles#_i)];
+            _dir = _pos getDir _dest;
+            (_vehicles#_i) setVehiclePosition [_roadPos, [], 0, "NONE"];
+        };
+
+        (_vehicles#_i) setdir _dir;
+
+        sleep 0.1;
+
+    };
+
+    // _roadsPos = [_roadsPos, [], {(_x#0) distance2D _dest}, "ASCEND"] call BIS_fnc_sortBy;
+
+    // for "_i" from 0 to (count _vehicles) - 1 step 1 do {
+    //     (_vehicles#_i) setPos ((_roadsPos#_i)#0);
+    //     (_vehicles#_i) setdir ((_roadsPos#_i)#1);
+    // };
+};
+
+pl_disengage = {
+    params [["_group", (hcSelected player) select 0], ["_retreatPos", []]];
+    private ["_retreatPos", "_enemyDir"];
+
+    private _markerDirName = format ["delayDir%1%2", _group, random 1];
+    private _playerCalled = false;
+
+    if (visibleMap or !(isNull findDisplay 2000) and _retreatPos isEqualTo []) then {
+        if (visibleMap) then {
+            _retreatPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _retreatPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+        _playerCalled = true;
+    };
+    private _retreatDir = (getPos (leader _group)) getdir _retreatPos;
+// else {
+    //     private _allyUnits = allUnits+vehicles select {side _x == playerSide};
+    //     _allyUnits = _allyUnits - (units _group);
+    //     private _ally = ([_allyUnits, [], {_x distance2D (leader _group)}, "ASCEND"] call BIS_fnc_sortBy)#0;
+
+    //     private _retreatDistance = 150;
+    //     if (((leader _group) distance2D _ally) <= 100) then {
+    //         _retreatDistance = ((leader _group) distance2D _ally) + 50;
+    //     };
+
+    //     if (vehicle (leader _group) != leader _group) then { _retreatDistance = _retreatDistance + 100};
+
+    //     if ([getpos (leader _group)] call pl_is_city) then {_retreatDistance = _retreatDistance / 2};
+
+    //     private _enemy = (leader _group) findNearestEnemy getPos (leader _group);
+    //     if (isNull _enemy) then {_enemyDir = getDir (leader _group)} else {_enemyDir = (leader _group) getDir _enemy};
+    //     private _allyDir = (leader _group) getDir _ally;
+
+    //     if (_retreatDir == -1) then {_retreatDir = _enemyDir - 180};
+
+    //     _retreatPos = (getPos (leader _group)) getPos [_retreatDistance, _retreatDir];
+
+    //     // createMarker [_markerDirName, _retreatPos];
+    //     // _markerDirName setMarkerPos _retreatPos;
+    //     // _markerDirName setMarkerType "marker_position_eny";
+    //     // _markerDirName setMarkerColor pl_side_color;
+    //     // _markerDirName setMarkerDir _enemyDir;
+    // };
+
+    // _retreatPos findEmptyPosition [0, 50, typeOf (vehicle (leader _group))];
+    
+    pl_draw_disengage_array pushBack [_group, _retreatPos];
+
+    [_group, "confirm", 1] call pl_voice_radio_answer;
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 1;
+
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa";
+    _group setVariable ["onTask", true];
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", _icon];
+    {
+        _x setUnitTrait ["camouflageCoef", 0.5, true];
+        _x setVariable ["pl_damage_reduction", true];
+    } forEach (units _group);
+
+    if (vehicle (leader _group) == leader _group) then {
+
+        private _units = (units _group) select {alive _x};
+        private _injured = _units select {lifeState _x isEqualTo "INCAPACITATED" or (_x getVariable ["pl_wia", false])};
+        _group setCombatMode "BLUE";
+        _group setVariable ["pl_combat_mode", true];
+        _group setSpeedMode "FULL";
+        [_group] spawn pl_forget_targets;
+        [leader _group, "SmokeShellMuzzle"] call BIS_fnc_fire;
+
+        if (count _injured > 0) then {
+
+            private _dragScripts = []; 
+            private _restUnits = _units - _injured - [leader _group];
+            private _draggers = [];
+
+            for "_i" from 0 to (count _injured) - 1 do {
+                if ((count _restUnits) - 1 >= _i) then {
+                    _unit = _injured#_i;
+                    _dragger = ([_restUnits, [], {_x distance2D _unit}, "ASCEND"] call BIS_fnc_sortBy)#0;
+                    _draggers pushBack _dragger;
+                    [_dragger, "SmokeShellMuzzle"] call BIS_fnc_fire;
+                    // _injured deleteAt (_injured find _unit);
+                    _restUnits deleteAt (_restUnits find _dragger);
+                    _script = [_dragger, _unit, _retreatPos, true] spawn pl_injured_drag;
+                    _dragScripts pushBack _script;
+
+                    [_dragger, _script, _retreatDir] spawn {
+                        params ["_dragger", "_script", "_retreatDir"];
+
+                        waitUntil {sleep 0.5; scriptDone _script or !alive _dragger};
+
+                        if ([_retreatPos] call pl_is_forest or [_retreatPos] call pl_is_city) then {
+                            [_unit, 3, _retreatDir] spawn pl_find_cover;
+                        } else {
+                            [_unit, 10, _retreatDir] spawn pl_find_cover;
+                        };
+                    };
+                };
+            };
+
+            {
+                [_x, _retreatPos, _retreatDir] spawn {
+                    params ["_unit", "_retreatPos", "_retreatDir"];
+
+                    _unit disableAI "AUTOCOMBAT";
+                    _unit disableAI "AUTOTARGET";
+                    _unit disableAI "TARGET";
+                    _unit setUnitTrait ["camouflageCoef", 0.7, true];
+                    _unit setVariable ["pl_damage_reduction", true];
+                    _unit doMove _retreatPos;
+                    // _unit setDestination [_retreatPos, "LEADER DIRECT", true];
+                    sleep 1;
+                    private _counter = 0;
+                    while {alive _unit and ((group _unit) getVariable ["onTask", true])} do {
+                        sleep 0.5;
+                        _check = [_unit, _retreatPos, _counter] call pl_position_reached_check;
+                        if (_check#0) exitWith {};
+                        _counter = _check#1;
+                    };
+
+                    if ([_retreatPos] call pl_is_forest or [_retreatPos] call pl_is_city) then {
+                        [_unit, 3, _retreatDir - 180] spawn pl_find_cover;
+                    } else {
+                        [_unit, 10, _retreatDir - 180] spawn pl_find_cover;
+                    };
+                };
+            } forEach _restUnits + [leader _group];
+
+            waitUntil {sleep 0.5; (({!(scriptDone _x)} count _dragScripts) <= 0 and ({_x distance2D _retreatPos < 15} count _units) > 0) or ({alive _x} count _units) <= 0 or !(_group getVariable ["onTask", false])};
+
+        } else {
+
+            {
+                [_x, _retreatPos, _retreatDir] spawn {
+                    params ["_unit", "_retreatPos", "_retreatDir"];
+
+                    _unit disableAI "AUTOCOMBAT";
+                    _unit disableAI "AUTOTARGET";
+                    _unit disableAI "TARGET";
+                    _unit setUnitTrait ["camouflageCoef", 0.7, true];
+                    _unit setVariable ["pl_damage_reduction", true];
+                    _unit doMove _retreatPos;
+                    // _unit setDestination [_retreatPos, "LEADER DIRECT", true];
+                    sleep 1;
+                    private _counter = 0;
+                    while {alive _unit and ((group _unit) getVariable ["onTask", true])} do {
+                        sleep 0.5;
+                        _check = [_unit, _retreatPos, _counter] call pl_position_reached_check;
+                        if (_check#0) exitWith {};
+                        _counter = _check#1;
+                    };
+
+                    if ([_defPos] call pl_is_forest or [_defPos] call pl_is_city) then {
+                        [_unit, 20, _retreatDir - 180] spawn pl_find_cover;
+                    } else {
+                        [_unit, 15, _retreatDir - 180] spawn pl_find_cover;
+                    };
+                };
+                
+            } forEach _units;
+
+            waitUntil {sleep 0.5; ({_x distance2D _retreatPos < 15} count _units) > 0 or ({alive _x} count _units) <= 0 or !(_group getVariable ["onTask", false])};
+
+        };
+        _group setCombatMode "YELLOW";
+        _group setVariable ["pl_combat_mode", false];
+
+
+    } else {
+        private _vic = vehicle (leader _group);
+        [_vic, "SmokeLauncher"] call BIS_fnc_fire;
+
+        _vic doMove _retreatPos;
+        _vic setDestination [_retreatPos,"VEHICLE PLANNED" , true];
+        waitUntil {sleep 0.5, unitReady _vic or !alive _vic};
+        _pos = [(vehicle (leader _group)), _retreatDir - 180] call pl_get_turn_vehicle;
+        (vehicle (leader _group)) doMove _pos;
+    };
+
+    // sleep 1;
+    // if (_group getVariable ["onTask", false] and ({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) >= 2) then {
+    //     if !(_playerCalled) then {
+    //         [_group, [], _retreatPos, _retreatDir - 180] spawn pl_defend_position;
+    //     } else {
+    //         [_group] spawn pl_reset;
+    //         sleep 0.5;
+    //         // {
+    //         //     [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
+    //         // } forEach (units _group);
+    //         if (vehicle (leader _group) == (leader _group)) then {
+    //             {
+    //                 if (_x getUnitTrait "Medic" and alive _x and !(_x getVariable ["pl_wia", false])) exitWith {[_group] spawn pl_heal_group};
+    //             } forEach (units _group);
+    //         } else {
+    //             _pos = [(vehicle (leader _group)), _retreatDir - 180] call pl_get_turn_vehicle;
+    //             (vehicle (leader _group)) doMove _pos;
+    //         };
+    //     };
+    // };
+    pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _retreatPos]];
+    deleteMarker _markerDirName;
+};
+
+pl_repair = {
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_group", "_engVic", "_vicPos", "_validEng", "_cords", "_repairTarget", "_toRepairVic", "_markerName", "_markerName2", "_vicGroup", "_smokeGroup", "_vicGroupId", "_icon", "_wp", "_repairTime"];
+
+    if (vehicle (leader _group) != leader _group) then {
+        _engVic = vehicle (leader _group);
+        _vicType = typeOf _engVic;
+
+        if (!(_engVic getVariable ["pl_is_repair_vehicle", false]) and !(_group getVariable ["pl_is_repair_group", false])) exitWith {hint "Requires Repair Vehicle!"};
+
+        _repairCargo = _engVic getVariable ["pl_repair_supplies", 0];
+
+        if (_repairCargo <= 0) exitWith {hint "No more Supplies left!"};
+
+        if (visibleMap or !(isNull findDisplay 2000)) then {
+            pl_show_dead_vehicles = true;
+            pl_show_dead_vehicles_pos = getPos _engVic;
+            pl_show_damaged_vehicles = true;
+            pl_show_vehicles_pos = getPos _engVic;
+            hint "Select on MAP";
+            onMapSingleClick {
+                pl_repair_cords = _pos;
+                pl_mapClicked = true;
+                pl_show_dead_vehicles = false;
+                pl_show_damaged_vehicles = false;
+                hint "";
+                onMapSingleClick "";
+            };
+            while {!pl_mapClicked} do {
+                if (visibleMap) then {
+                    pl_repair_cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    pl_repair_cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
+                sleep 0.1;
+            };
+
+            pl_mapClicked = false;
+            _cords = pl_repair_cords;
+            private _distance = 30;
+            {
+                if ((_cords distance2D (_x #0)) < _distance) then {
+                    _repairTarget = _x,
+                    _distance = (_cords distance2D (_x #0));
+                };
+            } forEach pl_destroyed_vics_data;
+
+            if !(isNil "_repairTarget") then {
+
+                _toRepairVic = _repairTarget #1;
+                _markerName = _repairTarget #2;
+                _vicGroupId = _repairTarget #3;
+                _smokeGroup = _repairTarget #4;
+                _markerName2 = _repairTarget #5;
+            }
+            else
+            {
+                _vics = nearestObjects [_cords, ["Car", "Tank", "Truck"], 30];
+                _distance = 30;
+                {
+                    if ((((_cords distance2D _x) < _distance) and ((getDammage _x) > 0 or !(canMove _x)) and alive _x and (side _x) == playerSide) or ((count (crew _x)) <= 0 and ((getDammage _x) > 0 or !(canMove _x)) and alive _x)) then {
+                        _repairTarget = _x,
+                        _distance = (_cords distance2D _x);
+                    };
+                } forEach _vics;
+            };
+
+            if (isNil "_repairTarget") exitWith {
+                if (pl_enable_chat_radio) then {leader _group sideChat "No damaged Vehicles found"};
+                if (pl_enable_map_radio) then {[_group, "...No damaged Vehicles found", 20] call pl_map_radio_callout};
+                if (pl_enable_beep_sound) then {playSound "beep"};
+            };
+
+            _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa";
+
+            if (count _taskPlanWp != 0) then {
+
+                // add Arrow indicator
+                pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+                waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
+
+                // remove Arrow indicator
+                pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+                if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+                _group setVariable ["pl_task_planed", false];
+                _group setVariable ["pl_execute_plan", nil];
+            };
+
+            if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
+
+
+            // if (pl_enable_beep_sound) then {playSound "beep"};
+            [_group, "confirm", 1] call pl_voice_radio_answer;
+            [_group] call pl_reset;
+
+            sleep 0.5;
+
+            [_group] call pl_reset;
+
+            sleep 0.5;
+
+            _group setVariable ["onTask", true];
+            _group setVariable ["setSpecial", true];
+            _group setVariable ["specialIcon", _icon];
+            _group setVariable ["pl_is_support", true];
+
+            for "_i" from count waypoints _group - 1 to 0 step -1 do{
+                deleteWaypoint [_group, _i];
+            };
+            if ((typeName _repairTarget) isEqualTo "ARRAY") then {
+                _wp = _group addWaypoint [_repairTarget #0, 0];
+                _repairTime = time + 90;
+            }
+            else
+            {
+                _wp = _group addWaypoint [getPos _repairTarget, 0];
+                _repairTime = time + 45;
+            };
+            // [_group, "maint"] call pl_change_group_icon;
+            // add Task Icon to wp
+            pl_draw_planed_task_array pushBack [_wp, _icon];
+            // if (pl_enable_beep_sound) then {playSound "beep"};
+            // leader _group sideChat format ["%1 is moving to damaged vehicle, over", (groupId _group)];
+            sleep 4;
+            waitUntil {sleep 0.5; !alive _engVic or (unitReady _engVic) or !(_group getVariable ["onTask", true])};
+            sleep 2;
+
+            // remove Task Icon from wp and delete wp
+            pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+
+            // _repairTime = time + 90;
+            {
+                _x disableAI "PATH";
+            } forEach crew _engVic;
+            waitUntil {sleep 0.5; time >= _repairTime or !(_group getVariable ["onTask", true])};
+            {
+                _x enableAI "PATH";
+            } forEach crew _engVic;
+            sleep 1;
+            if ((alive _engVic) and (_group getVariable "onTask") and ({ alive _x } count units _group > 0) and (time >= _repairTime)) then {
+                if ((typeName _repairTarget) isEqualTo "ARRAY") then {
+                    _idx = pl_destroyed_vics_data find _repairTarget;
+                    0 = pl_destroyed_vics_data deleteAt _idx;
+                    deleteMarker _markerName;
+                    deleteMarker _markerName2;
+                    _toRepairVic setDamage 0;
+                    _toRepairVic setFuel 1;
+                    _toRepairVic setVehicleAmmo 1;
+                    _toRepairVic setCaptive false;
+                    _toRepairVic allowDamage true;
+                    _toRepairVic setVehicleLock "DEFAULT";
+                    {
+                        deleteVehicle ((_x getVariable "effectEmitter") select 0);  
+                        // deleteVehicle ((_x getVariable "effectLight") select 0);
+                    } forEach (units _smokeGroup);
+                    sleep 0.1;
+                    _unitText = getText (configFile >> "CfgVehicles" >> typeOf _toRepairVic>> "textSingular");
+                    if (_toRepairVic isKindOf "Tank" or _unitText isEqualTo "APC") then {
+                        _vicGroup = createVehicleCrew _toRepairVic;
+                        sleep 0.1;
+                        _vicGroup setGroupId [_vicGroupId];
+                        sleep  0.1;
+                        [_vicGroup] spawn pl_set_up_ai;
+                        sleep 4;
+                        player hcSetGroup [_vicGroup];
+                        [_vicGroup] spawn pl_reset;
+                        sleep 1;
+                        if (pl_enable_beep_sound) then {playSound "radioina"};
+                        if (pl_enable_chat_radio) then {(leader _vicGroup) sideChat format ["%1 is back up and fully operational", (groupId _vicGroup)]};
+                        if (pl_enable_map_radio) then {[_vicGroup, "...We are back up!", 20] call pl_map_radio_callout};
+                    } else {
+                        if (pl_enable_beep_sound) then {playSound "radioina"};
+                        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Repairs Completeted", (groupId _group)]};
+                        if (pl_enable_map_radio) then {[_group, "...Repairs Completeted", 20] call pl_map_radio_callout};
+                    };
+
+                    _group setVariable ["onTask", false];
+                    _group setVariable ["setSpecial", false];
+                    // _group setVariable ["MARTA_customIcon", nil];
+                    _repairCargo = _repairCargo - 2;
+                }
+                else
+                {
+                    _repairTarget setDamage 0;
+                    _repairTarget setFuel 1;
+                    _group setVariable ["onTask", false];
+                    _group setVariable ["setSpecial", false];
+                    // _group setVariable ["MARTA_customIcon", nil];
+                    if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Repairs Completeted", (groupId _group)]};
+                    if (pl_enable_map_radio) then {[_group, "...Repairs Completeted", 20] call pl_map_radio_callout};
+                    _repairCargo = _repairCargo - 1;
+                };
+                
+                _engVic setVariable ["pl_repair_supplies", _repairCargo];
+                _group setVariable ["pl_is_support", false];
+            };
+        };
+    }; 
+};
+
+pl_cas = {
+    params ["_key"];
+    private ["_sortiesCost", "_cords", "_dir", "_support", "_casType", "_plane", "_cs", "_markerName"];
+
+    switch (_key) do { 
+        case 1 : {_sortiesCost = 1}; 
+        case 2 : {_sortiesCost = 2};
+        case 3 : {_sortiesCost = 4}; 
+        case 4 : {_sortiesCost = 5}; 
+        default {_sortiesCost = 1}; 
+    };
+
+    if (visibleMap) then {
+
+        if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
+
+        hintSilent "";
+        // hint "Select STRIKE location on MAP (SHIFT + LMB to cancel)";
+        _message = "Select STRIKE Location <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
+
+        _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+
+        onMapSingleClick {
+            pl_cas_cords = _pos;
+            pl_mapClicked = true;
+            if (_shift) then {pl_cancel_strike = true};
+            hintSilent "";
+            onMapSingleClick "";
+        };
+
+        while {!pl_mapClicked} do {sleep 0.1;};
+        pl_mapClicked = false;
+        // hint "Select APPROACH Vector for Strike (SHIFT + LMB to cancel)";
+        _message = "Select APPROACH Vector <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
+
+        sleep 0.1;
+        _cords = pl_cas_cords;
+        _markerName = format ["cas%1", _key];
+        createMarker [_markerName, _cords];
+        _markerName setMarkerType "mil_arrow2";
+        _markerName setMarkerColor "colorRED";
+        if (pl_cancel_strike) exitWith {};
+
+        onMapSingleClick {
+            pl_cas_cords = _pos;
+            pl_mapClicked = true;
+            if (_shift) then {pl_cancel_strike = true};
+            hintSilent "";
+            onMapSingleClick "";
+        };
+
+        while {!pl_mapClicked} do {
+            _dir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
+            _markerName setMarkerDir _dir;
+        };
+        pl_mapClicked = false;
+
+    }
+    else
+    {
+        _cords =  screenToWorld [0.5,0.5];
+        _dir = player getDir _cords;
+        _markerName = format ["cas%1", _key];
+        createMarker [_markerName, _cords];
+        _markerName setMarkerType "mil_arrow2";
+        _markerName setMarkerColor "colorRED";
+        _markerName setMarkerDir _dir;
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+    pl_sorties = pl_sorties - _sortiesCost;
+
+    switch (_key) do { 
+        case 1 : {pl_gun_enabled = 0, _casType = 0, _plane = pl_cas_plane_1, _cs = 'Viper 1'};
+        case 2 : {pl_gun_rocket_enabled = 0, _casType = 2, _plane = pl_cas_plane_1, _cs = 'Viper 4'};
+        case 3 : {pl_cluster_enabled = 0,  _casType = 3, _plane = pl_cas_plane_3, _cs = 'Black Knight 2'}; 
+        case 4 : {pl_jdam_enabled = 0,  _casType = 3, _plane = pl_cas_plane_2, _cs = 'Stroke 3'};
+        default {sleep 0.1}; 
+    };
+    sleep 1;
+    _group = createGroup [playerSide, true];
+    _support = _group createUnit ["ModuleCAS_F", _cords, [],0 , ""];
+    
+    _support setVariable ["vehicle", _plane];
+    _support setVariable ["type", _casType];
+
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    [playerSide, "HQ"] sideChat "Strike Aircraft on the Way!";
+    sleep 1;
+    _support setDir _dir;
+    sleep 5;
+    _vicGroup = group (driver (_support getVariable "plane"));
+    if (isNil "_vicGroup") exitWith {
+        deleteVehicle _support;
+        hint "Defined Plane Class not supported!";
+        deleteMarker _markerName;
+    };
+    _vicGroup setGroupId [_cs];
+    _vicGroup setVariable ["pl_not_addalbe", true];
+    waitUntil {sleep 0.5; _support isEqualTo objNull};
+    deleteMarker _markerName;
+    sleep 8;
+    switch (_key) do {
+        case 1 : {
+        pl_cas_gun_cd = time + 120;
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 2 MINUTES, over", _cs];
+        waitUntil {sleep 1; time > pl_cas_gun_cd};
+        pl_gun_enabled = 1;
+     }; 
+        case 2 : {
+        pl_cas_gun_rocket_cd = time + 240;
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 4 MINUTES, over", _cs];
+        waitUntil {sleep 1; time > pl_cas_gun_rocket_cd};
+        pl_gun_rocket_enabled = 1;
+     }; 
+        case 3 : {
+        pl_cas_cluster_cd = time + 480;
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 8 MINUTES, over", _cs];
+        waitUntil {sleep 1; time > pl_cas_cluster_cd};
+        pl_cluster_enabled = 1;
+    };
+        case 4 : {
+        pl_cas_jdam_cd = time + 720;
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        // [playerSide, "HQ"] sideChat format ["%1 will be back on Station in 12 MINUTES, over", _cs];
+        waitUntil {sleep 1; time > pl_cas_jdam_cd};
+        pl_jdam_enabled = 1;
+    };
+        default {pl_cas_cd = time + 240;}; 
+    };
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    [playerSide, "HQ"] sideChat format ["%1, is back on Station", _cs];
+};

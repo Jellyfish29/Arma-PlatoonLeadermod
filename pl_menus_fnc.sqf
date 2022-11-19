@@ -65,6 +65,7 @@ pl_str_maintenance = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleT
 pl_str_recon = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa"/><t> Designate as Recon</t>';
 pl_str_ce_menu = '<img color="#e5e500" image="\Plmod\gfx\b_engineer.paa"/><t> Combat Engineering Tasks</t>';
 pl_rearm_point_str = '<img color="#e5e500" image="\Plmod\gfx\pl_asp_marker.paa"/><t> Set up Ammo Supply Point</t>';
+pl_deploy_uav_str = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa"/><t> Deploy UAV</t>';
 
 //        [parseText '%13', [4], '', -5, [['expression', '[] spawn pl_vehicle_ccp_aid_station']], '%1', 'HCNotEmpty'],
 
@@ -82,8 +83,9 @@ pl_show_css_menu = {
         ['', [], '', -1, [['expression', '']], '%2', '1'],
         [parseText '%7', [8], '', -5, [['expression', '[] spawn pl_repair']], '%2', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%13', [9], '', -5, [['expression', '[] spawn pl_deploy_small_uav']], '1', 'HCNotEmpty'],
         [parseText '%9', [10], '', -5, [['expression', '[] spawn pl_recon']], '1', 'HCNotEmpty']
-    ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance, pl_str_recon, pl_str_supply_point, pl_str_ce_menu, pl_rearm_point_str];
+    ];", pl_show_medical, pl_show_vehicle_recovery, pl_str_heal, pl_str_ccp, pl_str_transfer, pl_str_resupply, pl_str_repair, pl_str_maintenance, pl_str_recon, pl_str_supply_point, pl_str_ce_menu, pl_rearm_point_str, pl_deploy_uav_str];
     // showCommandingMenu "#USER:pl_mortar_menu";
 };
 
@@ -142,6 +144,7 @@ pl_str_plane_sad = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTas
 pl_str_helo_sad = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heli_ca.paa"/><t> Attack Helo SAD (7)</t>';
 pl_str_uav = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa"/><t> UAV Recon (4)</t>';
 pl_str_medevac = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\heal_ca.paa"/><t> MEDEVAC (4)</t>';
+pl_str_supply_air = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Heli Resupply (4)</t>';
 
 
 pl_show_cas_menu = {
@@ -158,9 +161,10 @@ pl_show_cas_menu = {
         ['', [], '', -1, [['expression', '']], '1', '1'],
         [parseText '%14', [8], '', -5, [['expression', '[3] spawn pl_interdiction_cas']], '1', '%7'],
         ['', [], '', -1, [['expression', '']], '1', '1'],
-        [parseText '%15', [9], '', -5, [['expression', '[4] spawn pl_interdiction_cas']], '1', '%16']
+        [parseText '%15', [9], '', -5, [['expression', '[4] spawn pl_interdiction_cas']], '1', '%16'],
+        [parseText '%17', [9], '', -5, [['expression', '[5] spawn pl_interdiction_cas']], '1', '%18']
 
-    ];", pl_gun_enabled, pl_gun_rocket_enabled, pl_cluster_enabled, pl_jdam_enabled, pl_plane_sad_enabled, pl_helo_sad_enabled, pl_uav_sad_enabled, pl_str_gun, pl_str_attack_run, pl_str_cluster, pl_str_jdam, pl_str_plane_sad, pl_str_helo_sad, pl_str_uav, pl_str_medevac, pl_medevac_sad_enabled];
+    ];", pl_cas_active, pl_cas_active, pl_cas_active, pl_cas_active, pl_cas_active, pl_cas_active, pl_uav_sad_enabled, pl_str_gun, pl_str_attack_run, pl_str_cluster, pl_str_jdam, pl_str_plane_sad, pl_str_helo_sad, pl_str_uav, pl_str_medevac, pl_medevac_sad_enabled, pl_str_supply_air, pl_supply_sad_enabled];
     showCommandingMenu "#USER:pl_cas_menu";
 };
 
@@ -221,21 +225,21 @@ pl_arty_round_menu_on_map =
 [
     ['Rounds',true],
     ['1', [2], '', -5, [['expression', 'pl_arty_rounds = 1; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['3', [3], '', -5, [['expression', 'pl_arty_rounds = 3; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['6', [4], '', -5, [['expression', 'pl_arty_rounds = 6; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['9', [5], '', -5, [['expression', 'pl_arty_rounds = 9; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['12', [6], '', -5, [['expression', 'pl_arty_rounds = 12; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['15', [7], '', -5, [['expression', 'pl_arty_rounds = 15; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['18', [8], '', -5, [['expression', 'pl_arty_rounds = 18; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['21', [9], '', -5, [['expression', 'pl_arty_rounds = 21; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['24', [10], '', -5, [['expression', 'pl_arty_rounds = 24; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+    ['2', [3], '', -5, [['expression', 'pl_arty_rounds = 2; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['4', [4], '', -5, [['expression', 'pl_arty_rounds = 4; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['6', [5], '', -5, [['expression', 'pl_arty_rounds = 6; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['8', [6], '', -5, [['expression', 'pl_arty_rounds = 8; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['10', [7], '', -5, [['expression', 'pl_arty_rounds = 10; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['15', [8], '', -5, [['expression', 'pl_arty_rounds = 15; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['20', [9], '', -5, [['expression', 'pl_arty_rounds = 20; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['32', [10], '', -5, [['expression', 'pl_arty_rounds = 32; [] spawn pl_show_on_map_arty_menu']], '1', '1']
 ];
 
 pl_arty_dispersion_menu_on_map = 
 [
     ['Dispersion',true],
-    ['50 m', [2], '', -5, [['expression', 'pl_arty_dispersion = 50; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['75 m', [3], '', -5, [['expression', 'pl_arty_dispersion = 75; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['0 m', [2], '', -5, [['expression', 'pl_arty_dispersion = 1; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['50 m', [3], '', -5, [['expression', 'pl_arty_dispersion = 50; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
     ['100 m', [4], '', -5, [['expression', 'pl_arty_dispersion = 100; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
     ['125 m', [5], '', -5, [['expression', 'pl_arty_dispersion = 125; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
     ['150 m', [6], '', -5, [['expression', 'pl_arty_dispersion = 150; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
@@ -262,7 +266,19 @@ pl_arty_round_type_menu_on_map =
     ['Type',true],
     ['HE', [2], '', -5, [['expression', 'pl_arty_round_type = 1; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
     ['SMOKE', [3], '', -5, [['expression', 'pl_arty_round_type = 2; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
-    ['ILLUM', [4], '', -5, [['expression', 'pl_arty_round_type = 3; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+    ['ILLUM', [4], '', -5, [['expression', 'pl_arty_round_type = 3; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['GUIDED', [5], '', -5, [['expression', 'pl_arty_round_type = 4; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['MINE', [6], '', -5, [['expression', 'pl_arty_round_type = 5; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['CLUSTER', [7], '', -5, [['expression', 'pl_arty_round_type = 6; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+];
+
+
+pl_arty_mission = "SUP";
+pl_arty_mission_menu = 
+[
+    ['Fire Mission',true],
+    ['SUPPRESS', [2], '', -5, [['expression', 'pl_arty_mission = "SUP"; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['ANIHILATE', [3], '', -5, [['expression', 'pl_arty_mission = "ANI"; [] spawn pl_show_on_map_arty_menu']], '1', '1']
 ];
 
 pl_get_type_str = {
@@ -273,10 +289,52 @@ pl_get_type_str = {
           case 1 : {_return = "HE"}; 
           case 2 : {_return = "SMOKE"}; 
           case 3 : {_return = "ILLUM"};
+          case 4 : {_return = "GUIDED"};
+          case 5 : {_return = "MINE"};
+          case 6 : {_return = "CLUSTER"};
           default {};
       };
     _return
 };
+
+pl_get_arty_ammo = {
+    params ["_guns"];
+
+    private _availableMagazinesLeader = magazinesAmmo [_guns#0, true];
+    {
+        private _availableMagazines = magazinesAmmo [_x, true];
+
+        for "_i" from 0 to (count _availableMagazinesLeader) - 1 do {
+            if (((_availableMagazinesLeader#_i)#0) isEqualTo ((_availableMagazines#_i)#0)) then {
+                (_availableMagazinesLeader#_i) set [1, ((_availableMagazinesLeader#_i)#1) + ((_availableMagazines#_i)#1)]
+            };
+        }
+    } forEach (_guns - [_guns#0]);
+
+    private _allAmmoCount = createHashMap;
+
+    {
+        if !((_x#0) in _allAmmoCount) then {
+            _allAmmoCount set [_x#0, _x#1];
+        } else {
+            _a = _allAmmoCount get (_x#0);
+            _allAmmoCount set [_x#0, _a + (_x#1)];
+        };
+    } forEach _availableMagazinesLeader;
+
+    _allAmmoCount
+};
+
+pl_get_arty_type_to_name = {
+    params ["_typeName"];
+
+        private _r = {
+            if ([_x#0, _typeName] call BIS_fnc_inString) exitWith {_x#1};
+            ""
+        } forEach [["he", "HE"], ["smoke", "SMOKE"], ["smk", "SMOKE"], ["il", "ILLUM"], ["illum", "ILLUM"], ["guid", "GUIDED"], ["gui", "GUIDED"], ["cluster", "CLUSTER"], ["icm", "CLUSTER"], ["mine", "MINE"]];
+    _r
+};
+
 
 pl_show_on_map_arty_menu = {
 call compile format ["
@@ -286,14 +344,16 @@ pl_on_map_arty_menu = [
     ['', [], '', -5, [['expression', '']], '1', '0'],
     ['Choose Battery:   %5', [3], '', -5, [['expression', '[] spawn pl_show_battery_menu']], '1', '1'],
     ['', [], '', -5, [['expression', '']], '1', '0'],
-    ['Type:          %6', [4], '#USER:pl_arty_round_type_menu_on_map', -5, [['expression', '']], '1', '1'],
-    ['Rounds:        %1', [4], '#USER:pl_arty_round_menu_on_map', -5, [['expression', '']], '1', '1'],
-    ['Dispersion:    %2 m', [5], '#USER:pl_arty_dispersion_menu_on_map', -5, [['expression', '']], '1', '1'],
-    ['Min Delay:     %3 s', [6], '#USER:pl_arty_delay_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Mission:     %7', [4], '#USER:pl_arty_mission_menu', -5, [['expression', '']], '1', '1'],
+    ['Type:          %6', [5], '#USER:pl_arty_round_type_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Rounds:        %1', [6], '#USER:pl_arty_round_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Dispersion:    %2 m', [7], '#USER:pl_arty_dispersion_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Min Delay:     %3 s', [8], '#USER:pl_arty_delay_menu_on_map', -5, [['expression', '']], '1', '1'],
     ['', [], '', -5, [['expression', '']], '1', '0']
-];", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, pl_arty_enabled, groupId (pl_arty_groups#pl_active_arty_group_idx), [pl_arty_round_type] call pl_get_type_str];
+];", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, pl_arty_enabled, groupId (pl_arty_groups#pl_active_arty_group_idx), [pl_arty_round_type] call pl_get_type_str, pl_arty_mission];
 showCommandingMenu "#USER:pl_on_map_arty_menu";
 };
+
 
 pl_show_battery_menu = {
     private ["_menuScript"];
@@ -335,13 +395,15 @@ pl_task_plan_menu = [
     ['Task Plan', true],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_std_atk.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] call pl_task_planer']], '1', '1'],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] call pl_task_planer']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\SFP.paa'/><t> Support by Fire</t>", [4], '', -5, [['expression', '["sfp"] call pl_task_planer']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'/><t> Garrison Building</t>", [5], '', -5, [['expression', '["garrison"] call pl_task_planer']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_css_task.paa"/><t> Combat Service Suppport Tasks</t>', [4], '#USER:pl_task_plan_menu_css_sub', -5, [['expression', '']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_css_task.paa"/><t> Combat Service Suppport Tasks</t>', [6], '#USER:pl_task_plan_menu_css_sub', -5, [['expression', '']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_eng_task.paa"/><t> Combat Engineering Tasks</t>', [5], '#USER:pl_task_plan_menu_eng_sub', -5, [['expression', '']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_eng_task.paa"/><t> Combat Engineering Tasks</t>', [7], '#USER:pl_task_plan_menu_eng_sub', -5, [['expression', '']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"/><t> Crew/Leave Vehicle</t>', [6], '', -5, [['expression', '[] call pl_crew_leave_switch']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Load/Unload Cargo</t>', [7], '', -5, [['expression', '[] call pl_load_unload_switch']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"/><t> Crew/Leave Vehicle</t>', [8], '', -5, [['expression', '[] call pl_crew_leave_switch']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Load/Unload Cargo</t>', [9], '', -5, [['expression', '[] call pl_load_unload_switch']], '1', '1']
 
 ];
 
@@ -363,31 +425,30 @@ pl_task_plan_menu_unloaded_inf = [
     ['Task Plan', true],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa'/><t> Assault Position</t>", [2], '', -5, [['expression', '["assault"] spawn pl_task_planer_unload_inf']], '1', '1'],
     [parseText "<img color='#e5e500' image='\Plmod\gfx\pl_position.paa'/><t> Defend Position</t>", [3], '', -5, [['expression', '["defend"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\Plmod\gfx\sfp.paa'/><t> Support by Fire</t>", [4], '', -5, [['expression', '["sfp"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'/><t> Garrison Building</t>", [5], '', -5, [['expression', '["garrison"] spawn pl_task_planer_unload_inf']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Add Waypoints</t>", [4], '', -5, [['expression', '["addwp"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Add Waypoints</t>", [6], '', -5, [['expression', '["addwp"] spawn pl_task_planer_unload_inf']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [5], '', -5, [['expression', '["mine"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [6], '', -5, [['expression', '["clearmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [7], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [7], '', -5, [['expression', '["mine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [8], '', -5, [['expression', '["clearmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [9], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ccp_marker.paa"/><t> Set Up Casualty Collection Point</t>', [8], '', -5, [['expression', '["ccp"] spawn pl_task_planer_unload_inf']], '1', '1']
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ccp_marker.paa"/><t> Set Up Casualty Collection Point</t>', [10], '', -5, [['expression', '["ccp"] spawn pl_task_planer_unload_inf']], '1', '1']
 ];
-
-
-
 
 
 pl_change_icon_menu = 
 [
     ['Nato Markers',true],
-    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_inf.paa'/><t> Infantry</t>", [2], '', -5, [['expression', '{[_x, "f_s_inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_inf.paa'/><t> Infantry</t>", [2], '', -5, [['expression', '{[_x, "f_s_inf_pl"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_armor.paa'/><t> Armor</t>", [3], '', -5, [['expression', '{[_x, "armor"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_mech_inf.paa'/><t> Mech Inf</t>", [4], '', -5, [['expression', '{[_x, "mech_inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_motor_inf.paa'/><t> Mot Inf</t>", [5], '', -5, [['expression', '{[_x, "motor_inf"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_recon.paa'/><t> Recon</t>", [6], '', -5, [['expression', '{[_x, "f_s_recon"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_recon.paa'/><t> Recon</t>", [6], '', -5, [['expression', '{[_x, "f_s_recon_pl"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_maint.paa'/><t> Maintenance</t>", [7], '', -5, [['expression', '{[_x, "maint"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_support.paa'/><t> Support</t>", [8], '', -5, [['expression', '{[_x, "support"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
-    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_antiair.paa'/><t> Anti Air</t>", [9], '', -5, [['expression', '{[_x, "antiair"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
+    [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_antiair.paa'/><t> Anti Air</t>", [9], '', -5, [['expression', '{[_x, "f_s_aa_pl"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_art.paa'/><t> Artillery</t>", [10], '', -5, [['expression', '{[_x, "art"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\ui_f\data\map\markers\nato\b_unknown.paa'/><t> Unknown</t>", [11], '', -5, [['expression', '{[_x, "unknown"] call pl_change_group_icon} forEach (hcSelected player);']], '1', '1']
 ];

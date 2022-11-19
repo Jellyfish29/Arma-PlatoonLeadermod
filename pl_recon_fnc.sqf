@@ -51,8 +51,12 @@ pl_recon = {
     [_group, _markerName] spawn {
         params ["_group", "_markerName"];
 
+        private _airBonus = 0;
+
+        if (vehicle (leader _group) isKindOf "AIR") then {_airBonus = 500};
+
         while {_group getVariable ["pl_is_recon", false]} do {
-            _bonus = 0;
+            _bonus = 0 + _airBonus;
             _markerName setMarkerPos (getPos (leader _group));
             if !(((currentWaypoint _group) < count (waypoints _group))) then {
                 _bonus = 400;
@@ -143,9 +147,9 @@ pl_marta_dic = createHashMap;
 
 Pl_marta = {
     params ["_opfGrp", ["_reveal", false]];
-    private ["_unitText"];
+    private ["_unitText", "_centoid"];
 
-    if (_opfGrp getVariable ["pl_not_recon_able", false]) exitWith {};
+    if ((_opfGrp getVariable ["pl_not_recon_able", false]) and !_reveal) exitWith {};
 
     _leader = leader _opfGrp;
     if (vehicle _leader != _leader and ((assignedVehicleRole _leader)#0) == "cargo") exitWith {};
@@ -171,8 +175,9 @@ Pl_marta = {
     if (_sideColor == "exit") exitWith {};
 
     // 50 % chance to create Marker
-    if (((random 1) < 0.35 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.1 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
+    if (((random 1) < 0.15 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.075 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
 
+        _centoid = [_opfGrp] call pl_find_centroid_of_group;
         _unitText = getText (configFile >> "CfgVehicles" >> typeOf (vehicle (leader _opfGrp)) >> "textSingular");
         private _exit = false;
 
@@ -222,10 +227,21 @@ Pl_marta = {
                         if (_vic isKindOf "Car") then {_markerTypeType = format ["%1_%2_apcwe_pl", _sidePrefix, _status]};
                     };
                 };
+                case "IFV" : {
+                    _symbolType = format ["%1_%2_ifvtr_pl", pl_side_prefix, _status];
+                    if (_vic isKindOf "Car") then {_symbolType = format ["%1_%2_ifvwe_pl", pl_side_prefix, _status]};
+                };
                 default {_markerTypeType = format ["%1_%2_truck_pl", _sidePrefix, _status]};
             };
+
+            // if (isVehicleRadarOn _vic) then {
+            //     _symbolType = format ["%1_%2_tankaa_pl", pl_side_prefix, _status];
+            // };
+            // if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1 and !_force) then {
+            //     _symbolType = format ["%1_%2_artgun_pl", pl_side_prefix, _status];
+            // };
                 
-            if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) then {_markerTypeType = format ["%1_art", _sidePrefix]};
+            // if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) then {_markerTypeType = format ["%1_art", _sidePrefix]};
 
 
         } else {
@@ -244,14 +260,14 @@ Pl_marta = {
         if ((currentWaypoint _opfGrp) < count (waypoints _opfGrp) and (waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp)) distance2D _leader) > 50) then {
             _wp = waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp));
             _opfDir = _leader getDir _wp;
-            _pos = (getPos _leader) getPos [45, _opfDir];
-            pl_opfor_wp_dic set [groupId _opfGrp, [getPos _leader, _pos, _sideColorRGB, _opfGrp]];
+            _pos = _centoid getPos [45, _opfDir];
+            pl_opfor_wp_dic set [groupId _opfGrp, [_centoid, _pos, _sideColorRGB, _opfGrp]];
         } else {
             if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
         };
 
         if !(_callsign in pl_marta_dic) then {
-            createMarker [_markerNameGroup, getPos _leader];
+            createMarker [_markerNameGroup, _centoid];
             pl_marta_dic set [_callsign, [_opfGrp, [_markerNameGroup, _markerNameStrength]]];
             [_opfGrp, _unitText, _opfDir] spawn pl_marta_spotrep;
 
@@ -259,7 +275,7 @@ Pl_marta = {
             // _markerNameGroup setMarkerColor _sideColor;
             // first time call out
         } else {
-            _markerNameGroup setMarkerPos (getPos _leader);
+            _markerNameGroup setMarkerPos _centoid;
         };
 
         _markerNameGroup setMarkerType _markerTypeType;
@@ -287,7 +303,7 @@ Pl_marta = {
                     _target = ([_targets, [], {_leader distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
                     private _targetPos = getPos _target;
                     private _targetDir = _leader getDir _targetPos;
-                    private _tacMarkerPos = (getPos _leader) getPos [6, _targetDir];
+                    private _tacMarkerPos = _centoid getPos [6, _targetDir];
                      createMarker [_markerNameOpfTactic, _tacMarkerPos];
                     _markerNameOpfTactic setMarkerType "marker_position_eny";
                     _markerNameOpfTactic setMarkerColor _sideColor;
@@ -297,7 +313,7 @@ Pl_marta = {
                     pl_marta_dic set [_callsign, [_opfGrp, [_markerNameGroup, _markerNameStrength, _markerNameOpfTactic]]];
                 };
             } else {
-                _markerNameOpfTactic setMarkerPos (getPos _leader);
+                _markerNameOpfTactic setMarkerPos _centoid;
             };     
         } else {
             deleteMarker _markerNameOpfTactic;
@@ -348,7 +364,7 @@ pl_marta_cleanup = {
                     default {_sideColor = "colorOpfor";}; 
                 };
 
-                _markerName = createMarker [str (random 4), getPos (leader _grp)];
+                _markerName = createMarker [str (random 4), [_grp] call pl_find_centroid_of_group];
                 _markerName setMarkerSize [0.8, 0.8];
                 _markerName setMarkerType "mil_destroy";
                 _markerName setMarkerColor _sideColor;
@@ -358,7 +374,7 @@ pl_marta_cleanup = {
                     _x setMarkerAlpha 0.5;
                 } forEach _markers;
 
-                sleep 30;
+                sleep 60;
 
                 {
                     deleteMarker _x;
@@ -367,7 +383,7 @@ pl_marta_cleanup = {
                 if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
                 deleteMarker _markerName;
                 // deleteGroup _grp;
-                _grp setvariable ["pl_marta_clean", nil];
+                _grp setVariable ["pl_marta_no_delete", nil];
             };
         } else {
             {
@@ -388,7 +404,7 @@ pl_marta_cleanup_loop = {
             _grp = _y#0;
             _markers = _y#1;
             // if ((({alive _x} count (units _grp) < 1 and !(_grp getvariable ["pl_marta_clean", false])) or (isNull _grp))) then {
-            if ((({alive _x} count (units _grp) < 1) or (isNull _grp))) then {
+            if (((({alive _x} count (units _grp) < 1) or (isNull _grp)) or (side (leader _grp)) == civilian) and !(_grp getVariable ["pl_marta_no_delete", false])) then {
                 {
                     deleteMarker _x;
                 } forEach _markers;
@@ -397,7 +413,7 @@ pl_marta_cleanup_loop = {
             };
         } forEach pl_marta_dic;
 
-        sleep 10;
+        sleep 15;
     };
 };
 

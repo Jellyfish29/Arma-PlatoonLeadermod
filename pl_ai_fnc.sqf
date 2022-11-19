@@ -239,12 +239,12 @@ pl_player_report = {
 pl_enemy_destroyed_report = {
     params ["_unit", "_killer", "_group"];
 
-    _group setvariable ["pl_marta_clean", true];
     _typeStr = "Infantry Unit";
     if (vehicle _unit != _unit) then {
         _vic = vehicle _unit;
         _typeStr = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");
     };
+    _group setVariable ["pl_marta_no_delete", true];
     _time = time + 10;
     waitUntil {time >= _time};
     _unitsAlive = false;
@@ -253,6 +253,7 @@ pl_enemy_destroyed_report = {
             _unitsAlive = true;
         };
     } forEach (units _group);
+    
     if !(_unitsAlive) then {
         if (isNil {_group getVariable "pl_death_reported"}) then {
             _gridPos = mapGridPosition _unit;
@@ -383,18 +384,32 @@ pl_medical_setup = {
     _unit setVariable ["pl_damage_reduction", false];
     _unit addEventHandler ['HandleDamage', {
         params['_unit', '_selName', '_damage', '_source'];
+
         if ((_unit getVariable "pl_damage_reduction") or (_unit getVariable ["pl_special_force", false])) then {
-            _dmg = _damage * 0.7 ;
-            _damage = _dmg;
+
+            if ((getNumber (configFile >> "CfgVehicles" >> typeOf _source >> "artilleryScanner")) == 1) then {
+                _dmg = _damage * 0.25 ;
+                _damage = _dmg;
+                // _damage = 0;
+                // player sideChat (format ["%1   %2", _unit, _damage]);
+            } else {
+                _dmg = _damage * 0.8 ;
+                _damage = _dmg;
+            };
         };
+
         if !(_unit getVariable "pl_wia") then {
             if (_damage > 0.99) then {
-                if (([0, 100] call BIS_fnc_randomInt) > 10) then {
+                // if (([0, 100] call BIS_fnc_randomInt) > 10) then {
                     _damage = 0;
                     _unit setUnconscious true;
                     if (vehicle _unit != _unit) then {
-                        if (alive (vehicle _unit)) then {
-                            [_unit, vehicle _unit] call pl_crew_eject;
+                        if !(alive (vehicle _unit)) then {
+                            // if ((vehicle _unit) getVariable ["pl_has_cargo", false] and _unit == (driver (vehicle _unit))) then {
+                            //     [group _unit, (vehicle _unit)] call pl_eject_cargo;
+                            // };
+                            // if !((group _unit) getVariable ["pl_show_info", false]) then {[group _unit] call pl_show_group_icon};
+                            // [_unit, vehicle _unit] call pl_crew_eject;
                         };
                     };
                     if !(_unit getVariable "pl_wia_calledout") then {
@@ -403,7 +418,7 @@ pl_medical_setup = {
                     if !(_unit getVariable "pl_bleedout_set") then {
                         [_unit] spawn pl_bleedout;
                     };
-                };
+                // };
             }
             else
             {
@@ -534,6 +549,16 @@ pl_set_up_ai = {
     _group setVariable ["pl_allow_static", true];
     _groupComposition = [];
 
+    _engineer = {
+        if (_x getUnitTrait "engineer") exitWith {_x};
+        objNull
+    } forEach (units _group);
+
+    if !(isNull _engineer) then {
+        _group setVariable ["pl_is_repair_group", true];
+        _group setVariable ["pl_repair_supplies", 10]
+    };
+
     if (pl_enable_map_radio) then {
         [_group] spawn pl_reset_group_radio_setup;
     };
@@ -574,6 +599,8 @@ pl_set_up_ai = {
     _group setVariable ["_unitCountDefault", _unitCount];
 };
 
+
+
 pl_vehicle_setup = {
     params ["_vic"];
 
@@ -583,6 +610,7 @@ pl_vehicle_setup = {
 
     _vic setUnloadInCombat [false, false];
     _vic allowCrewInImmobile true;
+    _vic setVariable ["pl_assigned_group", group (driver _vic)];
     
     if (isNil {_vic getVariable "pl_vehicle_setup_complete"}) then {
         _vic limitSpeed 50;
@@ -687,6 +715,7 @@ pl_vehicle_setup = {
             };
         };
 
+        // Missile alert
         _vic addEventHandler ["IncomingMissile", {
             params ["_target", "_ammo", "_vehicle", "_instigator"];
 
@@ -705,6 +734,61 @@ pl_vehicle_setup = {
                 sleep 30;
                 deleteMarker _markerName;
             };
+        }];
+
+
+        (driver _vic) addEventHandler ["GetOutMan", {
+            params ["_unit", "_role", "_vehicle", "_turret"];
+
+            if (_vehicle getVariable ["pl_has_cargo", false]) then {
+                [group _unit, _vehicle] call pl_eject_cargo;
+            };
+        }];
+
+        _vic addEventHandler ["HandleDamage", {
+            params ["_unit", "_selection", "_damage", "_source", "_projectile", "_hitIndex", "_instigator", "_hitPoint"];
+
+            if (["mine", _projectile] call BIS_fnc_inString) then {
+
+                if !(_unit getVariable ["pl_mine_called_out", false]) then {
+                    if (pl_enable_beep_sound) then {playSound "radioina"};
+                    if (pl_enable_chat_radio) then {(leader (group (driver _unit))) sideChat format ["...We Just Hit a Mine", (groupId (group (driver _unit)))]};
+                    if (pl_enable_map_radio) then {[(group (driver _unit)), "...We Just Hit a Mine", 20] call pl_map_radio_callout};
+
+                    _mineArea = createMarker [str (random 3), getPos _unit];
+                    _mineArea setMarkerShape "RECTANGLE";
+                    _mineArea setMarkerBrush "Cross";
+                    _mineArea setMarkerColor "colorORANGE";
+                    _mineArea setMarkerAlpha 0.5;
+                    _mineArea setMarkerSize [25, 25];
+                    _mineArea setMarkerDir (getDir _unit);
+                    pl_engineering_markers pushBack _mineArea;
+
+                    _mines = allMines select {(_x distance2D _unit) < 20};
+
+                    {
+                        _m = createMarker [str (random 3), getPos _x];
+                        _m setMarkerType "mil_triangle";
+                        _m setMarkerSize [0.4, 0.4];
+                        _m setMarkerColor "ColorRed";
+                        _m setMarkerShadow false;
+                        pl_engineering_markers pushBack _m;
+                        playerSide revealMine _x;
+                    } forEach _mines;
+
+                    _unit setVariable ["pl_mine_called_out", true];
+
+                    [_unit] spawn {
+                        params ["_unit"];
+
+                        sleep 5;
+
+                        _unit setVariable ["pl_mine_called_out", nil];
+                    }
+                };
+
+            };
+            _damage
         }];
 
 
@@ -800,6 +884,10 @@ pl_ai_setUp_loop = {
                     // unit Reset loop
                     {
                         if (!((lifeState _x) isEqualTo "INCAPACITATED") and alive _x) then {
+                            
+                            // limping escape
+                            _x setHit ["legs", 0];
+
                             [_x] call pl_auto_unstuck;
                             if (_x getVariable "pl_wia") then {
                                 _x setVariable ["pl_wia", false];
@@ -822,6 +910,7 @@ pl_ai_setUp_loop = {
                         _x setVariable ["pl_opfor_ai_enabled", true];
                         _x execFSM "Plmod\fsm\pl_opfor_cmd_inf_2.fsm";
                     };
+                    [_x] spawn pl_opfor_auto_unstuck;
                 };
             };
 
@@ -832,7 +921,7 @@ pl_ai_setUp_loop = {
                 };
             };
         } forEach allGroups;
-        sleep 20;
+        sleep 35;
     };
 };
 
@@ -841,7 +930,7 @@ pl_ai_setUp_loop = {
 pl_auto_unstuck = {
     params ["_unit"];
     _distance = _unit distance2D leader (group _unit);
-    if (_distance > 120 and _unit checkAIFeature "PATH" and !(_unit getVariable ["pl_engaging", false])) then {
+    if (_distance > 100 and _unit checkAIFeature "PATH" and !(_unit getVariable ["pl_engaging", false])) then {
         doStop _unit;
         _pos = (getPos _unit) findEmptyPosition [0, 50, typeOf _unit];
         _unit setPos _pos;
@@ -1256,6 +1345,7 @@ pl_start_set_up = {
     if ((vehicle player) != player) then {
         _commander = leader (group driver (vehicle player));
         (vehicle player) setEffectiveCommander _commander;
+        (vehicle player) addAction ["Use UAV-Terminal", {[] spawn pl_add_uav_terminal}]
     };
 
     sleep 2;
@@ -1317,3 +1407,25 @@ pl_start_set_up = {
 
 
 // [spec1] spawn pl_special_forces_skills;
+
+
+// SOPs
+// def pos on contact --> on contact Report (reset contact on new order)
+// def Pos on Idle (360) -- performance?
+// attack on contact --> on contact report
+// disengage on contact --> on contact report
+// dismount when under AT fire --> on IncominfMissle
+// stop when under AT fire --> on IncominfMissle
+// auto disengage (attack, def) OK
+    // set Breakingpoint % <100 , <75, <50
+
+//static deploy OK
+// auto medic/revive OK
+// Auto at defence OK
+// auto defence suppress OK
+// auto defence supply OK
+
+//auto formation OK
+//auto speed OK
+
+

@@ -34,10 +34,10 @@ pl_medic_heal = {
         _stopTarget = false;
         if (_target checkAIFeature "PATH") then {
             doStop _target;
-            _target disableAI "PATH";
+            // _target disableAI "PATH";
             _stopTarget = true;
         };
-        sleep 2;
+        sleep 0.2;
         waitUntil {sleep 0.5; (_medic distance2D _pos < 2) or (unitReady _medic) or (!alive _medic) or !((group _medic) getVariable [_waitVar, true]) or (_medic getVariable ["pl_wia", false]) or (!alive _target) or (_target getVariable ["pl_wia", false])};
         doStop _medic;
         _medic disableAI "PATH";
@@ -136,18 +136,18 @@ pl_heal_group = {
                             // };
                         } forEach ((units _group) select {_x getVariable ["pl_wia", false]});;
                         // _medic sideChat "Tick";
-                        {
-                            _enemySides = [side player] call BIS_fnc_enemySides;
-                            _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
-                            if ((count _enemies) <= 0 and !(_group getVariable ["onTask", true])) then {
-                                if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
-                                    _medic setVariable ["pl_is_ccp_medic", true];
-                                    _h1 = [_medic, _x, nil, "pl_healing_active"] spawn pl_medic_heal;
-                                    waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
-                                    _medic setVariable ["pl_is_ccp_medic", false];
-                                };
-                            };
-                        } forEach (units _group);
+                        // {
+                            // _enemySides = [side player] call BIS_fnc_enemySides;
+                            // _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
+                            // if ((count _enemies) <= 0 and !(_group getVariable ["onTask", true])) then {
+                            //     if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
+                            //         _medic setVariable ["pl_is_ccp_medic", true];
+                            //         _h1 = [_medic, _x, nil, "pl_healing_active"] spawn pl_medic_heal;
+                            //         waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
+                            //         _medic setVariable ["pl_is_ccp_medic", false];
+                            //     };
+                            // };
+                        // } forEach (units _group);
                         // _medic setVariable ["pl_is_ccp_medic", true];
                         _medic setVariable ["pl_is_ccp_medic", false];
                     };
@@ -467,7 +467,7 @@ pl_ccp = {
     _markerNameOuter setMarkerAlpha 0.35;
     _markerNameOuter setMarkerSize [pl_ccp_size, pl_ccp_size];
 
-    if (visibleMap or !(isNull findDisplay 2000)) then {
+    if ((visibleMap or !(isNull findDisplay 2000)) and !_isMedevac) then {
         hint "Select CCP Position on Map";
         onMapSingleClick {
             pl_ccp_cords = _pos;
@@ -490,7 +490,7 @@ pl_ccp = {
             if (inputAction "MoveForward" > 0) then {pl_ccp_size = pl_ccp_size + 20; sleep 0.05};
             if (inputAction "MoveBack" > 0) then {pl_ccp_size = pl_ccp_size - 20; sleep 0.05};
             _markerNameOuter setMarkerSize [pl_ccp_size, pl_ccp_size];
-            if (pl_ccp_size >= 200) then {pl_ccp_size = 200};
+            if (pl_ccp_size >= 300) then {pl_ccp_size = 300};
             if (pl_ccp_size <= 25) then {pl_ccp_size = 25};
         };
 
@@ -528,21 +528,25 @@ pl_ccp = {
 
         if (vehicle (leader _group) != leader _group) then {
             if !(_group getVariable ["pl_unload_task_planed", false]) then {
-                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
+                // waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
+                waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
             } else {
-                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+                // waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+                waitUntil {sleep 0.5; ((_group getVariable ["pl_execute_plan", false]) and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
             };
         } else {
-            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
+            // waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
         };
         _group setVariable ["pl_disembark_finished", nil];
 
         // remove Arrow indicator
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_ccpPos, _taskPlanWp, _icon]];
 
-        _group setVariable ["pl_unload_task_planed", false];
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
+        _group setVariable ["pl_unload_task_planed", false];
+        _group setVariable ["pl_execute_plan", nil];
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; deleteMarker _markerNameOuter; deleteMarker _markerNameInner; pl_ccp_set = false;};
@@ -590,6 +594,14 @@ pl_ccp = {
         _reviveTargets = _ccpPos nearObjects ["Man", _reviveRange];
         _healTargets = _ccpPos nearObjects ["Man", _healRange];
         {
+            if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and (_group getVariable ["onTask", true])) then {
+                _h2 = [_medic, _x, _ccpPos, "onTask"] spawn pl_medic_heal;
+                _time = time + 40;
+                waitUntil {sleep 0.5; scriptDone _h2 or !(_group getVariable ["onTask", true]) or (time > _time)}
+            };
+        } forEach (_healTargets select {side _x isEqualTo playerSide});
+
+        {
             if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and (_group getVariable ["onTask", true])) then {
                 if !(isNil "_escort") then {
                     _h1 = [_group, _medic, _escort, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
@@ -602,13 +614,6 @@ pl_ccp = {
                 };
             };
         } forEach (_reviveTargets select {_x getVariable ["pl_wia", false]});
-        {
-            if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and (_group getVariable ["onTask", true])) then {
-                _h2 = [_medic, _x, _ccpPos, "onTask"] spawn pl_medic_heal;
-                _time = time + 40;
-                waitUntil {sleep 0.5; scriptDone _h2 or !(_group getVariable ["onTask", true]) or (time > _time)}
-            };
-        } forEach (_healTargets select {side _x isEqualTo playerSide});
         
         if ((_medic distance2D _ccpPos) < 15) then {
             doStop _medic;

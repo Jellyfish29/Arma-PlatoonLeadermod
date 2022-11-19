@@ -32,6 +32,7 @@ pl_reset = {
         _unit setVariable ['pl_is_at', nil];
         _unit setVariable ['pl_is_ccp_medic', false];
         _unit setVariable ["pl_def_pos", nil];
+        _unit setVariable ["pl_in_position", nil];
         // sleep 0.5;
         _unit limitSpeed 5000;
         _unit forceSpeed -1;
@@ -64,6 +65,7 @@ pl_reset = {
     _group setVariable ["pl_in_position", nil];
     _group setVariable ["pl_disembark_finished", nil];
     _group setVariable ["onTask", false];
+    _group setVariable ["pl_on_hold", false];
 
     // if group is not leading a formation reset Task
     if !(!(_isNotWp) and (_group getVariable ["pl_formation_leader", false])) then {
@@ -84,10 +86,15 @@ pl_reset = {
 
     // cancel planed Task
     _group setVariable ["pl_task_planed", false];
+    _group setVariable ["pl_execute_plan", nil];
 
     if (vehicle (leader _group) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic forceSpeed -1;
+        if ((_vic getVariable ["pl_speed_limit", ""]) isEqualTo "CON") then {
+            _vic setVariable ["pl_speed_limit", "50"];
+            _vic limitSpeed 50;
+        };
         _vic call pl_load_ap;
         _vic setVariable ["pl_phasing", nil];
         if (_vic getVariable ["pl_on_transport", false]) then {
@@ -110,6 +117,7 @@ pl_reset = {
             // [_x] spawn pl_reset;
             _x setVariable ["pl_task_planed", false];
             _x setVariable ["pl_unload_task_planed", false];
+            _x setVariable ["pl_execute_plan", nil];
             [_x, (currentWaypoint _x)] setWaypointType "MOVE";
             [_x, (currentWaypoint _x)] setWaypointPosition [getPosASL (leader _x), -1];
             sleep 0.1;
@@ -165,6 +173,13 @@ pl_hold = {
     // set Variable
     _group setVariable ["pl_on_hold", true];
 
+    if (_group getVariable ["onTask", false]) then {
+        [_group] spawn pl_reset;
+        sleep 0.5;
+        [_group] spawn pl_reset;
+        sleep 0.5;
+    };
+
     // if not already having special set, set special
     if !(_group getVariable ["setSpecial", false]) then {
         _group setVariable ["setSpecial", true];
@@ -189,7 +204,7 @@ pl_spawn_hold = {
 pl_execute = {
     params ["_group"];
     // if (pl_enable_beep_sound) then {playSound "beep"};
-    [_group, "confirm", 1] call pl_voice_radio_answer;
+    // [_group, "confirm", 1] call pl_voice_radio_answer;
     _group setVariable ["pl_on_hold", false];
 
     // if icon == "wait" disable icon
@@ -218,6 +233,7 @@ pl_execute = {
 };
 
 pl_spawn_execute = {
+    [selectRandom (hcSelected player), "confirm", 1] call pl_voice_radio_answer;
     {
         [_x] spawn pl_execute;
     } forEach hcSelected player;
@@ -231,7 +247,7 @@ pl_watch_dir = {
 
 
     if (_dir isEqualTo "") then {
-        if (pl_enable_beep_sound) then {playSound "beep"};
+        // if (pl_enable_beep_sound) then {playSound "beep"};
         // [_group, "confirm", 1] call pl_voice_radio_answer;
         if (visibleMap) then {
             _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
@@ -249,16 +265,11 @@ pl_watch_dir = {
     _leader = leader _group;
     if (_leader == vehicle _leader) then {
         _group setFormDir _watchDir;
-        _watchDir = _watchDir - 180;
-        _watchPos = [1000*(sin _watchDir), 1000*(cos _watchDir), 0] vectorAdd _groupPos;
-        {
-            _x doWatch _watchPos;
-        } forEach (units _group);
     }
     else
     {
         _vic = vehicle _leader;
-        _pos = _watchDir - 180;
+        _pos = [_vic, _watchDir] call pl_get_turn_vehicle;
         _vic doMove _pos;
     };
 };

@@ -1,295 +1,582 @@
+pl_arty_mission = "SUP";
 
-pl_ccp = {
-    params [["_group", hcSelected player select 0], ["_isMedevac", false], ["_escort", nil], ["_reviveRange", 100], ["_healRange", 25], ["_medic", nil]];
-    private ["_mPos", "_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP", "_marker3D", "_ccpVic"];
+pl_fire_on_map_arty = {
+    private ["_mpos", "_cords", "_ammoTypes", "_ammoType", "_eh", "_markerName", "_centerMarkerName", "_eta", "_battery", "_guns", "_volleys", "_isHc", "_ammoTypestr", "_ammoType"];
 
-    // _group = hcSelected player select 0;
-    // if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
-    // if (pl_ccp_set and !(_isMedevac)) exitWith {hint "Only one CCP allowed!"};
+    // if (pl_arty_ammo < pl_arty_rounds) exitWith {
+    //     // if (pl_enable_beep_sound) then {playSound "beep"};
+    //     hint "Not enough ammunition left!";
+    // };
 
-    if (_group != (group player) and !(_isMedevac) and !(_group getVariable ["pl_set_as_medical", false])) exitWith {
-        hint "Only the Player Group or a Medical Group can set up the CCP";
+    _markerName = createMarker [str (random 4), [0,0,0]];
+    _markerName setMarkerColor pl_side_color;
+    _markerName setMarkerShape "ELLIPSE";
+    _markerName setMarkerBrush "Border";
+    // _markerName setMarkerAlpha 1;
+    _markerName setMarkerSize [pl_arty_dispersion, pl_arty_dispersion];
+
+    switch (pl_arty_round_type) do { 
+        case 1 : {_ammoTypestr = "HE"}; 
+        case 2 : {_ammoTypestr = "SMK"}; 
+        case 3 : {_ammoTypestr = "IL"};
+        case 4 : {_ammoTypestr = "GUI"};
+        case 5 : {_ammoTypestr = "MINE"};
+        case 6 : {_ammoTypestr = "CLT"};
+        default {_ammoTypestr = "HE"}; 
     };
-    
-    private _medic = {
-        if (_x getUnitTrait "Medic" and alive _x and !(_x getVariable ["pl_wia", false])) exitWith {_x};
-        objNull
-    } forEach (units _group);
 
-    if (isNull _medic) exitWith {hint "No Medic"};
-
-
-    pl_ccp_size = 150;
-    _markerNameCCP = str (random 3);
-    createMarker [_markerNameCCP, getPos (leader _group)];
-    _markerNameCCP setMarkerType "marker_CCP";
-    _markerNameCCP setMarkerColor "colorBLUFOR";
-
-    _markerNameOuter = format ["%1ccp%2", _group, random 2];
-    createMarker [_markerNameOuter, [0,0,0]];
-    _markerNameOuter setMarkerShape "ELLIPSE";
-    _markerNameOuter setMarkerBrush "SolidBorder";
-    _markerNameOuter setMarkerColor pl_side_color;
-    _markerNameOuter setMarkerAlpha 0.35;
-    _markerNameOuter setMarkerSize [pl_ccp_size, pl_ccp_size];
+    _markerName setMarkerAlpha 0.4;
+    _centerMarkerName = createMarker [str (random 4), [0,0,0]];
+    _centerMarkerName setMarkerType "mil_destroy";
+    _centerMarkerName setMarkerText format ["%1 %4 / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, _ammoTypestr];
+    _centerMarkerName setMarkerColor pl_side_color;
 
     if (visibleMap or !(isNull findDisplay 2000)) then {
-        hint "Select CCP Position on Map";
+
+        _message = "Select STRIKE Location <br /><br />
+        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+        hint parseText _message;
+
+        pl_cancel_strike = false;
         onMapSingleClick {
-            pl_ccp_cords = _pos;
-            if (_shift) then {pl_cancel_strike = true};
+            pl_arty_cords = _pos;
             pl_mapClicked = true;
-            hintSilent "";
+            if (_shift) then {pl_cancel_strike = true};
+            hint "";
             onMapSingleClick "";
         };
-
-        player enableSimulation false;
-
         while {!pl_mapClicked} do {
             if (visibleMap) then {
                 _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             } else {
                 _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
             };
-            _markerNameOuter setMarkerPos _mPos;
-            _markerNameCCP setMarkerPos _mPos;
-            if (inputAction "MoveForward" > 0) then {pl_ccp_size = pl_ccp_size + 20; sleep 0.05};
-            if (inputAction "MoveBack" > 0) then {pl_ccp_size = pl_ccp_size - 20; sleep 0.05};
-            _markerNameOuter setMarkerSize [pl_ccp_size, pl_ccp_size];
-            if (pl_ccp_size >= 200) then {pl_ccp_size = 200};
-            if (pl_ccp_size <= 25) then {pl_ccp_size = 25};
+            _markerName setMarkerPos _mPos;
+            _centerMarkerName setMarkerPos _mPos;
         };
-
-        player enableSimulation true;
-
         pl_mapClicked = false;
-        _reviveRange = pl_ccp_size;
-        _ccpPos = pl_ccp_cords;
-        pl_active_ccps pushBack _ccpPos;
-        _markerNameOuter setMarkerBrush "Border";
-        _markerNameOuter setMarkerPos _ccpPos;
-        _markerNameCCP setMarkerPos _ccpPos;
-
-        _markerNameInner = str (random 2);
-        createMarker [_markerNameInner, _ccpPos];
-        _markerNameInner setMarkerShape "ELLIPSE";
-        _markerNameInner setMarkerBrush "SolidBorder";
-        _markerNameInner setMarkerColor "colorGreen";
-        _markerNameInner setMarkerAlpha 0.10;
-        _markerNameInner setMarkerSize [_healRange, _healRange];
     }
     else
     {
-        _ccpPos = getPos (leader _group);
+        pl_arty_cords = screenToWorld [0.5,0.5];
+        _markerName setMarkerPos pl_arty_cords;
+        _centerMarkerName setMarkerPos pl_arty_cords;
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; pl_ccp_set = false;};
 
+    _cords = pl_arty_cords;
+    _battery = pl_arty_groups#pl_active_arty_group_idx;
 
-    // if (pl_enable_beep_sound) then {playSound "beep"};
-    [_group, "confirm", 1] call pl_voice_radio_answer;
-    [_group] call pl_reset;
-
-    sleep 0.5;
-
-    [_group] call pl_reset;
-
-    sleep 0.5;
-
-    if (count (units _group) > 3) then {
-        _escort = {
-            if (_x != _medic and _x != (leader _group) and !(_x getVariable "pl_wia") and (alive _x)) exitWith {_x};
-            objNull
-        } forEach (units _group);
-    } else {
-        _escort = objNull;
-    };
-    _group setVariable ["onTask", true];
-    _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", "\Plmod\gfx\pl_ccp_marker.paa"];
-
-    
-    private _units = units _group;
-    if (_group == (group player)) then {_units = [_medic, _escort]};
-    {
-        if (isNull _x) exitWith {};
-        _x doMove _ccpPos;
-        // _x setDestination [_ccpPos, "LEADER DIRECT", true];
-        if (_x in [_medic, _escort]) then {
-            pl_ccp_draw_array pushBack [_ccpPos, _x];
-            _x setVariable ["pl_damage_reduction", true];
-            _x setVariable ["pl_is_ccp_medic", true];
+    _isHc = false;
+    if (hcLeader _battery == player) then {
+        _isHc = true;
+        player hcRemoveGroup _battery;
+        if (_battery getVariable "setSpecial") then {
+            _battery setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"];
         };
-    } forEach _units;
-
-    waitUntil {_medic distance2D _ccpPos < 20 or !alive _medic or !(_medic getVariable ["pl_wia", false]) or !(_group getVariable ["onTask", false])};
-
-    while {(_group getVariable ["onTask", true]) and (alive _medic) and !(_medic getVariable ["pl_wia", false])} do {
-        _reviveTargets = _ccpPos nearObjects ["Man", _reviveRange];
-        _healTargets = _ccpPos nearObjects ["Man", _healRange];
-        {
-            if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and (_group getVariable ["onTask", true])) then {
-                if !(isNil "_escort") then {
-                    _h1 = [_group, _medic, _escort, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
-                    waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
-                }
-                else
-                {
-                    _h1 = [_group, _medic, objNull, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
-                    waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
-                };
-            };
-        } forEach (_reviveTargets select {_x getVariable ["pl_wia", false]});
-        {
-            if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and (_group getVariable ["onTask", true])) then {
-                _h2 = [_medic, _x, _ccpPos, "onTask"] spawn pl_medic_heal;
-                _time = time + 40;
-                waitUntil {sleep 0.5; scriptDone _h2 or !(_group getVariable ["onTask", true]) or (time > _time)}
-            };
-        } forEach (_healTargets select {side _x isEqualTo playerSide});
-        
-        if ((_medic distance2D _ccpPos) < 15) then {
-            doStop _medic;
-            doStop _escort;
-        } else {
-            _medic doMove _ccpPos;
-            _escort doMove _ccpPos;
-        };
-        _time = time + 5;
-        waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", false])};
     };
 
-    _group setVariable ["setSpecial", false];
-    _group setVariable ["onTask", false];
-    _medic setVariable ["pl_damage_reduction", false];
-    _medic setVariable ["pl_is_ccp_medic", false];
-    pl_ccp_draw_array = pl_ccp_draw_array - [[_ccpPos, _medic]];
-    if !(isNil "_escort") then {
-        _escort setVariable ["pl_is_ccp_medic", false];
-        pl_ccp_draw_array = pl_ccp_draw_array - [[_ccpPos, _escort]];
+    _guns = _battery getVariable ["pl_active_arty_guns", []];
+    if (_guns isEqualTo []) exitWith {Hint "No active Guns"};
+
+    _ammoType = (getArray (configFile >> "CfgVehicles" >> typeOf (_guns#0) >> "Turrets" >> "MainTurret" >> "magazines")) select 0;
+    _eta = (_guns#0) getArtilleryETA [_cords, _ammoType];
+    if (_eta == -1) exitWith {
+        hint "Not in Range";
+        deleteMarker _markerName;
+        deleteMarker _centerMarkerName;
     };
-    deleteMarker _markerNameCCP;
-    deleteMarker _markerNameOuter;
-    deleteMarker _markerNameInner;
-    pl_active_ccps = pl_active_ccps - [_ccpPos];
-    // [_marker3D] call pl_remove_3d_icon;
-};
 
+    _eta = _eta + 5;
 
-pl_ccp_revive_action = {
-    params ["_group", "_medic", "_escort", "_healTarget", "_ccpPos", "_reviveTime", "_waitVar", ["_minDragRange", 0]];
-    // player sideChat str (alive _healTarget);
+    // [_eta, _centerMarkerName, _ammoTypestr] spawn {
+    //     params ["_eta", "_centerMarkerName", "_ammoTypestr"];
+    //     _time = time +_eta;
+    //     while {time < _time} do {
+    //         _centerMarkerName setMarkerText format ["%1 %5 / %2 m / %3 s ETA: %4s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, round (_time - time), _ammoTypestr];
+    //         sleep 1;
+    //     };
+    //     _centerMarkerName setMarkerText format ["%1 %4 / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, _ammoTypestr];;
+    // };
 
-    _healTarget setVariable ["pl_beeing_treatet", true];
-    _medic disableAI "AUTOCOMBAT";
-    _medic disableAI "AUTOTARGET";
-    _medic disableAI "TARGET";
-    _medic setVariable ["pl_damage_reduction", true];
-    _medic setUnitTrait ["camouflageCoef", 0.1, true];
-    _medic setVariable ["pl_engaging", true];
-    // _medic disableAI "FSM";
-    _medic enableAI "PATH";
-    _medic setUnitPos "AUTO";
-    doStop _medic;
-    private _pos = getPos _healtarget;
-    _pos = [0.5 - (random 1), 0.5 - (random 1)] vectorAdd _pos;
-    _medic doMove _pos;
-    // _medic setDestination [_pos,"LEADER DIRECT", true];
-    if !(isNull _escort) then {
-        _escort disableAI "AUTOCOMBAT";
-        _escort setVariable ["pl_engaging", true];
-        _escort enableAI "PATH";
-        _escort doMove _pos;
+    if (pl_enable_beep_sound) then {playSound "beep"};
+    if (pl_enable_chat_radio) then {(gunner (_guns#0)) sideChat format ["...Fire Mission Confimed ETA: %1s", round _eta]};
+    if (pl_enable_map_radio) then {[group (gunner (_guns#0)), format ["...Fire Mission Confimed ETA: %1s", round _eta], 25] call pl_map_radio_callout};
+
+    _volleys = round (pl_arty_rounds / (count _guns));
+    _dispersion = pl_arty_dispersion;
+    _delay = pl_arty_delay;
+    _missionType = pl_arty_mission;
+
+    _weapon = (getArray (configfile >> "CfgVehicles" >> typeOf (_guns#0) >> "Turrets" >> "MainTurret" >> "weapons"))#0;
+    // _allMagazines = getArray (configfile >> "CfgWeapons" >> _weapon >> "Magazines");
+    _allMagazines = magazines (_guns#0) + [currentMagazine (_guns#0)];
+
+    // player sideChat (str _allMagazines);
+
+    _ammoType = "";
+
+    switch (pl_arty_round_type) do { 
+        case 1 : {_ammoTypes = _allMagazines select {["he", _x] call BIS_fnc_inString}}; 
+        case 2 : {_ammoTypes = (_allMagazines select {["smoke", _x] call BIS_fnc_inString}) + (_allMagazines select {["smk", _x] call BIS_fnc_inString})}; 
+        case 3 : {_ammoTypes = _allMagazines select {["illum", _x] call BIS_fnc_inString}};
+        case 4 : {_ammoTypes = _allMagazines select {["guid", _x] call BIS_fnc_inString}};
+        case 5 : {_ammoTypes = _allMagazines select {["mine", _x] call BIS_fnc_inString}};
+        case 6 : {_ammoTypes = (_allMagazines select {["cluster", _x] call BIS_fnc_inString}) + _allMagazines select {["icm", _x] call BIS_fnc_inString}};
+        default {_ammoType = (currentMagazine (_guns#0))}; 
     };
+
+    if ((count _ammoTypes) > 0) then {
+        _ammoType = ([_ammoTypes, [], {parseNumber _x}, "DESCEND"] call BIS_fnc_sortBy)#0;
+    };
+
+    if (_ammoType isEqualTo "") exitWith {format ["Battery cant Fire %1 Rounds", _ammoTypestr]};
+
+    // private _availableMagazinesLeader = magazinesAmmo [_guns#0, true];
+    // {
+    //     private _availableMagazines = magazinesAmmo [_x, true];
+
+    //     for "_i" from 0 to (count _availableMagazinesLeader) - 1 do{
+    //         if (((_availableMagazinesLeader#_i)#0) isEqualTo ((_availableMagazines#_i)#0)) then {
+    //             (_availableMagazinesLeader#_i) set [1, ((_availableMagazinesLeader#_i)#1) + ((_availableMagazines#_i)#1)]
+    //         };
+    //     }
+    // } forEach (_guns - [_guns#0]);
+
+    // private _ammoAmount = 0;
+
+    // player sideChat (str _availableMagazinesLeader);
+    // {
+    //     if (_ammoType isEqualTo (_x#0)) then {
+    //         _ammoAmount = _x#1;
+    //     };
+    // } forEach _all;
+
+    _allAmmo = [_guns] call pl_get_arty_ammo;
+
+    private _ammoAmount = _allAmmo get _ammoType;
+
+    if (_ammoAmount <= 0) exitWith {hint "No Ammo Left"};
+
     sleep 1;
-    waitUntil {sleep 0.5; ((_medic distance2D _pos) < 5) or !(_group getVariable [_waitVar, true]) or (!alive _healTarget) or (!alive _medic) or (_medic getVariable ["pl_wia", false])};
+
+    if !(_ammoType isEqualTo (currentMagazine (_guns#0))) then {
+        // Force Reolad Hack
+        {
+
+            // player sideChat _ammoType;
+            // player sideChat (currentMagazine _x);
+
+            // _x doArtilleryFire [_cords, _ammoType, 1];
+
+            _x loadMagazine [[0], _weapon, _ammoType];
+            _x setWeaponReloadingTime [gunner _x, _weapon, 0];
+            // sleep 1;
+        } forEach _guns;
+
+        sleep 1;
+
+        if (((weaponState [_guns#0, [0]])#6) > 0) then {
+
+                _reloadMarker = createMarker [str (random 4), getPos (_guns#0)];
+                _reloadMarker setMarkerType "mil_circle";
+                _reloadMarker setMarkerText format ["%1 %", round ((1 - ((weaponState [_guns#0, [0]])#6)) * 100)];
+                _reloadMarker setMarkerColor pl_side_color;
+
+            waitUntil {sleep 1; _reloadMarker setMarkerText format ["Reload: %1 %", round ((1 - ((weaponState [_guns#0, [0]])#6)) * 100)];; ((weaponState [_guns#0, [0]])#6) <= 0};
+
+            deleteMarker _reloadMarker;
+
+            sleep 5;
+        };
+
+    };
+
+    [_eta, _centerMarkerName, _ammoTypestr] spawn {
+        params ["_eta", "_centerMarkerName", "_ammoTypestr"];
+        _time = time +_eta;
+        while {time < _time} do {
+            _centerMarkerName setMarkerText format ["%1 %5 / %2 m / %3 s ETA: %4s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, round (_time - time), _ammoTypestr];
+            sleep 1;
+        };
+        _centerMarkerName setMarkerText format ["%1 %4 / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, _ammoTypestr];;
+    };
+
+    switch (_missionType) do { 
+        case "SUP" : {
+
+            for "_i" from 1 to _volleys do {
+                {
+                    _firePos = [[[_cords, _dispersion + 20]],[]] call BIS_fnc_randomPos;
+                    _x setVariable ["pl_waiting_for_fired", true];
+                    _x doArtilleryFire [_firePos, _ammoType, 1];
+                    _eh = _x addEventHandler ["Fired", {
+                        params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_gunner"];
+                        _unit setVariable ["pl_waiting_for_fired", false];
+                    }];
+                    // sleep 1;
+                } forEach _guns;
+
+
+                _MaxDelay = time + 40;
+                _minDelay = time + _delay;
+                waitUntil {({_x getVariable ["pl_waiting_for_fired", true]} count _guns == 0 and time >= _minDelay) or time >= _MaxDelay};
+                _centerMarkerName setMarkerColor "colorOrange";
+                // waitUntil {time >= _minDelay or time >= _MaxDelay};
+
+                // pl_arty_ammo = pl_arty_ammo - 1;
+            };
+
+            {
+                // _x addMagazineTurret [_ammoType, [-1]];
+                _x removeEventHandler ["Fired", _eh];
+                // _x setVehicleAmmo 1;
+            } forEach _guns;
+        }; 
+        case "ANI" : {
+            {
+                _firePos = [[[_cords, 30]],[]] call BIS_fnc_randomPos;
+                _x doArtilleryFire [_firePos, _ammoType, _volleys];
+                sleep 1;
+            } forEach _guns;
+            _centerMarkerName setMarkerColor "colorOrange";
+        }; 
+        case "BLK" : {
+            
+        }; 
+        default {}; 
+    };
     
-    if (_group getVariable [_waitVar, true] and (alive _healTarget) and (alive _medic) and !(_medic getVariable ["pl_wia", false]) and ((_medic distance2D _pos) <= 5)) then {
-        // _medic setUnitPos "MIDDLE";
 
-        _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500};
-        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0  ) then {
-            if ((_ccpPos distance2D _healTarget) > _minDragRange and ((_ccpPos distance2D _healTarget) < 200)) then {
-                _escort doFollow _medic;
-                _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
-                waitUntil {sleep 0.5; scriptDone _dragScript};
-            };
+    if (_isHc) then {
+        player hcSetGroup [_battery];
+        if (_battery getVariable "setSpecial") then {
+            _battery setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"];
         };
-        // sleep 1;
-        if (alive _medic and alive _healTarget and (_group getVariable [_waitVar, true]) and !(lifeState _medic isEqualTo "INCAPACITATED")) then {
-
-            doStop _escort;
-            _reviveTime = time + _reviveTime;
-            _medic attachTo [_healTarget, [0.6,0.2,0]];
-            _medic setDir -90;
-            _medic playAction "medicStart";
-            _medic disableAI "ANIM";
-            while {_reviveTime > time and (_group getVariable [_waitVar, true])} do {
-              _medic switchMove selectRandom ["AinvPknlMstpSnonWrflDnon_medic3", "AinvPknlMstpSnonWrflDnon_medic2", "AinvPknlMstpSnonWrflDnon_medic1", "AinvPknlMstpSnonWrflDnon_medic4"];
-              _time = time + 5;
-              waitUntil {sleep 0.5; time >=_time or time > _reviveTime or !(_group getVariable [_waitVar, true])};
-            };
-            detach _medic;
-            _medic playAction "medicStop";
-            _medic enableAI "ANIM";
-            _healTarget setVariable ["pl_beeing_treatet", false];
-        } else {
-            _healTarget setVariable ["pl_beeing_treatet", false];
-            if (_ccpPos isEqualTo []) then {
-                _medic doFollow (leader (group _medic));
-            } else {
-                _medic doMove _ccpPos;
-                _escort doMove _ccpPos;
-            };
-        };
-    }
-    else
-    {
-        _healTarget setVariable ["pl_beeing_treatet", false];
     };
-    _medic setUnitPos "AUTO";
-    if (_group getVariable _waitVar and (alive _medic) and !(_medic getVariable "pl_wia") and ((_medic distance2D _healTarget) < 2) and time > _reviveTime and !(lifeState _medic isEqualTo "INCAPACITATED")) then {
-        _healTarget setUnconscious false;
-        _healTarget setDamage 0;
-        _healTarget setUnitPos "AUTO";
-        _healTarget enableAI "PATH";
-        _healTarget setVariable ["pl_wia", false];
-        _healtarget setVariable ["pl_injured", false];
-        _healTarget setVariable ["pl_wia_calledout", false];
-        _healTarget setVariable ["pl_beeing_treatet", false];
-        _healTarget setVariable ["pl_bleedout_set", false];
-        if !((_healTarget getVariable ["pl_def_pos", []]) isEqualTo []) then {
-            [_healTarget] spawn pl_move_back_to_def_pos;
-        } else {
-            _healTarget doFollow (leader (group _healtarget));
-        };
 
-        if !(_ccpPos isEqualTo []) then {
-            _medic doMove _ccpPos;
-            _medic setDestination [_ccpPos, "LEADER DIRECT", true];
-            _escort doMove _ccpPos;
-            _escort setDestination [_ccpPos, "LEADER DIRECT", true];
-        } else {
-            _medic doFollow (leader (group _medic));
-            _escort doFollow (leader (group _medic));
-        };
-        _escort enableAI "AUTOCOMBAT";
-        _escort enableAI "FSM";
-    }
-    else
-    {
-        _healTarget setVariable ["pl_beeing_treatet", false];
-    };
-    _medic enableAI "AUTOCOMBAT";
-    _medic enableAI "AUTOTARGET";
-    _medic enableAI "TARGET";
-    _medic enableAI "FSM";
-    _medic setVariable ["pl_engaging", false];
-    _medic setVariable ["pl_damage_reduction", false];
-    _medic setUnitTrait ["camouflageCoef", 1, true];
-    _escort enableAI "AUTOCOMBAT";
-    _escort enableAI "FSM";
-    _escort setVariable ["pl_engaging", nil];
+    sleep (_eta + 20);
+    deleteMarker _markerName;
+    deleteMarker _centerMarkerName;
+
+
 };
 
-{unitReady _x} count (units (group cursorObject))
+pl_show_on_map_arty_menu = {
+call compile format ["
+pl_on_map_arty_menu = [
+    ['Artillery',true],
+    ['Call Artillery Strike', [2], '', -5, [['expression', '[] spawn pl_fire_on_map_arty']], '1', '1'],
+    ['', [], '', -5, [['expression', '']], '1', '0'],
+    ['Choose Battery:   %5', [3], '', -5, [['expression', '[] spawn pl_show_battery_menu']], '1', '1'],
+    ['', [], '', -5, [['expression', '']], '1', '0'],
+    ['Mission:     %7', [4], '#USER:pl_arty_mission_menu', -5, [['expression', '']], '1', '1'],
+    ['Type:          %6', [5], '#USER:pl_arty_round_type_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Rounds:        %1', [6], '#USER:pl_arty_round_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Dispersion:    %2 m', [7], '#USER:pl_arty_dispersion_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['Min Delay:     %3 s', [8], '#USER:pl_arty_delay_menu_on_map', -5, [['expression', '']], '1', '1'],
+    ['', [], '', -5, [['expression', '']], '1', '0']
+];", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, pl_arty_enabled, groupId (pl_arty_groups#pl_active_arty_group_idx), [pl_arty_round_type] call pl_get_type_str, pl_arty_mission];
+showCommandingMenu "#USER:pl_on_map_arty_menu";
+};
+
+
+pl_arty_mission_menu = 
+[
+    ['Fire Mission',true],
+    ['SUPPRESS', [2], '', -5, [['expression', 'pl_arty_mission = "SUP"; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['ANIHILATE', [3], '', -5, [['expression', 'pl_arty_mission = "ANI"; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['BLOCK', [4], '', -5, [['expression', 'pl_arty_mission = "BLK"; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+];
+
+pl_get_type_str = {
+    params ["_type"];
+
+    private _return = "";
+    switch (_type) do { 
+          case 1 : {_return = "HE"}; 
+          case 2 : {_return = "SMOKE"}; 
+          case 3 : {_return = "ILLUM"};
+          case 4 : {_return = "GUIDED"};
+          case 5 : {_return = "MINE"};
+          case 6 : {_return = "CLUSTER"};
+          default {};
+      };
+    _return
+};
+
+pl_get_arty_ammo = {
+    params ["_guns"];
+
+    private _availableMagazinesLeader = magazinesAmmo [_guns#0, true];
+    {
+        private _availableMagazines = magazinesAmmo [_x, true];
+
+        for "_i" from 0 to (count _availableMagazinesLeader) - 1 do {
+            if (((_availableMagazinesLeader#_i)#0) isEqualTo ((_availableMagazines#_i)#0)) then {
+                (_availableMagazinesLeader#_i) set [1, ((_availableMagazinesLeader#_i)#1) + ((_availableMagazines#_i)#1)]
+            };
+        }
+    } forEach (_guns - [_guns#0]);
+
+    private _allAmmoCount = createHashMap;
+
+    {
+        if !((_x#0) in _allAmmoCount) then {
+            _allAmmoCount set [_x#0, _x#1];
+        } else {
+            _a = _allAmmoCount get (_x#0);
+            _allAmmoCount set [_x#0, _a + (_x#1)];
+        };
+    } forEach _availableMagazinesLeader;
+
+    _allAmmoCount
+};
+
+pl_get_arty_type_to_name = {
+    params ["_typeName"];
+
+        private _r = {
+            if ([_x#0, _typeName] call BIS_fnc_inString) exitWith {_x#1};
+            ""
+        } forEach [["he", "HE"], ["smoke", "SMOKE"], ["smk", "SMOKE"], ["il", "ILLUM"], ["illum", "ILLUM"], ["guid", "GUIDED"], ["gui", "GUIDED"], ["cluster", "CLUSTER"], ["icm", "CLUSTER"], ["mine", "MINE"]];
+    _r
+};
+
+pl_arty_round_type_menu_on_map = 
+[
+    ['Type',true],
+    ['HE', [2], '', -5, [['expression', 'pl_arty_round_type = 1; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['SMOKE', [3], '', -5, [['expression', 'pl_arty_round_type = 2; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['ILLUM', [4], '', -5, [['expression', 'pl_arty_round_type = 3; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['GUIDED', [5], '', -5, [['expression', 'pl_arty_round_type = 4; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['MINE', [6], '', -5, [['expression', 'pl_arty_round_type = 5; [] spawn pl_show_on_map_arty_menu']], '1', '1'],
+    ['CLUSTER', [7], '', -5, [['expression', 'pl_arty_round_type = 6; [] spawn pl_show_on_map_arty_menu']], '1', '1']
+];
+
+// pl_show_battery_ammo_status = {
+//     private ["_menuScript"];
+//     _menuScript = "pl_arty_round_type_menu_on_map = [['Artillery Batteries',true],";
+//     player sideChat (str count _ammo);
+
+//     _n = 0;
+//     {
+//         _text = format ["%1 (%2)", [_x#0] call pl_get_arty_type_to_name, _x#1];
+//         _menuScript = _menuScript + format ["[parseText '%1', [%2], '', -5, [['expression', 'pl_arty_round_type = %3; [] spawn pl_show_on_map_arty_menu']], '1', '1'],", _text, _n + 2, _n];
+//         _n = _n + 1;
+//     } forEach _ammo;
+//     _menuScript = _menuScript + "['', [], '', -5, [['expression', '']], '0', '0']]";
+
+//     call compile _menuScript;
+//     showCommandingMenu "#USER:pl_arty_round_type_menu_on_map";
+// };
+// "gm_mlrs_110mm_launcher"
+// magazines[] = {"gm_36Rnd_mlrs_110mm_he_dm21","gm_36Rnd_mlrs_110mm_icm_dm602","gm_36Rnd_mlrs_110mm_mine_dm711","gm_36Rnd_mlrs_110mm_smoke_dm15"};
+
+// _allMagazines = getArray (configfile >> "CfgWeapons" >> "gm_mlrs_110mm_launcher" >> "Magazines");
+
+
+_weapon = (getArray (configfile >> "CfgVehicles" >> typeOf this >> "Turrets" >> "MainTurret" >> "weapons"))#0;
+_allMagazines = getArray (configfile >> "CfgWeapons" >> _weapon >> "Magazines");
+
+{
+    this removeMagazines _x;
+} forEach _allMagazines;
+
+this addMagazine ["gm_36Rnd_mlrs_110mm_he_dm21", 36]; 
+this addMagazine ["gm_36Rnd_mlrs_110mm_icm_dm602", 36]; 
+this addMagazine ["gm_36Rnd_mlrs_110mm_mine_dm711", 36];
+
+// getText (configFile >> "CfgAmmo" >> "gm_1Rnd_155mm_he_dm21" >> "displayName");
+
+    // ["gm_1Rnd_155mm_he_dm21","gm_1Rnd_155mm_he_dm111","gm_1Rnd_155mm_icm_dm602","gm_1Rnd_155mm_smoke_dm105","gm_1Rnd_155mm_illum_dm106","gm_1Rnd_155mm_he_m107","gm_1Rnd_155mm_he_m795","gm_1Rnd_155mm_smoke_m116","gm_1Rnd_155mm_smoke_m110","gm_1Rnd_155mm_illum_m485","gm_10Rnd_155mm_he_dm21","gm_10Rnd_155mm_he_dm111","gm_10Rnd_155mm_icm_dm602","gm_10Rnd_155mm_smoke_dm105","gm_10Rnd_155mm_illum_dm106","gm_10Rnd_155mm_he_m107","gm_10Rnd_155mm_he_m795","gm_10Rnd_155mm_smoke_m116","gm_10Rnd_155mm_smoke_m110","gm_10Rnd_155mm_illum_m485","gm_20Rnd_155mm_he_dm21","gm_20Rnd_155mm_he_dm111","gm_20Rnd_155mm_icm_dm602","gm_20Rnd_155mm_smoke_dm105","gm_20Rnd_155mm_illum_dm106","gm_20Rnd_155mm_he_m107","gm_20Rnd_155mm_he_m795","gm_20Rnd_155mm_smoke_m116","gm_20Rnd_155mm_smoke_m110","gm_20Rnd_155mm_illum_m485","gm_4Rnd_155mm_he_dm21","gm_4Rnd_155mm_he_dm111","gm_4Rnd_155mm_icm_dm602","gm_4Rnd_155mm_smoke_dm105","gm_4Rnd_155mm_illum_dm106","gm_4Rnd_155mm_he_m107","gm_4Rnd_155mm_he_m795","gm_4Rnd_155mm_smoke_m116","gm_4Rnd_155mm_smoke_m110","gm_4Rnd_155mm_illum_m485"]
+
+// [["gm_20Rnd_155mm_he_dm21",60],["gm_4Rnd_155mm_smoke_dm105",12],["gm_4Rnd_155mm_illum_dm106",12],["gm_1Rnd_155mm_he_dm21",3],["gm_1Rnd_155mm_he_dm111",3],
+// ["gm_1Rnd_155mm_icm_dm602",3],["gm_1Rnd_155mm_smoke_dm105",3],["gm_1Rnd_155mm_illum_dm106",3],["gm_1Rnd_155mm_he_m107",3],["gm_1Rnd_155mm_he_m795",3],
+// ["gm_1Rnd_155mm_smoke_m116",3],["gm_1Rnd_155mm_smoke_m110",3],["gm_1Rnd_155mm_illum_m485",3],["gm_10Rnd_155mm_he_dm21",30],["gm_10Rnd_155mm_he_dm111",30],["gm_10Rnd_155mm_icm_dm602",30],
+// ["gm_10Rnd_155mm_smoke_dm105",30],["gm_10Rnd_155mm_illum_dm106",30],["gm_10Rnd_155mm_he_m107",30],["gm_10Rnd_155mm_he_m795",30],["gm_10Rnd_155mm_smoke_m116",30],
+// ["gm_10Rnd_155mm_smoke_m110",30],["gm_10Rnd_155mm_illum_m485",30],["gm_20Rnd_155mm_he_dm21",60],["gm_20Rnd_155mm_he_dm111",60],["gm_20Rnd_155mm_icm_dm602",60],
+// ["gm_20Rnd_155mm_smoke_dm105",60],["gm_20Rnd_155mm_illum_dm106",60],["gm_20Rnd_155mm_he_m107",60],["gm_20Rnd_155mm_he_m795",60],["gm_20Rnd_155mm_smoke_m116",60],
+// ["gm_20Rnd_155mm_smoke_m110",60],["gm_20Rnd_155mm_illum_m485",60],["gm_4Rnd_155mm_he_dm21",12],["gm_4Rnd_155mm_he_dm111",12],["gm_4Rnd_155mm_icm_dm602",12],
+// ["gm_4Rnd_155mm_smoke_dm105",12],["gm_4Rnd_155mm_illum_dm106",12],["gm_4Rnd_155mm_he_m107",12],["gm_4Rnd_155mm_he_m795",4],["gm_4Rnd_155mm_smoke_m116",12],
+// ["gm_4Rnd_155mm_smoke_m110",12],["gm_4Rnd_155mm_illum_m485",12]]
+
+// this addMagazine ["gm_20Rnd_155mm_he_dm21", 20];
+// this addMagazine ["gm_20Rnd_155mm_he_dm21", 20];
+// this addMagazine ["gm_20Rnd_155mm_smoke_m116", 20];
+
+// [["gm_20Rnd_155mm_he_dm21",40],["gm_4Rnd_155mm_smoke_dm105",8],["gm_4Rnd_155mm_illum_dm106",8],["gm_20Rnd_155mm_he_dm21",10],["gm_20Rnd_155mm_smoke_m116",10]];
+
+// [["gm_20Rnd_155mm_he_dm21",40],["gm_4Rnd_155mm_smoke_dm105",8],["gm_4Rnd_155mm_illum_dm106",8],["gm_20Rnd_155mm_he_dm21",10],["gm_20Rnd_155mm_smoke_m116",10]]
+
+// [["gm_36Rnd_mlrs_110mm_he_dm21",72],["gm_36Rnd_mlrs_110mm_he_dm21",10],["gm_36Rnd_mlrs_110mm_icm_dm602",10],["gm_36Rnd_mlrs_110mm_mine_dm711",10],["gm_36Rnd_mlrs_110mm_smoke_dm15",10]]
+
+// this addMagazine ["gm_36Rnd_mlrs_110mm_he_dm21", 36];
+// this addMagazine ["gm_36Rnd_mlrs_110mm_icm_dm602", 36];
+// this addMagazine ["gm_36Rnd_mlrs_110mm_mine_dm711", 36];
+// [["gm_20Rnd_155mm_he_dm21",40],["gm_4Rnd_155mm_smoke_dm105",8],["gm_4Rnd_155mm_illum_dm106",8],["gm_20Rnd_155mm_he_dm21",40],["gm_20Rnd_155mm_he_dm21",40],["gm_20Rnd_155mm_smoke_m116",40]]
+// [["gm_20Rnd_155mm_he_dm21",120],["gm_4Rnd_155mm_smoke_dm105",8],["gm_4Rnd_155mm_illum_dm106",8],["gm_20Rnd_155mm_smoke_m116",40]]
+
+// [["gm_20Rnd_155mm_he_dm21",120],["gm_4Rnd_155mm_smoke_dm105",8],["gm_4Rnd_155mm_illum_dm106",8],["gm_20Rnd_155mm_smoke_m116",36]]
+// [["gm_20Rnd_155mm_he_dm21",120],["gm_4Rnd_155mm_smoke_dm105",8],["gm_4Rnd_155mm_illum_dm106",8],["gm_20Rnd_155mm_smoke_m116",40]] apply {[[_x#0] call pl_get_arty_type_to_name, _x#1]};
+
+pl_support_status = {
+    _gunCd = "ON STATION";
+    _gunColor = "#66ff33";
+    _gunRocketCd = "ON STATION";
+    _gunRocketColor = "#66ff33";
+    _clusterCd = "ON STATION";
+    _clusterColor = "#66ff33";
+    _jdamCd = "ON STATION";
+    _jdamColor = "#66ff33";
+    _sadPlaneCd = "ON STATION";
+    _sadPlaneColor = "#66ff33";
+    _sadHeloCd = "ON STATION";
+    _sadHeloColor = "#66ff33";
+    _sadUavCd = "ON STATION";
+    _sadUavColor = "#66ff33";
+    _sadMedevacCd = "ON STATION";
+    _sadMedevacColor = "#66ff33";
+    _time = time + 8;
+    while {time < _time} do {
+        if (time < pl_cas_cd) then {
+            _gunCd = format ["%1s", round (pl_cas_cd - time)];
+            _gunColor = '#b20000';
+        };
+        if (time < pl_cas_cd) then {
+            _gunRocketCd = format ["%1s", round (pl_cas_cd - time)];
+            _gunRocketColor = '#b20000';
+        };
+        if (time < pl_cas_cd) then {
+            _clusterCd = format ["%1s", round (pl_cas_cd - time)];
+            _clusterColor = '#b20000';
+        };
+        if (time < pl_cas_cd) then {
+            _jdamCd = format ["%1s", round (pl_cas_cd - time)];
+            _jdamColor = '#b20000';
+        };
+        if (time < pl_cas_cd) then {
+            _sadPlaneCd = format ["%1s", round (pl_cas_cd - time)];
+            _sadPlaneColor = '#b20000';
+        };
+        if (time < pl_cas_cd) then {
+            _sadHeloCd = format ["%1s", round (pl_cas_cd - time)];
+            _sadHeloColor = '#b20000';
+        };
+        if (time < pl_uav_sad_cd) then {
+            _sadUavCd = format ["%1s", round (pl_uav_sad_cd - time)];
+            _sadUavColor = '#b20000';
+        };
+        if (time < pl_medevac_sad_cd) then {
+            _sadMedevacCd = format ["%1s", round (pl_medevac_sad_cd - time)];
+            _sadMedevacColor = '#b20000';
+        };
+        _batteryRounds = [(pl_arty_groups#pl_active_arty_group_idx) getVariable ["pl_active_arty_guns", []]] call pl_get_arty_ammo;
+
+        _batteryRoundsFinal = createHashMap;
+        {
+            _batteryRoundsFinal set [[_x] call pl_get_arty_type_to_name, _y];
+        } forEach _batteryRounds;
+        // _batteryRounds = _batteryRounds apply {[_x] call pl_get_arty_type_to_name};
+         _message = format ["
+            <t color='#004c99' size='1.3' align='center' underline='1'>CAS</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Sorties:</t><t color='#00ff00' size='0.8' align='right'>%10</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Viper 1 (Gun Run)</t><t color='%1' size='0.8' align='right'>%2</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Viper 4 (Attack Run)</t><t color='%3' size='0.8' align='right'>%4</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Black Knight 1-2 (Cluster)</t><t color='%5' size='0.8' align='right'>%6</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Stroke 3 (JDAM)</t><t color='%7' size='0.8' align='right'>%8</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Reaper 1 (SAD Plane)</t><t color='%11' size='0.8' align='right'>%12</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Black Jack 4 (SAD HELO)</t><t color='%13' size='0.8' align='right'>%14</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Sentry 3 (UAV Recon)</t><t color='%15' size='0.8' align='right'>%16</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Angel 6 (MEDEVAC)</t><t color='%17' size='0.8' align='right'>%18</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Harvester 2 (Supply)</t><t color='%17' size='0.8' align='right'>%18</t>
+            <br /><br />
+            <t color='#004c99' size='1.3' align='center' underline='1'>Artillery</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Available Rounds</t><t color='#ffffff' size='0.8' align='right'>%9x</t>
+            <br /><br />
+            <t color='#ffffff' size='0.8' align='left'>Available Rounds %19:</t><t color='#ffffff' size='0.8' align='right'></t>
+            <t color='#ffffff' size='0.8' align='left'>%20</t><t color='#ffffff' size='0.8' align='right'></t>
+        ", _gunColor, _gunCd, _gunRocketColor, _gunRocketCd, _clusterColor, _clusterCd, _jdamColor, _jdamCd,  pl_arty_ammo, pl_sorties, _sadPlaneColor, _sadPlaneCd, _sadHeloColor, _sadHeloCd, _sadUavColor, _sadUavCd, _sadMedevacColor, _sadMedevacCd, groupId (pl_arty_groups#pl_active_arty_group_idx), _batteryRoundsFinal];
+
+        hintSilent parseText _message;
+        sleep 1;
+    };
+    hintSilent "";
+};
+
+// _off = [(pl_arty_groups#pl_active_arty_group_idx) getVariable ["pl_active_arty_guns", []]] call pl_get_arty_ammo;
+// _off2 = _off apply {[[_x#0] call pl_get_arty_type_to_name, _x#1]};
+// player sideChat (str _off2);
+
+
+v1 addEventHandler ["HandleDamage", {
+    params ["_unit", "_selection", "_damage", "_source", "_projectile", "_hitIndex", "_instigator", "_hitPoint"];
+
+    if (["mine", _projectile] call BIS_fnc_inString) then {
+
+        if !(_unit getVariable ["pl_mine_called_out", false]) then {
+            if (pl_enable_beep_sound) then {playSound "radioina"};
+            if (pl_enable_chat_radio) then {(leader (group (driver _unit))) sideChat format ["...We Just Hit a Mine", (groupId (group (driver _unit)))]};
+            if (pl_enable_map_radio) then {[(group (driver _unit)), "...We Just Hit a Mine", 20] call pl_map_radio_callout};
+
+            _mineArea = createMarker [str (random 3), getPos _unit];
+            _mineArea setMarkerShape "RECTANGLE";
+            _mineArea setMarkerBrush "Cross";
+            _mineArea setMarkerColor "colorORANGE";
+            _mineArea setMarkerAlpha 0.5;
+            _mineArea setMarkerSize [25, 25];
+            _mineArea setMarkerDir (getDir _unit);
+            pl_engineering_markers pushBack _mineArea;
+
+            _mines = allMines select {(_x distance2D _unit) < 20};
+
+            {
+                _m = createMarker [str (random 3), getPos _x];
+                _m setMarkerType "mil_triangle";
+                _m setMarkerSize [0.4, 0.4];
+                _m setMarkerColor "ColorRed";
+                _m setMarkerShadow false;
+                pl_engineering_markers pushBack _m;
+                playerSide revealMine _x;
+            } forEach _mines;
+
+            _unit setVariable ["pl_mine_called_out", true];
+
+            [_unit] spawn {
+                params ["_unit"];
+
+                sleep 5;
+
+                _unit setVariable ["pl_mine_called_out", nil];
+            }
+        };
+
+    };
+    _damage
+}];
+
+
+{
+    _x setVariable ["pl_assigned_group", group (driver _x)];  
+} forEach vehicles;
+
+if (count (((getPos (leader _grp)) nearEntities [["Man"], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0) then {
+    if ((random 1) > 0.4) then {
+        [_grp] spawn pl_opfor_attack_closest_enemy;
+        _time = time + 10 + (random 1);
+    } else {
+        [_grp] spawn pl_opfor_flanking_move;
+        _time = time + 25 + (random 1);
+    };
+};

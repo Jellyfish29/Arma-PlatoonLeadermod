@@ -26,6 +26,7 @@ pl_task_planer = {
 
     // set Variable
     _group setVariable ["pl_task_planed", true];
+    _wp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
 
     // call task to be executed
     switch (_taskType) do { 
@@ -41,6 +42,9 @@ pl_task_planer = {
         case "leave" : {[_group, _wp] spawn pl_leave_vehicle; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
         case "mineclear" : {[_group, _wp] spawn pl_mine_clearing; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
         case "ccp" : {[_group, false, objNull, 100, 25, objNull, _wp] spawn pl_ccp; _icon = "\Plmod\gfx\pl_ccp_marker.paa"};
+        case "sfp" : {[_group, _wp, [], 0, true] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "garrison" : {[_group, _wp] spawn pl_garrison; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+        case "mech" : {[_group, _wp] spawn pl_change_kampfweise; _icon = "\Plmod\gfx\pl_mech_task.paa"};
         default {}; 
     };
 
@@ -94,6 +98,7 @@ pl_task_planer_unload_inf = {
     // set Variable
     _group setVariable ["pl_task_planed", true];
     _group setVariable ["pl_unload_task_planed", true];
+    _wp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
 
     // call task to be executed
     switch (_taskType) do {
@@ -101,10 +106,12 @@ pl_task_planer_unload_inf = {
         case "assault" : {[_group, _wp] spawn pl_assault_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
         case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "defPos" : {[_group, _wp] spawn pl_take_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
+        case "sfp" : {[_group, _wp, [], 0, true] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "mine" : {[_group, _wp] spawn pl_lay_mine_field; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
         case "clearmine" : {[_group, _wp] spawn pl_mine_clearing; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"};
         case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         case "ccp" : {[_group, false, objNull, 100, 25, objNull, _wp] spawn pl_ccp; _icon = "\Plmod\gfx\pl_ccp_marker.paa"};
+        case "garrison" : {[_group, _wp] spawn pl_garrison; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
         default {}; 
     };
 
@@ -158,8 +165,12 @@ pl_add_wp_planed = {
 
         // add Arrow indicator
 
-    waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _startWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
-    _group setVariable ["pl_disembark_finished", nil];
+    private _planWpPos = _wpPath#((count _wpPath) - 1);
+    pl_draw_unload_inf_task_plan_icon_array pushBack [_group, _planWpPos];
+
+    waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+    // waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _startWp)) < 11 and (({vehicle _x != _x} count (units _group)) <= 0)) or !(_group getVariable ["pl_task_planed", false]) or (_group getVariable ["pl_disembark_finished", false])};
+    // _group setVariable ["pl_disembark_finished", nil];
     
     // remove Arrow indicator
     // pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _startWp, _icon]];
@@ -169,7 +180,7 @@ pl_add_wp_planed = {
     _group setVariable ["pl_task_planed", false];
 
     pl_draw_planed_wps_dic deleteAt _callsign;
-    if (pl_cancel_strike) exitwith {};
+    if (pl_cancel_strike) exitwith {pl_draw_unload_inf_task_plan_icon_array = pl_draw_unload_inf_task_plan_icon_array - [[_group, _planWpPos]];};
 
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", "\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"];
@@ -184,9 +195,11 @@ pl_add_wp_planed = {
 
     {
         _group addWaypoint [_x, 0];
-    } forEach _wpPath;
+    } forEach _wpPath; 
 
     waitUntil {sleep 0.5; (((leader _group) distance2D _lastWpPos) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
+
+    pl_draw_unload_inf_task_plan_icon_array = pl_draw_unload_inf_task_plan_icon_array - [[_group, _planWpPos]];
     _group setVariable ["pl_on_march", nil];
     _group setVariable ["setSpecial", false];
     {
@@ -254,4 +267,39 @@ pl_crew_leave_switch = {
     } else {
         ["leave"] call pl_task_planer;
     };
+};
+
+pl_synced_wp_data_array = [];
+
+pl_sync_wps_wait_for = {
+    private ["_group", "_wp", "_icon"];
+
+    // get _wp and _group
+    _logic = player getvariable "BIS_HC_scope";
+    _wp1 = _logic getvariable "WPover";
+    if ((count _wp1) == 1) exitWith {hint "Keep Mouse over Waypoint to Sync Waypoints!"};
+    _group1 = _wp1 select 0;
+    _wp1Pos = waypointPosition _wp1;
+
+    hint "Select WP with MMB";
+    pl_draw_arrow_ptm_array pushback _wp1Pos;
+    waitUntil {inputAction "ActionContext" > 0 or inputAction "zoomTemp" > 0};
+    pl_draw_arrow_ptm_array deleteAt (pl_draw_arrow_ptm_array find _wp1Pos);
+
+    hintSilent "";
+
+    _wp2 = _logic getvariable "WPover";
+    if ((count _wp2) == 1) exitWith {hint "Keep Mouse over Waypoint to Sync Waypoints!"};
+    _group2 = _wp2 select 0;
+    _wp2Pos = waypointPosition _wp2;
+    pl_synced_wp_data_array pushback [[_group2, [_wp1Pos, _wp2Pos]]];
+    _wp2 setWaypointStatements ["true", ""];
+
+    pl_draw_arrow_ptp_array pushback [_wp1Pos, _wp2Pos];
+
+    _wp1 synchronizeWaypoint [_wp2];
+
+    waitUntil {sleep 1; ((currentWaypoint _group1) > (_wp1#1))};
+
+    pl_draw_arrow_ptp_array = pl_draw_arrow_ptp_array - [[_wp1Pos, _wp2Pos]];
 };

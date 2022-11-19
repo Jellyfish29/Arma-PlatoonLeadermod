@@ -155,7 +155,7 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="{[_x] spawn pl_rush} forEach hcSelected player";
+                expression="{[_x] spawn pl_disengage} forEach hcSelected player";
             };
             show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -530,7 +530,7 @@ class RscHCGroupRootMenu
             };
             class PlHold
             {
-                title="<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa'/><t> Hold</t>";
+                title="<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\whiteboard_ca.paa'/><t> Planing Mode</t>";
                 shortcuts[]={6};
                 shortcutsAction = "CommandingMenu5";
                 submenu="";
@@ -545,7 +545,7 @@ class RscHCGroupRootMenu
             };
             class PlExecute
             {
-                title="<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Execute</t>";
+                title="<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Execute Plan</t>";
                 shortcuts[]={7};
                 shortcutsAction = "CommandingMenu6";
                 submenu="";
@@ -1909,6 +1909,20 @@ class RscHCWPRootMenu
                 enable = "1";
                 speechId = 0;
             };
+            class SyncWP
+            {
+                shortcuts[] = {6};
+                class Params
+                {
+                    expression = "[] spawn pl_sync_wps_wait_for";
+                };
+                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Sync Waypoint</t>";
+                shortcutsAction = "CommandingMenu5";
+                command = -5;
+                show = "1";
+                enable = "1";
+                speechId = 0;
+            };
             // class Back
             // {
             //     shortcuts[] = {14};
@@ -1957,14 +1971,14 @@ class CfgMarkers
     class marker_afp: pl_marker
     {
         name="Attack by Fire Position";
-        icon="\Plmod\gfx\AFP.paa";
-        texture="\Plmod\gfx\AFP.paa";
+        icon="\Plmod\gfx\pl_afp_marker.paa";
+        texture="\Plmod\gfx\pl_afp_marker.paa";
     };
     class marker_sfp: pl_marker
     {
         name="Support by Fire Position";
-        icon="\Plmod\gfx\SFP.paa";
-        texture="\Plmod\gfx\SFP.paa";
+        icon="\Plmod\gfx\pl_sfp_marker.paa";
+        texture="\Plmod\gfx\pl_sfp_marker.paa";
     };
     class marker_eng: pl_marker
     {
@@ -2043,6 +2057,12 @@ class CfgMarkers
         name="Objective Marker Enemy";
         icon="\Plmod\gfx\pl_obj_eny.paa";
         texture="\Plmod\gfx\pl_obj_eny.paa";
+    };
+    class marker_withdraw: pl_marker
+    {
+        name="Withdraw Marker";
+        icon="\Plmod\gfx\pl_withdraw_marker.paa";
+        texture="\Plmod\gfx\pl_withdraw_marker.paa";
     };
 
     class o_f_tank_pl
@@ -2432,6 +2452,60 @@ class CfgMarkers
         icon="\Plmod\gfx\marta\b_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\b_f_s_aa_pl.paa";
     };
+        class b_p_inf_pl: b_f_tank_pl
+    {
+        name="Inf Plt Blufor";
+        icon="\Plmod\gfx\marta\b_p_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_p_inf_pl.paa";
+    };
+    class b_c_inf_pl: b_f_tank_pl
+    {
+        name="Inf Coy Blufor";
+        icon="\Plmod\gfx\marta\b_c_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_c_inf_pl.paa";
+    };
+    class b_b_inf_pl: b_f_tank_pl
+    {
+        name="Inf Btl Blufor";
+        icon="\Plmod\gfx\marta\b_b_inf_pl.paa";
+        texture="\Plmod\gfx\marta\b_b_inf_pl.paa";
+    };
+    class b_p_mech_pl: b_f_tank_pl
+    {
+        name="Mech Plt Blufor";
+        icon="\Plmod\gfx\marta\b_p_mech_pl.paa";
+        texture="\Plmod\gfx\marta\b_p_mech_pl.paa";
+    };
+    class b_c_mech_pl: b_f_tank_pl
+    {
+        name="Mech Coy Blufor";
+        icon="\Plmod\gfx\marta\b_c_mech_pl.paa";
+        texture="\Plmod\gfx\marta\b_c_mech_pl.paa";
+    };
+    class b_b_mech_pl: b_f_tank_pl
+    {
+        name="Mech Btl Blufor";
+        icon="\Plmod\gfx\marta\b_b_mech_pl.paa";
+        texture="\Plmod\gfx\marta\b_b_mech_pl.paa";
+    };
+    class b_p_armor_pl: b_f_tank_pl
+    {
+        name="Armor Plt Blufor";
+        icon="\Plmod\gfx\marta\b_p_armor_pl.paa";
+        texture="\Plmod\gfx\marta\b_p_armor_pl.paa";
+    };
+    class b_c_armor_pl: b_f_tank_pl
+    {
+        name="Armor Coy Blufor";
+        icon="\Plmod\gfx\marta\b_c_armor_pl.paa";
+        texture="\Plmod\gfx\marta\b_c_armor_pl.paa";
+    };
+    class b_b_armor_pl: b_f_tank_pl
+    {
+        name="Armor Btl Blufor";
+        icon="\Plmod\gfx\marta\b_b_armor_pl.paa";
+        texture="\Plmod\gfx\marta\b_b_armor_pl.paa";
+    };
 
     class o_f_t_inf_pl: o_f_tank_pl
     {
@@ -2504,6 +2578,60 @@ class CfgMarkers
         name="aa Squad Opfor";
         icon="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
+    };
+        class o_p_inf_pl: o_f_tank_pl
+    {
+        name="Inf Plt Opfor";
+        icon="\Plmod\gfx\marta\o_p_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_p_inf_pl.paa";
+    };
+    class o_c_inf_pl: o_f_tank_pl
+    {
+        name="Inf Coy Opfor";
+        icon="\Plmod\gfx\marta\o_c_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_c_inf_pl.paa";
+    };
+    class o_b_inf_pl: o_f_tank_pl
+    {
+        name="Inf Btl Opfor";
+        icon="\Plmod\gfx\marta\o_b_inf_pl.paa";
+        texture="\Plmod\gfx\marta\o_b_inf_pl.paa";
+    };
+    class o_p_mech_pl: o_f_tank_pl
+    {
+        name="Inf Plt Opfor";
+        icon="\Plmod\gfx\marta\o_p_mech_pl.paa";
+        texture="\Plmod\gfx\marta\o_p_mech_pl.paa";
+    };
+    class o_c_mech_pl: o_f_tank_pl
+    {
+        name="Inf Coy Opfor";
+        icon="\Plmod\gfx\marta\o_c_mech_pl.paa";
+        texture="\Plmod\gfx\marta\o_c_mech_pl.paa";
+    };
+    class o_b_mech_pl: o_f_tank_pl
+    {
+        name="Inf Btl Opfor";
+        icon="\Plmod\gfx\marta\o_b_mech_pl.paa";
+        texture="\Plmod\gfx\marta\o_b_mech_pl.paa";
+    };
+    class o_p_armor_pl: o_f_tank_pl
+    {
+        name="Inf Plt Opfor";
+        icon="\Plmod\gfx\marta\o_p_armor_pl.paa";
+        texture="\Plmod\gfx\marta\o_p_armor_pl.paa";
+    };
+    class o_c_armor_pl: o_f_tank_pl
+    {
+        name="Inf Coy Opfor";
+        icon="\Plmod\gfx\marta\o_c_armor_pl.paa";
+        texture="\Plmod\gfx\marta\o_c_armor_pl.paa";
+    };
+    class o_b_armor_pl: o_f_tank_pl
+    {
+        name="Inf Btl Opfor";
+        icon="\Plmod\gfx\marta\o_b_armor_pl.paa";
+        texture="\Plmod\gfx\marta\o_b_armor_pl.paa";
     };
 
     class n_f_t_inf_pl: n_f_tank_pl
@@ -2780,17 +2908,17 @@ class cfgGroupIcons
         icon="\Plmod\gfx\marta\b_f_tank_sup_pl.paa";
         texture="\Plmod\gfx\marta\b_f_tank_sup_pl.paa";
     };
-    class b_f_tankaa_sup_pl: b_unknown_pl
+    class b_f_tankaa_pl: b_unknown_pl
     {
         name="AA Tank support Blufor";
-        icon="\Plmod\gfx\marta\b_f_tankaa_sup_pl.paa";
-        texture="\Plmod\gfx\marta\b_f_tankaa_sup_pl.paa";
+        icon="\Plmod\gfx\marta\b_f_tankaa_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_tankaa_pl.paa";
     };
-    class b_f_artgun_sup_pl: b_unknown_pl
+    class b_f_artgun_pl: b_unknown_pl
     {
         name="Howitzer Blufor";
-        icon="\Plmod\gfx\marta\b_f_artgun_sup_pl.paa";
-        texture="\Plmod\gfx\marta\b_f_artgun_sup_pl.paa";
+        icon="\Plmod\gfx\marta\b_f_artgun_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_artgun_pl.paa";
     };
 
     class b_f_t_inf_pl: b_unknown_pl
@@ -2877,6 +3005,13 @@ class cfgGroupIcons
         name="Plane Attack Blufor";
         icon="\Plmod\gfx\marta\b_f_planea_pl.paa";
         texture="\Plmod\gfx\marta\b_f_planea_pl.paa";
+    };
+
+    class b_f_uav_pl: b_unknown_pl
+    {
+        name="Plane Attack Blufor";
+        icon="\Plmod\gfx\marta\b_f_uav_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_uav_pl.paa";
     };
 
     class o_f_tank_pl: o_unknown_pl
@@ -3050,6 +3185,13 @@ class cfgGroupIcons
         texture="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
     };
 
+    class o_f_uav_pl: o_unknown_pl
+    {
+        name="Plane Attack Blufor";
+        icon="\Plmod\gfx\marta\o_f_uav_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_uav_pl.paa";
+    };
+
     class n_f_tank_pl: n_unknown_pl
     {
         size = 24;
@@ -3220,6 +3362,12 @@ class cfgGroupIcons
         name="aa Squad Independet";
         icon="\Plmod\gfx\marta\n_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\n_f_s_aa_pl.paa";
+    };
+    class n_f_uav_pl: n_unknown_pl
+    {
+        name="Plane Attack Blufor";
+        icon="\Plmod\gfx\marta\n_f_uav_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_uav_pl.paa";
     };
 
     class b_recon_add_pl: Flag
@@ -3794,10 +3942,12 @@ class pl_RscMap
             shadow = 1;
             moveOnEdges = 0;
             idc = 2000;
-            x = 0.1 * safezoneW + safezoneX;
-            y = 0.1 * safezoneH + safezoneY;
-            w = 0.232031 * safezoneW;
-            h = 0.286 * safezoneH;
+            x = 0.2 * safezoneW + safezoneX;
+            y = 0.024 * safezoneH + safezoneY;
+            w = 0.433125 * safezoneW;
+            h = 0.462 * safezoneH;
+
+
         };
     };
     access = 0;
@@ -3811,7 +3961,6 @@ $[
     [1801,"",[1,"",["0.46865 * safezoneW + safezoneX","0.33852 * safezoneH + safezoneY","0.232031 * safezoneW","0.286 * safezoneH"],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],"","-1"],[]]
 ]
 */
-
 
 
 

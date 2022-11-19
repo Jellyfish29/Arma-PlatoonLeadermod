@@ -84,37 +84,6 @@ pl_load_ap = {
     };
 };
 
-pl_bounding_move_team = {
-    params ["_team", "_movePosArray", "_wpPos", "_group", "_unitPos"];
-
-    for "_i" from 0 to (count _team) - 1 do {
-        _unit = _team#_i;
-        _movePos = _movePosArray#_i;
-        if ((_unit distance2D _movePos) > 3) then {
-            if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
-                doStop _unit;
-                [_unit, true] call pl_enable_force_move;
-                _unit setUnitPos "UP";
-                _unit doMove _movePos;
-                _unit setDestination [_movePos, "LEADER DIRECT", true];
-            };
-        }
-        else
-        {
-            doStop _unit;
-            [_unit, false] call pl_enable_force_move;
-            if (_unitPos isEqualTo "COVER") then {
-                [_unit, getPos _unit, getDir _unit, 15, false] spawn pl_find_cover;
-            } else {
-                _unit disableAI "PATH";
-                _unit setUnitPos _unitPos;
-            };
-        };
-    };
-    if (({currentCommand _x isEqualTo "MOVE"} count (_team select {alive _x and !(_x getVariable ["pl_wia", false])})) == 0 or ({(_x distance2D _wpPos) < 15} count _team > 0) or (waypoints _group isEqualTo [])) exitWith {true};
-    false
-};
-
 pl_quick_suppress = {
     params ["_unit", "_targetPos"];
 
@@ -159,6 +128,7 @@ pl_position_reached_check = {
     if ((_unit distance2D _movePos) > 4) then {
         if ((((currentCommand _unit) isNotEqualTo "MOVE") or ((speed _unit) == 0))) then {
             // _unit setUnitPosWeak "UP";
+            _unit setHit ["legs", 0];
             _movePos = [-1 + (random 2), -1 + (random 2), 0] vectorAdd _movePos;
             _unit doMove _movePos;
             _counter = _counter + 1;
@@ -176,6 +146,7 @@ pl_not_reachable_escape = {
     sleep 2;
 
     if ((currentCommand _unit) isEqualTo "MOVE" and (speed _unit) == 0) exitWith {
+        _unit setHit ["legs", 0];
         _movePos = [[[_pos, _area * 1.1]],["water"]] call BIS_fnc_randomPos;
         _movePos = _movePos findEmptyPosition [0, 10, typeOf _unit];
         doStop _unit;
@@ -405,6 +376,47 @@ pl_has_cannon = {
 
 pl_is_ifv = {
     params ["_vic"];
+    if (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "IFV") exitWith {true};
     if (([_vic] call pl_has_cannon or ([(_vic weaponsTurret [0])#0] call pl_get_caliber) >= 20) and !(["mbt", typeOf _vic] call BIS_fnc_inString)) exitwith {true};
     false
 };
+
+pl_find_centroid_of_group = {
+    params ["_group"];
+
+    private _sumX = 0;
+    private _sumY = 0;
+    private _len = count (units _group);
+
+    {
+        _sumX = _sumX + ((getPos _x)#0);
+        _sumY = _sumY + ((getPos _x)#1);
+
+    } forEach (units _group);
+
+    // _m = createMarker [str (random 2), [_sumX / _len, _sumY / _len, (getPosASL (leader _group))#2]];
+    // _m setMarkerType "mil_dot";
+
+    [_sumX / _len, _sumY / _len, (getPosASL (leader _group))#2] 
+};
+
+// 0 = [group player] call pl_find_centroid_of_group;
+
+pl_find_centroid_of_groups = {
+    params ["_groups"];
+
+    private _sumX = 0;
+    private _sumY = 0;
+    private _len = count _groups;
+
+    {
+        _sumX = _sumX + ((getPos (leader _x))#0);
+        _sumY = _sumY + ((getPos (leader _x))#1);
+
+    } forEach _groups;
+
+    [_sumX / _len, _sumY / _len, (getPosASL (leader (_groups#0)))#2] 
+};
+
+// _m = createMarker [str (random 1), [g1] call pl_find_centroid_of_group];
+// _m setMarkerType "mil_marker";

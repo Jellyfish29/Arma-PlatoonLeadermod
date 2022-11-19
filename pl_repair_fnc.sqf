@@ -17,21 +17,19 @@ addMissionEventHandler ["EntityKilled",{
     // if ((side (group (driver _killed))) isEqualTo playerSide or _killed in _abandonedVics) then {
         if (_killed getVariable ["pl_repair_lifes", 0] > 0) then {
 
-            _groupId = groupId group driver _killed;
+            _vicGroup = _killed getVariable ["pl_assigned_group", group (driver _killed)];
+
+            _symbolType = _vicGroup getVariable ["pl_custom_icon", format ["%1_f_truck_pl", pl_side_prefix]];
+            _groupId = groupId _vicGroup;
             if (pl_enable_beep_sound) then {playSound "radioina"};
-            if (pl_enable_chat_radio) then {driver _killed sideChat format ["%1 has been disabled!", _groupId]};
-            if (pl_enable_map_radio) then {[group (driver _killed), "...We are hit!", 15] call pl_map_radio_callout};
-            [group driver _killed, "damaged", 1] call pl_voice_radio_answer;
+            if (pl_enable_chat_radio) then {(leader _vicGroup) sideChat format ["%1 has been disabled!", _groupId]};
+            if (pl_enable_map_radio) then {[_vicGroup, "...We are hit!", 15] spawn pl_map_radio_callout};
+            [_vicGroup, "damaged", 1] spawn pl_voice_radio_answer;
 
-            _crew = crew _killed;
-            _vicGroup = group (driver _killed);
-
-            _crewClassName = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "crew");
-            _unitText = getText (configFile >> "CfgVehicles" >> typeOf _killed >> "textSingular");
-            private _cargoGroups = [];
             {
+                if (((["tank", _symbolType] call BIS_fnc_inString) or (["apc", _symbolType] call BIS_fnc_inString) or (["ifv", _symbolType] call BIS_fnc_inString)) and (group _x) == _vicGroup) then {
                 // if (typeOf _x isEqualTo _crewClassName and !(((_killed call BIS_fnc_objectType) select 1) isEqualTo "Car")) then {
-                if ((_killed isKindOf "Tank" or _unitText isEqualTo "APC") and (group _x) == _vicGroup ) then {
+                // if ((_killed isKindOf "Tank" or _unitText isEqualTo "APC") and (group _x) == _vicGroup ) then {
                     deleteVehicle _x;
                 }
                 else
@@ -39,13 +37,8 @@ addMissionEventHandler ["EntityKilled",{
                     [_x, _killed] call pl_crew_eject;
                 };
                 _cargoGroups pushBackUnique (group _x);
-            } forEach _crew;
+            } forEach (units _vicGroup);
 
-            {
-                [_x] call pl_show_group_icon;
-                [_x] call pl_change_inf_icons;
-                [_x] spawn pl_reset;
-            } forEach _cargoGroups;
 
             _pos = getPosATLVisual _killed;
             _dir = getDir _killed;
@@ -63,7 +56,7 @@ addMissionEventHandler ["EntityKilled",{
 
             deleteVehicle _killed;
 
-            [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives] spawn pl_create_new_vic;
+            [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives, _symbolType] spawn pl_create_new_vic;
             
         } else {
 
@@ -77,8 +70,10 @@ addMissionEventHandler ["EntityKilled",{
         };
 }];
 
+
+
 pl_create_new_vic = {
-    params ["_type", "_pos", "_dir", "_appereance", "_loadout", "_groupId", "_lives"];
+    params ["_type", "_pos", "_dir", "_appereance", "_loadout", "_groupId", "_lives", "_symbolType"];
     private ["_newVic"];
 
     sleep 0.3;
@@ -106,22 +101,31 @@ pl_create_new_vic = {
     _fire setPos _pos;
     _smoke setPos _pos;
 
+
     _markerName = format ["disabled%1", _newVic];
     createMarker [_markerName, _pos];
     _markerName setMarkerType "mil_destroy";
     _markerName setMarkerColor pl_side_color;
     _markerName setMarkerShadow false;
     _markerName setMarkerDir 45;
-    _markerName setMarkerSize [0.8, 0.8];
+    // _markerName setMarkerSize [0.8, 0.8];
 
+    _markerName2 = format ["disabledUnit%1", _newVic];
+    createMarker [_markerName2, _pos];
+    _markerName2 setMarkerType _symbolType;
+    _markerName2 setMarkerColor pl_side_color;
+    // _markerName2 setMarkerShadow false;
+    _markerName2 setMarkerAlpha 0.45;
+    // _markerName2 setMarkerSize [0.8, 0.8];
     _vicName = getText (configFile >> "CfgVehicles" >> _type >> "displayName");
-    _markerName setMarkerText format ["%1", _vicName];
+    _markerName setMarkerText format ["%1", _groupid];
 
     [_newVic] call pl_vehicle_setup;
     _lives = _lives - 1;
     _newVic setVariable ["pl_repair_lifes", _lives];
+    _newVic setVariable ["pl_is_destroyed", true];
 
-    pl_destroyed_vics_data pushBack [_pos, _newVic, _markerName, _groupId, _smokeGroup];
+    pl_destroyed_vics_data pushBack [_pos, _newVic, _markerName, _groupId, _smokeGroup, _markerName2];
 };
 
 pl_crew_eject = {
@@ -133,7 +137,10 @@ pl_crew_eject = {
     unassignVehicle _unit;
     doGetOut _unit;
     // group _unit setVariable ["pl_show_info", true];
-    // if !(_group getVariable ["pl_show_info", false]) then {[group _unit] call pl_show_group_icon};
+    if !((group _unit) getVariable ["pl_show_info", false]) then {
+        // [group _unit] call pl_show_group_icon
+        [group (driver _vic), _vic] spawn pl_eject_cargo;
+    };
 };
 
 pl_set_vic_laodout = {
@@ -166,154 +173,211 @@ pl_set_vic_laodout = {
 
 pl_repair = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_group", "_engVic", "_vicPos", "_validEng", "_cords", "_repairTarget", "_toRepairVic", "_markerName", "_vicGroup", "_smokeGroup", "_vicGroupId", "_icon", "_wp", "_repairTime"];
+    private ["_group", "_engVic", "_vicPos", "_validEng", "_cords", "_repairTarget", "_repairCargo", "_mPos", "_toRepairVic", "_markerName", "_markerName2", "_vicGroup", "_smokeGroup", "_vicGroupId", "_icon", "_wp", "_repairTime", "_repairTargets"];
 
     if (vehicle (leader _group) != leader _group) then {
         _engVic = vehicle (leader _group);
         _vicType = typeOf _engVic;
+    } else {
+        if (_group getVariable ["pl_is_repair_group", false]) then {
+            _engVic = {
+                if (_x getUnitTrait "engineer") exitWith {_x};
+                objNull;
+            } forEach (units _group);
+        };
+        _engVic setVariable ["pl_is_repair_vehicle", true];
+    };
 
-        if (!(_engVic getVariable ["pl_is_repair_vehicle", false]) and !(_group getVariable ["pl_is_repair_group", false])) exitWith {hint "Requires Repair Vehicle!"};
+    if (!(isNull _engVic) and !(_engVic getVariable ["pl_is_repair_vehicle", false]) and !(_group getVariable ["pl_is_repair_group", false])) exitWith {hint "Requires Repair Vehicle or Engineer!"};
 
-        _repairCargo = _engVic getVariable ["pl_repair_supplies", 0];
+    _repairCargo = _engVic getVariable ["pl_repair_supplies", 0];
 
-        if (_repairCargo <= 0) exitWith {hint "No more Supplies left!"};
+    if (_engVic isKindOf "Man") then {
+        _repairCargo = _group getVariable ["pl_repair_supplies", 0];
+    };
 
-        if (visibleMap or !(isNull findDisplay 2000)) then {
-            pl_show_dead_vehicles = true;
-            pl_show_dead_vehicles_pos = getPos _engVic;
-            pl_show_damaged_vehicles = true;
-            pl_show_vehicles_pos = getPos _engVic;
-            hint "Select on MAP";
-            onMapSingleClick {
-                pl_repair_cords = _pos;
-                pl_mapClicked = true;
-                pl_show_dead_vehicles = false;
-                pl_show_damaged_vehicles = false;
-                hint "";
-                onMapSingleClick "";
+    if (_repairCargo <= 0) exitWith {hint "No more Supplies left!"};
+
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+        pl_show_dead_vehicles = true;
+        pl_show_dead_vehicles_pos = getPos _engVic;
+        pl_show_damaged_vehicles = true;
+        pl_show_vehicles_pos = getPos _engVic;
+        hint "Select on MAP";
+        onMapSingleClick {
+            pl_repair_cords = _pos;
+            pl_mapClicked = true;
+            pl_show_dead_vehicles = false;
+            pl_show_damaged_vehicles = false;
+            hint "";
+            onMapSingleClick "";
+        };
+
+        pl_garrison_area_size = 10;
+
+        _markerAreaName = format ["%1garrison%2", _group, random 2];
+        createMarker [_markerAreaName, [0,0,0]];
+        _markerAreaName setMarkerShape "ELLIPSE";
+        _markerAreaName setMarkerBrush "SolidBorder";
+        _markerAreaName setMarkerColor pl_side_color;
+        _markerAreaName setMarkerAlpha 0.35;
+        _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
+                
+        player enableSimulation false;
+
+        while {!pl_mapClicked} do {
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
             };
-            while {!pl_mapClicked} do {
-                if (visibleMap) then {
-                    pl_repair_cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-                } else {
-                    pl_repair_cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
-                };
-                sleep 0.1;
-            };
 
-            pl_mapClicked = false;
-            _cords = pl_repair_cords;
-            private _distance = 30;
+            if (inputAction "MoveForward" > 0) then {pl_garrison_area_size = pl_garrison_area_size + 10; sleep 0.05};
+            if (inputAction "MoveBack" > 0) then {pl_garrison_area_size = pl_garrison_area_size - 10; sleep 0.05};
+            if (pl_garrison_area_size >= 700) then {pl_garrison_area_size = 700};
+            if (pl_garrison_area_size <= 10) then {pl_garrison_area_size = 10};
+
+            _markerAreaName setMarkerPos _mPos;
+            _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
+        };
+
+        player enableSimulation true;
+
+        pl_mapClicked = false;
+        deleteMarker _markerAreaName;
+        _cords = pl_repair_cords;
+        private _area = pl_garrison_area_size;
+        _repairTargets = [];
+        _iconDic = createHashMap;
+        pl_test_dic = _iconDic;
+
+        // only Vehicles can repair destroyed Vehicles
+        if !(_engVic isKindOf "Man") then {
             {
-                if ((_cords distance2D (_x #0)) < _distance) then {
-                    _repairTarget = _x,
-                    _distance = (_cords distance2D (_x #0));
+                if ((_cords distance2D (_x #0)) < _area) then {
+                    _repairTargets pushBack _x,
+                    _iconPos = getPos (_x#1);
+                    _iconDic set [_x#3, _iconPos];
+                    pl_draw_icon_array pushBack ["\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa", _iconPos, 20, [0.9,0.9,0,1]];
                 };
             } forEach pl_destroyed_vics_data;
+        };
 
-            if !(isNil "_repairTarget") then {
+        _vics = nearestObjects [_cords, ["Car", "Tank", "Truck"], _area];
 
+        {
+            if ((((_cords distance2D _x) < _area) and ((getDammage _x) > 0 or !(canMove _x)) and alive _x and (side _x) == playerSide) or ((count (crew _x)) <= 0 and ((getDammage _x) > 0 or !(canMove _x)) and alive _x)) then {
+                _repairTargets pushBack _x,
+                (group (driver _x)) spawn pl_hold;
+                _iconPos = getPos _x;
+                _iconDic set [groupid (group (driver _x)), _iconPos];
+                pl_draw_icon_array pushBack ["\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa", _iconPos, 20, [0.9,0.9,0,1]];
+            };
+        } forEach (_vics select {!(_x getVariable ["pl_is_destroyed", false])});
+
+
+        if (_repairTargets isEqualTo []) exitWith {
+            if (pl_enable_chat_radio) then {leader _group sideChat "No damaged Vehicles found"};
+            if (pl_enable_map_radio) then {[_group, "...No damaged Vehicles found", 20] call pl_map_radio_callout};
+            if (pl_enable_beep_sound) then {playSound "beep"};
+        };
+
+        _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa";
+
+        if (count _taskPlanWp != 0) then {
+
+            // add Arrow indicator
+            pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+            waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
+
+            // remove Arrow indicator
+            pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+            if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+            _group setVariable ["pl_task_planed", false];
+            _group setVariable ["pl_execute_plan", nil];
+        };
+
+        if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
+
+
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        [_group, "confirm", 1] call pl_voice_radio_answer;
+        [_group] call pl_reset;
+
+        sleep 0.5;
+
+        [_group] call pl_reset;
+
+        sleep 0.5;
+
+        _group setVariable ["onTask", true];
+        _group setVariable ["setSpecial", true];
+        _group setVariable ["specialIcon", _icon];
+        _group setVariable ["pl_is_support", true];
+        _group setBehaviour "CARELESS";
+
+        _repairTargets = [_repairTargets, [], {if (((typeName _x) isEqualTo "ARRAY")) then {(_x#1) distance2D _engVic} else {_x distance2D _engVic}}, "ASCEND"] call BIS_fnc_sortBy;
+
+        {
+
+            _repairTarget = _x;
+
+            if ((typeName _repairTarget) isEqualTo "ARRAY") then {
+                _wp = _group addWaypoint [_repairTarget#0, 0];
+                _engVic doMove (_repairTarget#0);
+                _repairTime = time + 90;
                 _toRepairVic = _repairTarget #1;
                 _markerName = _repairTarget #2;
                 _vicGroupId = _repairTarget #3;
                 _smokeGroup = _repairTarget #4;
-            }
-            else
-            {
-                _vics = nearestObjects [_cords, ["Car", "Tank", "Truck"], 30];
-                _distance = 30;
-                {
-                    if ((((_cords distance2D _x) < _distance) and ((getDammage _x) > 0 or !(canMove _x)) and alive _x and (side _x) == playerSide) or ((count (crew _x)) <= 0 and ((getDammage _x) > 0 or !(canMove _x)) and alive _x)) then {
-                        _repairTarget = _x,
-                        _distance = (_cords distance2D _x);
-                    };
-                } forEach _vics;
-            };
-
-            if (isNil "_repairTarget") exitWith {
-                if (pl_enable_chat_radio) then {leader _group sideChat "No damaged Vehicles found"};
-                if (pl_enable_map_radio) then {[_group, "...No damaged Vehicles found", 20] call pl_map_radio_callout};
-                if (pl_enable_beep_sound) then {playSound "beep"};
-            };
-
-            _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa";
-
-            if (count _taskPlanWp != 0) then {
-
-                // add Arrow indicator
-                pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
-
-                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 40) or !(_group getVariable ["pl_task_planed", false])};
-
-                // remove Arrow indicator
-                pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
-
-                if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
-                _group setVariable ["pl_task_planed", false];
-            };
-
-            if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
-
-
-            // if (pl_enable_beep_sound) then {playSound "beep"};
-            [_group, "confirm", 1] call pl_voice_radio_answer;
-            [_group] call pl_reset;
-
-            sleep 0.5;
-
-            [_group] call pl_reset;
-
-            sleep 0.5;
-
-            _group setVariable ["onTask", true];
-            _group setVariable ["setSpecial", true];
-            _group setVariable ["specialIcon", _icon];
-            _group setVariable ["pl_is_support", true];
-
-            for "_i" from count waypoints _group - 1 to 0 step -1 do{
-                deleteWaypoint [_group, _i];
-            };
-            if ((typeName _repairTarget) isEqualTo "ARRAY") then {
-                _wp = _group addWaypoint [_repairTarget #0, 0];
-                _repairTime = time + 90;
+                _markerName2 = _repairTarget #5;
             }
             else
             {
                 _wp = _group addWaypoint [getPos _repairTarget, 0];
+                _engVic doMove (getPos _repairTarget);
                 _repairTime = time + 45;
             };
-            // [_group, "maint"] call pl_change_group_icon;
-            // add Task Icon to wp
-            pl_draw_planed_task_array pushBack [_wp, _icon];
-            // if (pl_enable_beep_sound) then {playSound "beep"};
-            // leader _group sideChat format ["%1 is moving to damaged vehicle, over", (groupId _group)];
+
+
+            // pl_draw_planed_task_array pushBack [_wp, _icon];
+
             sleep 4;
             waitUntil {sleep 0.5; !alive _engVic or (unitReady _engVic) or !(_group getVariable ["onTask", true])};
             sleep 2;
 
             // remove Task Icon from wp and delete wp
-            pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+            // pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
 
             // _repairTime = time + 90;
             {
                 _x disableAI "PATH";
             } forEach crew _engVic;
+
             waitUntil {sleep 0.5; time >= _repairTime or !(_group getVariable ["onTask", true])};
             {
                 _x enableAI "PATH";
             } forEach crew _engVic;
             sleep 1;
+
             if ((alive _engVic) and (_group getVariable "onTask") and ({ alive _x } count units _group > 0) and (time >= _repairTime)) then {
                 if ((typeName _repairTarget) isEqualTo "ARRAY") then {
                     _idx = pl_destroyed_vics_data find _repairTarget;
                     0 = pl_destroyed_vics_data deleteAt _idx;
+
+                    pl_draw_icon_array = pl_draw_icon_array - [["\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa", _iconDic get _vicGroupId, 20, [0.9,0.9,0,1]]];
+
                     deleteMarker _markerName;
+                    deleteMarker _markerName2;
                     _toRepairVic setDamage 0;
                     _toRepairVic setFuel 1;
                     _toRepairVic setVehicleAmmo 1;
                     _toRepairVic setCaptive false;
                     _toRepairVic allowDamage true;
                     _toRepairVic setVehicleLock "DEFAULT";
+                    _toRepairVic setVariable ["pl_is_destroyed", nil];
                     {
                         deleteVehicle ((_x getVariable "effectEmitter") select 0);  
                         // deleteVehicle ((_x getVariable "effectLight") select 0);
@@ -348,19 +412,40 @@ pl_repair = {
                 {
                     _repairTarget setDamage 0;
                     _repairTarget setFuel 1;
-                    _group setVariable ["onTask", false];
-                    _group setVariable ["setSpecial", false];
                     // _group setVariable ["MARTA_customIcon", nil];
                     if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Repairs Completeted", (groupId _group)]};
                     if (pl_enable_map_radio) then {[_group, "...Repairs Completeted", 20] call pl_map_radio_callout};
                     _repairCargo = _repairCargo - 1;
+                    (group (driver _repairTarget)) spawn pl_execute;
+                    pl_draw_icon_array = pl_draw_icon_array - [["\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa", _iconDic get (groupId (group (driver _repairTarget))), 20, [0.9,0.9,0,1]]];
                 };
                 
                 _engVic setVariable ["pl_repair_supplies", _repairCargo];
                 _group setVariable ["pl_is_support", false];
             };
+
+            if !(_group getVariable ["onTask", false]) exitWith {};
+
+        } forEach _repairTargets;
+
+        if !(_group getVariable ["onTask", false]) then {
+
+            {
+                if ((typeName _x) isEqualTo "ARRAY") then {
+                    pl_draw_icon_array = pl_draw_icon_array - [["\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa", _iconDic get (_x#3), 20, [0.9,0.9,0,1]]];
+                }
+                else
+                {
+                    (group (driver _x)) spawn pl_execute;
+                    pl_draw_icon_array = pl_draw_icon_array - [["\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa", _iconDic get (groupId (group (driver _x))), 20, [0.9,0.9,0,1]]];
+                };
+            } forEach _repairTargets;
         };
-    }; 
+
+        _group setVariable ["onTask", false];
+        _group setVariable ["setSpecial", false];
+        _group setBehaviour "AWARE";
+    };
 };
 
 pl_repair_bridge = {

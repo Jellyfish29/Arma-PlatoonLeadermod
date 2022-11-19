@@ -72,6 +72,31 @@ pl_opfor_reset = {
     };
 };
 
+pl_opfor_auto_unstuck = {
+    params ["_grp"];
+    {
+        _unit = _x;
+        if ((_unit distance2D leader (group _unit)) > 400) then {
+            // doStop _unit;
+            // _pos = (getPos _unit) findEmptyPosition [0, 100, typeOf _unit];
+            // _unit setPos _pos;
+            _unit setPos ((getPos _unit) vectorAdd [0.5 - (random 1), 0.5 - (random 1), 0]);
+            _unit doFollow leader (group _unit);
+            _unit switchMove "";
+            _unit enableAI "PATH";
+            _unit setUnitPos "AUTO";
+            if ([getPos _unit] call pl_is_indoor) then {
+                _b = nearestBuilding (getPos _unit);
+                _unit disableCollisionWith _b;
+                [_unit, _b] spawn {
+                    sleep 15;
+                    (_this#0) enableCollisionWith (_this#1);
+                };
+            };
+        };
+    } forEach (units _grp);
+};
+
 pl_opfor_find_cover = {
     params ["_unit", "_watchPos", "_watchDir", "_radius", "_moveBehind", ["_fullCover", false], ["_inArea", ""], ["_fofScan", false]];
     private ["_valid"];
@@ -138,6 +163,8 @@ pl_opfor_find_cover = {
 
 pl_opfor_advance = {
 	params ["_grp"];
+
+    _grp setvariable ["pl_opfor_advance", true];
 
 	if (behaviour (leader _grp) != "SAFE") then {
 		{
@@ -617,7 +644,7 @@ pl_opfor_defence_suppression = {
                     _x setUnitTrait ["camouflageCoef", 0.5, false];
                     _x setVariable ["pl_damage_reduction", true];
                 } else {
-                    if ((random 1) > 0.4) then {_firers pushBackUnique _x;}
+                    if ((random 1) > 0.6) then {_firers pushBackUnique _x;}
                 };
             } forEach ((units _grp) select {!(_x checkAIFeature "PATH") and _x != _medic});
             {
@@ -629,7 +656,7 @@ pl_opfor_defence_suppression = {
                     _targetPos = (_vis select 0) select 0;
                 };
 
-                if ((_targetPos distance2D _unit) > 15) then {
+                if ((_targetPos distance2D _unit) > 25) then {
                      _unit doSuppressiveFire _targetPos;
               //       _m = createMarker [str (random 1), _targetPos];
 		            // _m setMarkerType "mil_dot";
@@ -638,9 +665,9 @@ pl_opfor_defence_suppression = {
             } forEach _firers;
 
             _time = time + 10;
-            waitUntil {sleep 0.5; time > _time or !(_grp getVariable ["pl_opf_in_pos", true])};
+            waitUntil {sleep 1; time > _time or !(_grp getVariable ["pl_opf_in_pos", true])};
         };
-        sleep 5;
+        sleep 10;
     };
 };
 
@@ -652,6 +679,10 @@ pl_opfor_flanking_move = {
 	[_grp] call pl_opfor_reset;
 
 	sleep 0.5;
+
+    [_grp] call pl_opfor_advance;
+
+    sleep 0.5;
 
     _units = allUnits select {side _x == playerSide and alive _x and hcLeader (group _x) == player};
     _units = [_units, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
@@ -703,6 +734,10 @@ pl_opfor_attack_closest_enemy = {
 	[_grp] call pl_opfor_reset;
 
 	sleep 0.5;
+
+    [_grp] call pl_opfor_advance;
+
+    sleep 0.5;
 	
 	// [_grp] spawn {
 	// params ["_grp"];
@@ -855,6 +890,7 @@ pl_opfor_join_grp = {
 				_x disableAI "AUTOCOMBAT";
 				_x setBehaviour "AWARE";
 				_x setUnitPos "AUTO";
+                _x doMove (getPos (leader _targetGrp));
 				_x doFollow (leader _targetGrp);
 			};
 		} forEach (units _grp);

@@ -2,56 +2,62 @@
 /*%FSM<HEAD>*/
 /*
 item0[] = {"Start",0,250,-304.746002,-139.547150,-214.746002,-89.547142,0.000000,"Start"};
-item1[] = {"has_wp",4,218,-108.587517,-143.968536,-18.587524,-93.968544,2.000000,"has wp"};
+item1[] = {"has_wp",4,218,-310.244171,12.345139,-220.244141,62.345131,2.000000,"has wp"};
 item2[] = {"no_wp",4,218,-514.789673,-142.893494,-424.789703,-92.893417,1.000000,"no wp"};
-item3[] = {"In_Defence_Posit",2,250,-519.041626,-2.109360,-415.182129,59.902100,0.000000,"In Defence Position"};
+item3[] = {"In_Defence_Posit",2,250,-534.346191,247.343140,-430.487000,309.354584,0.000000,"In Defence Position"};
 item4[] = {"advance",2,250,228.418213,1.369354,342.441254,68.924591,0.000000,"advance"};
-item5[] = {"advance__Loop",2,250,440.343079,-201.789001,534.802917,-140.138672,0.000000,"advance " \n "Loop"};
+item5[] = {"advance__Loop",2,4346,440.343079,-201.789001,534.802917,-140.138672,0.000000,"advance " \n "Loop"};
 item6[] = {"Condition_Check",2,250,714.192627,8.283081,804.192627,58.283081,0.000000,"Condition" \n "Check"};
 item7[] = {"delay",4,218,444.293884,9.798996,534.293884,59.798996,0.000000,"delay"};
 item8[] = {"Return",8,218,718.439026,-207.848923,808.439026,-157.848923,0.000000,"Return"};
-item9[] = {"Defend",4,218,810.761169,125.426529,900.761169,175.426529,1.000000,"Defend"};
-item10[] = {"Acting",2,250,696.941162,264.671661,786.941162,314.671661,0.000000,"Acting"};
-item11[] = {"Timeout",4,218,245.126587,263.294678,335.126526,313.294678,0.000000,"Timeout"};
-item12[] = {"Attack",4,218,558.940002,136.922607,648.940186,186.922607,2.000000,"Attack"};
+item9[] = {"Defend",4,218,806.431458,137.549728,896.431458,187.549728,1.000000,"Defend"};
+item10[] = {"Acting",2,250,709.262573,267.952850,799.262573,317.952850,0.000000,"Acting"};
+item11[] = {"Timeout",4,218,237.489441,262.402557,327.489410,312.402557,0.000000,"Timeout"};
+item12[] = {"Attack",4,218,607.432983,138.654510,697.433167,188.654510,2.000000,"Attack"};
 item13[] = {"below__breackingpoint",4,218,295.597015,617.130127,385.597015,667.130066,10.000000,"below " \n "breackingpoint?"};
-item14[] = {"END",1,4346,295.752533,721.902527,385.752563,771.902405,0.000000,"END"};
+item14[] = {"END",1,250,295.752533,721.902527,385.752563,771.902405,0.000000,"END"};
 item15[] = {"Retreat",4,218,587.783508,-89.612946,677.783020,-39.612946,3.000000,"Retreat"};
-item16[] = {"not_in_Combat",2,250,47.678314,-145.842926,137.678329,-95.842926,0.000000,"not in Combat"};
-item17[] = {"Combat",4,218,232.536438,-150.762177,322.536438,-100.762177,0.000000,"Combat"};
-item18[] = {"is_Cargo",4,218,-306.654663,5.115402,-216.654663,55.115402,3.000000,"is Cargo"};
-item19[] = {"is_dismounted",4,218,55.709778,12.437042,145.709778,62.437042,0.000000,"is dismounted"};
-item20[] = {"in_Vehicle",2,250,-121.715332,13.435822,-31.715317,63.435822,0.000000,"in Vehicle"};
+item16[] = {"not_in_Combat",2,250,-138.466248,8.084381,-48.466232,58.084381,0.000000,"not in Combat"};
+item17[] = {"Combat",4,218,24.913635,6.744781,114.913643,56.744781,0.000000,"Combat"};
+item18[] = {"is_Cargo",4,218,-134.828918,-134.492981,-44.828918,-84.492996,3.000000,"is Cargo"};
+item19[] = {"is_dismounted",4,218,238.274719,-129.557831,328.274719,-79.557831,0.000000,"is dismounted"};
+item20[] = {"in_Vehicle",2,250,36.984863,-130.945541,126.984879,-80.945541,0.000000,"in Vehicle"};
+item21[] = {"no_wp",4,218,0.670715,152.191956,90.670715,202.192032,0.000000,"no wp"};
+item22[] = {"has_wp",4,218,-173.370026,135.840881,-83.370026,185.840881,2.000000,"has wp"};
 link0[] = {0,1};
 link1[] = {0,2};
 link2[] = {0,18};
 link3[] = {1,16};
 link4[] = {2,3};
-link5[] = {3,1};
-link6[] = {3,13};
+link5[] = {3,13};
+link6[] = {3,22};
 link7[] = {4,7};
 link8[] = {5,7};
 link9[] = {6,8};
 link10[] = {6,9};
 link11[] = {6,12};
 link12[] = {6,15};
-link13[] = {7,6};
-link14[] = {8,5};
-link15[] = {9,10};
-link16[] = {10,11};
-link17[] = {10,13};
-link18[] = {11,4};
-link19[] = {12,10};
-link20[] = {13,14};
-link21[] = {15,5};
-link22[] = {16,17};
-link23[] = {17,4};
-link24[] = {18,20};
-link25[] = {19,4};
-link26[] = {20,13};
-link27[] = {20,19};
-globals[] = {0.000000,0,0,0,0,640,480,1,32,6316128,1,-394.941040,967.936340,580.612610,-439.525940,1181,1244,1};
-window[] = {2,-1,-1,-32000,-32000,1341,312,2231,312,3,1199};
+link13[] = {6,21};
+link14[] = {7,6};
+link15[] = {8,5};
+link16[] = {9,10};
+link17[] = {10,11};
+link18[] = {10,13};
+link19[] = {11,4};
+link20[] = {12,10};
+link21[] = {13,14};
+link22[] = {15,5};
+link23[] = {16,17};
+link24[] = {16,21};
+link25[] = {17,4};
+link26[] = {18,20};
+link27[] = {19,4};
+link28[] = {20,13};
+link29[] = {20,19};
+link30[] = {21,3};
+link31[] = {22,16};
+globals[] = {0.000000,0,0,0,0,640,480,1,38,6316128,1,-517.553162,654.203308,748.773804,-306.045227,982,884,1};
+window[] = {2,-1,-1,-32000,-32000,1159,130,2049,130,3,1000};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -147,15 +153,15 @@ class FSM
                                 /*%FSM<LINK "has_wp">*/
                                 class has_wp
                                 {
-                                        itemno = 1;
+                                        itemno = 22;
                                         priority = 2.000000;
                                         to="not_in_Combat";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"(currentWaypoint _grp) < count (waypoints _grp);" \n
                                          ""/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"{_x enableAI ""PATH""} forEach (units _grp);" \n
-                                         "[_grp] spawn pl_opfor_auto_formation;" \n
+                                        action=/*%FSM<ACTION""">*/"[_grp] spawn pl_opfor_reset;" \n
                                          "(leader _grp) limitspeed 14;" \n
+                                         "[_grp] spawn pl_opfor_auto_formation;" \n
                                          "" \n
                                          "" \n
                                          ""/*%FSM</ACTION""">*/;
@@ -169,9 +175,7 @@ class FSM
                 {
                         name = "advance";
                         itemno = 4;
-                        init = /*%FSM<STATEINIT""">*/"_grp setVariable [""pl_opf_task"", ""advance""];" \n
-                         "[_grp] call pl_opfor_advance;" \n
-                         ""/*%FSM</STATEINIT""">*/;
+                        init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {
@@ -194,7 +198,8 @@ class FSM
                 {
                         name = "advance__Loop";
                         itemno = 5;
-                        init = /*%FSM<STATEINIT""">*/"_time = time + 2 + (random 1);"/*%FSM</STATEINIT""">*/;
+                        init = /*%FSM<STATEINIT""">*/"_time = time + 4 + (random 1);" \n
+                         ""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {
@@ -260,6 +265,17 @@ class FSM
                                          ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
+                                /*%FSM<LINK "no_wp">*/
+                                class no_wp
+                                {
+                                        itemno = 21;
+                                        priority = 0.000000;
+                                        to="In_Defence_Posit";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"(currentWaypoint _grp) >= count (waypoints _grp);"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
                                 /*%FSM<LINK "Return">*/
                                 class Return
                                 {
@@ -303,12 +319,14 @@ class FSM
                                         to="advance";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"time >= _time;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if ((random 1) > 0.4) then {" \n
-                                         "	[_grp] spawn pl_opfor_attack_closest_enemy;" \n
-                                         "	_time = time + 10 + (random 1);" \n
-                                         "} else {" \n
-                                         "	[_grp] spawn pl_opfor_flanking_move;" \n
-                                         "	_time = time + 25 + (random 1);" \n
+                                        action=/*%FSM<ACTION""">*/"if (count (((getPos (leader _grp)) nearEntities [[""Man""], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0) then {" \n
+                                         "    if ((random 1) > 0.4) then {" \n
+                                         "        [_grp] spawn pl_opfor_attack_closest_enemy;" \n
+                                         "        _time = time + 10 + (random 1);" \n
+                                         "    } else {" \n
+                                         "        [_grp] spawn pl_opfor_flanking_move;" \n
+                                         "        _time = time + 25 + (random 1);" \n
+                                         "    };" \n
                                          "};" \n
                                          ""/*%FSM</ACTION""">*/;
                                 };
@@ -344,6 +362,17 @@ class FSM
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {
+                                /*%FSM<LINK "no_wp">*/
+                                class no_wp
+                                {
+                                        itemno = 21;
+                                        priority = 0.000000;
+                                        to="In_Defence_Posit";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"(currentWaypoint _grp) >= count (waypoints _grp);"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
                                 /*%FSM<LINK "Combat">*/
                                 class Combat
                                 {

@@ -19,7 +19,7 @@ pl_get_group_health = {
 
 pl_get_unit_color = {
     params ["_unit"];
-    if (_unit getVariable ['pl_wia', false]) exitWith {[0.7,0,0,1]};
+    if (_unit getVariable ['pl_wia', false]) exitWith {[0.9,0,0,1]}; //[0.7,0,0,1]
     if (_unit getVariable ['pl_firing', false]) exitWith {[0.92,0.24,0.07,1]};
     if (_unit getVariable ['pl_is_ccp_medic', false]) exitWith {[0.4,1,0.2,0.9]};
     if (_unit getVariable ['pl_is_at', false]) exitWith {[1,0.7,0.4,0.9]};
@@ -1047,24 +1047,24 @@ pl_draw_unit_group_lines = {
             {
                 _pos1 = getPos (leader _x);
                 {
-                    if (vehicle _x == _x and side _x == playerSide) then {
+                    if (alive _x) then {
                         _pos2 = getPos _x;
                         _color = pl_side_color_rgb;
-                        if (_x getVariable ['pl_wia', false]) then {_color = [0.7,0,0,0.5]};
+                        if (_x getVariable ['pl_wia', false]) then {_color = [0.9,0,0,1]};
                         _display drawLine [
                             _pos1,
                             _pos2,
                             _color
                             ];
-                        };
+                    };
                 } forEach ((units _x) - [leader _x]);
-            } forEach (hcSelected player);
+            } forEach ((hcSelected player) select {(vehicle (leader _x)) == (leader _x)});
     "]; // "
 };
 
+// [findDisplay 12 displayCtrl 51] call pl_draw_unit_group_lines;
 // allGroups select {hcLeader _x isEqualTo player}
-
-// [] call pl_draw_unit_group_lines;
+                    // 
 
 
 pl_draw_at_targets_indicator = {
@@ -1165,35 +1165,35 @@ pl_draw_text = {
 
 // [] call pl_draw_text;
 
-// pl_draw_defence_watchpos_select = {
-//     params ["_display"];
-//    _display ctrlAddEventHandler ["Draw","
-//         _display = _this#0;
-//         if (pl_show_watchpos_selector) then {
-//             _pos1 = pl_defence_cords;
-//             _pos2 = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+pl_draw_defence_watchpos_select = {
+    params ["_display"];
+   _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (pl_show_watchpos_selector) then {
+            _pos1 = pl_defence_cords;
+            _pos2 = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
 
-//             _display drawArrow [
-//                 _pos1,
-//                 _pos2,
-//                 pl_side_color_rgb
-//             ];
+            _display drawArrow [
+                _pos1,
+                _pos2,
+                pl_side_color_rgb
+            ];
 
-//             _display drawIcon [
-//                 '\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa',
-//                 [0.9,0.9,0,1],
-//                 _pos2,
-//                 14,
-//                 14,
-//                 0,
-//                 '',
-//                 2
-//             ];
-//         };
-//     "]; // "
-// };
+            _display drawIcon [
+                '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa',
+                [0.9,0.9,0,1],
+                _pos2,
+                14,
+                14,
+                0,
+                '',
+                2
+            ];
+        };
+    "]; // "
+};
 
-// [] call pl_draw_defence_watchpos_select;
+[findDisplay 12 displayCtrl 51] call pl_draw_defence_watchpos_select;
 
 pl_draw_at_attack = {
     params ["_display"];
@@ -1323,12 +1323,12 @@ pl_draw_planed_wps = {
                     _display drawArrow [
                         _pos1,
                         _pos2,
-                        [0.9,0.9,0,1]
+                        pl_side_color_rgb
                     ];
                 } forEach _y;
             } forEach pl_draw_planed_wps_dic;
     "]; // "
-};
+}; // [0.9,0.9,0,1]
 
 pl_draw_disengage_array = [];
 pl_draw_disengage = {
@@ -1347,6 +1347,105 @@ pl_draw_disengage = {
             } forEach pl_draw_disengage_array;
     "]; // "
 };
+
+pl_draw_kia_array = [];
+
+pl_draw_kia_unit = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                _unit = _x;
+                _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _unit) >> 'icon');
+                _size = 12;
+                _unitColor = [0,0,0,1];
+                _display drawIcon [
+                    _icon,
+                    _unitColor,
+                    getPosVisual _unit,
+                    _size,
+                    _size,
+                    getDirVisual _unit
+                ];
+            } forEach pl_draw_kia_array;
+    "]; // "
+};
+
+// [findDisplay 12 displayCtrl 51] call pl_draw_kia_unit;
+
+pl_draw_arrow_ptm_array = [];
+
+pl_draw_arrow_pos_to_mouse = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                    _pos1 = _x;
+                    _pos2 = _display ctrlMapScreenToWorld getMousePosition;
+                    _display drawArrow [
+                        _pos1,
+                        _pos2,
+                        pl_side_color_rgb
+                    ];
+
+            } forEach pl_draw_arrow_ptm_array;
+    "]; // 
+};
+
+// [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_mouse;
+
+pl_draw_arrow_ptp_array = [];
+
+pl_draw_arrow_pos_to_pos = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+    _display = _this#0;
+        {
+                _pos1 = _x#0;
+                _pos2 = _x#1;
+                _display drawArrow [
+                    _pos1,
+                    _pos2,
+                    pl_side_color_rgb
+                ];
+
+        } forEach pl_draw_arrow_ptp_array;
+    "]; // 
+};
+
+// [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_pos;
+
+pl_draw_icon_array = [];
+
+pl_draw_icon = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        {
+            _icon = _x#0;
+            _pos = _x#1;
+            _size = _x#2;
+            _color = _x#3;
+            _color set [3, 1];
+            _display drawIcon [
+                _icon,
+                _color,
+                _pos,
+                _size,
+                _size,
+                0,
+                '',
+                2
+            ];
+        } forEach pl_draw_icon_array;
+    "]; // 
+};  
+
+// [findDisplay 12 displayCtrl 51] call pl_draw_icon;
+
+// pl_draw_icon_array = [['\Plmod\gfx\pl_position.paa', getPos player, 20, pl_side_color_rgb]];
+
+
 
 
 pl_init_map_icons = {
@@ -1384,6 +1483,10 @@ pl_init_map_icons = {
     [findDisplay 12 displayCtrl 51] call pl_mark_supllies;
     [findDisplay 12 displayCtrl 51] call pl_show_charges;
     [findDisplay 12 displayCtrl 51] call pl_draw_disengage;
+    [findDisplay 12 displayCtrl 51] call pl_draw_kia_unit;
+    [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_mouse;
+    [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_pos;
+    [findDisplay 12 displayCtrl 51] call pl_draw_icon;
 };
 
 [] call pl_init_map_icons;
@@ -1424,6 +1527,10 @@ addMissionEventHandler ["Loaded", {
     [findDisplay 12 displayCtrl 51] call pl_mark_supllies;
     [findDisplay 12 displayCtrl 51] call pl_show_charges;
     [findDisplay 12 displayCtrl 51] call pl_draw_disengage;
+    [findDisplay 12 displayCtrl 51] call pl_draw_kia_unit;
+    [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_mouse;
+    [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_pos;
+    [findDisplay 12 displayCtrl 51] call pl_draw_icon;
 }];
 
 
@@ -1452,17 +1559,24 @@ pl_reset_group_radio_setup = {
 
 pl_draw_kia = {
     params ["_unit"];
-    _pos = getPos _unit;
+
+    sleep 2;
+
+    _pos = getPosVisual _unit;
     _markerName = str _unit;
     _marker = createMarker [_markerName, _pos];
-    _markerName setMarkerSize [0.35, 0.35];
+    _markerName setMarkerSize [0.4, 0.4];
     _markerName setMarkerType "mil_destroy";
-    _markerName setMarkerColor pl_side_color;
-    // _markerName setMarkerDir 45;
+    _markerName setMarkerColor "colorPink";
+    _markerName setMarkerDir 45;
     _markerName setMarkerShadow false;
+
+    pl_draw_kia_array pushBack _unit;
+
     _time = time + 120;
     waitUntil {sleep 1; time >= _time};
     deleteMarker _markerName;
+    // pl_draw_kia_array deleteAt (pl_draw_kia_array find _unit);
 };
 
 pl_show_tac_map_icons = {
@@ -1500,6 +1614,10 @@ pl_show_tac_map_icons = {
     [findDisplay 2000 displayCtrl 2000] call pl_mark_supllies;
     [findDisplay 2000 displayCtrl 2000] call pl_show_charges;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_disengage;
+    [findDisplay 2000 displayCtrl 2000] call pl_draw_kia_unit;
+    [findDisplay 2000 displayCtrl 2000] call pl_draw_arrow_pos_to_mouse;
+    [findDisplay 2000 displayCtrl 2000] call pl_draw_arrow_pos_to_pos;
+    [findDisplay 2000 displayCtrl 2000] call pl_draw_icon;
 };
 
 pl_last_tac_zoom = 0.1;

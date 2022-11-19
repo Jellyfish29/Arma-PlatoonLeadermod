@@ -290,6 +290,17 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "pl_medevac_Heli_1",
+    "EDITBOX",
+    ["Supply Heli","Define Classname for Supply Heli"],
+    ["Platoon Leader", "Fire Support"],
+    ['B_Heli_Transport_01_F'],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
     "pl_uav_1",
     "EDITBOX",
     ["UAV","Define Classname for UAV"],
@@ -406,7 +417,7 @@ pl_enable_vanilla_marta = false;
 ["Platoon Leader","Select HC Group", "Selects the HCGroup of the Unit the player aims at", {_this spawn pl_select_group}, "", [DIK_T, [false, false, false]]] call CBA_fnc_addKeybind;
 ["Platoon Leader","hcSquadIn_key", "Remote View Leader of HC Group", {_this spawn pl_spawn_cam }, "", [DIK_HOME, [false, false, false]]] call CBA_fnc_addKeybind;
 ["Platoon Leader","hcSquadOut_key", "Release Remote View", {_this spawn pl_remote_camera_out}, "", [DIK_END, [false, false, false]]] call CBA_fnc_addKeybind;
-// ["Platoon Leader","pl_tac_map", "Open_Tac_Map", {_this spawn pl_open_tac_map}, "", [DIK_TAB, [false, false, false]]] call CBA_fnc_addKeybind;
+["Platoon Leader","pl_tac_map", "Open_Tac_Map", {_this spawn pl_open_tac_map}, "", [DIK_TAB, [false, false, false]]] call CBA_fnc_addKeybind;
 
 
 

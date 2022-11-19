@@ -24,6 +24,11 @@ pl_set_waypoint = {
     sleep 0.2;
 
     _group addWaypoint [_cords, 0];
+    
+    if (vehicle (leader _group) != (leader _group)) then {
+        vehicle (leader _group) doMove _cords;
+        vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
+    };
 };
 
 // {if ((count (waypoints _x)) == 0) then {
@@ -61,11 +66,13 @@ pl_march = {
             [_group] spawn pl_reset;
             sleep 0.5;
         } else {
-            {
-                _x enableAI "PATH";
-                _x setUnitPos "AUTO";
-                _x forceSpeed -1;
-            } forEach (units _group);
+            if !(_group getVariable ["pl_on_hold", false]) then {
+                {
+                    _x enableAI "PATH";
+                    _x setUnitPos "AUTO";
+                    _x forceSpeed -1;
+                } forEach (units _group);
+            };
         };
 
         // if (pl_enable_beep_sound) then {playSound "beep"};
@@ -74,16 +81,17 @@ pl_march = {
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
 
-        if (vehicle (leader _group) != (leader _group)) then {
-            vehicle (leader _group) doMove _cords;
-            vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
-        };
+        // if (vehicle (leader _group) != (leader _group)) then {
+        //     vehicle (leader _group) doMove _cords;
+        //     // vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
+        // };
 
         sleep 0.2;
 
         _group setVariable ["pl_on_march", true];
         {
             _x disableAI "AUTOCOMBAT";
+            _x setHit ["legs", 0];
         } forEach (units _group);
         (leader _group) limitSpeed 14;
         // _group setFormation "FILE";
@@ -126,6 +134,37 @@ pl_vic_advance = {
     pl_draw_vic_advance_wp_array = pl_draw_vic_advance_wp_array - [[_vic, _cords]];
 };
 
+pl_bounding_move_team = {
+    params ["_team", "_movePosArray", "_wpPos", "_group", "_unitPos"];
+
+    for "_i" from 0 to (count _team) - 1 do {
+        _unit = _team#_i;
+        _movePos = _movePosArray#_i;
+        if ((_unit distance2D _movePos) > 3) then {
+            if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
+                doStop _unit;
+                [_unit, true] call pl_enable_force_move;
+                _unit setHit ["legs", 0];
+                _unit setUnitPos "UP";
+                _unit doMove _movePos;
+                _unit setDestination [_movePos, "LEADER DIRECT", true];
+            };
+        }
+        else
+        {
+            doStop _unit;
+            [_unit, false] call pl_enable_force_move;
+            if (_unitPos isEqualTo "COVER") then {
+                [_unit, getPos _unit, getDir _unit, 15, false] spawn pl_find_cover;
+            } else {
+                _unit disableAI "PATH";
+                _unit setUnitPos _unitPos;
+            };
+        };
+    };
+    if (({currentCommand _x isEqualTo "MOVE"} count (_team select {alive _x and !(_x getVariable ["pl_wia", false])})) == 0 or ({(_x distance2D _wpPos) < 15} count _team > 0) or (waypoints _group isEqualTo [])) exitWith {true};
+    false
+};
 
 pl_bounding_squad = {
     params ["_mode", ["_ai", false]];
@@ -193,6 +232,7 @@ pl_bounding_squad = {
         _x disableAI "PATH";
         _x disableAI "AUTOCOMBAT";
         _x setUnitPosWeak "Middle";
+        _x setHit ["legs", 0];
     } forEach _units;
 
     _group setBehaviour "AWARE";
@@ -381,7 +421,7 @@ pl_follow = {
 
 
 pl_move_as_formation = {
-    params [["_groups", hcSelected player], ["_firstCall", false]];
+    params [["_groups", hcSelected player], ["_firstCall", false], ["_lastWps", []]];
     private ["_cords", "_wpPos", "_pos1", "_pos2", "_syncWps", "_infIncluded"];
 
     if !(visibleMap) then {
@@ -439,7 +479,7 @@ pl_move_as_formation = {
     if (_firstCall) then {
         showCommandingMenu "";
         {
-            if ((count (waypoints _x)) == 0) then {[_x, false] spawn pl_reset};
+            if ((count (waypoints _x)) == 0 and !(_x getVariable ["pl_on_hold", false])) then {[_x, false] spawn pl_reset};
         } forEach _groups;
         sleep 0.5;
      };
@@ -451,16 +491,23 @@ pl_move_as_formation = {
 
     pl_draw_formation_move_mouse_array = [];
 
-    if (inputAction "zoomTemp" > 0) exitWith {pl_draw_formation_mouse = false;};
+    if (inputAction "zoomTemp" > 0) exitWith {
+        pl_draw_formation_mouse = false;
+        if !(_lastWps isEqualTo []) then {
+            {
+                _x setWaypointStatements ["true", "(vehicle (leader this)) limitSpeed 50; (vehicle (leader this)) setVariable ['pl_speed_limit', '50'];"];
+            } forEach _lastWps;
+        };
+    };
 
-    if (_infIncluded) then {
+    // if (_infIncluded) then {
         {
             if (vehicle (leader _x) != leader _x) then {
-                (vehicle (leader _x)) limitSpeed 23;
+                (vehicle (leader _x)) limitSpeed 30;
                 (vehicle (leader _x)) setVariable ["pl_speed_limit", "CON"];
             };
         } forEach _groups;
-    };
+    // };
 
     if (visibleMap) then {
         _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
@@ -500,7 +547,7 @@ pl_move_as_formation = {
         _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
         _newPos = _relPos vectorAdd _cords;
         _gWp = _x addWaypoint [_newPos, 0];
-        _gWp synchronizeWaypoint _syncWps;
+        // _gWp synchronizeWaypoint _syncWps;
         _syncWps pushBack _gWp;
     } forEach _groups - [_formationLeaderGroup];
 
@@ -508,7 +555,7 @@ pl_move_as_formation = {
 
     // pl_draw_sync_wp_array pushBack _syncWps;
 
-    if (inputAction "curatorGroupMod" > 0) exitWith {sleep 0.4; [_groups] spawn pl_move_as_formation};
+    if (inputAction "curatorGroupMod" > 0) exitWith {sleep 0.4; [_groups, false, _syncWps] spawn pl_move_as_formation};
     pl_draw_formation_mouse = false;
 };
 

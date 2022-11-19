@@ -189,12 +189,13 @@ pl_supply_point = {
     // Taskplanning
     if (count _taskPlanWp != 0) then {
 
-        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 40) or !(_group getVariable ["pl_task_planed", false])};
+        waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
 
         deleteWaypoint [_group, _taskPlanWp#1];
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
         _group setVariable ["pl_task_planed", false];
+        _group setVariable ["pl_execute_plan", nil];
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
@@ -399,7 +400,7 @@ pl_supply_point = {
                         // stop Hold and move back to _vic
                         [_targetGrp] call pl_execute;
                         pl_supply_draw_array = pl_supply_draw_array - [[_cords, _pos, [0.4,1,0.2,1]]];
-                        _pos = _cords findEmptyPosition [0, 15];
+                        _pos = _cords findEmptyPosition [0, 50];
                         _ammoBearer doMove _pos;
                         _suppliedGroups pushBack _targetGrp;
 
