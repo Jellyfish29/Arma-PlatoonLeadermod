@@ -275,6 +275,22 @@ pl_draw_group_info = {
                         2
                     ];
                 };
+
+                if ((_x getVariable ['pl_sop_icon', '']) != '') then {
+                    _sopPos = [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 2)];
+                    _sopIcon = _x getVariable ['pl_sop_icon', ''];
+                    _display drawIcon [
+                        _sopIcon,
+                        [0.92,0.24,0.07,1],
+                        _soppos,
+                        11,
+                        11,
+                        0,
+                        '',
+                        2
+                    ];
+                };
+
                 if ((vehicle (leader _x)) != leader _x) then {
                     _vicPos = [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 1.25)];
                     _vicColor = [vehicle (leader _x)] call pl_get_vic_health;
@@ -436,7 +452,7 @@ pl_draw_group_info = {
     "]; // "
 };
 
-// [] call pl_draw_group_info;
+// [findDisplay 12 displayCtrl 51] call pl_draw_group_info;
 
 // if (_x getVariable ['pl_group_mg_status', false]) then {
 //     _mgStatusPos = [(_pos select 0) - (pl_map_scale_x * 2.1), (_pos select 1) + (pl_map_scale_y * 1)];

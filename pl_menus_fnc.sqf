@@ -91,6 +91,172 @@ pl_show_css_menu = {
 
 [] call pl_show_css_menu;
 
+
+
+
+// SOPs
+// def pos on contact --> on contact Report (reset contact on new order)
+// def Pos on Idle (360) -- performance?
+// attack on contact --> on contact report
+// disengage on contact --> on contact report
+// dismount when under AT fire --> on IncominfMissle
+// stop when under AT fire --> on IncominfMissle
+// auto disengage (attack, def) OK
+    // set Breakingpoint % <100 , <75, <50
+
+//static deploy OK
+// auto medic/revive OK
+// Auto at defence OK
+// auto defence suppress OK
+// auto defence supply OK
+
+//auto formation OK
+//auto speed OK
+
+
+// Move
+pl_str_sop_atkOnContact = '<img color="#e5e500" image="\Plmod\gfx\pl_std_atk.paa"/><t> Attack on Contact</t>';
+pl_str_sop_defOnContact = '<img color="#e5e500" image="\Plmod\gfx\pl_position.paa"/><t> Defend on Contact</t>';
+pl_str_sop_disengageOnContact = '<img color="#e5e500" image="\Plmod\gfx\pl_withdraw_marker.paa"/><t> Disengage on Contact</t>';
+
+pl_str_sop_unloadUnderAt = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Unload Cargo on AT Fire</t>';
+pl_str_sop_stopUnderAt = '<img color="#e5e500" image="\A3\3den\data\Attributes\default_ca.paa"/><t> Stop on AT Fire</t>';
+pl_str_sop_disengageUnderAt = '<img color="#e5e500" image="\Plmod\gfx\pl_withdraw_marker.paa"/><t> Disengage on AT Fire</t>';
+
+pl_str_sop_autoFormation = '<img color="#e5e500" image="\A3\3den\data\Attributes\Formation\wedge_ca.paa"/><t> Independent Formations</t>';
+pl_str_sop_autoSpeed = '<img color="#e5e500" image="\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"/><t> Independent Speed</t>';
+
+pl_str_sop_attackSop = '<img color="#e5e500" image="A3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"/><t> Attack Task SOPs</t>';
+pl_str_sop_defendSop = '<img color="#e5e500" image="A3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"/><t> Defend Task SOPs</t>';
+
+pl_str_sop_resetSOP = '<img color="#b20000" image="\A3\3den\data\Attributes\default_ca.paa"/><t> Reset SOPs</t>';
+
+pl_str_sop_atk_disengage = '<img color="#e5e500" image="\Plmod\gfx\pl_withdraw_marker.paa"/><t> Allow Disengage</t>';
+pl_str_sop_atk_ATEngagement = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Allow AT Engagement</t>';
+
+pl_str_sop_def_disengage = '<img color="#e5e500" image="\Plmod\gfx\pl_withdraw_marker.paa"/><t> Allow Disengage</t>';
+pl_str_sop_def_ATEngagement = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Allow AT Engagement</t>';
+pl_str_sop_def_resupply = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"/><t> Allow Resupply</t>';
+pl_str_sop_def_suppressiveFire = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa"/><t> Allow Suppressive Fire</t>';
+pl_str_sop_def_deployStatic = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\backpack_ca.paa"/><t> Allow Static Deploy</t>';
+
+
+pl_show_sop_menu = {
+    call compile format ["
+    pl_sop_menu = [
+        ['SOPs',true],
+        [parseText '%1', [2], '', -5, [['expression', '[1] call pl_set_sop_onContact']], '1', 'HCNotEmpty'],
+        [parseText '%2', [3], '', -5, [['expression', '[2] call pl_set_sop_onContact']], '1', 'HCNotEmpty'],
+        [parseText '%3', [4], '', -5, [['expression', '[3] call pl_set_sop_onContact']], '1', 'HCNotEmpty'],
+        [parseText '%5', [5], '', -5, [['expression', '[4] call pl_set_sop_onContact']], '1', 'HCNotEmpty'],
+        [parseText '%4', [6], '', -5, [['expression', '[5] call pl_set_sop_onContact']], '1', 'HCNotEmpty'],
+        ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%7', [7], '', -5, [['expression', '[] call pl_toggle_auto_formation']], '1', 'HCNotEmpty'],
+        [parseText '%8', [8], '', -5, [['expression', '[] call pl_toggle_auto_speed']], '1', 'HCNotEmpty'],
+        ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%11', [9], '', -5, [['expression', '{[_x] call pl_reset_sop} forEach (hcSelected player)']], '1', 'HCNotEmpty']
+    ];", pl_str_sop_atkOnContact, pl_str_sop_defOnContact, pl_str_sop_disengageOnContact, pl_str_sop_unloadUnderAt, pl_str_sop_stopUnderAt, pl_str_sop_disengageUnderAt, pl_str_sop_autoFormation, pl_str_sop_autoSpeed, pl_str_sop_attackSop, pl_str_sop_defendSop, pl_str_sop_resetSOP];
+    [] spawn {showCommandingMenu "#USER:pl_sop_menu";}
+};
+
+// [] call pl_show_sop_menu;
+
+        // [parseText '%9', [10], '#USER:pl_atk_sop', -5, [['expression', '']], '1', '1'],
+        // [parseText '%10', [11], '#USER:pl_def_sop', -5, [['expression', '']], '1', '1'],
+
+pl_atk_sop = [
+    ['Attack Task SOPs',true],
+    [parseText pl_str_sop_atk_disengage, [2], '', -5, [['expression', '["pl_sop_atk_disenage"] call pl_toggle_task_sops']], '1', '1'],
+    [parseText pl_str_sop_atk_ATEngagement, [3], '', -5, [['expression', '["pl_sop_atk_ATEngagement"] call pl_toggle_task_sops']], '1', '1']
+];
+
+pl_def_sop = [
+    ['Defend Task SOPs',true],
+    [parseText pl_str_sop_def_disengage, [2], '', -5, [['expression', '["pl_sop_def_disenage"] call pl_toggle_task_sops']], '1', '1'],
+    [parseText pl_str_sop_def_ATEngagement, [3], '', -5, [['expression', '["pl_sop_def_ATEngagement"] call pl_toggle_task_sops']], '1', '1'],
+    [parseText pl_str_sop_def_resupply, [4], '', -5, [['expression', '["pl_sop_def_resupply"] call pl_toggle_task_sops']], '1', '1'],
+    [parseText pl_str_sop_def_suppressiveFire, [5], '', -5, [['expression', '["pl_sop_def_suppress"] call pl_toggle_task_sops']], '1', '1'],
+    [parseText pl_str_sop_def_deployStatic, [6], '', -5, [['expression', '["pl_sop_def_deployStatic"] call pl_toggle_task_sops']], '1', '1']
+
+];
+
+
+pl_set_sop_onContact = {
+    params ["_sop"];
+
+    {
+        _group = _x;
+        // {
+        //     _group setVariable [_x, nil];
+        // } forEach ["pl_sop_atkOnContact", "pl_sop_defOnContact", "pl_sop_disengageOnContact"];
+        [_group] call pl_reset_sop;
+
+        switch (_sop) do { 
+            case 1 : {_group setVariable ["pl_sop_atkOnContact", true]; _group setVariable ["pl_sop_icon", "\Plmod\gfx\pl_std_atk.paa"]}; 
+            case 2 : {_group setVariable ["pl_sop_defOnContact", true]; _group setVariable ["pl_sop_icon", "\Plmod\gfx\pl_position.paa"]};
+            case 3 : {_group setVariable ["pl_sop_disengageOnContact", true]; _group setVariable ["pl_sop_icon", "\Plmod\gfx\pl_withdraw_marker.paa"]};
+            case 4 : {_group setVariable ["pl_sop_stopOnContact", true]; _group setVariable ["pl_sop_icon", "\A3\3den\data\Attributes\default_ca.paa"]};
+            case 5 : {
+                if (vehicle (leader _group) != (leader _group)) then {
+                    _group setVariable ["pl_sop_unloadUnderAt", true]; _group setVariable ["pl_sop_icon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"]};
+                };
+            default {}; 
+        };
+    } forEach (hcSelected player);
+
+};
+
+
+pl_reset_sop = {
+    params ["_group"];
+    {
+        _group setVariable [_x, nil];
+        // _group setVariable ["pl_sop_def_disenage", true];
+        // _group setVariable ["pl_sop_def_ATEngagement", true];
+        // _group setVariable ["pl_sop_def_resupply", true];
+        // _group setVariable ["pl_sop_def_suppress", true];
+        // _group setVariable ["pl_sop_def_deployStatic", true];
+        // _group setVariable ["pl_sop_atk_disenage", true];
+        // _group setVariable ["pl_sop_atk_ATEngagement", true];
+        _group setVariable ["pl_sop_icon", nil];
+    } forEach ["pl_sop_atkOnContact", "pl_sop_defOnContact", "pl_sop_disengageOnContact", "pl_sop_unloadUnderAt", "pl_sop_stopUnderAt", "pl_sop_disengageUnderAt"];  
+};
+
+pl_toggle_auto_formation = {
+    {
+        if (_x getVariable ["pl_choose_auto_formation", false]) then {
+            _x setVariable ["pl_choose_auto_formation", nil];
+        } else {
+            _x setVariable ["pl_choose_auto_formation", true];
+        };
+    } forEach (hcSelected player);  
+};
+
+pl_toggle_auto_speed = {
+    {
+        if ((vehicle (leader _x)) getVariable ["pl_choose_auto_speed", false]) then {
+            (vehicle (leader _x)) setVariable ["pl_choose_auto_speed", nil];
+        } else {
+            (vehicle (leader _x)) setVariable ["pl_choose_auto_speed", true];
+        };
+    } forEach (hcSelected player);  
+};
+
+pl_toggle_task_sops = {
+    params ["_sop"];
+
+    {
+
+        if (_x getVariable [_sop, false]) then {
+            _x setVariable [_sop, nil];
+        } else {
+            _x setVariable [_sop, true];
+        };
+
+    } forEach (hcSelected player);  
+};
+
+
         // ['', [], '', -1, [['expression', '']], '%2', '1'],
         // [parseText '%11', [9], '#USER:pl_combat_engineer', -5, [['expression', '']], '%2', '1'],
 

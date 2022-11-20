@@ -503,33 +503,22 @@ pl_disengage = {
         if !(canMove _vic) exitWith {};
 
         _vic limitSpeed 5000;
+        _vic engineOn true;
         _vDir = getDir _vic;
-        [_vic, "SmokeLauncher"] call BIS_fnc_fire;
-        _time = time + 45;
+        if (_takePosition) then {[_vic, "SmokeLauncher"] call BIS_fnc_fire};
 
-        _vic doMove _retreatPos;
+        [_vic, _retreatPos] call pl_vic_reverse_to_pos;
 
-        waitUntil {sleep 0.5; ((leader _group) distance2D _retreatPos) < 25 or !(_group getVariable ["onTask", false])};
+        pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _retreatPos]];
+        deleteMarker _markerWithdrawName;
+        [_group] call pl_reset;
 
         if (_takePosition) then {
 
-            [_group, [], _retreatPos, _retreatPos getDir _startPos, false, true] spawn pl_defend_position;
+            [_group, [], getPos _vic, getDir _vic, false, false] spawn pl_defend_position;
+         };
 
-        } else {
-
-            sleep 2;
-            [_group, str _vDir] call pl_watch_dir;
-            _group setVariable ["setSpecial", false];
-            _group setVariable ["onTask", false];
-            _vicSpeedLimit = _vic getVariable ["pl_speed_limit", "50"];
-            if !(_vicSpeedLimit isEqualTo "MAX") then {
-                _vic limitSpeed (parseNumber _vicSpeedLimit);
-            };
-        };
     };
-
-    pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _retreatPos]];
-    deleteMarker _markerWithdrawName;
 };
 
 pl_defend_position = {
@@ -587,7 +576,7 @@ pl_defend_position = {
         pl_360_area = false;
         private _staticStr = "NO";
         private _staticColor = '#ff0000';
-        if ([_group] call pl_get_has_static and (_group getVariable ["pl_allow_static", false])) then {_staticStr = "YES"; _staticColor = '#00ff00'};
+        if ([_group] call pl_get_has_static and (_group getVariable ["pl_sop_def_deployStatic", false])) then {_staticStr = "YES"; _staticColor = '#00ff00'};
         _message = format ["Select Area <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br /><t size='0.8' align='left'>-> W/S</t><t size='0.8' align='right'>Increase/Decrease Size</t><br /><t size='0.8' align='left'>-> Deploy Static Weapon</t><t size='0.8' align='right'>%2</t>", _staticColor, _staticStr];
         hint parseText _message;
 
@@ -909,8 +898,12 @@ pl_defend_position = {
     {_units pushBack _x} forEach _mgGunners;
     _units pushBack _medic;
 
-    [_group, _defenceWatchPos, _medic] spawn pl_defence_suppression;
-    [_group, _cords, _medic] spawn pl_defence_rearm;
+    if (_group getVariable ["pl_sop_def_suppress", false]) then {
+        [_group, _defenceWatchPos, _medic] spawn pl_defence_suppression;
+    };
+    if (_group getVariable ["pl_sop_def_resupply", false]) then {
+        [_group, _cords, _medic] spawn pl_defence_rearm;
+    };
 
     _posOffsetStep = _defenceAreaSize / (round ((count _units) / 2));
     private _posOffset = 0; //+ _posOffsetStep;
@@ -1093,7 +1086,7 @@ pl_defend_position = {
 
     _validLosPos = [_validLosPos, [], {_x#1}, "DESCEND"] call BIS_fnc_sortBy;
 
-    if (_group getVariable ["pl_allow_static", false]) then {
+    if (_group getVariable ["pl_sop_def_deployStatic", false]) then {
         _isStatic = [_units, _group, (_validLosPos#0)#0, _watchPos, _cords] call pl_static_unpack;
 
         if (_isStatic#0) then {
@@ -1267,7 +1260,9 @@ pl_defend_position = {
                 };
             };
             if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
-                [_unit, group _unit, _cords, _defenceAreaSize, _defenceDir, _defPos, _atEscord] spawn pl_at_defence;
+                if ((group _unit) getVariable ["pl_sop_def_ATEngagement", false]) then {
+                    [_unit, group _unit, _cords, _defenceAreaSize, _defenceDir, _defPos, _atEscord] spawn pl_at_defence;
+                };
                 sleep 0.1;
                 // _m setMarkerColor "colorOrange";
             };
@@ -1288,11 +1283,12 @@ pl_defend_position = {
     };
 
     _breakingPoint = round (({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group)) * 0.5);
+    if (_breakingPoint >= ({alive _x and !(_x getVariable ["pl_wia", false])} count (units _group))) then {_breakingPoint = -1};
 
     waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (({alive _x and !((lifeState _x) isEqualTo "INCAPACITATED")} count (units _group)) <= _breakingPoint)};
 
 
-    if ((({alive _x and !((lifeState _x) isEqualTo "INCAPACITATED")} count (units _group)) <= _breakingPoint) and !_retreat) then {
+    if ((({alive _x and !((lifeState _x) isEqualTo "INCAPACITATED")} count (units _group)) <= _breakingPoint) and !_retreat and (_group getVariable ["pl_sop_def_disenage", false])) then {
         _group setVariable ["pl_in_position", nil];
         if (pl_enable_beep_sound) then {playSound "radioina"};
         if (pl_enable_map_radio) then {[_group, "...Falling Back!", 20] call pl_map_radio_callout};
@@ -1734,7 +1730,7 @@ pl_defend_position_vehicle = {
 
     _vic doMove _cords;
     _vic setDestination [_cords,"VEHICLE PLANNED" , true];
-    private _breakingPoint = (1 - (getDammage _vic)) * 0.75;
+    private _breakingPoint = (1 - (getDammage _vic)) * 0.8;
 
     sleep 1;
 
@@ -1836,8 +1832,8 @@ pl_defend_position_vehicle = {
             if (pl_enable_map_radio) then {[_group, "...Falling Back!", 20] call pl_map_radio_callout};
             if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Falling Back", (groupId _group)]};
 
-            private _retreatDistance = 150;
-            if ([_cords] call pl_is_city) then {_retreatDistance = 75};
+            private _retreatDistance = 100;
+            if ([_cords] call pl_is_city) then {_retreatDistance = 45};
 
             _retreatPos = _cords getPos [_retreatDistance, _watchDir - 180];
 
@@ -1845,3 +1841,5 @@ pl_defend_position_vehicle = {
         };
     };
 };
+
+

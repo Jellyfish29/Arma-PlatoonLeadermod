@@ -36,9 +36,9 @@ addMissionEventHandler ["EntityKilled",{
                 {
                     [_x, _killed] call pl_crew_eject;
                 };
-                _cargoGroups pushBackUnique (group _x);
             } forEach (units _vicGroup);
 
+            // [_vicGroup, _killed] call pl_eject_cargo;
 
             _pos = getPosATLVisual _killed;
             _dir = getDir _killed;
@@ -55,6 +55,7 @@ addMissionEventHandler ["EntityKilled",{
             } forEach pl_abandoned_markers;
 
             deleteVehicle _killed;
+            deleteGroup _vicGroup;
 
             [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives, _symbolType] spawn pl_create_new_vic;
             
@@ -136,11 +137,11 @@ pl_crew_eject = {
     _unit setDir _dir;
     unassignVehicle _unit;
     doGetOut _unit;
-    // group _unit setVariable ["pl_show_info", true];
-    if !((group _unit) getVariable ["pl_show_info", false]) then {
-        // [group _unit] call pl_show_group_icon
-        [group (driver _vic), _vic] spawn pl_eject_cargo;
-    };
+    // if !((group _unit) getVariable ["pl_show_info", false]) then {
+    //     group _unit setVariable ["pl_show_info", true];
+    //     [group _unit] call pl_show_group_icon;
+        // [group (driver _vic), _vic] spawn pl_eject_cargo;
+    // };
 };
 
 pl_set_vic_laodout = {

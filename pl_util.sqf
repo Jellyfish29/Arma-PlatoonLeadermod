@@ -192,6 +192,18 @@ pl_is_city = {
     false
 };
 
+pl_is_water = {
+    params ["_pos"];
+    private ["_isWater"];
+
+    _isWater = {
+        if (surfaceIsWater (_pos getPos [35, _x])) exitWith {true};
+        false
+    } forEach [0, 90, 180, 270]; 
+    if (surfaceIsWater _pos) then {_isWater = true};
+    _isWater 
+};
+
 pl_fof_check = {
     params ["_pos","_d", "_h"];
     private _c = 0;

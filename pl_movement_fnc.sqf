@@ -81,10 +81,10 @@ pl_march = {
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
 
-        // if (vehicle (leader _group) != (leader _group)) then {
-        //     vehicle (leader _group) doMove _cords;
-        //     // vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
-        // };
+        if (vehicle (leader _group) != (leader _group)) then {
+            vehicle (leader _group) doMove _cords;
+            // vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
+        };
 
         sleep 0.2;
 
@@ -111,6 +111,7 @@ pl_march = {
     {
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
+        _mwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]"];
     };
 };
 
@@ -532,6 +533,7 @@ pl_move_as_formation = {
     _lWp = _formationLeaderGroup addWaypoint [_cords, 0];
     _formationLeaderGroup setVariable ["pl_wait_wp", _lWp];
     _syncWps = [_lWp];
+    _lwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]"];
     // _syncWps pushBack _lWp;
 
     // 3. calc waypoint for other groups relativ to Formationleader and add WP
@@ -547,6 +549,7 @@ pl_move_as_formation = {
         _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
         _newPos = _relPos vectorAdd _cords;
         _gWp = _x addWaypoint [_newPos, 0];
+        _gwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]"];
         // _gWp synchronizeWaypoint _syncWps;
         _syncWps pushBack _gWp;
     } forEach _groups - [_formationLeaderGroup];
@@ -670,4 +673,240 @@ pl_rush = {
             _vic limitSpeed (parseNumber _vicSpeedLimit);
         };
     };
+};
+
+pl_cross_bridge = {
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_cords", "_engineer", "_bridges", "_bridgeMarkers", "_mPos"];
+
+
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+
+        _markerName = createMarker ["pl_charge_range_marker2", [0,0,0]];
+        _markerName setMarkerColor "colorOrange";
+        _markerName setMarkerShape "ELLIPSE";
+        _markerName setMarkerBrush "Border";
+        _markerName setMarkerSize [30, 30];
+
+        private _rangelimiter = 150;
+
+        private _markerBorderName = str (random 2);
+        private _borderMarkerPos = getPos (leader _group);
+        if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+        createMarker [_markerBorderName, _borderMarkerPos];
+        _markerBorderName setMarkerShape "ELLIPSE";
+        _markerBorderName setMarkerBrush "Border";
+        _markerBorderName setMarkerColor "colorOrange";
+        _markerBorderName setMarkerAlpha 0.8;
+        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+        hint "Select on MAP";
+        onMapSingleClick {
+            pl_repair_cords = _pos;
+            pl_mapClicked = true;
+            if (_shift) then {pl_cancel_strike = true};
+            hint "";
+            onMapSingleClick "";
+        };
+
+        while {!pl_mapClicked} do {
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
+            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+                _markerName setMarkerPos _mPos;
+            };
+        };
+
+        pl_mapClicked = false;
+        _cords = getMarkerPos _markerName;
+        deleteMarker _markerName;
+        deleteMarker _markerBorderName;
+    }
+    else
+    {
+        _cords = screenToWorld [0.5, 0.5];
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+
+    _roads = _cords nearRoads 100;
+    _bridges = [];
+    _bridgeMarkers = [];
+
+    {
+        _info = getRoadInfo _x;
+        if (_info#8) then {
+                _bridges pushBackUnique _x;
+        };
+    } forEach _roads;
+
+    private _allEndings = [];
+    private _deployed = false;
+
+    {
+        if ((_x#0) distance2D _cords < 100) then {
+            _allEndings = _allEndings + (_x#1);
+            _deployed = true;
+        };
+
+    } forEach pl_deployed_bridges;
+
+    {
+        _info = getRoadInfo _x;
+        _endings = [_info#6, _info#7];
+        _allEndings = _allEndings + _endings;
+
+        // {
+            // _m = createMarker [str (random 4), _x];
+            // _m setMarkerType "mil_dot";
+        // } forEach _endings;
+    } forEach _bridges;
+
+    if (_allEndings isEqualTo []) exitWith {hint "No Bridge in Area"};
+
+    [_group, "confirm", 1] call pl_voice_radio_answer;
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    _group setVariable ["onTask", true];
+
+
+    _closest = ([_allEndings, [], {_x distance2D (leader _group)}, "ASCEND"] call BIS_fnc_sortBy)#0;
+    _furthest = ([_allEndings, [], {_x distance2D (leader _group)}, "DESCEND"] call BIS_fnc_sortBy)#0;
+
+    if (vehicle (leader _group) == (leader _group)) then {
+        // _group addWaypoint [_closest, 0];
+        {
+            [_x, _group, _closest, _furthest, _closest getDir _furthest, _deployed] spawn {
+                params ["_unit", "_group", "_closest", "_furthest", "_dir", "_deployed"];
+
+                _unit doMove _closest;
+
+                waitUntil {sleep 0.5; (_unit distance2D _closest) < 5 or !alive _unit or !(_group getVariable ["onTask", false])};
+                if (_deployed) then {_unit setVehiclePosition [_closest, [], 0, "CAN_COLLIDE"]};
+                _movePos = _furthest getPos [15, _dir];
+
+                if (alive _unit and (_group getVariable ["onTask", false])) then {
+                    _unit setCombatBehaviour "CARELESS";
+                    _unit disableAI "ANIM";
+                    _unit setDir (_unit getdir _movePos);
+                    _unit switchMove "AmovPercMrunSrasWrflDf";
+                    waitUntil {sleep 0.5; (_unit distance2D _movePos) < 10 or !alive _unit or !(_group getVariable ["onTask", false])};
+                    _unit enableAI "ALL";
+                    _unit switchMove "";
+                    _unit setCombatBehaviour "AWARE";
+                    _unit doFollow (leader _group);
+                    // if (_unit == (leader _group)) then {
+                        _unit doMove (_movePos getPos [25, _dir]);
+                    // };
+                };
+            };
+        } forEach units _group;
+    } else {
+        _vic = vehicle (leader _group);
+
+        _dir = _closest getDir _furthest;
+        
+
+        // _m = createMarker [str (random 4), _closest];
+        // _m setMarkerType "mil_dot";
+
+        // _group addWaypoint [_movePos, 0];
+        _movePos2 = _furthest getPos [15, _dir];
+
+        _group setBehaviourStrong "CARELESS";
+
+        if (_deployed) then {
+            [_vic, _closest, 4] call pl_vic_advance_to_pos_static;
+            _vic setVehiclePosition [_closest, [], 0, "CAN_COLLIDE"];
+        } else {
+            _movePos = _closest getPos [15, _dir - 180];
+            _vic doMove _movePos;
+            sleep 1;
+            waitUntil {sleep 0.5; (_vic distance2D _movePos) < 15 or !alive _vic};
+        };
+
+        [_vic, _movePos2, 2] call pl_vic_advance_to_pos_static;
+
+        _group setBehaviourStrong "AWARE";
+
+        // _vic setDir _dir;
+        // _vic disableBrakes true;
+        // while {_vic distance2D _movePos2 >= 10 and alive _vic and (_group getVariable ["onTask", false])} do {
+        //     _vic setVelocityModelSpace [0,6,0];
+        //     // _vic setDir _dir;
+        //     sleep 0.5;
+        // };
+        // _vic disableBrakes false;
+    };
+};
+
+pl_vic_reverse_to_pos = {
+    params ["_vic", "_pos"];
+
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+
+    _vic setDir (_pos getDir _vic);
+
+    _vic disableBrakes true;
+    _vic engineOn true;
+    while {_vic distance2D _pos >= 15 and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+        _vic setVelocityModelSpace [0,6,0];
+        sleep 0.5;
+    };
+    _vic disableBrakes false;
+    (group (driver _vic)) setVariable ["pl_on_march", false];
+};
+
+pl_vic_advance_to_pos = {
+    private ["_vic", "_pos"];
+
+    _group = (hcSelected player)#0;
+
+    if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task"};
+
+    _vic = vehicle (leader _group);
+
+    if (visibleMap) then {
+        _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    } else {
+        _pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+    };
+
+    pl_draw_disengage_array pushBack [_group, _pos];
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+    _vic setDir (_vic getDir _pos);
+    _vic disableBrakes true;
+    _vic engineOn true;
+    while {_vic distance2D _pos >= 5 and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+        _vic setVelocityModelSpace [0,4,0];
+        sleep 0.5;
+    };
+    _vic disableBrakes false;
+    (group (driver _vic)) setVariable ["pl_on_march", false];
+    pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _pos]];
+};
+
+pl_vic_advance_to_pos_static = {
+    params ["_vic", "_pos", ["_speed", 4]];
+
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+    _vic setDir (_vic getDir _pos);
+    _vic disableBrakes true;
+    _vic engineOn true;
+    while {_vic distance2D _pos >= 5 and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+        _vic setVelocityModelSpace [0,_speed,0];
+        // if (time % 2 == 0) then {_vic setDir (_vic getDir _pos)};
+        sleep 0.5;
+    };
+    _vic disableBrakes false;
+    (group (driver _vic)) setVariable ["pl_on_march", false];
 };

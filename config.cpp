@@ -135,12 +135,12 @@ class RscHCGroupRootMenu
         };
         class Watch
         {
-            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\scout_ca.paa'/><t> Watch Direction</t>";
+            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Vehicle Advance</t>";
             shortcuts[]={0};
             command=-5;
             class params
             {
-                expression="[] call pl_spawn_watch_dir";
+                expression="[] spawn pl_vic_advance_to_pos";
             };
             show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -824,20 +824,20 @@ class RscHCGroupRootMenu
             //     enable="HCNotEmpty";
             //     speechId=0;
             // };
-            class PlToggleStatic
-            {
-                title="<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Static Delpoy</t";
-                shortcuts[]={11};
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="{[_x] call pl_toggle_static} forEach (hcSelected player)";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
+            // class PlToggleStatic
+            // {
+            //     title="<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Static Delpoy</t";
+            //     shortcuts[]={11};
+            //     submenu="";
+            //     command=-5;
+            //     class params
+            //     {
+            //         expression="{[_x] call pl_toggle_static} forEach (hcSelected player)";
+            //     };
+            //     show="HCIsLeader";
+            //     enable="HCNotEmpty";
+            //     speechId=0;
+            // };
         };
         title = "Combat Tasking";
         access = 0;
@@ -937,6 +937,33 @@ class RscHCGroupRootMenu
                     expression = "{[_x] call pl_hold_fire} forEach (hcSelected player)";
                 };
                 title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Hold Fire</t";
+                shortcutsAction = "CommandingMenu7";
+                command = -5;
+                show = "1";
+                enable = "HCNotEmpty";
+            };
+            class PlSeperator70252513
+            {
+                title="Vehicle Speed:";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class pl_sops
+            {
+                shortcuts[] = {8};
+                class Params
+                {
+                    expression = "[] call pl_show_sop_menu";
+                };
+                title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa'/><t> Set SOPs</t";
                 shortcutsAction = "CommandingMenu7";
                 command = -5;
                 show = "1";
@@ -1057,19 +1084,46 @@ class RscHCGroupRootMenu
                 show = "";
                 enable = "HCNotEmpty";
             };
-            class PlAutoSpeed
+            class PlSeperator734572357257
             {
-                shortcuts[]={10};
+                title="Vehicle Speed:";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class PlCrossBridge
+            {
+                shortcuts[]={9};
                 class Params
                 {
-                    expression = "[] call pl_toggle_auto_speed";
+                    expression = "[] spawn pl_cross_bridge";
                 };
-                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Auto Speed</t";
-                shortcutsAction = "CommandingMenu10";
+                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Cross Bridge</t";
+                shortcutsAction = "CommandingMenu9";
                 command = -5;
                 show = "";
                 enable = "HCNotEmpty";
             };
+            // class PlAutoSpeed
+            // {
+            //     shortcuts[]={10};
+            //     class Params
+            //     {
+            //         expression = "[] call pl_toggle_auto_speed";
+            //     };
+            //     title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Auto Speed</t";
+            //     shortcutsAction = "CommandingMenu10";
+            //     command = -5;
+            //     show = "0";
+            //     enable = "HCNotEmpty";
+            // };
         };
         title = "Speed";
         access = 0;
@@ -1197,19 +1251,19 @@ class RscHCGroupRootMenu
                 show = "";
                 enable = "HCNotEmpty";
             };
-            class plAutoFormation
-            {
-                shortcuts[] = {11};
-                class Params
-                {
-                    expression = "[] call pl_toggle_auto_formation";
-                };
-                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Auto Formation</t";
-                shortcutsAction = "CommandingMenu11";
-                command = -5;
-                show = "";
-                enable = "HCNotEmpty";
-            };
+            // class plAutoFormation
+            // {
+            //     shortcuts[] = {11};
+            //     class Params
+            //     {
+            //         expression = "[] call pl_toggle_auto_formation";
+            //     };
+            //     title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Auto Formation</t";
+            //     shortcutsAction = "CommandingMenu11";
+            //     command = -5;
+            //     show = "";
+            //     enable = "HCNotEmpty";
+            // };
         };
         title = "Formation";
         access = 0;
@@ -1854,7 +1908,7 @@ class RscHCWPRootMenu
                 enable = "0";
                 speechId = 0;
             };
-            class Separator1
+            class Separator1467935367
             {
                 shortcuts[] = {0};
                 title = "";
@@ -1863,10 +1917,10 @@ class RscHCWPRootMenu
             class CreateTask
             {
                 shortcuts[] = {3};
-                // class Params
-                // {
-                //     expression = "[] call pl_get_task_plan_wp";
-                // };
+                class Params
+                {
+                    expression = "";
+                };
                 title = "<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Plan Task</t>";
                 shortcutsAction = "CommandingMenu3";
                 menu = "#USER:pl_task_plan_menu"
@@ -1889,7 +1943,7 @@ class RscHCWPRootMenu
                 enable = "1";
                 speechId = 0;
             };
-            class Separator200
+            class Separator205505
             {
                 shortcuts[] = {0};
                 title = "";

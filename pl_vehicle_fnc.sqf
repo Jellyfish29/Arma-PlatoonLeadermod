@@ -442,6 +442,84 @@ pl_unload_at_position_planed = {
     [_group] spawn pl_reset;
 };
 
+pl_unload_at_combat = {
+    params ["_group"];
+
+    if (vehicle (leader _group) == leader _group) exitWith {};
+
+    _vic = vehicle (leader _group);
+    _driver = driver _vic;
+    _vicGroup = group _driver;
+    _crew = crew _vic;
+    private _cargo = _crew - (units _vicGroup);
+    
+    private _attached = _vicGroup getVariable ["pl_attached_infGrp", grpNull];
+    if !(isNull _attached) exitWith {[_vicGroup, _attached, _taskPlanWp] spawn pl_detach_inf_planed};
+
+    private _cargoGroups = [];
+    {
+        _unit = _x;
+        if (!(_unit in (units _vicGroup)) and !(_unit in (units (group player)))) then {
+            _cargoGroups pushBack (group _unit);
+        };
+    } forEach _cargo;
+
+    _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
+
+    if (_cargoGroups isEqualTo []) exitWith {};
+
+    doStop _vic;
+
+    private _cargoPers = [];
+    {
+        _cGroup = _x;
+        // moveOut (leader _cGroup);
+        if !(_cGroup getVariable ["pl_show_info", false]) then {
+            [_cGroup, "inf", false] call pl_show_group_icon;
+        };
+        _cGroup leaveVehicle _vic;
+        {
+            _cargoPers pushBack _x;
+            unassignVehicle _x;
+            doGetOut _x;
+            [_x] allowGetIn false;
+            // doStop _x;
+            if (_x != (leader _cGroup)) then {
+                _x doFollow (leader _cGroup);
+            } else {
+                _x doMove ((getpos _vic) getPos [10, (getdir _vic) - 180]);
+                _x setDestination [(getpos _vic) getPos [10, (getdir _vic) - 180], "LEADER DIRECT", true];
+            };
+            _x disableAI "AUTOCOMBAT";
+
+            if ((lifeState _x) isEqualTo "INCAPACITATED") then {
+                [_x, _vic] call pl_crew_eject;
+            };
+        } forEach (units _cGroup);
+        _cGroup setBehaviourStrong "AWARE";
+
+    } forEach _cargoGroups;
+
+    waitUntil {sleep 0.5; (({vehicle _x != _x} count _cargoPers) == 0) or (!alive _vic)};
+
+    {
+        player hcSetGroup [_x];
+    } forEach _cargoGroups;
+
+    _vic setVariable ["pl_on_transport", nil];
+    _vicGroup setVariable ["pl_has_cargo", false];
+    sleep 2;
+    _time = time + 30;
+    waitUntil {sleep 0.5; ({unitReady _x} count _cargoPers) == (count _cargoPers) or time >= _time};
+    sleep 2;
+
+    {
+        [_x, [], getPos _vic, getDir _vic, false, false, 35] spawn pl_defend_position;
+    } forEach _cargoGroups;
+
+    [_group] spawn pl_reset;
+};
+
 pl_convoy = {
     private ["_mPos"];
 

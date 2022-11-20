@@ -1,7 +1,245 @@
 pl_engineering_markers = [];
 
 pl_mine_clearing = {
-v
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_cords", "_engineer", "_mines", "_watchdir", "_mPos"];
+
+    // _group = (hcSelected player) select 0;
+
+    _engineer = {
+        if ("MineDetector" in (items _x) and "ToolKit" in (items _x)) exitWith {_x};
+        objNull
+    } forEach (units _group);
+
+    if (isNull _engineer) exitWith {hint "No mineclearing equipment"};
+
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader _group] call pl_open_tac_forced;
+        };
+    };
+
+    pl_mine_sweep_area_size = 35;
+
+    _markerName = format ["%1mineSweepe%2", _group, random 3];
+    createMarker [_markerName, [0,0,0]];
+    _markerName setMarkerShape "RECTANGLE";
+    _markerName setMarkerBrush "SolidBorder";;
+    _markerName setMarkerColor "colorGreen";
+    _markerName setMarkerAlpha 0.5;
+    _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
+
+    private _rangelimiter = 80;
+
+    _markerBorderName = str (random 2);
+    private _borderMarkerPos = getPos (leader _group);
+    if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+    createMarker [_markerBorderName, _borderMarkerPos];
+    _markerBorderName setMarkerShape "ELLIPSE";
+    _markerBorderName setMarkerBrush "Border";
+    _markerBorderName setMarkerColor "colorORANGE";
+    _markerBorderName setMarkerAlpha 0.8;
+    _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+    _message = "Select Search Area <br /><br />
+    <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>
+    <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
+    hint parseText _message;
+    onMapSingleClick {
+        pl_sweep_cords = _pos;
+        if (_shift) then {pl_cancel_strike = true};
+        pl_mapClicked = true;
+        hintSilent "";
+        onMapSingleClick "";
+    };
+
+    player enableSimulation false;
+
+    while {!pl_mapClicked} do {
+        // sleep 0.1;
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+        if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+            _markerName setMarkerPos _mPos;
+        };
+        if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
+        if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
+        _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
+        if (pl_mine_sweep_area_size >= 100) then {pl_mine_sweep_area_size = 100};
+        if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
+    };
+
+    // player enableSimulation true;
+    pl_mapClicked = false;
+    _cords = getMarkerPos _markerName;
+
+    onMapSingleClick {
+        pl_mapClicked = true;
+        if (_shift) then {pl_cancel_strike = true};
+        // if (_alt) then {pl_mine_type = "APERSBoundingMine"};
+        onMapSingleClick "";
+    };
+
+    // player enableSimulation false;
+
+    while {!pl_mapClicked} do {
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+        _watchDir = _cords getdir _mPos;
+        _markerName setMarkerDir (_watchDir + 90);
+        if (inputAction "MoveForward" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size + 5; sleep 0.05};
+        if (inputAction "MoveBack" > 0) then {pl_mine_sweep_area_size = pl_mine_sweep_area_size - 5; sleep 0.05};
+        _markerName setMarkerSize [pl_mine_sweep_area_size, pl_mine_sweep_area_size * 0.33];
+        if (pl_mine_sweep_area_size >= 100) then {pl_mine_sweep_area_size = 100};
+        if (pl_mine_sweep_area_size <= 5) then {pl_mine_sweep_area_size = 5};
+    };
+
+    player enableSimulation true;
+
+    pl_mapClicked = false;
+    _markerName setMarkerAlpha 0.3;
+    deleteMarker _markerBorderName;
+
+    private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa";
+
+    if (count _taskPlanWp != 0) then {
+
+        // add Arrow indicator
+        pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
+
+        if (vehicle (leader _group) != leader _group) then {
+            if !(_group getVariable ["pl_unload_task_planed", false]) then {
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
+            } else {
+                waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+            };
+        } else {
+            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
+        };
+        _group setVariable ["pl_disembark_finished", nil];
+
+        // remove Arrow indicator
+        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
+
+        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+        _group setVariable ["pl_task_planed", false];
+        _group setVariable ["pl_unload_task_planed", false];
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["onTask", true];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"];
+    private _escort = {
+        if (_x != (leader _group) and _x != _engineer) exitWith {_x};
+        objNull
+    } forEach (units _group);
+
+    {
+        [_x, 15, getDir _x] spawn pl_find_cover;
+    } forEach (units _group) - [_engineer] - [_escort];
+
+    _engineer disableAI "AUTOCOMBAT";
+    _engineer disableAI "TARGET";
+    _engineer disableAI "AUTOTARGET";
+    _escort disableAI "AUTOCOMBAT";
+    _group setBehaviour "AWARE";
+    {
+        _x setVariable ["pl_is_at", true];
+        _x setVariable ["pl_engaging", true];
+        _x setUnitTrait ["camouflageCoef", 0.5, true];
+        _x setVariable ["pl_damage_reduction", true];
+        _x setUnitPosWeak "MIDDLE";
+        _x setCombatBehaviour "CARELESS";
+    } forEach [_engineer, _escort];
+    pl_at_attack_array pushBack [_engineer, _cords, _escort];
+
+    private _watchPos = _cords getPos [500, _watchDir];
+    _mines = allMines select {(getpos _x) inArea _markerName};
+    _mines = ([_mines, [], {_x distance2D _watchPos}, "DESCEND"] call BIS_fnc_sortBy);
+    // _engineer forceSpeed 1;
+    // _escort forceSpeed 1;
+
+    waitUntil {sleep 0.5; unitReady _engineer or !alive _engineer};
+
+    if (count _mines > 0) then {
+        while {count _mines > 0} do {
+
+            _mine = _mines#0;
+            _pos = getPosATL _mine;
+            _engineer doMove _pos;
+            _escort doMove _pos;
+
+            sleep 0.5;
+            _time = time + 5 + (_engineer distance2d _pos);
+
+            waitUntil {sleep 0.5; ((_engineer distance2D _pos) < 2) or time > _time or !(_group getVariable ["onTask", true])};
+
+            if !(_group getVariable ["onTask", true]) exitWith {};
+            // if ((_engineer distance2D _pos) > 2) then {continue};
+            _cm = createMarker [str (random 3), getPos _mine];
+            _cm setMarkerType "mil_triangle";
+            _cm setMarkerSize [0.4, 0.4];
+            _cm setMarkerDir -180;
+            _cm setMarkerShadow false;
+            pl_engineering_markers pushBack _cm;
+
+            if (time > _time) then {
+                _cm setMarkerColor "colorBLUE";
+            } else {
+                _cm setMarkerColor "colorGreen";
+                _engineer action ["Deactivate", _engineer, _mine];
+            };
+            _mines deleteAt (_mines find _mine);
+
+            sleep 2;
+        };
+    } else {
+        private _time = time + ([60, 120] call BIS_fnc_randomInt);
+        private _time2 = 0;
+        while {_time > time and (_group getVariable ["onTask", false])} do {
+
+            _engineer doMove ([[[_cords, 30]], ["water"]] call BIS_fnc_randomPos);
+            _escort doFollow _engineer;
+            _time2 = time + 6;
+
+            waituntil {time >= _time2 or !(_group getVariable ["onTask", false])};
+
+            sleep 0.5;
+        };
+    };
+
+    if (_group getVariable ["onTask", true]) then {
+        if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Mine Sweep complete", groupId _group]};
+        if (pl_enable_map_radio) then {[_group, "...Mine Sweep Complete", 20] call pl_map_radio_callout};
+        [_group] call pl_reset;
+        _markerName setMarkerBrush "Cross";
+        _markerName setMarkerColor "colorGreen";
+        _markerName setMarkerText "CLR";
+        pl_engineering_markers pushBack _markerName;
+    } else {
+        deleteMarker _markerName;
+    };
+    pl_at_attack_array = pl_at_attack_array - [[_engineer, _cords, _escort]];
+    _engineer forceSpeed -1;
+    _escort forceSpeed -1;
 };
 
 

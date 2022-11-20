@@ -3,7 +3,7 @@ pl_get_has_static = {
     params ["_group"];
 
     private _supportUnits = units _group;
-    if ((count _supportUnits) < 2) exitWith {[false, []]};
+    if ((count _supportUnits) < 2) exitWith {false};
     private _gunner = 
     {
         if (unitBackpack _x isKindOf "Weapon_Bag_Base") exitWith {_x};

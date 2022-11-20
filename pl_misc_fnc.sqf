@@ -66,6 +66,7 @@ pl_reset = {
     _group setVariable ["pl_disembark_finished", nil];
     _group setVariable ["onTask", false];
     _group setVariable ["pl_on_hold", false];
+    // [_group] call pl_reset_sop;
 
     // if group is not leading a formation reset Task
     if !(!(_isNotWp) and (_group getVariable ["pl_formation_leader", false])) then {
