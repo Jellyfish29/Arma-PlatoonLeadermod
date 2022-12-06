@@ -582,118 +582,157 @@
 // };
 
 
+pl_attach_vic = {
+    params [["_group", (hcSelected player) select 0], ["_infGrp", grpNull]];
+    private ["_leader", "_vic"];
 
-pl_deployed_bridges = [];
+    // _group = (hcSelected player) select 0;
 
-pl_create_bridge = {
-    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_cordsStart", "_cordsEnd", "_engineer", "_bridges", "_bridgeMarkers", "_mPos"];
+    if (_group getVariable ["pl_inf_attached", false]) exitWith {_group setVariable ["pl_inf_attached", false]; _group setVariable ["pl_attached_vicGrp", nil];};
 
 
-    if (visibleMap or !(isNull findDisplay 2000)) then {
+    if (isNull _infGrp) then {
 
-    	if (visibleMap) then {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-        } else {
-            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
-        };
+        pl_attach_form = false;
+      
+        if (visibleMap or !(isNull findDisplay 2000)) then {
+            pl_follow_array_other_setup = pl_follow_array_other_setup + [_group];
 
-        _markerNameStart = createMarker [format ["pl_bridge_start%1", random 2], _mPos];
-        _markerNameStart setMarkerType "mil_dot";
+            _message = "Select Vehicle <br /><br />
+            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>LINE Formation</t> <br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>FILE Formation</t> <br />
+            <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>DIAMOND Formation</t> <br />";
+            hint parseText _message;
 
-        private _rangelimiter = 150;
-
-        private _markerBorderName = str (random 2);
-        private _borderMarkerPos = getPos (leader _group);
-        if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
-        createMarker [_markerBorderName, _borderMarkerPos];
-        _markerBorderName setMarkerShape "ELLIPSE";
-        _markerBorderName setMarkerBrush "Border";
-        _markerBorderName setMarkerColor "colorOrange";
-        _markerBorderName setMarkerAlpha 0.8;
-        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
-
-        hint "Select on MAP";
-        onMapSingleClick {
-            pl_repair_cords = _pos;
-            pl_mapClicked = true;
-            if (_shift) then {pl_cancel_strike = true};
-            hint "";
-            onMapSingleClick "";
-        };
-
-        while {!pl_mapClicked} do {
-            if (visibleMap) then {
-                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            } else {
-                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            onMapSingleClick {
+                pl_mapClicked = true;
+                _cords = _pos;
+                pl_vics = nearestObjects [_cords, ["Man"], 10, true];
+                hintSilent "";
+                onMapSingleClick "";
             };
-            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
-            	_markerNameStart setMarkerPos _mPos;
-                if (surfaceIsWater (markerPos _markerNameStart)) then {
-                	_markerNameStart setMarkerColor "colorBlue";
-                } else {
-                	_markerNameStart setMarkerColor "colorBlack";
-            	};
-            };
+            while {!pl_mapClicked} do {sleep 0.1};
+            pl_mapClicked = false;
+            pl_follow_array_other_setup = pl_follow_array_other_setup - [_group];
+        }
+        else
+        {
+            pl_vics = [cursorTarget];
         };
 
-        pl_mapClicked = false;
-        _cordsStart = getMarkerPos _markerNameStart;
-        // deleteMarker _markerName;
+        _infGrp = group (pl_vics#0);
 
-        _markerNameEnd = createMarker [format ["pl_bridge_end%1", random 2], [0,0,0]];
-        _markerNameEnd setMarkerType "mil_dot";
-
-        hint "Select on MAP";
-        onMapSingleClick {
-            pl_repair_cords = _pos;
-            pl_mapClicked = true;
-            if (_shift) then {pl_cancel_strike = true};
-            hint "";
-            onMapSingleClick "";
-        };
-
-        while {!pl_mapClicked} do {
-            if (visibleMap) then {
-                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            } else {
-                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
-            };
-            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
-                _markerNameEnd setMarkerPos _mPos;
-            	if (surfaceIsWater (markerPos _markerNameEnd)) then {
-                	_markerNameEnd setMarkerColor "colorBlue";
-                } else {
-                	_markerNameEnd setMarkerColor "colorBlack";
-            	};
-            };
-        };
-
-        pl_mapClicked = false;
-        _cordsEnd = getMarkerPos _markerNameEnd;
-
-        deleteMarker _markerBorderName;
+    } else {
+        pl_attach_form = "Line";
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+    if (_infGroup getVariable ["pl_vic_attached", false]) exitWith {Hint "Group already has a Vehicle attached"};
 
-    _placePos = _cordsStart getPos [(_cordsStart distance2D _cordsEnd)/ 2, _cordsStart getDir _cordsEnd];
-    _m = createMarker [str (random 3), _placePos];
-	_m setMarkerType "mil_marker";
+    _vic = vehicle (leader _group);
 
-	_bridge = createVehicle ["gm_biber_deployablebridge", _placePos, [], 0, "CAN_COLLIDE"];
-	_bridge enableSimulation false;
-	_bridge allowDamage false;
-	_bridge setDir (_cordsStart getDir _cordsEnd);
-	while {underwater _bridge} do {
-		_bPos = getPosATLVisual _bridge;
-		_bridge setPosATL [_bPos#0, _bPos#1, (_bPos#2) + 0.5];
-	};
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
+    [_group] call pl_reset;
+    [_infGroup] call pl_reset;
 
-	_bPos = getPosATLVisual _bridge;
-	_bridge setPosATL [_bPos#0, _bPos#1, (_bPos#2) + 1];
+    sleep 0.5;
 
-	pl_deployed_bridges pushBack [_placePos, [(getPosATLVisual _bridge) getPos [17,  (getdir _bridge) - 180], (getPosATLVisual _bridge) getPos [17,  getdir _bridge]]];
+    [_group] call pl_reset;
+    [_infGroup] call pl_reset;
 
+    sleep 0.5;
+
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["onTask", true];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\map\markers\nato\n_mech_inf.paa"];
+    _infGroup setVariable ["pl_inf_attached", true];
+    _infGroup setVariable ["pl_attached_vicGrp", _group];
+    // _vicGroup setVariable ["setSpecial", true];
+    // _vicGroup setVariable ["specialIcon", "\A3\ui_f\data\map\markers\nato\n_mech_inf.paa"];
+    // _group setVariable ["specialIcon", "\A3\3den\data\Attributes\Formation\line_ca.paa"];
+
+    pl_follow_array_other = pl_follow_array_other + [[_vicGroup, _group]];
+    _vic setVariable ["pl_speed_limit", "CON"];
+
+    _attachForm = "STAG COLUMN";
+    switch (_attachForm) do { 
+        case "File" : {_group setFormation "FILE"}; 
+        case "Diamond" : {_group setFormation "DIAMOND"}; 
+        default {_group setFormation "LINE"}; 
+    };
+
+    _vicGroup setFormation _attachForm;
+
+    {
+        _x disableAI "AUTOCOMBAT";
+    } forEach (units _group);
+
+    _leader = leader _group;
+    _leader limitSpeed 14;
+    _leaderPos = [5*(sin ((getDir _vic) - 180)), 5*(cos ((getDir _vic) - 180)), 0] vectorAdd getPos _vic;
+    _leader doMove _leaderPos;
+    {
+        _x doFollow _leader;
+    } forEach ((units _group) - [_leader]);
+    _group setFormDir (getDir _vic);
+
+    _attachDir = (leader _group) getDir _vic;
+
+    // _turnPos = [_vic, _attachDir] call pl_get_turn_vehicle;
+    // _vic doMove _turnPos;
+    player hcRemoveGroup _group;
+    _group setVariable ["pl_choose_auto_formation", false];
+
+    // waitUntil {sleep 0.5; (!(_group getVariable ["onTask", false]) or !alive _vic) and unitReady (leader _group)};
+
+
+    while {(alive _vic) and (_group getVariable ["onTask", false]) and (_vicGroup getVariable ["pl_vic_attached", false])} do {
+
+        _group setFormDir (getDir _vic);
+        _group setFormation (formation _vicGroup);
+        if (speed _vic > 0) then {
+            _leader = leader _group;
+            _leader limitSpeed 14;
+            _leaderPos = [5*(sin ((getDir _vic) - 180)), 5*(cos ((getDir _vic) - 180)), 0] vectorAdd getPos _vic;
+            _leader doMove _leaderPos;
+            {
+                _x doFollow _leader;
+                _x disableAI "AUTOCOMBAT";
+            } forEach ((units _group) - [_leader]);
+            _group setBehaviour "AWARE";
+        } else {
+            {
+                _x enableAI "AUTOCOMBAT";
+            } forEach (units _group);
+        };
+
+        if ((_leader distance2D _vic) > 22) then {_vic forceSpeed 0} else {_vic forceSpeed -1; _vic limitSpeed 12};
+        _vic setVariable ["pl_speed_limit", "CON"];
+
+        // sleep 2;
+        _time = time + 2;
+        waitUntil {sleep 0.1; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
+    };
+
+    _vicGroup setVariable ["pl_vic_attached", nil];
+    _vicGroup setVariable ["pl_attached_infGrp", nil];
+    _group setVariable ["pl_choose_auto_formation", true];
+    player hcSetGroup [_group];
+
+    pl_follow_array_other = pl_follow_array_other - [[_vicGroup, _group]];
+    [_group] call pl_reset;
+    _vic forceSpeed -1;
+    _vic limitSpeed 50;
+    _vic setVariable ["pl_speed_limit", "50"];
 };
+
+// ["BWA3_32Rnd_155mm_Mo_shells","BWA3_12Rnd_155mm_Mo_Flare_white","BWA3_6Rnd_155mm_Mo_Smoke_white"]
+
+// ["BWA3_32Rnd_155mm_Mo_shells","BWA3_12Rnd_155mm_Mo_Flare_white","BWA3_6Rnd_155mm_Mo_Smoke_white"]
+
+// this addMagazine ["BWA3_32Rnd_155mm_Mo_shells", 32]; 
+// this addMagazine ["BWA3_32Rnd_155mm_Mo_shells", 32]; 
+// this addMagazine ["BWA3_32Rnd_155mm_Mo_shells", 32]; 
+// this addMagazine ["BWA3_6Rnd_155mm_Mo_Smoke_white", 6];
+// this addMagazine ["BWA3_6Rnd_155mm_Mo_Smoke_white", 6];
+// this addMagazine ["BWA3_6Rnd_155mm_Mo_Smoke_white", 6];

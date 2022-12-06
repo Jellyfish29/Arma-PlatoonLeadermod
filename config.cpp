@@ -135,7 +135,7 @@ class RscHCGroupRootMenu
         };
         class Watch
         {
-            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Vehicle Advance</t>";
+            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\takeoff_ca.paa'/><t> Vehicle Forward</t>";
             shortcuts[]={0};
             command=-5;
             class params
@@ -150,12 +150,12 @@ class RscHCGroupRootMenu
         };
         class Empty3
         {
-            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa'/><t> Disengage</t>";
+            title="<img color='#e5e500' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\land_ca.paa'/><t> Vehicle Reverse</t>";
             shortcuts[]={};
             command=-5;
             class Params
             {
-                expression="{[_x] spawn pl_disengage} forEach hcSelected player";
+                expression="[] spawn pl_vic_advance_to_pos_reverse";
             };
             show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -173,7 +173,7 @@ class RscHCGroupRootMenu
                 expression="['team'] spawn pl_bounding_squad";
             };
             show="HCIsLeader * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
-            enable="1";
+            enable="HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=2;
@@ -588,6 +588,35 @@ class RscHCGroupRootMenu
                 speechId=0;
             };
 
+            class PlSeperator1035632562572468
+            {
+                title="";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+
+            class PlCrossBridge
+            {
+                shortcuts[]={9};
+                class Params
+                {
+                    expression = "[] spawn pl_cross_bridge";
+                };
+                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Cross Bridge</t";
+                shortcutsAction = "CommandingMenu9";
+                command = -5;
+                show = "";
+                enable = "HCNotEmpty";
+            };
+
             // class PlFormationMove
             // {
             //     title="<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\line_ca.paa'/><t> Formation Move</t";
@@ -824,20 +853,20 @@ class RscHCGroupRootMenu
             //     enable="HCNotEmpty";
             //     speechId=0;
             // };
-            // class PlToggleStatic
-            // {
-            //     title="<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Static Delpoy</t";
-            //     shortcuts[]={11};
-            //     submenu="";
-            //     command=-5;
-            //     class params
-            //     {
-            //         expression="{[_x] call pl_toggle_static} forEach (hcSelected player)";
-            //     };
-            //     show="HCIsLeader";
-            //     enable="HCNotEmpty";
-            //     speechId=0;
-            // };
+            class PlToggleStatic
+            {
+                title="<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa'/><t> Toggle Static Delpoy</t";
+                shortcuts[]={11};
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="{[_x] call pl_toggle_static} forEach (hcSelected player)";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
         };
         title = "Combat Tasking";
         access = 0;
@@ -1097,19 +1126,6 @@ class RscHCGroupRootMenu
                 show="1";
                 enable="1";
                 speechId=0;
-            };
-            class PlCrossBridge
-            {
-                shortcuts[]={9};
-                class Params
-                {
-                    expression = "[] spawn pl_cross_bridge";
-                };
-                title = "<img color='#ffffff' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\car_ca.paa'/><t> Cross Bridge</t";
-                shortcutsAction = "CommandingMenu9";
-                command = -5;
-                show = "";
-                enable = "HCNotEmpty";
             };
             // class PlAutoSpeed
             // {
@@ -1934,7 +1950,7 @@ class RscHCWPRootMenu
                 shortcuts[] = {4};
                 class Params
                 {
-                    expression = "[] call pl_cancel_planed_task";
+                    expression = "[] spawn pl_cancel_planed_task";
                 };
                 title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa'/><t> Cancel Planed Task</t>";
                 shortcutsAction = "CommandingMenu4";
@@ -2835,6 +2851,13 @@ class CfgMarkers
         texture="\Plmod\gfx\marta\n_s_artgun_pl.paa";
     };
 
+    class b_f_bridgetank_pl: b_f_tank_pl
+    {
+        name="Bridge Tank BluFor";
+        icon="\Plmod\gfx\marta\b_f_bridgetank_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_bridgetank_pl.paa";
+    };
+
     class unknown_f_pl: n_f_tank_pl
     {
         name="Unknown";
@@ -2973,6 +2996,12 @@ class cfgGroupIcons
         name="Howitzer Blufor";
         icon="\Plmod\gfx\marta\b_f_artgun_pl.paa";
         texture="\Plmod\gfx\marta\b_f_artgun_pl.paa";
+    };
+    class b_f_bridgetank_pl: b_unknown_pl
+    {
+        name="Bridge Tank BluFor";
+        icon="\Plmod\gfx\marta\b_f_bridgetank_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_bridgetank_pl.paa";
     };
 
     class b_f_t_inf_pl: b_unknown_pl
@@ -4034,4 +4063,85 @@ class CfgVehicles
         };
     };
 };
+
+// class Pl_radial_menu {
+
+//     idd = 3050;
+
+//     class controls {
+
+//         class pl_radial_base: RscFrame
+//         {
+//             idc = 1800;
+//             x = 0.395 * safezoneW + safezoneX;
+//             y = 0.36 * safezoneH + safezoneY;
+//             w = 0.196875 * safezoneW;
+//             h = 0.308 * safezoneH;
+//         };
+//         class pl_radial_button_1: RscButtonMenu
+//         {
+//             idc = 2400;
+//             x = 0.47375 * safezoneW + safezoneX;
+//             y = 0.374 * safezoneH + safezoneY;
+//             w = 0.039375 * safezoneW;
+//             h = 0.056 * safezoneH;
+//         };
+//         class pl_radial_button_2: RscButtonMenu
+//         {
+//             idc = 2401;
+//             x = 0.42125 * safezoneW + safezoneX;
+//             y = 0.416 * safezoneH + safezoneY;
+//             w = 0.039375 * safezoneW;
+//             h = 0.056 * safezoneH;
+//         };
+//         class pl_radial_button_3: RscButtonMenu
+//         {
+//             idc = 2402;
+//             x = 0.52625 * safezoneW + safezoneX;
+//             y = 0.416 * safezoneH + safezoneY;
+//             w = 0.039375 * safezoneW;
+//             h = 0.056 * safezoneH;
+//         };
+//         class pl_radial_button_4: RscButtonMenu
+//         {
+//             idc = 2403;
+//             x = 0.408125 * safezoneW + safezoneX;
+//             y = 0.486 * safezoneH + safezoneY;
+//             w = 0.039375 * safezoneW;
+//             h = 0.056 * safezoneH;
+//         };
+//         class pl_radial_button_5: RscButtonMenu
+//         {
+//             idc = 2404;
+//             x = 0.539375 * safezoneW + safezoneX;
+//             y = 0.486 * safezoneH + safezoneY;
+//             w = 0.039375 * safezoneW;
+//             h = 0.056 * safezoneH;
+//         };
+//         class pl_radial_button_6: RscButtonMenu
+//         {
+//             idc = 2405;
+//             x = 0.42125 * safezoneW + safezoneX;
+//             y = 0.556 * safezoneH + safezoneY;
+//             w = 0.039375 * safezoneW;
+//             h = 0.056 * safezoneH;
+//         };
+//         class pl_radial_button_7: RscButtonMenu
+//         {
+//             idc = 2406;
+//             x = 0.52625 * safezoneW + safezoneX;
+//             y = 0.556 * safezoneH + safezoneY;
+//             w = 0.039375 * safezoneW;
+//             h = 0.056 * safezoneH;
+//         };
+//         class pl_radial_button_8: RscButtonMenu
+//         {
+//             idc = 2407;
+//             x = 0.47375 * safezoneW + safezoneX;
+//             y = 0.598 * safezoneH + safezoneY;
+//             w = 0.039375 * safezoneW;
+//             h = 0.056 * safezoneH;
+//         };
+//     };
+// };
 

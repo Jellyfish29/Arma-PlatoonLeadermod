@@ -1354,7 +1354,7 @@ pl_draw_disengage = {
             {
                     _pos1 = getPos (vehicle (leader (_x#0)));
                     _pos2 = _x#1;
-                    _display drawLine [
+                    _display drawArrow [
                         _pos1,
                         _pos2,
                         pl_side_color_rgb

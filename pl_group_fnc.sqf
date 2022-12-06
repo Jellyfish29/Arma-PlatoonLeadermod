@@ -503,16 +503,20 @@ pl_change_to_vic_symbols = {
             default {_symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status]};
         };
 
-        // if (isVehicleRadarOn _vic) then {
-        //     _symbolType = format ["%1_%2_tankaa_pl", pl_side_prefix, _status];
-        // };
-        // if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1 and !_force) then {
-        //     _symbolType = format ["%1_%2_artgun_pl", pl_side_prefix, _status];
-        // };
+
+        if (isVehicleRadarOn _vic) then {
+            _symbolType = format ["%1_%2_tankaa_pl", pl_side_prefix, _status];
+        };
+        if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) then {
+            _symbolType = format ["%1_%2_artgun_pl", pl_side_prefix, _status];
+        };
 
         // if (_unitText == "tank" and !(["apctr", _symbolType] call BIS_fnc_inString) and !(["ifvtr", _symbolType] call BIS_fnc_inString)) then {
         //     if ([_vic] call pl_is_apc) then {_symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status]};
         // };
+        if ((typeOf _vic) isEqualTo "gm_ge_army_bibera0") then {
+            _symbolType = format ["%1_%2_bridgetank_pl", pl_side_prefix, _status];
+        };
 
         _group setVariable ["pl_custom_icon", _symbolType];
         clearGroupIcons _group;

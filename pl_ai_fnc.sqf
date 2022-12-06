@@ -715,6 +715,7 @@ pl_vehicle_setup = {
         if (_repairCap > 0 or _vic getVariable ["pl_set_repair_vic", false]) then {
             _vic setVariable ["pl_is_repair_vehicle", true];
             _vic setVariable ["pl_repair_supplies", pl_max_repair_supplies_per_vic];
+            _vic setVariable ["pl_bridge_available", true];
             _vic setRepairCargo 0;
             [group (driver _vic)] spawn {
                 params ["_grp"];
@@ -727,6 +728,8 @@ pl_vehicle_setup = {
                 _vic setVariable ["pl_supplies", 40];
             };
         };
+
+        if ((typeof _vic) isEqualTo "gm_ge_army_bibera0") then {_vic setVariable ["pl_bridge_available", true];};
 
         // Missile alert
         _vic addEventHandler ["IncomingMissile", {

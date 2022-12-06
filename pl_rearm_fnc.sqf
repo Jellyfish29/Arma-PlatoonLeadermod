@@ -350,6 +350,9 @@ pl_supply_point = {
                                         vehicle (leader _targetGrp) setVariable ["pl_supplies", 40];
                                     };
                                 };
+                                if ((vehicle (leader _targetGrp)) getVariable ["pl_is_repair_vehicle", false] or (typeOf (vehicle (leader _targetGrp))) isEqualTo "gm_ge_army_bibera0") then {
+                                    (vehicle (leader _targetGrp)) setVariable ["pl_bridge_available", true];
+                                };
                             }; 
 
                             // reinforcements if enabled -> add dead units back to group

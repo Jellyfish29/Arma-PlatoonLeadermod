@@ -549,7 +549,7 @@ pl_assault_position = {
                 private ["_movePos", "_target"];
 
                 while {sleep 0.5; (count (missionNamespace getVariable format ["targets_%1", _group])) > 0} do {
-                    if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo []) and (_group getVariable ["pl_sop_atk_ATEngagement", false])) then {
+                    if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
                         _target = {
                             _attacker = _x getVariable ["pl_at_enaged_by", objNull];
                             if (!(_x isKindOf "Man") and alive _x and (isNull _attacker or _attacker == _unit)) exitWith {_x};
@@ -579,7 +579,7 @@ pl_assault_position = {
                                     // _vis2 = [_target, "VIEW", _target] checkVisibility [_checkPos, AGLToASL (unitAimPosition _target)];
                                     if (_vis isEqualTo []) then {
                                             _pointDir = _target getDir _checkPos;
-                                            if (_pointDir >= (_targetDir - 75) and _pointDir <= (_targetDir + 75)) then {
+                                            if (_pointDir >= (_targetDir - 50) and _pointDir <= (_targetDir + 50)) then {
                                                 // _m setMarkerColor "colorORANGE";
                                             } else {
                                                 if (_target distance2D _checkPos >= 30) then {
@@ -609,24 +609,26 @@ pl_assault_position = {
                                 _unit setBehaviourStrong "AWARE";
                                 _unit setUnitTrait ["camouflageCoef", 0, true];
                                 _unit disableAi "AIMINGERROR";
+                                _unit setUnitCombatMode "BLUE";
                                 _unit setVariable ["pl_engaging", true];
                                 _unit setVariable ['pl_is_at', true];
                                 _unit doWatch _target;
 
-                                _time = time + (_unit distance _movePos) + 20;
+                                _time = time + ((_unit distance _movePos) / 1.6 + 10);
                                 sleep 0.5;
                                 _unit reveal [_target, 3];
-                                waitUntil {sleep 0.5; (time >= _time or unitReady _unit or !alive _unit or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true]) or !alive _target or (count (crew _target) == 0))};
+                                waitUntil {sleep 0.5; (time >= _time or (_unit distance2D _movePos) < 6 or !alive _unit or (_unit getVariable ["pl_wia", false]) or !((group _unit) getVariable ["onTask", true]) or !alive _target or (count (crew _target) == 0))};
 
+                                [_unit, _movePos] call pl_unit_move_exact_pos; 
                                 doStop _unit;
-                                // _unit selectWeapon (secondaryWeapon _unit);
-                                sleep 0.5;
                                 _unit doTarget _target;
                                 waitUntil {sleep 0.5; !(_group getVariable ["pl_hold_fire", false]) or !alive _unit or _unit getVariable["pl_wia", false] or !alive _target};
+                                sleep 1;
+                                _unit setUnitCombatMode "RED";
                                 _unit doFire _target;
-                                _fired = _unit fireAtTarget [_target, secondaryWeapon _unit];
-                                _time = time + 5;
-                                waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", false]) or !alive _target or _fired};
+                                _unit forceWeaponFire [secondaryWeapon _unit, secondaryWeapon _unit];
+                                _time = time + 10;
+                                waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", false]) or !alive _target};
                                 // pl_at_attack_array = pl_at_attack_array - [[_unit, _movePos]];
                                 if (alive _target) then {_unit setVariable ['pl_is_at', false]; pl_at_attack_array = pl_at_attack_array - [[_unit, _target, objNull]]; continue};
                                 if !(alive _target or !alive _unit or _unit getVariable ["pl_wia", false]) then {_target setVariable ["pl_at_enaged_by", nil]};
@@ -637,6 +639,7 @@ pl_assault_position = {
                                 _unit setVariable ["pl_engaging", false];
                                 _unit enableAI "AUTOTARGET";
                                 _unit setBehaviour "AWARE";
+                                _unit setUnitCombatMode "YELLOW";
                                 _group setVariable ["pl_grp_active_at_soldier", nil];
                             } else {
                                 _target setVariable ["pl_at_enaged_by", nil];
@@ -732,7 +735,7 @@ pl_assault_position = {
             // {
             //     [_x, getPos (leader _group), 20] spawn pl_find_cover_allways;
             // } forEach (units _group);
-            [_group, [], _cords, _startPos getDir _cords, false, false, _area] spawn pl_defend_position;
+            [_group, [], _cords, _startPos getDir _cords, false, false, _area / 2] spawn pl_defend_position;
 
         };
     };

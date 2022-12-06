@@ -81,10 +81,10 @@ pl_march = {
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
 
-        if (vehicle (leader _group) != (leader _group)) then {
-            vehicle (leader _group) doMove _cords;
-            // vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
-        };
+        // if (vehicle (leader _group) != (leader _group)) then {
+        //     vehicle (leader _group) doMove _cords;
+        //     // vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
+        // };
 
         sleep 0.2;
 
@@ -732,14 +732,16 @@ pl_cross_bridge = {
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
-    _roads = _cords nearRoads 100;
+    _roads = _cords nearRoads 30;
     _bridges = [];
     _bridgeMarkers = [];
 
     {
         _info = getRoadInfo _x;
         if (_info#8) then {
+            if ((getDammage _x) < 1) then {
                 _bridges pushBackUnique _x;
+            };
         };
     } forEach _roads;
 
@@ -747,7 +749,7 @@ pl_cross_bridge = {
     private _deployed = false;
 
     {
-        if ((_x#0) distance2D _cords < 100) then {
+        if ((_x#0) distance2D _cords < 30) then {
             _allEndings = _allEndings + (_x#1);
             _deployed = true;
         };
@@ -783,11 +785,13 @@ pl_cross_bridge = {
     _furthest = ([_allEndings, [], {_x distance2D (leader _group)}, "DESCEND"] call BIS_fnc_sortBy)#0;
 
     if (vehicle (leader _group) == (leader _group)) then {
-        // _group addWaypoint [_closest, 0];
+        _group setVariable ["pl_on_march", true];
+        _group addWaypoint [_furthest getPos [35, _closest getDir _furthest], 0];
         {
             [_x, _group, _closest, _furthest, _closest getDir _furthest, _deployed] spawn {
                 params ["_unit", "_group", "_closest", "_furthest", "_dir", "_deployed"];
 
+                doStop _unit;
                 _unit doMove _closest;
 
                 waitUntil {sleep 0.5; (_unit distance2D _closest) < 5 or !alive _unit or !(_group getVariable ["onTask", false])};
@@ -798,19 +802,21 @@ pl_cross_bridge = {
                     _unit setCombatBehaviour "CARELESS";
                     _unit disableAI "ANIM";
                     _unit setDir (_unit getdir _movePos);
-                    _unit switchMove "AmovPercMrunSrasWrflDf";
+                    _unit switchMove "AmovPercMrunSrasWrflDf_ldst";
                     waitUntil {sleep 0.5; (_unit distance2D _movePos) < 10 or !alive _unit or !(_group getVariable ["onTask", false])};
                     _unit enableAI "ALL";
                     _unit switchMove "";
                     _unit setCombatBehaviour "AWARE";
                     _unit doFollow (leader _group);
                     // if (_unit == (leader _group)) then {
-                        _unit doMove (_movePos getPos [25, _dir]);
+                        _unit doMove (_movePos getPos [20, _dir]);
                     // };
                 };
             };
         } forEach units _group;
+
     } else {
+
         _vic = vehicle (leader _group);
 
         _dir = _closest getDir _furthest;
@@ -819,24 +825,46 @@ pl_cross_bridge = {
         // _m = createMarker [str (random 4), _closest];
         // _m setMarkerType "mil_dot";
 
-        // _group addWaypoint [_movePos, 0];
-        _movePos2 = _furthest getPos [15, _dir];
+        _movePos2 = _furthest getPos [20, _dir];
+        _group addWaypoint [_movePos2, 0];
+        // doStop _vic;
+
+        {
+            _x disableAI "PATH";
+        } forEach (units _group);
+        
 
         _group setBehaviourStrong "CARELESS";
 
         if (_deployed) then {
             [_vic, _closest, 4] call pl_vic_advance_to_pos_static;
-            _vic setVehiclePosition [_closest, [], 0, "CAN_COLLIDE"];
+            if (_group getVariable ["onTask", true] and alive _vic) then {
+                _vic setVehiclePosition [_closest, [], 0, "CAN_COLLIDE"];
+            };
         } else {
-            _movePos = _closest getPos [15, _dir - 180];
-            _vic doMove _movePos;
-            sleep 1;
-            waitUntil {sleep 0.5; (_vic distance2D _movePos) < 15 or !alive _vic};
+            // _movePos = _closest getPos [15, _dir - 180];
+            // _vic doMove _movePos;
+            // sleep 1;
+            // waitUntil {sleep 0.5; (_vic distance2D _movePos) < 15 or !alive _vic or !(_group getVariable ["onTask", true])};
+            [_vic, _closest, 4] call pl_vic_advance_to_pos_static;
         };
 
-        [_vic, _movePos2, 2] call pl_vic_advance_to_pos_static;
+        if (_group getVariable ["onTask", true] and alive _vic) then {
+            
+            [_vic, _movePos2, 2] call pl_vic_advance_to_pos_static;
+            // _movePos3 = _movePos2 findEmptyPosition [5, 40, typeOf _vic];
+            // _vic doMove _movePos3;
+        };
+
+        {
+            _x enableAI "PATH";
+        } forEach (units _group);
 
         _group setBehaviourStrong "AWARE";
+
+        sleep 2;
+
+        _vic doMove (waypointPosition ((waypoints _group) select (currentWaypoint _group)));
 
         // _vic setDir _dir;
         // _vic disableBrakes true;
@@ -850,21 +878,31 @@ pl_cross_bridge = {
 };
 
 pl_vic_reverse_to_pos = {
-    params ["_vic", "_pos"];
+    params ["_vic", "_pos", ["_speed", 6]];
 
+
+    [_vic, _vic getPos [50, _pos getDir _vic]] call pl_vic_turn_in_place;
+    // _vic setDir (_pos getDir _vic);
+
+    private _startPos = getPos _vic;
+    private _distancetoTravel = (_startPos distance2d _pos) - 1;
     (group (driver _vic)) setVariable ["pl_on_march", true];
-
-    _vic setDir (_pos getDir _vic);
-
     _vic disableBrakes true;
     _vic engineOn true;
-    while {_vic distance2D _pos >= 15 and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
-        _vic setVelocityModelSpace [0,6,0];
+    _n = _speed;
+    while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+        if (_n > 0) then {_n = _n - 0.5};
+        if (count (((getPos _vic) getPos [-8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
+            _vic setVelocityModelSpace [0, - (_speed - _n),0];
+        } else {
+            break;
+        };
         sleep 0.5;
     };
     _vic disableBrakes false;
     (group (driver _vic)) setVariable ["pl_on_march", false];
 };
+
 
 pl_vic_advance_to_pos = {
     private ["_vic", "_pos"];
@@ -882,12 +920,85 @@ pl_vic_advance_to_pos = {
     };
 
     pl_draw_disengage_array pushBack [_group, _pos];
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    // if ((_vic distance2D _pos) > 75) then {_pos = (getPos _vic) getPos [70, _vic getDir _pos]};
+
+    [_vic, _pos] call pl_vic_turn_in_place;
+    // _vic setDir (_vic getDir _pos);
+
+    private _startPos = getPos _vic;
+    private _distancetoTravel = (_startPos distance2d _pos) - 1;
     (group (driver _vic)) setVariable ["pl_on_march", true];
-    _vic setDir (_vic getDir _pos);
     _vic disableBrakes true;
     _vic engineOn true;
-    while {_vic distance2D _pos >= 5 and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
-        _vic setVelocityModelSpace [0,4,0];
+    _n = 4;
+    while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+        if (_n > 0) then {_n = _n - 0.5};
+
+        if (count (((getPos _vic) getPos [8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
+            _vic setVelocityModelSpace [0, 4 - _n,0];
+        } else {
+            break;
+        };
+        sleep 0.5;
+    };
+    _vic disableBrakes false;
+    (group (driver _vic)) setVariable ["pl_on_march", false];
+    pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _pos]];
+};
+
+pl_vic_advance_to_pos_reverse = {
+    private ["_vic", "_pos"];
+
+    _group = (hcSelected player)#0;
+
+    if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task"};
+
+    _vic = vehicle (leader _group);
+
+    if (visibleMap) then {
+        _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    } else {
+        _pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+    };
+
+    // if ((_vic distance2D _pos) > 75) then {_pos = (getPos _vic) getPos [70, _vic getDir _pos]};
+
+    pl_draw_disengage_array pushBack [_group, _pos];
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+
+    [_vic, (getPos _vic) getPos [50, _pos getDir _vic]] call pl_vic_turn_in_place;
+
+    private _startPos = getPos _vic;
+    private _distancetoTravel = (_startPos distance2d _pos) - 1;
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+    _vic disableBrakes true;
+    _vic engineOn true;
+    _n = 4;
+    while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+        if (_n > 0) then {_n = _n - 0.5};
+
+        if (count (((getPos _vic) getPos [-8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
+            _vic setVelocityModelSpace [0, - (4 - _n),0];
+        } else {
+            break;
+        };
         sleep 0.5;
     };
     _vic disableBrakes false;
@@ -898,15 +1009,94 @@ pl_vic_advance_to_pos = {
 pl_vic_advance_to_pos_static = {
     params ["_vic", "_pos", ["_speed", 4]];
 
+    [_vic, _pos] call pl_vic_turn_in_place;
+    // _vic setDir (_vic getDir _pos);
+
+    private _startPos = getPos _vic;
+    private _distancetoTravel = (_startPos distance2d _pos) - 1;
     (group (driver _vic)) setVariable ["pl_on_march", true];
-    _vic setDir (_vic getDir _pos);
     _vic disableBrakes true;
     _vic engineOn true;
-    while {_vic distance2D _pos >= 5 and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
-        _vic setVelocityModelSpace [0,_speed,0];
+    _n = _speed;
+    while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+        if (_n > 0) then {_n = _n - 0.5};
+        if (count (((getPos _vic) getPos [8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
+            _vic setVelocityModelSpace [0,_speed - _n,0];
+        } else {
+            break;
+        };
         // if (time % 2 == 0) then {_vic setDir (_vic getDir _pos)};
         sleep 0.5;
     };
     _vic disableBrakes false;
     (group (driver _vic)) setVariable ["pl_on_march", false];
+};
+
+pl_vic_turn_in_place = {
+    params ["_vic", "_targetPos"];
+
+    _vic engineOn true;
+    _vic disableBrakes true;
+    private _degreesToRotate = _vic getRelDir _targetPos;
+    private _posOrneg = 1; // This drives whether unit rotates clockwise or counter-clockwise
+    private _increment = 1;
+
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+    while {(_vic getRelDir _targetPos) > 2 and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+        _degreesToRotate = _vic getRelDir _targetPos;
+        _posOrneg = 1;
+        if (_degreesToRotate > 180) then
+        {
+            _posOrneg = -1;
+        };
+        _vic setDir (getDir _vic + (_increment * _posOrneg));
+        if (_vic isKindOf "Car" or _vic isKindOf "Truck") then {
+            _vic setVelocityModelSpace [0,-2,0];
+        };
+        sleep 0.03;
+    };
+    _vic disableBrakes false;
+    if ((group (driver _vic)) getVariable ["pl_on_march", false]) then {
+        _vic setDir (_vic getDir _targetPos);
+        (group (driver _vic)) setVariable ["pl_on_march", nil];
+    };
+
+};
+
+pl_unit_turn_in_place = {
+    params ["_unit", "_targetPos"];
+
+    private _degreesToRotate = _unit getRelDir _targetPos;
+    private _posOrneg = 1; // This drives whether unit rotates clockwise or counter-clockwise
+    private _increment = 2;
+
+    while {(_unit getRelDir _targetPos) > 2} do {
+        _degreesToRotate = _unit getRelDir _targetPos;
+        _posOrneg = 1;
+        if (_degreesToRotate > 180) then
+        {
+            _posOrneg = -1;
+        };
+        _unit setDir (getDir _unit + (_increment * _posOrneg));
+        sleep 0.03;
+    };
+    _unit setDir (_unit getDir _targetPos);
+
+};
+
+pl_unit_move_exact_pos = {
+    params ["_unit", "_pos"];
+
+    _distanceToTravel = (_unit distance2D _pos) - 0.25;
+    _startPos = getPos _unit;
+
+    _unit setCombatBehaviour "CARELESS";
+    _unit disableAI "ANIM";
+    // [_unit, _pos] call pl_unit_turn_in_place;
+    _unit setDir (_unit getDir _pos);
+    _unit switchMove "AmovPercMrunSrasWrflDf";
+    waitUntil {(_unit distance2D _startPos) >= _distancetoTravel or !alive _unit or !(_group getVariable ["onTask", false])};
+    _unit enableAI "ALL";
+    _unit switchMove "";
+    _unit setCombatBehaviour "AWARE";
 };

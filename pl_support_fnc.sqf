@@ -449,7 +449,7 @@ pl_fire_on_map_arty = {
     _missionType = pl_arty_mission;
 
     _weapon = (getArray (configfile >> "CfgVehicles" >> typeOf (_guns#0) >> "Turrets" >> "MainTurret" >> "weapons"))#0;
-    // _allMagazines = getArray (configfile >> "CfgWeapons" >> _weapon >> "Magazines");
+    // _allMagazines = getArray (configfile >> "CfgWeapons" >> _weapon >> "Magazines"); "BWA3_RH155mm_AMOS" getArray (configfile >> "CfgWeapons" >> "BWA3_RH155mm_AMOS" >> "Magazines");
     _allMagazines = magazines (_guns#0) + [currentMagazine (_guns#0)];
 
     // player sideChat (str _allMagazines);
@@ -459,7 +459,7 @@ pl_fire_on_map_arty = {
     switch (pl_arty_round_type) do { 
         case 1 : {_ammoTypes = _allMagazines select {["he", _x] call BIS_fnc_inString}}; 
         case 2 : {_ammoTypes = (_allMagazines select {["smoke", _x] call BIS_fnc_inString}) + (_allMagazines select {["smk", _x] call BIS_fnc_inString})}; 
-        case 3 : {_ammoTypes = _allMagazines select {["illum", _x] call BIS_fnc_inString}};
+        case 3 : {_ammoTypes = _allMagazines select {["illum", _x] call BIS_fnc_inString} + _allMagazines select {["flare", _x] call BIS_fnc_inString}};
         case 4 : {_ammoTypes = _allMagazines select {["guid", _x] call BIS_fnc_inString}};
         case 5 : {_ammoTypes = _allMagazines select {["mine", _x] call BIS_fnc_inString}};
         case 6 : {_ammoTypes = (_allMagazines select {["cluster", _x] call BIS_fnc_inString}) + _allMagazines select {["icm", _x] call BIS_fnc_inString}};

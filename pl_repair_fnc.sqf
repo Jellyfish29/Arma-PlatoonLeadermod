@@ -357,6 +357,7 @@ pl_repair = {
                 _x disableAI "PATH";
             } forEach crew _engVic;
 
+            [_repairTime, _repairTime - time, getPos _engVic, _group, "colorOrange"] spawn pl_countdown_on_map;
             waitUntil {sleep 0.5; time >= _repairTime or !(_group getVariable ["onTask", true])};
             {
                 _x enableAI "PATH";
@@ -404,8 +405,8 @@ pl_repair = {
                         if (pl_enable_map_radio) then {[_group, "...Repairs Completeted", 20] call pl_map_radio_callout};
                     };
 
-                    _group setVariable ["onTask", false];
-                    _group setVariable ["setSpecial", false];
+                    // _group setVariable ["onTask", false];
+                    // _group setVariable ["setSpecial", false];
                     // _group setVariable ["MARTA_customIcon", nil];
                     _repairCargo = _repairCargo - 2;
                 }
@@ -582,6 +583,7 @@ pl_repair_bridge = {
     if (pl_enable_map_radio) then {[_group, "...Starting Repairs", 20] call pl_map_radio_callout};
 
     _repairTime = time + 100;
+    [_repairTime, 100, getPos (_bridges#0), _group, "colorOrange"] spawn pl_countdown_on_map;
 
     waitUntil {sleep 0.5; time >= _repairTime or !(_group getVariable ["onTask", true]) or !alive _engineer or _engineer getVariable ["pl_wia", false]};
 
@@ -600,5 +602,240 @@ pl_repair_bridge = {
     {
         deleteMarker _x;
     } forEach _bridgeMarkers;
+};
+
+pl_deployed_bridges = [];
+
+pl_create_bridge = {
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_cordsStart", "_cordsEnd", "_engineer", "_bridges", "_bridgeMarkers", "_mPos", "_markerNameStart", "_markerNameEnd", "_engVic"];
+
+    if (vehicle (leader _group) == leader _group) exitWith {hint "Requires Bridging vehicle"};
+
+    _engVic = vehicle (leader _group);
+
+    if (!(isNull _engVic) and !(_engVic getVariable ["pl_is_repair_vehicle", false]) and !((typeOf _engVic) isEqualTo "gm_ge_army_bibera0")) exitWith {hint "Requires Bridging vehicle"};
+
+    if !(_engVic getVariable ["pl_bridge_available", false]) exitWith {hint "No Folding Bridge Available"};
+
+
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+
+        if (visibleMap) then {
+            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+
+        _markerNameStart = createMarker [format ["pl_bridge_start%1", random 2], _mPos];
+        _markerNameStart setMarkerType "mil_dot";
+
+        private _rangelimiter = 75;
+
+        private _markerBorderName = str (random 2);
+        private _borderMarkerPos = getPos (leader _group);
+        if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+        createMarker [_markerBorderName, _borderMarkerPos];
+        _markerBorderName setMarkerShape "ELLIPSE";
+        _markerBorderName setMarkerBrush "Border";
+        _markerBorderName setMarkerColor "colorOrange";
+        _markerBorderName setMarkerAlpha 0.8;
+        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+        hint "Select Bridge Start on MAP";
+        onMapSingleClick {
+            pl_repair_cords = _pos;
+            pl_mapClicked = true;
+            if (_shift) then {pl_cancel_strike = true};
+            hint "";
+            onMapSingleClick "";
+        };
+
+        while {!pl_mapClicked} do {
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
+            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+                _markerNameStart setMarkerPos _mPos;
+                if (surfaceIsWater (markerPos _markerNameStart)) then {
+                    _markerNameStart setMarkerColor "colorBlue";
+                } else {
+                    _markerNameStart setMarkerColor "colorBlack";
+                };
+            };
+        };
+
+        pl_mapClicked = false;
+        _cordsStart = getMarkerPos _markerNameStart;
+        // deleteMarker _markerName;
+
+        pl_draw_arrow_ptm_array pushback _cordsStart;
+
+        _rangelimiter = 20;
+        _borderMarkerPos = _cordsStart;
+        _markerBorderName setMarkerPos _cordsStart;
+        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+        _markerNameEnd = createMarker [format ["pl_bridge_end%1", random 2], [0,0,0]];
+        _markerNameEnd setMarkerType "mil_dot";
+
+        hint "Select Bridge Ending on MAP";
+        onMapSingleClick {
+            pl_repair_cords = _pos;
+            pl_mapClicked = true;
+            if (_shift) then {pl_cancel_strike = true};
+            hint "";
+            onMapSingleClick "";
+        };
+
+        while {!pl_mapClicked} do {
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
+            if ((_mPos distance2D _borderMarkerPos) <= _rangelimiter) then {
+                _markerNameEnd setMarkerPos _mPos;
+                if (surfaceIsWater (markerPos _markerNameEnd)) then {
+                    _markerNameEnd setMarkerColor "colorBlue";
+                } else {
+                    _markerNameEnd setMarkerColor "colorBlack";
+                };
+            };
+        };
+
+        pl_mapClicked = false;
+        _cordsEnd = getMarkerPos _markerNameEnd;
+
+        deleteMarker _markerBorderName;
+        pl_draw_arrow_ptm_array = pl_draw_arrow_ptm_array - [_cordsStart];
+    };
+
+    if (pl_cancel_strike) exitWith {deleteMarker _markerNameEnd; deleteMarker _markerNameStart; pl_cancel_strike = false};
+
+    if (!(surfaceIsWater _cordsStart) or !(surfaceIsWater _cordsEnd)) exitWith {deleteMarker _markerNameEnd; deleteMarker _markerNameStart; hint "Bridge has to be placed on Water"};
+
+    deleteMarker _markerNameStart;
+    deleteMarker _markerNameEnd;
+
+    _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa";
+
+    if (count _taskPlanWp != 0) then {
+
+        // add Arrow indicator
+        pl_draw_planed_task_array_wp pushBack [_cordsStart, _taskPlanWp, _icon];
+
+        waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
+
+        // remove Arrow indicator
+        pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cordsStart, _taskPlanWp, _icon]];
+
+        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
+        _group setVariable ["pl_task_planed", false];
+        _group setVariable ["pl_execute_plan", nil];
+    };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
+
+    [_group, "confirm", 1] call pl_voice_radio_answer;
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    _group setVariable ["onTask", true];
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["specialIcon", _icon];
+
+    _placePos = _cordsStart getPos [(_cordsStart distance2D _cordsEnd)/ 2, _cordsStart getDir _cordsEnd];
+    // _m = createMarker [str (random 3), _placePos];
+    // _m setMarkerType "mil_marker";
+
+    _dir = _cordsStart getDir _cordsEnd;
+    _markerLeftPos1 = _cordsStart getPos [7, _dir + 90];
+    _markerLeftPos2 = _markerLeftPos1 getPos [5, _dir - 45];
+    _markerLeftPos4 = _cordsEnd getPos [7, _dir + 90];
+    _markerLeftPos3 = _markerLeftPos4 getpos [5, _dir - 135];
+
+    _markerLeft = createMarker [str (random 3), [0,0,0]];
+    _markerLeft setMarkerShape "POLYLINE";
+    _markerLeft setMarkerPolyline [_markerLeftPos1#0, _markerLeftPos1#1, _markerLeftPos2#0, _markerLeftPos2#1, _markerLeftPos3#0, _markerLeftPos3#1, _markerLeftPos4#0, _markerLeftPos4#1];
+    _markerLeft setMarkerColor "colorOrange";
+
+    _markerRightPos1 = _cordsStart getPos [7, _dir - 90];
+    _markerRightPos2 = _markerRightPos1 getPos [5, _dir + 45];
+    _markerRightPos4 = _cordsEnd getPos [7, _dir - 90];
+    _markerRightPos3 = _markerRightPos4 getpos [5, _dir + 135];
+
+    _markerRight = createMarker [str (random 3), [0,0,0]];
+    _markerRight setMarkerShape "POLYLINE";
+    _markerRight setMarkerPolyline [_markerRightPos1#0, _markerRightPos1#1, _markerRightPos2#0, _markerRightPos2#1, _markerRightPos3#0, _markerRightPos3#1, _markerRightPos4#0, _markerRightPos4#1];
+    _markerRight setMarkerColor "colorOrange";
+
+    [_engVic, _cordsStart getPos [5, _dir -180]] call pl_vic_advance_to_pos_static;
+
+    _time = time + 110;
+    [_time, 110, _placePos, _group, "colorOrange"] spawn pl_countdown_on_map;
+
+    // if ((typeof _engVic) isEqualTo "gm_ge_army_bibera0") then {
+    //     [_engVic] spawn {
+    //         params ["_engVic"];
+    //         _engVic animateSource ["gm_bridgeSupport_source", 1];
+    //         sleep 10;
+    //         _engVic animateSource ["gm_bridgePrepare_source", 1];
+    //         sleep 40;
+    //         _engVic animateSource ["gm_bridgeDeploy_source", 1];
+    //         sleep 50;
+    //         _engVic animateSource ["gm_bridgeDetach_source", 1];
+    //         sleep 1;
+    //         _engVic animateSource ["gm_bridgeSupport_source", 0];
+    //         _engVic animateSource ["gm_bridgePrepare_source", 0];
+    //     };
+    // };
+        
+    waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", false]) or !alive _engVic};
+
+    if (alive _engVic and (_group getVariable ["onTask", false])) then {
+
+        _bridge = createVehicle ["gm_biber_deployablebridge", _placePos, [], 0, "CAN_COLLIDE"];
+        _bridge enableSimulation false;
+        _bridge allowDamage false;
+        _bridge setDir _dir;
+        while {underwater _bridge} do {
+            _bPos = getPosATLVisual _bridge;
+            _bridge setPosATL [_bPos#0, _bPos#1, (_bPos#2) + 0.5];
+        };
+
+        _bPos = getPosATLVisual _bridge;
+        _bridge setPosATL [_bPos#0, _bPos#1, (_bPos#2) + 1];
+
+        _engVic setVariable ["pl_bridge_available", false];
+
+        pl_deployed_bridges pushBack [_placePos, [(getPosATLVisual _bridge) getPos [17,  (getdir _bridge) - 180], (getPosATLVisual _bridge) getPos [17,  getdir _bridge]]];
+        _markerRight setMarkerColor "colorGreen";
+        _markerLeft setMarkerColor "colorGreen";
+
+        [_engVic, _cordsStart getPos [50, _dir - 180], 2] call pl_vic_reverse_to_pos;
+
+        [_group] call pl_reset;
+
+    } else {
+        deleteMarker _markerRight;
+        deleteMarker _markerLeft;
+    };
+
+    // biber1 animateSource ["gm_bridgeSupport_source", 1];
+    // biber1 animateSource ["gm_bridgePrepare_source", 1];
+    // biber1 animateSource ["gm_bridgeDeploy_source", 1];
+    // biber1 animateSource ["gm_bridgeReady_source", 1];
+    // biber1 animateSource ["gm_bridgeDetach_source", 1];
+    // biber1 animateSource ["gm_bridgeSupport_source", 0];
+    // biber1 animateSource ["gm_bridgeDeploy_source", 0];
+    // biber1 animateSource ["gm_bridgePrepare_source", 0];
 };
 

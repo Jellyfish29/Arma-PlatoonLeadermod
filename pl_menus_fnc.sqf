@@ -278,6 +278,7 @@ pl_str_mine_field_spacing = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\
 pl_str_clear_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mines</t>';
 pl_str_des_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Demolish Bridge</t>';
 pl_str_rpr_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Repair Bridge</t>';
+pl_str_create_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Deploy Vehicle Launched Bridge</t>';
 pl_str_clear_markers = 'Clear Engineering Markers';
 
 pl_show_egineer_menu = {
@@ -293,10 +294,11 @@ pl_show_egineer_menu = {
         ['', [], '', -1, [['expression', '']], '%2', '1'],
         [parseText '%7', [7], '', -5, [['expression', '[] spawn pl_destroy_bridge']], '%1', 'HCNotEmpty'],
         [parseText '%8', [8], '', -5, [['expression', '[] spawn pl_repair_bridge']], '%1', 'HCNotEmpty'],
+        [parseText '%10', [9], '', -5, [['expression', '[] spawn pl_create_bridge']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%9', [9], '', -5, [['expression', '{deleteMarker _x} forEach pl_engineering_markers; pl_engineering_markers = []']], '%1', 'HCNotEmpty']
+        [parseText '%9', [10], '', -5, [['expression', '{deleteMarker _x} forEach pl_engineering_markers; pl_engineering_markers = []']], '%1', 'HCNotEmpty']
 
-    ];", pl_virtual_mines_enabled, pl_str_charge, pl_str_detonate, pl_str_lay_mine_field, pl_str_mine_field_spacing, pl_str_clear_mine, pl_str_des_bridge, pl_str_rpr_bridge, pl_str_clear_markers];
+    ];", pl_virtual_mines_enabled, pl_str_charge, pl_str_detonate, pl_str_lay_mine_field, pl_str_mine_field_spacing, pl_str_clear_mine, pl_str_des_bridge, pl_str_rpr_bridge, pl_str_clear_markers, pl_str_create_bridge];
 };
 
 [] call pl_show_egineer_menu;
@@ -497,7 +499,7 @@ pl_get_arty_type_to_name = {
         private _r = {
             if ([_x#0, _typeName] call BIS_fnc_inString) exitWith {_x#1};
             ""
-        } forEach [["he", "HE"], ["smoke", "SMOKE"], ["smk", "SMOKE"], ["il", "ILLUM"], ["illum", "ILLUM"], ["guid", "GUIDED"], ["gui", "GUIDED"], ["cluster", "CLUSTER"], ["icm", "CLUSTER"], ["mine", "MINE"]];
+        } forEach [["he", "HE"], ["smoke", "SMOKE"], ["smk", "SMOKE"], ["il", "ILLUM"], ["flare", "ILLUM"], ["illum", "ILLUM"], ["guid", "GUIDED"], ["gui", "GUIDED"], ["cluster", "CLUSTER"], ["icm", "CLUSTER"], ["mine", "MINE"]];
     _r
 };
 
@@ -577,7 +579,8 @@ pl_task_plan_menu_eng_sub = [
     ['Task Plan Combat Engineering', true],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [2], '', -5, [['expression', '["mine"] call pl_task_planer']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [3], '', -5, [['expression', '["mineclear"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [4], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [4], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Deploy Vehicle Launched Bridge</t>', [5], '', -5, [['expression', '["createbridge"] call pl_task_planer']], '1', '1']
 ];
 
 pl_task_plan_menu_css_sub = [

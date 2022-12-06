@@ -346,7 +346,7 @@ pl_is_apc = {
     _isAPCtr = {
         if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
         false
-    } forEach ["m113", "rhino", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer", "Puma"];
+    } forEach ["m113", "rhino", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer"];
     _isAPCtr
 
 };
@@ -388,9 +388,14 @@ pl_has_cannon = {
 
 pl_is_ifv = {
     params ["_vic"];
+    private _isIFVtr = false;
     if (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "IFV") exitWith {true};
     if (([_vic] call pl_has_cannon or ([(_vic weaponsTurret [0])#0] call pl_get_caliber) >= 20) and !(["mbt", typeOf _vic] call BIS_fnc_inString)) exitwith {true};
-    false
+    _isIFVtr = {
+        if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
+        false
+    } forEach ["Puma", "m2a2", "bmp2", "bmp1"];
+    _isIFVtr
 };
 
 pl_find_centroid_of_group = {
@@ -428,6 +433,23 @@ pl_find_centroid_of_groups = {
     } forEach _groups;
 
     [_sumX / _len, _sumY / _len, (getPosASL (leader (_groups#0)))#2] 
+};
+
+pl_countdown_on_map = {
+    params ["_time", "_addedTime", "_placePos", "_group", ["_color", pl_side_color]];
+    private _m = createMarker [str (random 3), _placePos];
+    _m setMarkerType "mil_dot";
+    _m setMarkerSize [0.01, 0.01];
+    _m setMarkerColor _color;
+    private _interval = _addedTime / 100;
+    private _n = 0;
+    while {_time > time and (_group getVariable ["onTask", false])} do {
+        _n = _n + 1;
+        _m setMarkerText (format ["%1%2", _n,"%"]);
+        sleep _interval;
+    };
+
+    deleteMarker _m;
 };
 
 // _m = createMarker [str (random 1), [g1] call pl_find_centroid_of_group];

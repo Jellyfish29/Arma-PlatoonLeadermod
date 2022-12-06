@@ -12,6 +12,7 @@ pl_get_has_static = {
     } forEach _supportUnits;
 
     if (isNull _gunner) exitWith {false}; // changed by Jellyfish
+    if ((backpack _gunner) in ["B_UAV_01_backpack_F", "O_UAV_01_backpack_F", "I_UAV_01_backpack_F", "I_E_UAV_01_backpack_F"]) exitWith {false};
 
     _group setVariable ["pl_static_bag_gun", backpack _gunner];
 

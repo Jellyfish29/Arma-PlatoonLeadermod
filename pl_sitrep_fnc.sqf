@@ -167,11 +167,15 @@ pl_sitrep_solo = {
             _ammoCargo = _vic getVariable ["pl_supplies", 0];
             _repairCargo = _vic getVariable ["pl_repair_supplies", 0];
             _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];
+            private _bridge = "NO";
+            if (_vic getVariable ["pl_bridge_available", false]) then {_bridge = "YES"};
 
             _message = _message + format ["
             <br /><t color='#cccccc' size='0.8' align='left'>Ammo/Medical Supplies: </t><t color='#cccccc' size='1' align='right'>%1</t>
             <br /><t color='#cccccc' size='0.8' align='left'>Repair Supplies: </t><t color='#cccccc' size='1' align='right'>%4</t>
-            <br /><t color='#cccccc' size='0.8' align='left'>Avaible Reinforcements: </t><t color='#cccccc' size='1' align='right'>%3</t>", _ammoCargo, "%", _reinforcements, _repairCargo];
+            <br /><t color='#cccccc' size='0.8' align='left'>Available Reinforcements: </t><t color='#cccccc' size='1' align='right'>%3</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>Folding Bridge Available: </t><t color='#cccccc' size='1' align='right'>%5</t>"
+            , _ammoCargo, "%", _reinforcements, _repairCargo, _bridge];
 
         };
     };
