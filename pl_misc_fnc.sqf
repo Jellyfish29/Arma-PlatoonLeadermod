@@ -19,6 +19,7 @@ pl_reset = {
         //     [_unit] spawn pl_hard_reset;
         // };
         if !(_group getVariable ["pl_on_hold", false]) then {_unit enableAI "PATH"};
+        // _unit switchMove "";
         _unit enableAI "AUTOCOMBAT";
         _unit enableAI "AUTOTARGET";
         _unit enableAI "TARGET";
@@ -47,6 +48,8 @@ pl_reset = {
             _unit doFollow (leader _group);
         };
     } forEach (units _group);
+
+    _group allowFleeing 0;
     
     // rejoin group hack
     _leader = leader _group;
@@ -162,7 +165,9 @@ pl_spawn_reset = {
         [_x] spawn {
             params ["_group"];
             [_group] spawn pl_reset;
-            sleep 0.5;
+            sleep 0.25;
+            [_group] spawn pl_reset;
+            sleep 0.25;
             [_group] spawn pl_reset;
         };
     } forEach hcSelected player;

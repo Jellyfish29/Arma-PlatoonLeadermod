@@ -41,9 +41,10 @@ addMissionEventHandler ["EntityKilled",{
             // [_vicGroup, _killed] call pl_eject_cargo;
 
             _pos = getPosATLVisual _killed;
-            _dir = getDir _killed;
+            _dir = getDirVisual _killed;
             _type = typeOf _killed;
-            _appereance = _killed getVariable "pl_appereance";
+            // _appereance = _killed getVariable "pl_appereance";
+            _appereance = [_killed] call BIS_fnc_getVehicleCustomization;
             _loadout = _killed getVariable "pl_vic_inv";
             _lives = _killed getVariable "pl_repair_lifes";
 
@@ -57,7 +58,7 @@ addMissionEventHandler ["EntityKilled",{
             deleteVehicle _killed;
             deleteGroup _vicGroup;
 
-            [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives, _symbolType] spawn pl_create_new_vic;
+            [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives, _symbolType, _killed getVariable ["pl_line_charges", 0], _killed getVariable ["pl_bridge_available", false]] spawn pl_create_new_vic;
             
         } else {
 
@@ -74,13 +75,14 @@ addMissionEventHandler ["EntityKilled",{
 
 
 pl_create_new_vic = {
-    params ["_type", "_pos", "_dir", "_appereance", "_loadout", "_groupId", "_lives", "_symbolType"];
+    params ["_type", "_pos", "_dir", "_appereance", "_loadout", "_groupId", "_lives", "_symbolType", "_lineCharges", "_bridges"];
     private ["_newVic"];
 
     sleep 0.3;
 
     _newVic = _type createVehicle _pos;
-    _newVic setPos _pos;
+    _newVic setPosATL _pos;
+    // _newVic setVehiclePosition [_pos, [], 0, "CAN_COLLIDE"];
     _newVic setDir _dir;
 
     _newVic setCaptive true;
@@ -88,9 +90,7 @@ pl_create_new_vic = {
     _newVic allowDamage false;
     _newVic setVehicleLock "LOCKED";
 
-    {
-        _newVic animateSource [_x#0, _x#1, true];
-    } forEach _appereance;
+    [_newVic, _appereance#0, _appereance#1] call BIS_fnc_initVehicle;
 
     [_loadout, _newVic] call pl_set_vic_laodout;
 
@@ -125,6 +125,8 @@ pl_create_new_vic = {
     _lives = _lives - 1;
     _newVic setVariable ["pl_repair_lifes", _lives];
     _newVic setVariable ["pl_is_destroyed", true];
+    _newVic setVariable ["pl_line_charges", _lineCharges];
+    _newVic setVariable ["pl_bridge_available", _bridges];
 
     pl_destroyed_vics_data pushBack [_pos, _newVic, _markerName, _groupId, _smokeGroup, _markerName2];
 };
@@ -267,7 +269,7 @@ pl_repair = {
         _vics = nearestObjects [_cords, ["Car", "Tank", "Truck"], _area];
 
         {
-            if ((((_cords distance2D _x) < _area) and ((getDammage _x) > 0 or !(canMove _x)) and alive _x and (side _x) == playerSide) or ((count (crew _x)) <= 0 and ((getDammage _x) > 0 or !(canMove _x)) and alive _x)) then {
+            if ((((_cords distance2D _x) < _area) and ((getDammage _x) > 0 or !([_x] call pl_canMove)) and alive _x and (side _x) == playerSide) or ((count (crew _x)) <= 0 and ((getDammage _x) > 0 or !(canMove _x)) and alive _x)) then {
                 _repairTargets pushBack _x,
                 (group (driver _x)) spawn pl_hold;
                 _iconPos = getPos _x;
@@ -328,7 +330,6 @@ pl_repair = {
             if ((typeName _repairTarget) isEqualTo "ARRAY") then {
                 _wp = _group addWaypoint [_repairTarget#0, 0];
                 _engVic doMove (_repairTarget#0);
-                _repairTime = time + 90;
                 _toRepairVic = _repairTarget #1;
                 _markerName = _repairTarget #2;
                 _vicGroupId = _repairTarget #3;
@@ -339,7 +340,6 @@ pl_repair = {
             {
                 _wp = _group addWaypoint [getPos _repairTarget, 0];
                 _engVic doMove (getPos _repairTarget);
-                _repairTime = time + 45;
             };
 
 
@@ -356,6 +356,14 @@ pl_repair = {
             {
                 _x disableAI "PATH";
             } forEach crew _engVic;
+
+            if ((typeName _repairTarget) isEqualTo "ARRAY") then {
+                _repairTime = time + 90;
+            }
+            else
+            {
+                _repairTime = time + 45;
+            };
 
             [_repairTime, _repairTime - time, getPos _engVic, _group, "colorOrange"] spawn pl_countdown_on_map;
             waitUntil {sleep 0.5; time >= _repairTime or !(_group getVariable ["onTask", true])};

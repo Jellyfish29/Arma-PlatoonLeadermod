@@ -7,10 +7,10 @@ pl_get_group_health = {
     private ["_healthState"];
     _healthState = [0.4,1,0.2,1];
     {
-        if ((damage _x) > 0.1) then {
+        if ((damage _x) > 0.15) then {
             _healthState = [0.9,0.9,0,1];
         };
-        if ((_x getVariable "pl_wia") and (alive _x)) then {
+        if ((lifeState _x) isEqualTo "INCAPACITATED") exitWith {
             _healthState = [0.7,0,0,1];
         };
     } forEach (units _group);
@@ -28,9 +28,9 @@ pl_get_unit_color = {
 
 pl_get_vic_health = {
     params ["_vic"];
+    if !([_vic] call pl_canMove) exitWith {[0.49,0.06,0.8,0.8]}; // 7E11CA};
     if ((damage _vic) > 0) exitWith {[0.9,0.7,0.1,0.8]};
     if ((damage _vic) > 0.6) exitWith {[0.7,0,0,0.8]};
-    if !(canMove _vic) exitWith {[0.49,0.06,0.8,0.8]}; // 7E11CA};
     pl_side_color_rgb
 };
 
@@ -139,6 +139,13 @@ pl_draw_group_info = {
                             _size,
                             getDirVisual _unit
                         ];
+                        if (_unitColor isEqualTo [0.9,0,0,1]) then {
+                            _display drawLine [
+                                getPosVisual _unit,
+                                getPosVisual (leader (group _unit)),
+                                _unitColor
+                            ];
+                        };
                     };
                 } forEach (units _x);
                 _pos = getPosVisual (vehicle (leader _x));
@@ -1129,7 +1136,7 @@ pl_mark_obstacles = {
         if (pl_show_obstacles) then {
             {
                 _obstacle = _x;
-                if !(isHidden _obstacle) then {
+                if !(isObjectHidden _obstacle) then {
                     _icon = '\A3\ui_f\data\map\mapControl\bunker_ca.paa';
                     _size = 15;
                     if (_x isKindOf 'Tank' or _x isKindOf 'Car') then {
@@ -1149,6 +1156,47 @@ pl_mark_obstacles = {
         };
     "]; // "
 };
+
+pl_valid_terrain_obstacles = ['TREE', 'BUSH', 'SMALL TREE', 'ROCK', 'ROCKS', 'BUNKER', 'BUSSTOP', 'FOUNTAIN', 'POWERSOLAR', 'POWERWIND', 'VIEW-Tower', 'TRANSMITTER'];
+
+pl_show_obstacles_group = false;
+
+pl_mark_obstacles_group = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (pl_show_obstacles_group) then {
+            {
+                _groupPos = getPos (leader _x);
+                {
+                    _obstacle = _x;
+                    private _icon = '';
+                    if !(isObjectHidden _obstacle) then {
+                        _icon = getText (configfile >> 'CfgVehicles' >> typeof _obstacle >> 'icon');
+                        _size = 20;
+
+                        if ((['sand', typeOf _x] call BIS_fnc_inString or ['barrier', typeOf _x] call BIS_fnc_inString or ['rampart', typeOf _x] call BIS_fnc_inString or ['trench', typeOf _x] call BIS_fnc_inString) and _icon isEqualTo 'iconObject' or _icon isEqualTo 'iconThing') then {
+                            _icon = '\A3\ui_f\data\map\mapControl\bunker_ca.paa';
+                        };
+                        if (_icon isEqualTo 'iconObject' or _icon isEqualTo 'iconThing' or _icon isEqualTo '') then {
+                            _icon = '\A3\ui_f\data\map\mapControl\bush_ca.paa';
+                        };
+                        _display drawIcon [
+                            _icon,
+                            [0.92,0.24,0.07,1],
+                            getPosVisual _obstacle,
+                            _size,
+                            _size,
+                            getDirVisual _obstacle
+                        ]
+                    };
+                } forEach (((_groupPos nearObjects 80) select {['fence', typeOf _x] call BIS_fnc_inString or ['barrier', typeOf _x] call BIS_fnc_inString or ['wall', typeOf _x] call BIS_fnc_inString or ['sand', typeOf _x] call BIS_fnc_inString or ['bunker', typeOf _x] call BIS_fnc_inString or ['wire', typeOf _x] call BIS_fnc_inString})  + (vehicles select {(_x distance2D _groupPos) <= 80 and ((crew _x) isEqualTo [])}) + (allDead select {(_x distance2D _groupPos) <= 80}));
+            } forEach (hcSelected player);    
+        };
+    "]; // "
+};
+
+// + (nearestTerrainObjects [_groupPos, pl_valid_terrain_obstacles, 80])
 
 // [] call pl_mark_obstacles;
 
@@ -1503,6 +1551,7 @@ pl_init_map_icons = {
     [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_mouse;
     [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_pos;
     [findDisplay 12 displayCtrl 51] call pl_draw_icon;
+    [findDisplay 12 displayCtrl 51] call pl_mark_obstacles_group;
 };
 
 [] call pl_init_map_icons;
@@ -1547,6 +1596,7 @@ addMissionEventHandler ["Loaded", {
     [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_mouse;
     [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_pos;
     [findDisplay 12 displayCtrl 51] call pl_draw_icon;
+    [findDisplay 12 displayCtrl 51] call pl_mark_obstacles_group;
 }];
 
 
@@ -1634,6 +1684,7 @@ pl_show_tac_map_icons = {
     [findDisplay 2000 displayCtrl 2000] call pl_draw_arrow_pos_to_mouse;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_arrow_pos_to_pos;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_icon;
+    [findDisplay 2000 displayCtrl 2000] call pl_mark_obstacles_group;
 };
 
 pl_last_tac_zoom = 0.1;

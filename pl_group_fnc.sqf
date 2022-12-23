@@ -273,7 +273,7 @@ pl_change_inf_icons = {
     } forEach (units _group);
 
     if (_engineers >= 2) then {_icon = format ["f_%1_eng_pl", _size]};
-    if (_medics >= 2) then {
+    if (_medics >= 2 or (_group getVariable ["pl_set_as_medical", false])) then {
         _icon = format ["f_%1_med_pl", _size];
         _group setVariable ["pl_set_as_medical", true];
     };
@@ -333,11 +333,14 @@ pl_select_group = {
 pl_remote_camera_in = {
     params ["_leader"];
 
-    player setVariable ["pl_camera_mode", cameraView];
-    _leader switchCamera "GROUP";
-    // _leader switchCamera "EXTERNAL";
-    openMap [false, false];
-    // [getPos _leader] spawn pl_open_tac_forced;
+    if !(isNil "_leader") then {
+
+        player setVariable ["pl_camera_mode", cameraView];
+        _leader switchCamera "GROUP";
+        // _leader switchCamera "EXTERNAL";
+        openMap [false, false];
+        // [getPos _leader] spawn pl_open_tac_forced;
+    };
 };
 
 pl_spawn_cam = {

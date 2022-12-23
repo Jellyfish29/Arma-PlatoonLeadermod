@@ -125,19 +125,35 @@ pl_enable_force_move = {
 pl_position_reached_check = {
     params ["_unit", "_movePos", "_counter"];
 
-    if ((_unit distance2D _movePos) > 4) then {
+    // player sideChat (str _counter);
+
+    if ((_unit distance2D _movePos) > 4 and ((group _unit) getVariable ["onTask", false]) and alive _unit and !((lifeState _unit) isEqualto "INCAPACITATED")) then {
         if ((((currentCommand _unit) isNotEqualTo "MOVE") or ((speed _unit) == 0))) then {
-            // _unit setUnitPosWeak "UP";
-            _unit setHit ["legs", 0];
-            _movePos = [-1 + (random 2), -1 + (random 2), 0] vectorAdd _movePos;
-            _unit doMove _movePos;
+
+            _movePos = [-(_counter / 2) + (random _counter), -(_counter / 2) + (random _counter), 0] vectorAdd _movePos;
+
+            [_unit, _movePos] spawn {
+                params ["_unit", "_movePos"];
+                _unit setHit ["legs", 0];
+                _unit switchMove "";
+                _unit setUnitPos "AUTO";
+                doStop _unit;
+                _unit setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _unit));
+
+                sleep 0.5;
+
+                if ((group _unit) getVariable ["onTask", false]) then {
+                    _unit doMove _movePos;
+                    _unit setDestination [_movePos, "LEADER DIRECT", true];
+                };
+            };
             _counter = _counter + 1;
         };
     };
 
-    if ((_unit distance2D _movePos) < 4 or _counter >= 30) exitWith {[true, _counter]};
+    if ((_unit distance2D _movePos) < 4 or _counter >= 10) exitWith {[true, _counter, _movePos]};
 
-    [false, _counter]
+    [false, _counter, _movePos]
 };
 
 pl_not_reachable_escape = {
@@ -149,7 +165,7 @@ pl_not_reachable_escape = {
         _unit setHit ["legs", 0];
         _movePos = [[[_pos, _area * 1.1]],["water"]] call BIS_fnc_randomPos;
         _movePos = _movePos findEmptyPosition [0, 10, typeOf _unit];
-        doStop _unit;
+        // doStop _unit;
         _unit doMove _movePos;
         _unit setDestination [_movePos, "LEADER PLANNED", true];
         false
@@ -295,6 +311,28 @@ pl_find_highest_point = {
     _r
 };
 
+pl_THROW_VEL = {
+    _unit = _this select 0;
+    _targetpos = _this select 1;
+    _maxdist = if ((count _this) > 2) then {_this select 2} else {30};
+    _alpha = 45;
+    _range = _targetpos distance _unit;
+    if (_maxDist == 300) then {
+        _alpha = 20;
+        if (_range > 80) then {_alpha = 30};
+        if (_range > 150) then {_alpha = 45};
+    };
+    if (_range > _maxDist) then {_range = _maxdist};
+    _v0 = sqrt(_range * 9.81 / sin (2 * _alpha));
+    _v0x = cos _alpha * _v0;
+    _v0z = sin _alpha * _v0;
+    _throwDir = [_unit,_targetpos] call BIS_fnc_dirTo;
+    _flyDirSin = sin _throwDir;
+    _flyDirCos = cos _throwDir;
+    _vel = [_flyDirSin * _v0x,_flyDirCos * _v0x, _v0z];
+    _vel
+};
+
 pl_friendly_check = {
     params ["_unit", "_pos"];
 
@@ -304,6 +342,16 @@ pl_friendly_check = {
     
     _distance = _unit distance2D _pos; 
     _allies = (_pos nearEntities [["Man", "Car", "Tank"], 25 + (_distance * 0.25)]) select {side _x == side _unit};
+    // player sideChat str _allies;
+    if !(_allies isEqualTo []) exitWith {true};
+    false
+};
+// [cursorTarget, target_1] spawn pl_fire_ugl_at_target;
+
+pl_friendly_check_excact = {
+    params ["_unit", "_pos", "_area"];
+    
+    _allies = (_pos nearEntities [["Man", "Car", "Tank"], _area]) select {side _x == side _unit};
     // player sideChat str _allies;
     if !(_allies isEqualTo []) exitWith {true};
     false
@@ -346,10 +394,21 @@ pl_is_apc = {
     _isAPCtr = {
         if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
         false
-    } forEach ["m113", "rhino", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer"];
+    } forEach ["m113", "rhino", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer", "mtlb", "btr"];
     _isAPCtr
 
 };
+
+pl_is_tank = {
+    params ["_vic"];
+
+    _isTank = {
+        if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
+        false
+    } forEach ["m1", "m1a1", "m1a2", "t55", "t62", "t64", "t72", "t80", "t90", "t14", "leopard", "challenger", "mbt", "tank", "m60", "m48", "m4"];
+    _isTank
+};
+
 
 pl_get_caliber = {
     params ["_string"];
@@ -373,6 +432,25 @@ pl_get_caliber = {
     parsenumber _caliber
 };
 
+pl_canMove = {
+    params ["_vic"];
+
+    if !(canMove _vic) exitWith {false};
+    if (_vic getHitPointDamage "hitltrack" >= 0.95) exitWith {false};
+    if (_vic getHitPointDamage "hitrtrack" >= 0.95) exitWith {false};
+    if (_vic getHitPointDamage "hitengine" >= 0.95) exitWith {false};
+    private _wheelCount = 0;
+
+    {
+        if (_vic getHitPointDamage _x >= 0.95) then {_wheelCount = _wheelCount + 1};
+    } forEach ["hitlfwheel", "hitlf2wheel", "hitlbwheel", "hitlmwheel", "hitrbwheel", "hitrf2wheel", "hitrfwheel", "hitrmwheel"];
+
+    if (_wheelCount > 2) exitWith {false};
+
+    true
+};
+
+
 
 pl_has_cannon = {
     params ["_vic"];
@@ -389,12 +467,13 @@ pl_has_cannon = {
 pl_is_ifv = {
     params ["_vic"];
     private _isIFVtr = false;
+    if ([_vic] call pl_is_apc) exitWith {false};
     if (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "IFV") exitWith {true};
     if (([_vic] call pl_has_cannon or ([(_vic weaponsTurret [0])#0] call pl_get_caliber) >= 20) and !(["mbt", typeOf _vic] call BIS_fnc_inString)) exitwith {true};
     _isIFVtr = {
         if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
         false
-    } forEach ["Puma", "m2a2", "bmp2", "bmp1"];
+    } forEach ["Puma", "m2a2", "bmp2", "bmp1", "ifv", "m2a1", "m2a3", "m2", "warrior", "marder", "cannon"];
     _isIFVtr
 };
 
@@ -450,6 +529,28 @@ pl_countdown_on_map = {
     };
 
     deleteMarker _m;
+};
+
+//
+// PX_fnc_stringReplace :: Replace substrings
+// Author: Colin J.D. Stewart
+// Usage: ["xxx is awesome, I love xxx!", "xxx", "Arma"] call PX_fnc_stringReplace;
+//
+
+pl_stringReplace = {
+    params ["_str", "_find", "_replace"];
+    
+    private _return = "";
+    private _len = count _find;    
+    private _pos = _str find _find;
+
+    while {(_pos != -1) && (count _str > 0)} do {
+        _return = _return + (_str select [0, _pos]) + _replace;
+        
+        _str = (_str select [_pos+_len]);
+        _pos = _str find _find;
+    };    
+    _return + _str;
 };
 
 // _m = createMarker [str (random 1), [g1] call pl_find_centroid_of_group];

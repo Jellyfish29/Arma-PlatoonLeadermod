@@ -46,6 +46,7 @@ pl_task_planer = {
         case "garrison" : {[_group, _wp] spawn pl_garrison; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
         case "mech" : {[_group, _wp] spawn pl_change_kampfweise; _icon = "\Plmod\gfx\pl_mech_task.paa"};
         case "createbridge" : {[_group, _wp] spawn pl_create_bridge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"};
+        case "mc_lc" : {[_group, _wp] spawn pl_mc_lc; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         default {}; 
     };
 

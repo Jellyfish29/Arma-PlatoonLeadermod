@@ -193,6 +193,44 @@ pl_wia_callout = {
         if (pl_enable_chat_radio) then {leader (group _unit) sideChat format ["%1: %2 WOUNDED", groupId (group _unit), _unitMos]};
         if (pl_enable_map_radio) then {[group _unit, format ["...%1 is hit!", _unitMos], 20] call pl_map_radio_callout};
         [group _unit, "wia", 1] call pl_voice_radio_answer;
+
+        {
+            _hcGroup = _x;
+            if (_hcGroup getVariable ["pl_sop_active", false]) then {
+
+                if (_unit distance2D (leader _hcGroup) < 300) then {
+
+                    if (_hcGroup getVariable ["pl_sop_atkOnContact", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                        if (vehicle _unit == _unit) then {
+                            [_hcGroup, [], getPos (_unit findNearestEnemy (getPos _unit))] spawn pl_assault_position;
+                            [_hcGroup] call pl_reset_sop;
+                        };
+                    };
+
+                    if (_hcGroup getVariable ["pl_sop_defOnContact", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                        [_hcGroup, [], getPos (leader _hcGroup), getDir _unit, false, false, 35] spawn pl_defend_position;
+                        [_hcGroup] call pl_reset_sop;
+                    };
+
+                    if (_hcGroup getVariable ["pl_sop_disengageOnContact", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                        [_hcGroup, _hcGroup getVariable ['pl_last_wp_pos', getPos _unit]] spawn pl_disengage;
+                        [_hcGroup] call pl_reset_sop;
+                    };
+
+                    if (_hcGroup getVariable ["pl_sop_stopOnContact", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                        [_hcGroup] call pl_reset;
+                        [_hcGroup] call pl_reset_sop;
+                    };
+
+                    if (_hcGroup getVariable ["pl_sop_unloadUnderAt", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                        [_hcGroup] spawn pl_unload_at_combat;
+                        [_hcGroup] call pl_reset_sop;
+                    };
+
+                    // [_hcGroup] call pl_reset_sop;
+                };
+            };
+        } forEach (allGroups select {(hcLeader _x) == player});
     };
 };
 
@@ -460,12 +498,20 @@ pl_ccp = {
     _markerNameCCP setMarkerColor "colorBLUFOR";
 
     _markerNameOuter = format ["%1ccp%2", _group, random 2];
-    createMarker [_markerNameOuter, [0,0,0]];
+    createMarker [_markerNameOuter, getPos (leader _group)];
     _markerNameOuter setMarkerShape "ELLIPSE";
     _markerNameOuter setMarkerBrush "SolidBorder";
     _markerNameOuter setMarkerColor pl_side_color;
     _markerNameOuter setMarkerAlpha 0.35;
     _markerNameOuter setMarkerSize [pl_ccp_size, pl_ccp_size];
+
+    _markerNameInner = str (random 2);
+    createMarker [_markerNameInner, getPos (leader _group)];
+    _markerNameInner setMarkerShape "ELLIPSE";
+    _markerNameInner setMarkerBrush "SolidBorder";
+    _markerNameInner setMarkerColor "colorGreen";
+    _markerNameInner setMarkerAlpha 0.10;
+    _markerNameInner setMarkerSize [_healRange, _healRange];
 
     if ((visibleMap or !(isNull findDisplay 2000)) and !_isMedevac) then {
         hint "Select CCP Position on Map";
@@ -490,7 +536,7 @@ pl_ccp = {
             if (inputAction "MoveForward" > 0) then {pl_ccp_size = pl_ccp_size + 20; sleep 0.05};
             if (inputAction "MoveBack" > 0) then {pl_ccp_size = pl_ccp_size - 20; sleep 0.05};
             _markerNameOuter setMarkerSize [pl_ccp_size, pl_ccp_size];
-            if (pl_ccp_size >= 300) then {pl_ccp_size = 300};
+            if (pl_ccp_size >= 600) then {pl_ccp_size = 600};
             if (pl_ccp_size <= 25) then {pl_ccp_size = 25};
         };
 
@@ -503,14 +549,8 @@ pl_ccp = {
         _markerNameOuter setMarkerBrush "Border";
         _markerNameOuter setMarkerPos _ccpPos;
         _markerNameCCP setMarkerPos _ccpPos;
+        _markerNameInner setMarkerPos _ccpPos;
 
-        _markerNameInner = str (random 2);
-        createMarker [_markerNameInner, _ccpPos];
-        _markerNameInner setMarkerShape "ELLIPSE";
-        _markerNameInner setMarkerBrush "SolidBorder";
-        _markerNameInner setMarkerColor "colorGreen";
-        _markerNameInner setMarkerAlpha 0.10;
-        _markerNameInner setMarkerSize [_healRange, _healRange];
     }
     else
     {
@@ -575,55 +615,84 @@ pl_ccp = {
     _group setVariable ["specialIcon", _icon];
 
     
-    private _units = units _group;
-    if (_group == (group player)) then {_units = [_medic, _escort]};
-    {
-        if (isNull _x) exitWith {};
-        _x doMove _ccpPos;
-        // _x setDestination [_ccpPos, "LEADER DIRECT", true];
-        if (_x in [_medic, _escort]) then {
-            pl_ccp_draw_array pushBack [_ccpPos, _x];
-            _x setVariable ["pl_damage_reduction", true];
-            _x setVariable ["pl_is_ccp_medic", true];
-        };
-    } forEach _units;
-
-    waitUntil {_medic distance2D _ccpPos < 20 or !alive _medic or !(_medic getVariable ["pl_wia", false]) or !(_group getVariable ["onTask", false])};
-
-    while {(_group getVariable ["onTask", true]) and (alive _medic) and !(_medic getVariable ["pl_wia", false])} do {
-        _reviveTargets = _ccpPos nearObjects ["Man", _reviveRange];
-        _healTargets = _ccpPos nearObjects ["Man", _healRange];
+    if (vehicle (leader _group) == leader _group) then {
+        private _units = units _group;
+        if (_group == (group player)) then {_units = [_medic, _escort]};
         {
-            if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and (_group getVariable ["onTask", true])) then {
-                _h2 = [_medic, _x, _ccpPos, "onTask"] spawn pl_medic_heal;
-                _time = time + 40;
-                waitUntil {sleep 0.5; scriptDone _h2 or !(_group getVariable ["onTask", true]) or (time > _time)}
+            _x doMove _ccpPos;
+            // _x setDestination [_ccpPos, "LEADER DIRECT", true];
+            if (_x in [_medic, _escort]) then {
+                pl_ccp_draw_array pushBack [_ccpPos, _x];
+                _x setVariable ["pl_damage_reduction", true];
+                _x setVariable ["pl_is_ccp_medic", true];
             };
-        } forEach (_healTargets select {side _x isEqualTo playerSide});
+        } forEach _units;
+    } else {
+        // [vehicle (leader _group), 6] call pl_vic_advance_to_pos_static;
+        _group addWaypoint [_ccpPos, 0];
+    };
 
-        {
-            if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and (_group getVariable ["onTask", true])) then {
-                if !(isNil "_escort") then {
-                    _h1 = [_group, _medic, _escort, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
-                    waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
-                }
-                else
-                {
-                    _h1 = [_group, _medic, objNull, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
-                    waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
+    waitUntil {(_medic distance2D _ccpPos) < 25 or !alive _medic or (lifeState _medic isEqualTo "INCAPACITATED") or !(_group getVariable ["onTask", false])};
+
+    private _mev = objNull;
+
+    if (_group getVariable ["onTask", false]) then {
+
+        if (vehicle (leader _group) != leader _group) then {
+            _mev = vehicle (leader _group);
+            // _group setVariable ["pl_on_march", false];
+            [_group] spawn pl_leave_vehicle;
+
+            waitUntil {sleep 0.5; (_group getVariable ["pl_disembark_finished", false]) or !(_group getVariable ["onTask", false])};
+
+            private _units = units _group;
+            if (_group == (group player)) then {_units = [_medic, _escort]};
+            {
+                if (_x in [_medic, _escort]) then {
+                    pl_ccp_draw_array pushBack [_ccpPos, _x];
+                    _x setVariable ["pl_damage_reduction", true];
+                    _x setVariable ["pl_is_ccp_medic", true];
+                } else {
+                    [_x, 20, getDir _x] spawn pl_find_cover;
+                };  
+            } forEach _units;
+        };
+
+        while {(_group getVariable ["onTask", true]) and (alive _medic) and !(_medic getVariable ["pl_wia", false])} do {
+            _reviveTargets = _ccpPos nearObjects ["Man", _reviveRange];
+            _healTargets = _ccpPos nearObjects ["Man", _healRange];
+            {
+                if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and (_group getVariable ["onTask", true])) then {
+                    _h2 = [_medic, _x, _ccpPos, "onTask"] spawn pl_medic_heal;
+                    _time = time + 40;
+                    waitUntil {sleep 0.5; scriptDone _h2 or !(_group getVariable ["onTask", true]) or (time > _time)}
                 };
+            } forEach (_healTargets select {side _x isEqualTo playerSide});
+
+            {
+                if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and (_group getVariable ["onTask", true])) then {
+                    if !(isNil "_escort") then {
+                        _h1 = [_group, _medic, _escort, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
+                        waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
+                    }
+                    else
+                    {
+                        _h1 = [_group, _medic, objNull, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
+                        waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};
+                    };
+                };
+            } forEach (_reviveTargets select {_x getVariable ["pl_wia", false]});
+            
+            if ((_medic distance2D _ccpPos) < 15) then {
+                doStop _medic;
+                doStop _escort;
+            } else {
+                _medic doMove _ccpPos;
+                _escort doMove _ccpPos;
             };
-        } forEach (_reviveTargets select {_x getVariable ["pl_wia", false]});
-        
-        if ((_medic distance2D _ccpPos) < 15) then {
-            doStop _medic;
-            doStop _escort;
-        } else {
-            _medic doMove _ccpPos;
-            _escort doMove _ccpPos;
+            _time = time + 5;
+            waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", false])};
         };
-        _time = time + 5;
-        waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", false])};
     };
 
     _group setVariable ["setSpecial", false];
@@ -639,8 +708,13 @@ pl_ccp = {
     deleteMarker _markerNameOuter;
     deleteMarker _markerNameInner;
     pl_active_ccps = pl_active_ccps - [_ccpPos];
+
+    if !(isNull _mev) then {
+        [_group, _mev] call pl_crew_vehicle_now;
+    };
     // [_marker3D] call pl_remove_3d_icon;
 };
+
 
 pl_transfer_medic = {
     private ["_destMedic", "_srcMedic", "_srcGroup", "_destGroup"];

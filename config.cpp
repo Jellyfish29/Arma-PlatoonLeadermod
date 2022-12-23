@@ -89,7 +89,7 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="['buddy'] spawn pl_bounding_squad";
+                expression="['buddy'] spawn pl_bounding_switch";
             };
             show="HCIsLeader * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -170,7 +170,7 @@ class RscHCGroupRootMenu
             command=-5;
             class Params
             {
-                expression="['team'] spawn pl_bounding_squad";
+                expression="['team'] spawn pl_bounding_switch";
             };
             show="HCIsLeader * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";
@@ -180,15 +180,15 @@ class RscHCGroupRootMenu
         };
         class Empty5
         {
-            title="<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Advance</t>";
+            title="<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\full_ca.paa'/><t> Disenage</t>";
             shortcuts[]={0};
             command=-5;
             class Params
             {
-                expression="{[_x] spawn pl_march}forEach (hcSelected player)";
+                expression="{[_x] spawn pl_disengage}forEach (hcSelected player)";
             };
-            show="0";//"HCIsLeader * (1 - HCCursorOnIconSelectable) * IsSelectedToAdd * IsWatchCommanded";
-            enable="0";
+            show= "HCIsLeader * (1 - HCCursorOnIconSelectable) * IsSelectedToAdd * IsWatchCommanded";
+            enable="HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=4;
@@ -318,8 +318,8 @@ class RscHCGroupRootMenu
             title="$STR_rscMenu.hppRscGroupRootMenu_Items_Communication0";
             shortcuts[]={0};
             menu="#User:BIS_fnc_addCommMenuItem_menu";
-            show="1";
-            enable="1";
+            show="0";
+            enable="0";
             speechId=0;
         };
     };
@@ -508,7 +508,7 @@ class RscHCGroupRootMenu
                 command=-5;
                 class params
                 {
-                    expression="playSound 'beep'; [] call pl_spawn_reset";
+                    expression="[] call pl_spawn_reset";
                 };
                 show="HCIsLeader";
                 enable="HCNotEmpty";
@@ -809,6 +809,21 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
+            class PlAttachVic
+            {
+                title="<img color='#e5e500' image='\Plmod\gfx\pl_mech_task.paa'/><t> Attach/Detach Vehicle</t";
+                shortcuts[]={7};
+                shortcutsAction = "CommandingMenu8";
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_attach_vic";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
             class PlSeperator566666
             {
                 title="";
@@ -826,8 +841,8 @@ class RscHCGroupRootMenu
             class PlComEng
             {
                 title="<img color='#e5e500' image='\Plmod\gfx\pl_eng_task.paa'/><t> Combat Engineering Tasks</t>";
-                shortcuts[]={7};
-                shortcutsAction = "CommandingMenu8";
+                shortcuts[]={8};
+                shortcutsAction = "CommandingMenu9";
                 menu="#USER:pl_combat_engineer";
                 command=-5;
                 class params
@@ -1970,7 +1985,7 @@ class RscHCWPRootMenu
                 shortcuts[] = {5};
                 class Params
                 {
-                    expression = "[] call pl_cancel_planed_task; 'WP_CANCELWP' call BIS_HC_path_menu";
+                    expression = "[] spawn pl_cancel_planed_task; 'WP_CANCELWP' call BIS_HC_path_menu";
                 };
                 title = "<img color='#b20000' image='\A3\3den\data\Attributes\default_ca.paa'/><t> Cancel Waypoint</t>";
                 shortcutsAction = "CommandingMenu5";

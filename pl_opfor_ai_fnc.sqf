@@ -641,8 +641,8 @@ pl_opfor_defence_suppression = {
             {
                 if ((primaryweapon _x call BIS_fnc_itemtype) select 1 == "MachineGun") then {
                     _firers pushBackUnique _x;
-                    _x setUnitTrait ["camouflageCoef", 0.5, false];
-                    _x setVariable ["pl_damage_reduction", true];
+                    // _x setUnitTrait ["camouflageCoef", 0.5, false];
+                    // _x setVariable ["pl_damage_reduction", true];
                 } else {
                     if ((random 1) > 0.6) then {_firers pushBackUnique _x;}
                 };
@@ -906,6 +906,7 @@ pl_opfor_surrender = {
 
 	[_grp] spawn pl_opfor_reset;
 
+    _grp setvariable ["pl_has_surrendered", true];
 	_surrenderGrp = createGroup [civilian , true];
 
 	{

@@ -23,6 +23,8 @@ pl_getIn_vehicle = {
         [_group getVariable ["pl_attached_infGrp", grpNull], [], vehicle (leader _group)] spawn pl_getIn_vehicle
     };
 
+    if (_group getVariable ["pl_inf_attached", false]) then {_group setVariable ["pl_inf_attached", nil]; _group setVariable ["pl_attached_vicGrp", nil];};
+
     if (vehicle (leader _group) != leader _group) then {
         _vic = vehicle (leader _group);
     };
@@ -165,7 +167,7 @@ pl_getIn_vehicle = {
 
     [_group] call pl_reset;
 
-    sleep 0.5;
+    sleep 2;
 
         if (_group getVariable ["pl_healing_active", false]) then {_group setVariable ["pl_healing_active", false]};
 
@@ -225,6 +227,10 @@ pl_getIn_vehicle = {
             {
                 _unit = _x;
                 if !(_unit in (crew _targetVic)) then {
+
+                    _unit disableAI "AUTOCOMBAT";
+                    _unit setCombatBehaviour "AWARE";
+                    _unit setUnitCombatMode "BLUE";
                     
                     _seat = _allSeatsReady#_ii;
                     if ((_seat#1) isEqualTo "cargo") then {
@@ -237,6 +243,10 @@ pl_getIn_vehicle = {
 
                     [_unit] allowGetIn true;
                     [_unit] orderGetIn true;
+
+                    if ((lifeState _unit) isEqualto "INCAPACITATED") then {
+                        _unit moveInCargo _vic; 
+                    };
                 }
                 else
                 {
@@ -246,7 +256,7 @@ pl_getIn_vehicle = {
             } forEach (units _group);
 
             _group setVariable ["onTask", true];
-            waitUntil {({_x in _targetVic} count (units _group) == count (units _group)) or !(_group getVariable ["onTask", true])};
+            waitUntil {({_x in _targetVic} count (units _group) == count ((units _group) select {lifeState _x != "INCAPACITATED"})) or !(_group getVariable ["onTask", true])};
             [group (driver _targetVic)] call pl_execute;
             if !(_group getVariable "onTask") then {
                 {
@@ -264,6 +274,11 @@ pl_getIn_vehicle = {
                 _group setVariable ["pl_disembark_finished", false];
                 [_group] call pl_hide_group_icon;
                 [_group, _targetVic] spawn pl_rearm_in_transport;
+
+                {
+                    _x enableAI "AUTOCOMBAT";
+                    _x setUnitCombatMode "BLUE";
+                } forEach (units _group);
             };
         };
     }
@@ -1460,16 +1475,7 @@ pl_attach_inf = {
 
     // _group = (hcSelected player) select 0;
 
-    if (_group getVariable ["pl_vic_attached", false]) exitWith {
-        if (_group getVariable ["pl_change_kampfweise", false]) then {
-            _group setVariable ["pl_change_kampfweise", nil];
-            [_group] spawn pl_change_kampfweise;
-        } else {
-            _group setVariable ["pl_vic_attached", false]; _group setVariable ["pl_attached_infGrp", nil];
-        };
-    };
-
-    if (vehicle (leader _group) != leader _group) exitWith {_group setVariable ["pl_change_kampfweise", true]; [_group] spawn pl_change_kampfweise;};
+    if (vehicle (leader _group) != leader _group) exitWith {_group setVariable ["pl_change_kampfweise", true]; [_group, 1] spawn pl_change_kampfweise};
 
     if (_group getVariable ["pl_vic_attached", false]) exitWith {_group setVariable ["pl_vic_attached", false]; _group setVariable ["pl_attached_infGrp", nil];};
 
@@ -1533,7 +1539,7 @@ pl_attach_inf = {
 
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
-    _group setVariable ["specialIcon", "\A3\ui_f\data\map\markers\nato\n_mech_inf.paa"];
+    _group setVariable ["specialIcon", '\Plmod\gfx\pl_mech_task.paa'];
     _vicGroup setVariable ["pl_vic_attached", true];
     _vicGroup setVariable ["pl_attached_infGrp", _group];
     // _vicGroup setVariable ["setSpecial", true];
@@ -1611,109 +1617,177 @@ pl_attach_inf = {
     _vic setVariable ["pl_speed_limit", "50"];
 };
 
-pl_change_kampfweise = {
-    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+pl_attach_vic = {
+    params [["_group", (hcSelected player) select 0], ["_infGroup", grpNull]];
+    private ["_leader", "_vic"];
 
-    if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task"};
+    // detach vehicle used from InfGroup
+    if (_group getVariable ["pl_inf_attached", false]) exitWith {_group setVariable ["pl_inf_attached", nil]; _group setVariable ["pl_attached_vicGrp", nil];};
 
-    if (count _taskPlanWp != 0) then {
+    // unload mounted Infgroup and attach Vehicle after dismount
+    if (_group getVariable ["pl_has_cargo", false]) exitWith {[_group, 2] spawn pl_change_kampfweise};
 
-        if (vehicle (leader _group) != leader _group) then {
-            if !(_group getVariable ["pl_unload_task_planed", false]) then {
-                // waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 25) or !(_group getVariable ["pl_task_planed", false])};
-                waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_mech_task_planed", false])};
-            } else {
-                // waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
-                waitUntil {sleep 0.5; ((_group getVariable ["pl_execute_plan", false]) and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
+    if (vehicle (leader _group) == (leader _group)) exitWith {hint "Vehicle Only Task!"};
+
+    if (isNull _infGroup) then {
+        if (visibleMap or !(isNull findDisplay 2000)) then {
+            pl_follow_array_other_setup = pl_follow_array_other_setup + [_group];
+
+            _message = "Select Vehicle <br /><br />
+            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>LINE Formation</t> <br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>FILE Formation</t> <br />
+            <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>DIAMOND Formation</t> <br />";
+            hint parseText _message;
+
+            pl_vics = [];
+
+            onMapSingleClick {
+                pl_mapClicked = true;
+                _cords = _pos;
+                pl_vics = nearestObjects [_cords, ["Man"], 10, true];
+                if (_shift) then {pl_cancel_strike = true};
+                hintSilent "";
+                onMapSingleClick "";
             };
-        } else {
-            // waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
-            waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_meach_task_planed", false])};
+            while {!pl_mapClicked} do {sleep 0.1};
+            pl_mapClicked = false;
+            pl_follow_array_other_setup = pl_follow_array_other_setup - [_group];
         };
-        _group setVariable ["pl_disembark_finished", nil];
 
-        if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
-        _group setVariable ["pl_mech_task_planed", false];
-        // _group setVariable ["pl_unload_task_planed", false];
-        _group setVariable ["pl_execute_plan", nil];
+        if (pl_vics isEqualTo []) exitWith {l_cancel_strike = true};
+
+        _infGroup = group (pl_vics#0);
     };
+
+    if (pl_cancel_strike) exitwith {pl_cancel_strike = false};
+
+    if (_infGroup getVariable ["pl_inf_attached", false]) exitWith {Hint "Group already has a Vehicle attached"};
+
+    _vic = vehicle (leader _group);
+
+    // if (pl_enable_beep_sound) then {playSound "beep"};
+    [_group, "confirm", 1] call pl_voice_radio_answer;
+    [_group] call pl_reset;
+    // [_infGroup] call pl_reset;
+
+    sleep 0.5;
+
+    [_group] call pl_reset;
+    // [_infGroup] call pl_reset;
+
+    sleep 0.5;
+
+    _group setVariable ["setSpecial", true];
+    _group setVariable ["onTask", true];
+    _group setVariable ["specialIcon", '\Plmod\gfx\pl_mech_task.paa'];
+    _infGroup setVariable ["pl_inf_attached", true];
+    _infGroup setVariable ["pl_attached_vicGrp", _group];
+
+    pl_follow_array_other = pl_follow_array_other + [[_infGroup, _group]]; 
+
+    _vic limitSpeed 15;
+    _vic setVariable ["pl_speed_limit", "CON"];
+
+    player hcRemoveGroup _group;
+
+    while {(alive _vic) and (_group getVariable ["onTask", false]) and (_infGroup getVariable ["pl_inf_attached", false])} do {
+
+        _ally = leader (_infGroup);
+
+        _allyDir = _vic getDir _ally;
+        _movepos = (getPos _vic) getPos [(_vic distance2D _ally) - 10, _allyDir];
+        if (_vic distance2D _movePos > 20) then {
+            _vic doMove _movePos;
+            _vic setDestination [_movePos, "VEHICLE PLANNED", true];
+        };
+
+        _time = time + 10;
+        waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
+    };
+
+    _infGroup setVariable ["pl_inf_attached", nil];
+    _infGroup setVariable ["pl_attached_VicGrp", nil];
+    player hcSetGroup [_group];
+
+    pl_follow_array_other = pl_follow_array_other - [[_infGroup, _group]];
+    [_group] call pl_reset;
+    _vic forceSpeed -1;
+    _vic limitSpeed 50;
+    _vic setVariable ["pl_speed_limit", "50"];
+};
+
+
+pl_change_kampfweise = {
+    params [["_group", (hcSelected player) select 0], ["_variant", 1]];
+
+    // if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task"};
 
     private _vic = vehicle (leader _group);
-    private _driver = driver _vic;
-    private _vicGroup = group _driver;
-    private _crew = crew _vic;
-    private _cargo = _crew - (units _vicGroup);
     // dismount
-    if !(_group getVariable ["pl_vic_attached", false]) then {
+    private _infGroup = grpNull;
 
-        // _cargo = fullCrew [_vic, "cargo", false];
+    if (_group getVariable ["pl_has_cargo", false] or _group getVariable ["pl_vic_attached", false]) then {
 
-        // if (count _cargo == 0) exitWith {hint "No Cargo to Unload"}
-        private _attached = _vicGroup getVariable ["pl_attached_infGrp", grpNull];
-        if !(isNull _attached) exitWith {[_vicGroup, _attached, _taskPlanWp] spawn pl_detach_inf_planed};
+        if (_group getVariable ["pl_has_cargo", false]) then {
 
-        private _cargoGroups = [];
-        {
-            _unit = _x;
-            if (!(_unit in (units _vicGroup)) and !(_unit in (units (group player)))) then {
-                _cargoGroups pushBack (group _unit);
-            };
-        } forEach _cargo;
+            private _cargo = (crew _vic) - (units _group);
 
-        if (_cargoGroups isEqualTo []) exitWith {hint "No Mounted Infantry"};
-
-        _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
-
-        // unload
-
-        doStop _vic;
-
-        private _cargoPers = [];
-        {
-            _cGroup = _x;
-            // moveOut (leader _cGroup);
-            if !(_cGroup getVariable ["pl_show_info", false]) then {
-                [_cGroup, "inf", false] call pl_show_group_icon;
-            };
-            _cGroup leaveVehicle _vic;
+            private _cargoGroups = [];
             {
-                _cargoPers pushBack _x;
-                unassignVehicle _x;
-                doGetOut _x;
-                [_x] allowGetIn false;
-                // doStop _x;
-                if (_x != (leader _cGroup)) then {
-                    _x doFollow (leader _cGroup);
-                } else {
-                    _x doMove ((getpos _vic) getPos [10, (getdir _vic) - 180]);
-                    _x setDestination [(getpos _vic) getPos [10, (getdir _vic) - 180], "LEADER DIRECT", true];
+                _unit = _x;
+
+                if !(_unit in (units (group player))) then {
+                    _cargoGroups pushBack (group _unit);
                 };
-                _x disableAI "AUTOCOMBAT";
-            } forEach (units _cGroup);
-            _cGroup setBehaviourStrong "AWARE";
-         } forEach _cargoGroups;
 
-         waitUntil {sleep 0.5; (({vehicle _x != _x} count _cargoPers) == 0) or (!alive _vic)};
+                unassignVehicle _unit;
+                doGetOut _unit;
+                [_unit] allowGetIn false;
 
-        // attach
+            } forEach _cargo;
 
-        sleep 1;
+            private _limit = 0;
+            {
+                if ((count (units _x)) > _limit) then {
+                    _limit = count (units _x);
+                    _infGroup = _x;
+                };
+                // [_x] spawn pl_reset;
+                if !(_x getVariable ["pl_show_info", false]) then {
+                    [_x, "inf", false] call pl_show_group_icon;
+                };
+            } forEach _cargoGroups;
 
-        [_cargoGroups#0, _vic] spawn pl_attach_inf;
 
-    // mount
-    } else {
+            _infGroup leaveVehicle _vic;
 
-        //detach
+            _vic setVariable ["pl_on_transport", nil];
+            _group setVariable ["pl_has_cargo", false];
 
-        _group setVariable ["pl_vic_attached", false];
-        private _infGroup = _group getVariable ["pl_attached_infGrp", grpNull];
+            waitUntil {sleep 0.5; (({vehicle _x != _x} count (units _infGroup)) == 0) or (!alive _vic)};
+            sleep 2;
+            waitUntil {sleep 0.5; ({unitReady _x} count (units _infGroup)) == (count (units _infGroup))};
 
-        sleep 2;
-        //load
+            {
+                player hcSetGroup [_x];
+            } forEach _cargoGroups;
+        } else {
+            _infGroup = _group getVariable ["pl_attached_infGrp", grpNull];
+            _group setVariable ["pl_vic_attached", false];
+            _group setVariable ["pl_attached_infGrp", nil];
+        };
 
-        // [_infGroup, [], _vic] spawn pl_getIn_vehicle;
     };
+
+    sleep 1;
+
+    if (_variant == 1) then {
+        [_infGroup, _vic] spawn pl_attach_inf;
+    } else {
+        [group (driver _vic), _infGroup] spawn pl_attach_vic;
+        (leader _infGroup) doMove ((getPos _vic) getPos [10, getdir _vic]);
+    };
+
 };
 
 pl_air_insertion = {

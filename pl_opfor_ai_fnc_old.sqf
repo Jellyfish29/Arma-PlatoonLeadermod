@@ -562,6 +562,7 @@ pl_opfor_surrender = {
 	} forEach (units _grp) ;
 	_surrenderGrp setBehaviour "CARELESS";
 	_surrenderGrp setSpeedMode "LIMITED";
+	[_grp, true] spawn pl_marta_cleanup;
 
 	// sleep 80;
 

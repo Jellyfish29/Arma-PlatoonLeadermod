@@ -148,8 +148,11 @@ pl_contact_report = {
         _leader addEventHandler ["FiredNear", {
             params ["_unit", "_firer", "_distance", "_weapon", "_muzzle", "_mode", "_ammo", "_gunner"];
 
+            // onContact SOPs
+
             if ((group _firer) isEqualTo (group _unit)) then {
                 if (((group _unit) getVariable "PlContactTime") < time) then {
+
                     _callsign = groupId (group _unit);
                     if ((vehicle _unit) isKindOf "Air") then {
                         if (pl_enable_beep_sound) then {playSound "beep"};
@@ -168,27 +171,43 @@ pl_contact_report = {
                     (group _unit) setVariable ['inContact', true];
 
 
-                    // onContact SOPs
+                    {
+                        _hcGroup = _x;
+                        if (_hcGroup getVariable ["pl_sop_active", false]) then {
 
-                    if ((group _firer) getVariable ["pl_sop_atkOnContact", false] and !((group _firer) getVariable ["onTask", false])) then {
-                        if (vehicle _firer == _firer) then {
-                            [group _firer, [], getPos (_firer findNearestEnemy (getPos _firer))] spawn pl_assault_position;
+                            if (_unit distance2D (leader _hcGroup) < 300) then {
+
+                                if (_hcGroup getVariable ["pl_sop_atkOnContact", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                                    if (vehicle _unit == _unit) then {
+                                        [_hcGroup, [], getPos (_unit findNearestEnemy (getPos _unit))] spawn pl_assault_position;
+                                        [_hcGroup] call pl_reset_sop;
+                                    };
+                                };
+
+                                if (_hcGroup getVariable ["pl_sop_defOnContact", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                                    [_hcGroup, [], getPos (leader _hcGroup), getDir _unit, false, false, 35] spawn pl_defend_position;
+                                    [_hcGroup] call pl_reset_sop;
+                                };
+
+                                if (_hcGroup getVariable ["pl_sop_disengageOnContact", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                                    [_hcGroup, _hcGroup getVariable ['pl_last_wp_pos', getPos _unit]] spawn pl_disengage;
+                                    [_hcGroup] call pl_reset_sop;
+                                };
+
+                                if (_hcGroup getVariable ["pl_sop_stopOnContact", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                                    [_hcGroup] call pl_reset;
+                                    [_hcGroup] call pl_reset_sop;
+                                };
+
+                                if (_hcGroup getVariable ["pl_sop_unloadUnderAt", false] and !(_hcGroup getVariable ["onTask", false])) then {
+                                    [_hcGroup] spawn pl_unload_at_combat;
+                                    [_hcGroup] call pl_reset_sop;
+                                };
+
+                                // [_hcGroup] call pl_reset_sop;
+                            };
                         };
-                    };
-
-                    if ((group _firer) getVariable ["pl_sop_defOnContact", false] and !((group _firer) getVariable ["onTask", false])) then {
-                        [group _firer, [], getPos (leader (group _firer)), getDir _firer, false, false, 35] spawn pl_defend_position;
-                    };
-
-                    if ((group _firer) getVariable ["pl_sop_disengageOnContact", false] and !((group _firer) getVariable ["onTask", false])) then {
-                        [group _firer, (group _firer) getVariable ['pl_last_wp_pos', getPos _firer]] spawn pl_disengage;
-                    };
-
-                    if ((group _firer) getVariable ["pl_sop_stopOnContact", false] and !((group _firer) getVariable ["onTask", false])) then {
-                        [group (driver _x)] call pl_reset;
-                        [group (driver _x)] call pl_reset_sop;
-                    };
-                    [group _firer] call pl_reset_sop;
+                    } forEach (allGroups select {(hcLeader _x) == player});
 
                 };
                 (group _unit) setVariable ["PlContactTime", (time + 80)];
@@ -196,7 +215,7 @@ pl_contact_report = {
                 if ((secondaryWeapon _firer) isEqualTo _weapon) then {
                     if (pl_At_fire_report_cd < time) then {
                         pl_At_fire_report_cd = time + 5;
-                        _callsign = groupId (group _unit);
+                        _callsign = groupId _hcGroup;
                         if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Engaging Vehicles with AT", _callsign]};
                         if (pl_enable_map_radio) then {[group _unit, "...Engaging Vehicle!", 15] call pl_map_radio_callout};
                     };
@@ -240,8 +259,18 @@ pl_contact_report = {
                 _unit setVariable ["PlContactRepEnabled", false];
             };
         }];
+
+        _leader addEventHandler ["Killed", {
+            params ["_unit", "_killer", "_instigator", "_useEffects"];
+
+            [group _unit] call pl_contact_report;
+        }];
     };
 };
+
+// {
+//     [_x] call pl_contact_report
+// } forEach (allGroups select {(hcLeader _x) == player});
 
 
 
@@ -280,14 +309,18 @@ pl_enemy_destroyed_report = {
     
     if !(_unitsAlive) then {
         if (isNil {_group getVariable "pl_death_reported"}) then {
-            _gridPos = mapGridPosition _unit;
             _group setVariable ["pl_death_reported", true];
+            _gridPos = mapGridPosition _unit;
             // if (pl_enable_beep_sound) then {playSound "beep"};
             if (pl_enable_chat_radio) then {_killer sideChat format ["%1 destroyed enemy %2", groupId (group _killer), _typeStr]};
             if (pl_enable_map_radio) then {[group _killer, format ["...destroyed enemy %1", _typeStr], 15] call pl_map_radio_callout};
             [group _killer, "destroyed", 1] call pl_voice_radio_answer;
             [_group, true] spawn pl_marta_cleanup;
+        } else {
+            _group setVariable ["pl_marta_no_delete", nil];
         };
+    } else {
+        _group setVariable ["pl_marta_no_delete", nil];
     };
 };
 
@@ -295,7 +328,7 @@ pl_auto_crouch = {
     params ["_unit"];
     while {alive _unit} do {
         if ((behaviour _unit) isEqualTo "AWARE") then {
-            if (_unit checkAIFeature "PATH") then {
+            if (_unit checkAIFeature "PATH" and !((group _unit) getVariable ["onTask", false])) then {
                 if ((speed _unit) == 0) then {
                     _unit setUnitPos "MIDDLE";
                     waitUntil {sleep 1; (speed _unit) > 0 or !(alive _unit)};
@@ -324,8 +357,8 @@ pl_auto_formation = {
         waitUntil {sleep 1; !(_group getVariable ["pl_vic_attached", false]) and (_group getVariable ["pl_choose_auto_formation", false])};
 
         if ([getPos (leader _group)] call pl_is_city) then {
-            if (formation _group != "DIAMOND") then {
-                _group setFormation "DIAMOND";
+            if (formation _group != "WEDGE") then {
+                _group setFormation "WEDGE";
             }; 
         } else {
             if ((currentWaypoint _group) < count (waypoints _group)) then {
@@ -358,7 +391,7 @@ pl_auto_vic_speed = {
 
     while {alive _vic and ({alive _x} count (crew _vic)) > 0} do {
         waitUntil {sleep 1; _vic getVariable ["pl_choose_auto_speed", false] and (_vic getVariable ["pl_speed_limit", "CON"]) != "CON"};
-        if ([getPos _vic] call pl_is_city) then {
+        if ([getPos _vic] call pl_is_city or [getPos _vic] call pl_is_forest) then {
             _vic limitSpeed 15;
             _vic setVariable ["pl_speed_limit", "15"];
         } else {
@@ -372,10 +405,13 @@ pl_auto_vic_speed = {
                     _vic limitSpeed 30;
                     _vic setVariable ["pl_speed_limit", "30"];
                 };
+            } else {
+                _vic limitSpeed 50;
+                _vic setVariable ["pl_speed_limit", "50"];
             };
         };
         sleep 5;
-    }  
+    };  
 };
 
 
@@ -672,18 +708,20 @@ pl_vehicle_setup = {
             };
         };
 
-        if (isNil {_vic getVariable "pl_appereance"}) then {
-            _animations = "true" configClasses (configFile >> "CfgVehicles" >> typeOf _vic >> "AnimationSources");
-            _animationPhases = [];
+        // if (isNil {_vic getVariable "pl_appereance"}) then {
+        //     _animations = "true" configClasses (configFile >> "CfgVehicles" >> typeOf _vic >> "AnimationSources");
+        //     _animationPhases = [];
 
-            {
-                _s = (str _x) splitString "/";
-                _a =  _s select ((count _s) - 1);
-                _animationPhases pushBack [_a, (_vic animationSourcePhase _a)];
-            } forEach _animations;
+        //     {
+        //         _s = (str _x) splitString "/";
+        //         _a =  _s select ((count _s) - 1);
+        //         _animationPhases pushBack [_a, (_vic animationSourcePhase _a)];
+        //     } forEach _animations;
 
-            _vic setVariable ["pl_appereance", _animationPhases];
-        };
+        //     _vic setVariable ["pl_appereance", _animationPhases];
+        // };
+
+        _vic setVariable ["pl_appereance", [_vic] call BIS_fnc_getVehicleCustomization];
 
         _vic addEventHandler ['HandleDamage', {
             params['_unit', '_selName', '_damage', '_source'];
@@ -717,6 +755,11 @@ pl_vehicle_setup = {
             _vic setVariable ["pl_repair_supplies", pl_max_repair_supplies_per_vic];
             _vic setVariable ["pl_bridge_available", true];
             _vic setRepairCargo 0;
+
+            if (_vic isKindOf "Tank") then {
+                _engVic setVariable ["pl_line_charges", 4];
+            };
+
             [group (driver _vic)] spawn {
                 params ["_grp"];
                 _grp setvariable ["pl_is_repair_group", true];
@@ -980,10 +1023,11 @@ pl_ai_setUp_loop = {
 
 pl_auto_unstuck = {
     params ["_unit"];
+
     _distance = _unit distance2D leader (group _unit);
     if (_distance > 100 and _unit checkAIFeature "PATH" and !(_unit getVariable ["pl_engaging", false])) then {
         doStop _unit;
-        _pos = (getPos _unit) findEmptyPosition [0, 50, typeOf _unit];
+        _pos = (getPos _unit) findEmptyPosition [2, 50, typeOf _unit];
         _unit setPos _pos;
         _unit doFollow leader (group _unit);
         _unit switchMove "";
@@ -1002,7 +1046,7 @@ pl_vehicle_tree_stuck_fix = {
     params ["_vic"];
 
     while {alive _vic} do {
-        if (currentCommand _vic isEqualTo "MOVE" and (speed _vic) < 2) then {
+        if ((currentCommand _vic isEqualTo "MOVE" or ((group (driver _vic)) getVariable ["pl_on_march", false])) and (speed _vic) < 2) then {
             {
                 _x setDamage 1;
             } forEach (nearestTerrainObjects [getPos _vic, ["TREE", "SMALL TREE", "BUSH"], 8, false, true]);
@@ -1175,10 +1219,11 @@ pl_reset_vic = {
     _newVic setDir _dir;
     _newVic setDamage _damage;
 
-    {
-        _newVic animateSource [_x#0, _x#1, true];
-    } forEach _appereance;
-    _newVic setVariable ["pl_appereance", _appereance];
+    // {
+    //     _newVic animateSource [_x#0, _x#1, true];
+    // } forEach _appereance;
+    // _newVic setVariable ["pl_appereance", _appereance];
+    _newVic setVariable ["pl_appereance", [_newVic] call BIS_fnc_getVehicleCustomization];
     
     {
         _unit = _x#0;
@@ -1444,10 +1489,6 @@ pl_start_set_up = {
 
             if (_x getVariable ["pl_is_recon", false]) then {
                 [_x, true] spawn pl_recon;
-            };
-
-            if (_x getVariable ["pl_set_as_medical", false]) then {
-                [_x, "f_t_med_pl"] call pl_change_group_icon;
             };
 
         } forEach (allGroups select {side _x isEqualTo playerSide});

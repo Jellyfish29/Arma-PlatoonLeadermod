@@ -146,7 +146,7 @@ pl_mark_targets_on_map = {
 pl_marta_dic = createHashMap;
 
 Pl_marta = {
-    params ["_opfGrp", ["_reveal", false]];
+    params ["_opfGrp", ["_reveal", false], ["_destroyed", false]];
     private ["_unitText", "_centoid"];
 
     if ((_opfGrp getVariable ["pl_not_recon_able", false]) and !_reveal) exitWith {};
@@ -210,7 +210,7 @@ Pl_marta = {
                 }; 
                 case "tank" : {
                     _markerTypeType = format ["%1_%2_tank_pl", _sidePrefix, _status];
-                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) >= 2 and !(["mbt", typeOf _vic] call BIS_fnc_inString)) then {
+                    if (((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) >= 2 or getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair") > 0) and !([_vic] call pl_is_tank)) then {
                         if ([_vic] call pl_is_ifv) then {
                             _markerTypeType = format ["%1_%2_ifvtr_pl", _sidePrefix, _status];
                         } else {
@@ -257,7 +257,7 @@ Pl_marta = {
         if (_exit) exitwith {};
 
         private _opfDir = -1;
-        if ((currentWaypoint _opfGrp) < count (waypoints _opfGrp) and (waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp)) distance2D _leader) > 50) then {
+        if ((currentWaypoint _opfGrp) < count (waypoints _opfGrp) and (waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp)) distance2D _leader) > 50 and !_destroyed) then {
             _wp = waypointPosition ((waypoints _opfGrp) select (currentWaypoint _opfGrp));
             _opfDir = _leader getDir _wp;
             _pos = _centoid getPos [45, _opfDir];
@@ -276,14 +276,16 @@ Pl_marta = {
             // first time call out
         } else {
             _markerNameGroup setMarkerPos _centoid;
+            
         };
 
+        _opfGrp setVariable ["pl_spot_time", time];
         _markerNameGroup setMarkerType _markerTypeType;
         
         if (_reveal) then {
             _markerNameGroup setMarkerAlpha 0.9;
         } else {
-            _markerNameGroup setMarkerAlpha 0.8;
+            _markerNameGroup setMarkerAlpha 0.7;
         };
 
         // if !(_leader checkAIFeature "PATH") then {
@@ -291,7 +293,7 @@ Pl_marta = {
         //     _opfGrp setVariable ["pl_opf_tac_marker", "position"];
         // };
 
-        if (_opfGrp getVariable ["pl_opf_in_pos", false]) then {
+        if (_opfGrp getVariable ["pl_opf_in_pos", false] and !_destroyed) then {
 
             if !(_markerNameOpfTactic in ((pl_marta_dic get _callsign)#1)) then {
 
@@ -321,6 +323,41 @@ Pl_marta = {
         };
 
         // _opfGrp setVariable ["pl_active_recon_markers", [_markerNameGroup, _markerNameStrength, _markerNameOpfTactic]];
+
+        if (_destroyed) then {
+
+            _markerNameDestroyed = createMarker [str (random 4), getMarkerPos _markerNameGroup];
+            _markerNameDestroyed setMarkerSize [0.8, 0.8];
+            _markerNameDestroyed setMarkerType "mil_destroy";
+            _markerNameDestroyed setMarkerColor _sideColor;
+            _markerNameDestroyed setMarkerShadow false;
+            _markerNameDestroyed setMarkerDir 45;
+
+            _markerNameGroup setMarkerAlpha 0.5;
+
+            [_markerNameDestroyed, _markerNameGroup, _opfGrp] spawn {
+                params ["_markerNameDestroyed", "_markerNameGroup", "_grp"];
+                _callsign = groupId _grp;
+
+                sleep 600;
+
+                _markerNameGroup setMarkerAlpha 0.3;
+                _markerNameGroup setMarkerColor "colorGrey";
+                _markerNameGroup setMarkerSize [0.5, 0.5];
+
+                pl_marta_dic deleteat (_callsign);
+                if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
+
+                // deleteMarker _markerName;
+                _markerNameDestroyed setMarkerColor "colorGrey";
+                _markerNameDestroyed setMarkerAlpha 0.3;
+                _markerNameDestroyed setMarkerSize [0.4, 0.4];
+                // deleteGroup _grp;
+                // _grp setVariable ["pl_marta_no_delete", nil];
+
+
+            };
+        };
     };
 };
 
@@ -364,7 +401,7 @@ pl_marta_cleanup = {
                     default {_sideColor = "colorOpfor";}; 
                 };
 
-                _markerName = createMarker [str (random 4), [_grp] call pl_find_centroid_of_group];
+                _markerName = createMarker [format ["%1_%2", random 4, _callsign], getMarkerPos (_markers#0)];
                 _markerName setMarkerSize [0.8, 0.8];
                 _markerName setMarkerType "mil_destroy";
                 _markerName setMarkerColor _sideColor;
@@ -374,16 +411,22 @@ pl_marta_cleanup = {
                     _x setMarkerAlpha 0.5;
                 } forEach _markers;
 
-                sleep 60;
+                sleep 600;
 
                 {
-                    deleteMarker _x;
+                    _x setMarkerAlpha 0.3;
+                    _x setMarkerColor "colorGrey";
+                    _x setMarkerSize [0.5, 0.5];
                 } forEach _markers;
                 pl_marta_dic deleteat (_callsign);
                 if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
-                deleteMarker _markerName;
+                // deleteMarker _markerName;
+                _markerName setMarkerColor "colorGrey";
+                _markerName setMarkerAlpha 0.3;
+                _markerName setMarkerSize [0.4, 0.4];
                 // deleteGroup _grp;
-                _grp setVariable ["pl_marta_no_delete", nil];
+                // _grp setVariable ["pl_marta_no_delete", nil];
+
             };
         } else {
             {
@@ -392,6 +435,10 @@ pl_marta_cleanup = {
             pl_marta_dic deleteat (_callsign);
             if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
         };
+    } else {
+        if (_report) then {
+            [_grp, true, true] call Pl_marta;
+        };
     };
     // if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat (_callsign)};
 };
@@ -399,22 +446,35 @@ pl_marta_cleanup = {
 pl_marta_cleanup_loop = {
     
     while {true} do {
-        {
-            _key = _x;
-            _grp = _y#0;
-            _markers = _y#1;
-            // if ((({alive _x} count (units _grp) < 1 and !(_grp getvariable ["pl_marta_clean", false])) or (isNull _grp))) then {
-            if (((({alive _x} count (units _grp) < 1) or (isNull _grp)) or (side (leader _grp)) == civilian) and !(_grp getVariable ["pl_marta_no_delete", false])) then {
-                {
-                    deleteMarker _x;
-                } forEach _markers;
-                pl_marta_dic deleteat _key;
-                if ((groupId _grp) in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat (groupId _grp)};
-            };
-        } forEach pl_marta_dic;
-
+        
+        [] call pl_marta_cleanup_loop_function;
         sleep 15;
     };
+};
+
+pl_marta_cleanup_loop_function = {
+    {
+        _key = _x;
+        _grp = _y#0;
+        _markers = _y#1;
+        // if ((({alive _x} count (units _grp) < 1 and !(_grp getvariable ["pl_marta_clean", false])) or (isNull _grp))) then {
+        if (((({alive _x} count (units _grp) < 1) or !(alive (vehicle (leader _grp))) or (isNull _grp)) or (side (leader _grp)) == civilian or (_grp getvariable ["pl_has_surrendered", false])) and !(_grp getVariable ["pl_marta_no_delete", false])) then {
+            {
+                deleteMarker _x;
+            } forEach _markers;
+            pl_marta_dic deleteat _key;
+            if ((groupId _grp) in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat (groupId _grp)};
+        };
+
+        // turn back to supected if not spetted for 120 sec
+        if ((_grp getvariable ["pl_spot_time", 0]) < (time - 80)) then {
+            _type = markertype (_markers#0);
+            _newType = [_type, "_f_", "_s_"] call pl_stringReplace;
+            (_markers#0) setMarkerType _newType;
+            (_markers#0) setMarkerAlpha 0.7;
+        };
+
+    } forEach pl_marta_dic;
 };
 
 

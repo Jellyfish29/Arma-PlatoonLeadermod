@@ -141,7 +141,7 @@ pl_bounding_move_team = {
     for "_i" from 0 to (count _team) - 1 do {
         _unit = _team#_i;
         _movePos = _movePosArray#_i;
-        if ((_unit distance2D _movePos) > 3) then {
+        if ((_unit distance2D _movePos) > 4) then {
             if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
                 doStop _unit;
                 [_unit, true] call pl_enable_force_move;
@@ -153,64 +153,103 @@ pl_bounding_move_team = {
         }
         else
         {
-            doStop _unit;
-            [_unit, false] call pl_enable_force_move;
-            if (_unitPos isEqualTo "COVER") then {
-                [_unit, getPos _unit, getDir _unit, 15, false] spawn pl_find_cover;
-            } else {
-                _unit disableAI "PATH";
-                _unit setUnitPos _unitPos;
+            if ((_unit getVariable ["pl_bounding_set_time", 0]) == 0) then {
+                [_unit, _wpPos, _unitPos] call pl_bounding_set;
             };
         };
     };
-    if (({currentCommand _x isEqualTo "MOVE"} count (_team select {alive _x and !(_x getVariable ["pl_wia", false])})) == 0 or ({(_x distance2D _wpPos) < 15} count _team > 0) or (waypoints _group isEqualTo [])) exitWith {true};
+    if (({currentCommand _x isEqualTo "MOVE"} count (_team select {alive _x and !((lifeState _x) isEqualTo "INCAPACITATED")})) == 0 or ({(_x distance2D _wpPos) < 15} count _team > 0) or (waypoints _group isEqualTo []) or ({time > (_x getVariable ["pl_bounding_set_time", time])} count _team > 0)) exitWith {true};
     false
 };
 
+pl_bounding_set = {
+    params ["_unit", "_wpPos", "_unitPos"]; 
+
+    doStop _unit;
+    [_unit, false] call pl_enable_force_move;
+    if (_unitPos isEqualTo "COVER") then {
+        [_unit, 15, _unit getDir _wpPos] spawn pl_find_cover;
+    } else {
+        _unit disableAI "PATH";
+        _unit setUnitPos _unitPos;
+    };
+
+    _unit setVariable ["pl_bounding_set_time", time + 7];
+};
+
+pl_get_move_pos_array = { 
+    params ["_team", "_wpPos", "_dirOffset", "_distanceOffset", "_MoveDistance"];
+    _teamLeaderPos = getPos (_team#0);
+    _moveDir = _teamLeaderPos getDir _wpPos;
+    _teamLeaderMovePos = _teamLeaderPos getPos [_MoveDistance, _moveDir + (_dirOffset * 0.05)];
+    _return = [_teamLeaderMovePos];
+    for "_i" from 1 to (count _team) - 1 do {
+        _p = _teamLeaderMovePos getPos [_distanceOffset * _i + ([-2, 2] call BIS_fnc_randomInt), _moveDir + _dirOffset];
+        _return pushBack _p;
+    };
+    _return;
+};
+
+pl_bounding_switch = {
+    params [["_mode", "team"]];
+    if (count (hcSelected player) == 1) then {
+        [_mode] spawn pl_bounding_squad;
+    } else {
+        [] spawn pl_vehicle_team_overwatch;
+    };
+};
+
 pl_bounding_squad = {
-    params ["_mode", ["_ai", false]];
-    private ["_cords", "_icon", "_group", "_team1", "_team2", "_MoveDistance", "_distanceOffset", "_movePosArrayTeam1", "_movePosArrayTeam2", "_unitPos"];
+    params ["_mode", ["_group", hcSelected player select 0], ["_cords", []]];
+    private ["_cords", "_icon", "_group", "_team1", "_team2", "_MoveDistance", "_distanceOffset", "_movePosArrayTeam1", "_movePosArrayTeam2", "_unitPos", "_speed"];
 
     // if !(visibleMap) exitWith {hint "Open Map for bounding OW"};
 
-    _group = hcSelected player select 0;
-
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
-    if (visibleMap or !(isNull findDisplay 2000)) then {
-        if (visibleMap) then {
-            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-        } else {
-            _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+    private _drawSpecial = false;
+
+    if (_cords isEqualTo []) then {
+        if (visibleMap or !(isNull findDisplay 2000)) then {
+            if (visibleMap) then {
+                _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
+        }
+        else
+        {
+            _cords = screenToWorld [0.5,0.5];
         };
-    }
-    else
-    {
-        _cords = screenToWorld [0.5,0.5];
+        
+        _moveDir = (leader _group) getDir _cords;
+
+        // if (pl_enable_beep_sound) then {playSound "beep"};
+        _drawSpecial = true;
+        [_group, "confirm", 1] call pl_voice_radio_answer;
+        [_group] call pl_reset;
+
+        sleep 0.5;
+
+        [_group] call pl_reset;
+
+        sleep 0.5;
+        
+        switch (_mode) do { 
+            case "team" : {_icon = "\Plmod\gfx\team_bounding.paa";}; 
+            case "buddy" : {_icon = "\Plmod\gfx\buddy_bounding.paa";}; 
+            default {_icon = "\Plmod\gfx\team_bounding.paa";}; 
+        };
+        
+        _group setVariable ["setSpecial", true];
+        _group setVariable ["specialIcon", _icon];
     };
-    
-    _moveDir = (leader _group) getDir _cords;
 
-    // if (pl_enable_beep_sound) then {playSound "beep"};
-    [_group, "confirm", 1] call pl_voice_radio_answer;
-    [_group] call pl_reset;
-
-    sleep 0.5;
-
-    [_group] call pl_reset;
-
-    sleep 0.5;
-    
-    switch (_mode) do { 
-        case "team" : {_icon = "\Plmod\gfx\team_bounding.paa";}; 
-        case "buddy" : {_icon = "\Plmod\gfx\buddy_bounding.paa";}; 
-        default {_icon = "\Plmod\gfx\team_bounding.paa";}; 
-    };
-    
-    _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", _icon];
     _wp = _group addWaypoint [_cords, 0];
-    pl_draw_planed_task_array pushBack [_wp, _icon];
+
+    if (_drawSpecial) then {
+        pl_draw_planed_task_array pushBack [_wp, _icon];
+    };
 
     _units = (units _group);
     _team1 = [];
@@ -233,61 +272,72 @@ pl_bounding_squad = {
         _x disableAI "PATH";
         _x disableAI "AUTOCOMBAT";
         _x setUnitPosWeak "Middle";
+        _x setVariable ["pl_damage_reduction", true];
         _x setHit ["legs", 0];
+        _x setVariable ["pl_bounding_set_time", nil];
     } forEach _units;
 
     _group setBehaviour "AWARE";
 
     // _mode = "buddy";
 
-    _get_move_pos_array = { 
-        params ["_team", "_wpPos", "_dirOffset", "_distanceOffset", "_MoveDistance"];
-        _teamLeaderPos = getPos (_team#0);
-        _moveDir = _teamLeaderPos getDir _wpPos;
-        _teamLeaderMovePos = _teamLeaderPos getPos [_MoveDistance, _moveDir + (_dirOffset * 0.05)];
-        _return = [_teamLeaderMovePos];
-        for "_i" from 1 to (count _team) - 1 do {
-            _p = _teamLeaderMovePos getPos [_distanceOffset * _i, _moveDir + _dirOffset];
-            _return pushBack _p;
-        };
-        _return;
-    };
-
     switch (_mode) do { 
-        case "team" : {_MoveDistance = 25; _distanceOffset = 4; _unitPos = "DOWN"}; 
-        case "buddy" : {_MoveDistance = 2; _distanceOffset = 11; _unitPos = "MIDDLE"}; 
-        default {_MoveDistance = 25; _distanceOffset = 4; _unitPos = "DOWN"}; 
+        case "team" : {_MoveDistance = 25; _distanceOffset = 4; _unitPos = "DOWN"; _speed = 5000}; 
+        case "buddy" : {_MoveDistance = 40; _distanceOffset = 11; _unitPos = "MIDDLE"; _speed = 12}; 
+        default {_MoveDistance = 25; _distanceOffset = 4; _unitPos = "DOWN", _speed = 5000, _mode = "team"}; 
     };
 
     {
-        _x setUnitPos "DOWN";
-    } forEach _team2;
+        _x limitSpeed _speed;
+    } forEach _team1;
 
-    _MoveDistance = 25;
+    _movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, 4, 4] call pl_get_move_pos_array;
+    for "_i" from 0 to (count _team2) - 1 do {
+        [_team2#_i, 5, (_team2#_i) getdir (waypointPosition _wp), false, _movePosArrayTeam2#_i] spawn pl_find_cover;
+    };
+
+    // _MoveDistance = 25;
     while {({(_x distance2D (waypointPosition _wp)) < 15} count _units == 0) and !(waypoints _group isEqualTo [])} do {
 
         (_team1#0) groupRadio "SentConfirmMove";
-        _movePosArrayTeam1 = [_team1, waypointPosition _wp, -90, _distanceOffset, _MoveDistance] call _get_move_pos_array;
+        _movePosArrayTeam1 = [_team1, waypointPosition _wp, -90, _distanceOffset, _MoveDistance] call pl_get_move_pos_array;
+        {_x setVariable ["pl_bounding_set_time", nil]} forEach _team1;
         waitUntil {sleep 0.5; [_team1, _movePosArrayTeam1, waypointPosition _wp, _group, _unitPos] call pl_bounding_move_team};
         if (({(_x distance2D (waypointPosition _wp)) < 15} count _units > 0) or (waypoints _group isEqualTo [])) exitWith {};
         if (count (_team1 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2 or count (_team2 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2) exitWith {[_group] call pl_reset};
 
+        {
+            if ((_x getVariable ["pl_bounding_set_time", 0]) == 0) then {
+                _x setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _x));
+                [_x, waypointPosition _wp, _unitPos] call pl_bounding_set;
+            };
+        } forEach _team1;
+
         (_team1#0) groupRadio "sentCovering";
         _targets = (_team1#0) targets [true, 400, [], 0, waypointPosition _wp];
-        if (count _targets > 0 and _mode isEqualTo "team") then {{[_x, getPosASL (selectRandom _targets)] call pl_quick_suppress} forEach _team1};
+        // if (count _targets > 0 and _mode isEqualTo "team") then {{[_x, getPosASL (selectRandom _targets)] call pl_quick_suppress} forEach _team1};
+        if (count _targets > 0) then {{[_x, getPosASL (selectRandom _targets)] call pl_quick_suppress} forEach _team1};
 
         sleep 1;
 
         (_team2#0) groupRadio "SentConfirmMove";
         switch (_mode) do { 
-            case "team" : {_MoveDistance = 50; _movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, _distanceOffset, _MoveDistance] call _get_move_pos_array}; 
+            case "team" : {_MoveDistance = 50; _movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, _distanceOffset, _MoveDistance] call pl_get_move_pos_array}; 
             case "buddy" : {_MoveDistance = 30; _movePosArrayTeam2 = _movePosArrayTeam1}; 
-            default {_movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, _distanceOffset, _MoveDistance] call _get_move_pos_array}; 
+            default {_movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, _distanceOffset, _MoveDistance] call pl_get_move_pos_array}; 
         };
+        {_x setVariable ["pl_bounding_set_time", nil]} forEach _team2;
         waitUntil {sleep 0.5; [_team2, _movePosArrayTeam2, waypointPosition _wp, _group, _unitPos] call pl_bounding_move_team};
 
         if (({(_x distance2D (waypointPosition _wp)) < 15} count _units > 0) or (waypoints _group isEqualTo [])) exitWith {};
         if (count (_team1 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2 or count (_team2 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2) exitWith {[_group] call pl_reset};
+
+        {
+            if ((_x getVariable ["pl_bounding_set_time", 0]) == 0) then {
+                _x setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _x));
+                [_x, waypointPosition _wp, _unitPos] call pl_bounding_set;
+            };
+        } forEach _team2;
         
         (_team2#0) groupRadio "sentCovering";
         _targets = (_team2#0) targets [true, 400, [], 0, waypointPosition _wp];
@@ -298,6 +348,7 @@ pl_bounding_squad = {
 
     {
         doStop _x;
+        _x setVariable ["pl_damage_reduction", false];
         _x setUnitPos "Auto";
         _x enableAI "PATH";
         _x enableAI "AUTOCOMBAT";
@@ -308,10 +359,194 @@ pl_bounding_squad = {
         _x enableAI "WEAPONAIM";
         _x setUnitCombatMode "YELLOW";
         _x doFollow (leader _group);
+        _x limitSpeed 5000;
+        _x forceSpeed -1;
+        _x setVariable ["pl_bounding_set_time", nil];
     } forEach _units;
     
-    _group setVariable ["setSpecial", false];
-    pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+
+    if (_drawSpecial) then {
+        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
+        _group setVariable ["setSpecial", false];
+    };
+
+    [_team1,_team2]
+};
+
+
+pl_vehicle_team_overwatch = {
+    private ["_cords", "_moveDir"];
+    
+    private _groups = hcSelected player;
+
+    private _vics = [];
+
+    {
+        if (vehicle (leader _x) != (leader _x)) then {
+            if ([vehicle (leader _x)] call pl_canMove) then {
+                _vics pushBackUnique (vehicle (leader _x));
+            };
+        };
+    } forEach _groups;
+
+    if ((count _vics) != 2) exitWith {hint "Select only TWO functional Vehicles or ONE Infantry Group!"};
+
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+        if (visibleMap) then {
+            _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+    }
+    else
+    {
+        _cords = screenToWorld [0.5,0.5];
+    };
+    
+
+    _vics = [_vics, [], {_cords distance2D _x}, "ASCEND"] call BIS_fnc_sortBy;
+
+    _vic_1 = _vics#0;
+    _vicGroup_1 = group (driver _vic_1);
+    _vic_2 = _vics#1;
+    _vicGroup_2 = group (driver _vic_2);
+
+    [_vicGroup_1, "confirm", 1] call pl_voice_radio_answer;
+
+    [_vicGroup_1] call pl_reset;
+    [_vicGroup_2] call pl_reset;
+
+    sleep 0.5;
+
+    [_vicGroup_1] call pl_reset;
+    [_vicGroup_2] call pl_reset;
+
+    sleep 0.5;
+
+    _fnc_get_speed = {  
+        params ["_vic"];
+
+        if ((group (driver _vic)) getVariable ["pl_vic_attached", false]) exitWith {3};
+
+        private _r = 6;
+        switch (_vic getVariable ["pl_speed_limit", "50"]) do { 
+            case "15" : {_r = 3}; 
+            case "30" : {_r = 6};
+            case "50" : {_r = 10};
+            case "CON" : {_r = 3};
+            default {_r = 6}; 
+        };
+        _r
+    };
+
+    {   
+        _x setVariable ["onTask", true];
+        _x setVariable ["setSpecial", true];
+        _x setVariable ["specialIcon", "\Plmod\gfx\team_bounding.paa"];
+        
+    } forEach _groups;
+
+    // pl_follow_array_other = pl_follow_array_other + [[_vicGroup_1, _vicGroup_2]];
+
+    // pl_draw_disengage_array pushBack [_vicGroup_1, _cords];
+
+    private _moveDistanceRaw = 50;
+    private _moveDistance = _moveDistanceRaw;
+
+    _distanceToCords = _vic_1 distance2D _cords;
+    private _intervals = round (_distanceToCords / (_moveDistance * 2));
+    private _cordsDir = _vic_1 getDir _cords;
+
+    _rightPos = (getPos _vic_1) getPos [30, _cordsDir + 90];
+    _leftPos = (getPos _vic_1) getPos [30, _cordsDir - 90];
+
+    _movePos = ([[_leftPos, _rightPos], [], {_vic_2 distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
+
+    private _reverse = false;
+    _relDir = _vic_1 getRelDir _cords;
+    if (_relDir >= 90 and _relDir <= 270) then {_reverse = true};
+
+    _wp1 = _vicGroup_1 addWaypoint [_cords, 0];
+    _wp2 = _vicGroup_2 addWaypoint [_cords getpos [30, _vic_1 getDir _movePos], 0];
+
+    doStop _vic_1;
+    doStop _vic_2;
+
+    {
+        _x disableAI "PATH";
+    } forEach ((units _vicGroup_1) + (units _vicGroup_2));
+
+    if !(_reverse) then {
+        [_vic_1, (getpos _vic_1) getPos [50, _cordsDir]] spawn pl_vic_turn_in_place;
+        if (_vic_2 distance2D _movePos > 5) then {
+            [_vic_2, _movePos, [_vic_2] call _fnc_get_speed] call pl_vic_advance_to_pos_static;
+        };
+        [_vic_2, (getpos _vic_2) getPos [50, _cordsDir]] call pl_vic_turn_in_place;
+    } else {
+        [_vic_1, (getpos _vic_1) getPos [-50, _cordsDir]] spawn pl_vic_turn_in_place;
+        if (_vic_2 distance2D _movePos > 5) then {
+            [_vic_2, _movePos, [_vic_2] call _fnc_get_speed] call pl_vic_reverse_to_pos;
+        };
+        [_vic_2, (getpos _vic_2) getPos [-50, _cordsDir]] call pl_vic_turn_in_place;
+    };
+
+    for "_i" from 0 to _intervals - 1 do {
+
+        if (_moveDistance > (_vic_1 distance2D _cords)) then {_moveDistance = _vic_1 distance2D _cords};    
+
+        if !(_reverse) then {
+            [_vic_1, (getpos _vic_1) getPos [_moveDistance, _vic_1 getDir _cords], [_vic_1] call _fnc_get_speed, 1] call pl_vic_advance_to_pos_static;
+        } else {
+            [_vic_1, (getpos _vic_1) getPos [_moveDistance, _vic_1 getDir _cords], [_vic_1] call _fnc_get_speed, 1] call pl_vic_reverse_to_pos;
+        };
+
+        sleep 0.5;
+
+        _moveDistance = _moveDistanceRaw * 2;
+
+        if (!(_vicGroup_1 getVariable ["onTask", false]) or !(_vicGroup_2 getVariable ["onTask", false])) exitWith {};
+
+        if (_moveDistance > (_vic_2 distance2D _cords)) then {_moveDistance = _vic_2 distance2D _cords}; 
+
+        if !(_reverse) then {
+            [_vic_2, (getpos _vic_2) getPos [_moveDistance, _vic_1 getDir _cords], [_vic_2] call _fnc_get_speed, 1] call pl_vic_advance_to_pos_static;
+        } else {
+            [_vic_2, (getpos _vic_2) getPos [_moveDistance, _vic_1 getDir _cords], [_vic_2] call _fnc_get_speed, 1] call pl_vic_reverse_to_pos;
+        };
+
+        if (!(_vicGroup_1 getVariable ["onTask", false]) or !(_vicGroup_2 getVariable ["onTask", false])) exitWith {};
+    };
+
+    _vics = [_vics, [], {_cords distance2D _x}, "ASCEND"] call BIS_fnc_sortBy;
+
+    _vic_1 = _vics#0;
+    _vic_2 = _vics#1;
+
+    _rightPos = (getPos _vic_1) getPos [30, _cordsDir + 90];
+    _leftPos = (getPos _vic_1) getPos [30, _cordsDir - 90];
+
+    _movePos = ([[_leftPos, _rightPos], [], {_vic_2 distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
+
+    if !(_reverse) then {
+        if (_vic_2 distance2D _movePos > 5) then {
+            [_vic_2, _movePos, [_vic_2] call _fnc_get_speed] call pl_vic_advance_to_pos_static;
+        };
+        [_vic_2, (getpos _vic_2) getPos [50, _cordsDir]] call pl_vic_turn_in_place;
+    } else {
+        if (_vic_2 distance2D _movePos > 5) then {
+            [_vic_2, _movePos, [_vic_2] call _fnc_get_speed] call pl_vic_reverse_to_pos;
+        };
+        [_vic_2, (getpos _vic_2) getPos [-50, _cordsDir]] call pl_vic_turn_in_place;
+    };
+
+    // pl_follow_array_other = pl_follow_array_other - [[_vicGroup_1, _vicGroup_2]];
+    // pl_draw_disengage_array =  pl_draw_disengage_array - [[_vicGroup_1, _cords]];
+
+    {   
+        [_x] spawn pl_reset;
+    } forEach _groups;
+
+
 };
 
 
@@ -788,29 +1023,32 @@ pl_cross_bridge = {
         _group setVariable ["pl_on_march", true];
         _group addWaypoint [_furthest getPos [35, _closest getDir _furthest], 0];
         {
-            [_x, _group, _closest, _furthest, _closest getDir _furthest, _deployed] spawn {
-                params ["_unit", "_group", "_closest", "_furthest", "_dir", "_deployed"];
+            if ((_x distance2D _closest) < (_x distance2d _furthest)) then {
+                [_x, _group, _closest, _furthest, _closest getDir _furthest, _deployed] spawn {
+                    params ["_unit", "_group", "_closest", "_furthest", "_dir", "_deployed"];
 
-                doStop _unit;
-                _unit doMove _closest;
-
-                waitUntil {sleep 0.5; (_unit distance2D _closest) < 5 or !alive _unit or !(_group getVariable ["onTask", false])};
-                if (_deployed) then {_unit setVehiclePosition [_closest, [], 0, "CAN_COLLIDE"]};
-                _movePos = _furthest getPos [15, _dir];
-
-                if (alive _unit and (_group getVariable ["onTask", false])) then {
-                    _unit setCombatBehaviour "CARELESS";
-                    _unit disableAI "ANIM";
-                    _unit setDir (_unit getdir _movePos);
-                    _unit switchMove "AmovPercMrunSrasWrflDf_ldst";
-                    waitUntil {sleep 0.5; (_unit distance2D _movePos) < 10 or !alive _unit or !(_group getVariable ["onTask", false])};
-                    _unit enableAI "ALL";
-                    _unit switchMove "";
+                    doStop _unit;
+                    _unit doMove _closest;
                     _unit setCombatBehaviour "AWARE";
-                    _unit doFollow (leader _group);
-                    // if (_unit == (leader _group)) then {
-                        _unit doMove (_movePos getPos [20, _dir]);
-                    // };
+
+                    waitUntil {sleep 0.5; (_unit distance2D _closest) < 4 or !alive _unit or !(_group getVariable ["onTask", false])};
+                    if (_deployed) then {_unit setVehiclePosition [_closest, [], 0, "CAN_COLLIDE"]};
+                    _movePos = _furthest getPos [15, _dir];
+
+                    if (alive _unit and (_group getVariable ["onTask", false])) then {
+                        _unit setCombatBehaviour "CARELESS";
+                        _unit disableAI "ANIM";
+                        _unit setDir (_unit getdir _movePos);
+                        _unit switchMove "AmovPercMrunSrasWrflDf_ldst";
+                        waitUntil {sleep 0.5; (_unit distance2D _movePos) < 10 or !alive _unit or !(_group getVariable ["onTask", false])};
+                        _unit enableAI "ALL";
+                        _unit switchMove "";
+                        _unit setCombatBehaviour "AWARE";
+                        _unit doFollow (leader _group);
+                        // if (_unit == (leader _group)) then {
+                            _unit doMove (_movePos getPos [20, _dir]);
+                        // };
+                    };
                 };
             };
         } forEach units _group;
@@ -825,7 +1063,7 @@ pl_cross_bridge = {
         // _m = createMarker [str (random 4), _closest];
         // _m setMarkerType "mil_dot";
 
-        _movePos2 = _furthest getPos [20, _dir];
+        _movePos2 = _furthest getPos [40, _dir];
         _group addWaypoint [_movePos2, 0];
         // doStop _vic;
 
@@ -861,6 +1099,7 @@ pl_cross_bridge = {
         } forEach (units _group);
 
         _group setBehaviourStrong "AWARE";
+        _group setVariable ["onTask", false];
 
         sleep 2;
 
@@ -877,25 +1116,64 @@ pl_cross_bridge = {
     };
 };
 
-pl_vic_reverse_to_pos = {
-    params ["_vic", "_pos", ["_speed", 6]];
+pl_vic_advance_to_pos_static = {
+    params ["_vic", "_pos", ["_speed", 4], ["_acs", 0.5]];
 
+    if !([_vic] call pl_canMove) exitWith {};
 
-    [_vic, _vic getPos [50, _pos getDir _vic]] call pl_vic_turn_in_place;
-    // _vic setDir (_pos getDir _vic);
+    [_vic, _pos] call pl_vic_turn_in_place;
+    // _vic setDir (_vic getDir _pos);
 
     private _startPos = getPos _vic;
     private _distancetoTravel = (_startPos distance2d _pos) - 1;
     (group (driver _vic)) setVariable ["pl_on_march", true];
     _vic disableBrakes true;
+    _vic engineOn false;
     _vic engineOn true;
     _n = _speed;
     while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
-        if (_n > 0) then {_n = _n - 0.5};
+
+        _vic disableBrakes true;
         if (count (((getPos _vic) getPos [-8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
+            if (_n > 0) then {_n = _n - _acs};
             _vic setVelocityModelSpace [0, - (_speed - _n),0];
         } else {
-            break;
+            _n = _speed;
+            _vic disableBrakes false;
+        };
+        // if (time % 2 == 0) then {_vic setDir (_vic getDir _pos)};
+        sleep 0.5;
+    };
+    _vic disableBrakes false;
+    (group (driver _vic)) setVariable ["pl_on_march", false];
+};
+
+pl_vic_reverse_to_pos = {
+    params ["_vic", "_pos", ["_speed", 6], ["_acs", 0.5]];
+
+    if !([_vic] call pl_canMove) exitWith {};
+
+    [_vic, _vic getPos [50, _pos getDir _vic]] call pl_vic_turn_in_place;
+    // _vic setDir (_pos getDir _vic);
+
+    if (_speed > 8) then {_speed = 8};
+
+    private _startPos = getPos _vic;
+    private _distancetoTravel = (_startPos distance2d _pos) - 1;
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+    _vic disableBrakes true;
+    _vic engineOn false;
+    _vic engineOn true;
+    _n = _speed;
+    while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+
+        _vic disableBrakes true;
+        if (count (((getPos _vic) getPos [-8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
+            if (_n > 0) then {_n = _n - _acs};
+            _vic setVelocityModelSpace [0, - (_speed - _n),0];
+        } else {
+            _n = _speed;
+            _vic disableBrakes false;
         };
         sleep 0.5;
     };
@@ -907,11 +1185,14 @@ pl_vic_reverse_to_pos = {
 pl_vic_advance_to_pos = {
     private ["_vic", "_pos"];
 
+
     _group = (hcSelected player)#0;
 
     if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task"};
 
     _vic = vehicle (leader _group);
+
+    if !([_vic] call pl_canMove) exitWith {hint "Vehicle cant move!"};
 
     if (visibleMap) then {
         _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
@@ -919,7 +1200,7 @@ pl_vic_advance_to_pos = {
         _pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
     };
 
-    pl_draw_disengage_array pushBack [_group, _pos];
+    // pl_draw_disengage_array pushBack [_group, _pos];
 
     [_group] call pl_reset;
 
@@ -928,6 +1209,14 @@ pl_vic_advance_to_pos = {
     [_group] call pl_reset;
 
     sleep 0.5;
+
+    _wp = _group addWaypoint [_pos, 0];
+
+    doStop _vic;
+
+    {
+        _x disableAI "PATH";
+    } forEach (units _group);
 
     // if ((_vic distance2D _pos) > 75) then {_pos = (getPos _vic) getPos [70, _vic getDir _pos]};
 
@@ -938,21 +1227,28 @@ pl_vic_advance_to_pos = {
     private _distancetoTravel = (_startPos distance2d _pos) - 1;
     (group (driver _vic)) setVariable ["pl_on_march", true];
     _vic disableBrakes true;
+    _vic engineOn false;
     _vic engineOn true;
     _n = 4;
     while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
-        if (_n > 0) then {_n = _n - 0.5};
 
+        _vic disableBrakes true;
         if (count (((getPos _vic) getPos [8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
+            if (_n > 0) then {_n = _n - 0.5};
             _vic setVelocityModelSpace [0, 4 - _n,0];
         } else {
-            break;
+            _n = 4;
+            _vic disableBrakes false;
         };
         sleep 0.5;
     };
     _vic disableBrakes false;
     (group (driver _vic)) setVariable ["pl_on_march", false];
-    pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _pos]];
+    // pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _pos]];
+
+    {
+        _x enableAI "PATH";
+    } forEach (units _group);
 };
 
 pl_vic_advance_to_pos_reverse = {
@@ -964,24 +1260,34 @@ pl_vic_advance_to_pos_reverse = {
 
     _vic = vehicle (leader _group);
 
+    if !([_vic] call pl_canMove) exitWith {hint "Vehicle cant move!"};
+
     if (visibleMap) then {
         _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
     } else {
         _pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
     };
 
-    // if ((_vic distance2D _pos) > 75) then {_pos = (getPos _vic) getPos [70, _vic getDir _pos]};
+    // if ((_vic distance2D _pos) > 75) then {_pos = (getPos _vic) getPos [70, _vic getDir _pos]};#
 
-    pl_draw_disengage_array pushBack [_group, _pos];
 
-    [_group] call pl_reset;
-
-    sleep 0.5;
+    // pl_draw_disengage_array pushBack [_group, _pos];
 
     [_group] call pl_reset;
 
     sleep 0.5;
 
+    [_group] call pl_reset;
+
+    sleep 0.5;
+
+    _wp = _group addWaypoint [_pos, 0];
+
+    doStop _vic;
+
+    {
+        _x disableAI "PATH";
+    } forEach (units _group);
 
     [_vic, (getPos _vic) getPos [50, _pos getDir _vic]] call pl_vic_turn_in_place;
 
@@ -989,52 +1295,38 @@ pl_vic_advance_to_pos_reverse = {
     private _distancetoTravel = (_startPos distance2d _pos) - 1;
     (group (driver _vic)) setVariable ["pl_on_march", true];
     _vic disableBrakes true;
+    _vic engineOn false;
     _vic engineOn true;
     _n = 4;
     while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
-        if (_n > 0) then {_n = _n - 0.5};
-
-        if (count (((getPos _vic) getPos [-8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
-            _vic setVelocityModelSpace [0, - (4 - _n),0];
-        } else {
-            break;
-        };
-        sleep 0.5;
-    };
-    _vic disableBrakes false;
-    (group (driver _vic)) setVariable ["pl_on_march", false];
-    pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _pos]];
-};
-
-pl_vic_advance_to_pos_static = {
-    params ["_vic", "_pos", ["_speed", 4]];
-
-    [_vic, _pos] call pl_vic_turn_in_place;
-    // _vic setDir (_vic getDir _pos);
-
-    private _startPos = getPos _vic;
-    private _distancetoTravel = (_startPos distance2d _pos) - 1;
-    (group (driver _vic)) setVariable ["pl_on_march", true];
-    _vic disableBrakes true;
-    _vic engineOn true;
-    _n = _speed;
-    while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
-        if (_n > 0) then {_n = _n - 0.5};
+        
+        _vic disableBrakes true;
         if (count (((getPos _vic) getPos [8, getdir _vic]) nearEntities [["Car", "Tank", "Truck", "Man"], 10]) <= 1) then {
-            _vic setVelocityModelSpace [0,_speed - _n,0];
+            if (_n > 0) then {_n = _n - 0.5};
+            _vic setVelocityModelSpace [0, 4 - _n,0];
         } else {
-            break;
+            _n = 4;
+            _vic disableBrakes false;
         };
-        // if (time % 2 == 0) then {_vic setDir (_vic getDir _pos)};
         sleep 0.5;
     };
     _vic disableBrakes false;
     (group (driver _vic)) setVariable ["pl_on_march", false];
+    // pl_draw_disengage_array =  pl_draw_disengage_array - [[_group, _pos]];
+
+    {
+        _x enableAI "PATH";
+    } forEach (units _group);
 };
 
 pl_vic_turn_in_place = {
     params ["_vic", "_targetPos"];
 
+    if !([_vic] call pl_canMove) exitWith {};
+
+    if (_vic getRelDir _targetPos <= 2.5) exitWith {}; 
+
+    _vic engineOn false;
     _vic engineOn true;
     _vic disableBrakes true;
     private _degreesToRotate = _vic getRelDir _targetPos;

@@ -119,8 +119,8 @@ pl_str_sop_atkOnContact = '<img color="#e5e500" image="\Plmod\gfx\pl_std_atk.paa
 pl_str_sop_defOnContact = '<img color="#e5e500" image="\Plmod\gfx\pl_position.paa"/><t> Defend on Contact</t>';
 pl_str_sop_disengageOnContact = '<img color="#e5e500" image="\Plmod\gfx\pl_withdraw_marker.paa"/><t> Disengage on Contact</t>';
 
-pl_str_sop_unloadUnderAt = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"/><t> Unload Cargo on AT Fire</t>';
-pl_str_sop_stopUnderAt = '<img color="#e5e500" image="\A3\3den\data\Attributes\default_ca.paa"/><t> Stop on AT Fire</t>';
+pl_str_sop_unloadUnderAt = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\exit_ca.paa"/><t> Unload Cargo on Contact</t>';
+pl_str_sop_stopUnderAt = '<img color="#e5e500" image="\A3\3den\data\Attributes\default_ca.paa"/><t> Stop on Contact</t>';
 pl_str_sop_disengageUnderAt = '<img color="#e5e500" image="\Plmod\gfx\pl_withdraw_marker.paa"/><t> Disengage on AT Fire</t>';
 
 pl_str_sop_autoFormation = '<img color="#e5e500" image="\A3\3den\data\Attributes\Formation\wedge_ca.paa"/><t> Independent Formations</t>';
@@ -186,6 +186,7 @@ pl_set_sop_onContact = {
 
     {
         _group = _x;
+        _group setVariable ["pl_sop_active", true];
         // {
         //     _group setVariable [_x, nil];
         // } forEach ["pl_sop_atkOnContact", "pl_sop_defOnContact", "pl_sop_disengageOnContact"];
@@ -211,6 +212,7 @@ pl_reset_sop = {
     params ["_group"];
     {
         _group setVariable [_x, nil];
+        _group setVariable ["pl_sop_active", nil];
         // _group setVariable ["pl_sop_def_disenage", true];
         // _group setVariable ["pl_sop_def_ATEngagement", true];
         // _group setVariable ["pl_sop_def_resupply", true];
@@ -279,6 +281,7 @@ pl_str_clear_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTa
 pl_str_des_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Demolish Bridge</t>';
 pl_str_rpr_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Repair Bridge</t>';
 pl_str_create_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Deploy Vehicle Launched Bridge</t>';
+pl_str_mc_lc = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Deploy Mine Clearing Line Charge</t>';
 pl_str_clear_markers = 'Clear Engineering Markers';
 
 pl_show_egineer_menu = {
@@ -291,14 +294,15 @@ pl_show_egineer_menu = {
         [parseText '%4', [4], '', -5, [['expression', '[] spawn pl_lay_mine_field']], '%1', 'HCNotEmpty'],
         [parseText '%5', [5], '#USER:pl_mine_spacing_menu', -5, [['expression', '']], '%1', '1'],
         [parseText '%6', [6], '', -5, [['expression', '[] spawn pl_mine_clearing']], '1', 'HCNotEmpty'],
+        [parseText '%11', [7], '', -5, [['expression', '[] spawn pl_mc_lc']], '1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%7', [7], '', -5, [['expression', '[] spawn pl_destroy_bridge']], '%1', 'HCNotEmpty'],
-        [parseText '%8', [8], '', -5, [['expression', '[] spawn pl_repair_bridge']], '%1', 'HCNotEmpty'],
-        [parseText '%10', [9], '', -5, [['expression', '[] spawn pl_create_bridge']], '%1', 'HCNotEmpty'],
+        [parseText '%7', [8], '', -5, [['expression', '[] spawn pl_destroy_bridge']], '%1', 'HCNotEmpty'],
+        [parseText '%8', [9], '', -5, [['expression', '[] spawn pl_repair_bridge']], '%1', 'HCNotEmpty'],
+        [parseText '%10', [10], '', -5, [['expression', '[] spawn pl_create_bridge']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%9', [10], '', -5, [['expression', '{deleteMarker _x} forEach pl_engineering_markers; pl_engineering_markers = []']], '%1', 'HCNotEmpty']
+        [parseText '%9', [11], '', -5, [['expression', '{deleteMarker _x} forEach pl_engineering_markers; pl_engineering_markers = []']], '%1', 'HCNotEmpty']
 
-    ];", pl_virtual_mines_enabled, pl_str_charge, pl_str_detonate, pl_str_lay_mine_field, pl_str_mine_field_spacing, pl_str_clear_mine, pl_str_des_bridge, pl_str_rpr_bridge, pl_str_clear_markers, pl_str_create_bridge];
+    ];", pl_virtual_mines_enabled, pl_str_charge, pl_str_detonate, pl_str_lay_mine_field, pl_str_mine_field_spacing, pl_str_clear_mine, pl_str_des_bridge, pl_str_rpr_bridge, pl_str_clear_markers, pl_str_create_bridge, pl_str_mc_lc];
 };
 
 [] call pl_show_egineer_menu;
@@ -579,8 +583,9 @@ pl_task_plan_menu_eng_sub = [
     ['Task Plan Combat Engineering', true],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [2], '', -5, [['expression', '["mine"] call pl_task_planer']], '1', '1'],
     [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [3], '', -5, [['expression', '["mineclear"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [4], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Deploy Vehicle Launched Bridge</t>', [5], '', -5, [['expression', '["createbridge"] call pl_task_planer']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Deploy Mine Clearing Line Charge</t>', [4], '', -5, [['expression', '["mc_lc"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [5], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Deploy Vehicle Launched Bridge</t>', [6], '', -5, [['expression', '["createbridge"] call pl_task_planer']], '1', '1']
 ];
 
 pl_task_plan_menu_css_sub = [
