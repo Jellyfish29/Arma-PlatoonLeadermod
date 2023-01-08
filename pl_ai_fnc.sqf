@@ -357,8 +357,8 @@ pl_auto_formation = {
         waitUntil {sleep 1; !(_group getVariable ["pl_vic_attached", false]) and (_group getVariable ["pl_choose_auto_formation", false])};
 
         if ([getPos (leader _group)] call pl_is_city) then {
-            if (formation _group != "WEDGE") then {
-                _group setFormation "WEDGE";
+            if (formation _group != "VEE") then {
+                _group setFormation "VEE";
             }; 
         } else {
             if ((currentWaypoint _group) < count (waypoints _group)) then {
@@ -575,7 +575,7 @@ pl_set_up_ai = {
     if ((vehicle (leader _group)) != leader _group) then {
         _vic = vehicle (leader _group);
         _vic setVariable ["pl_rtb_pos", getPos _vic];
-        [_group] call pl_hc_mech_inf_icon_changer;
+        // [_group] call pl_hc_mech_inf_icon_changer;
         // if (_vic isKindOf "Air" and pl_enable_auto_air_remove) then {
         //     player hcRemoveGroup _group;
         // };
@@ -738,34 +738,34 @@ pl_vehicle_setup = {
         _repairCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportRepair");
         _transportCap = getNumber (configFile >> "cfgVehicles" >> _vicType >> "transportSoldier");
 
-        if ((_magazineCap >= 256 and _transportCap > 8 and _repairCap <= 0 and _vic isKindOf "Car") or _vic getVariable ["pl_set_supply_vic", false] or _ammoCap > 0) then {
+        if ((_magazineCap >= 256 and _transportCap > 8 and _repairCap <= 0 and _vic isKindOf "Car") or _vic getVariable ["pl_is_supply_vehicle", false] or _ammoCap > 0) then {
             _vic setVariable ["pl_is_supply_vehicle", true];
-            _vic setVariable ["pl_supplies", pl_max_supplies_per_vic];
-            _vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
+            if ((_vic getVariable ["pl_supplies", -1]) == -1) then {_vic setVariable ["pl_supplies", pl_max_supplies_per_vic]};
+            if ((_vic getVariable ["pl_avaible_reinforcements", -1]) == -1) then {_vic setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic]};
             _vic setAmmoCargo 0;
-            [group (driver _vic)] spawn {
-                params ["_grp"];
-                sleep 5;
-                [_grp, "f_truck_sup_pl"] call pl_change_group_icon;
-            };
+            // [group (driver _vic)] spawn {
+            //     params ["_grp"];
+            //     sleep 5;
+            //     [_grp, "f_truck_sup_pl"] call pl_change_group_icon;
+            // };
         };
 
-        if (_repairCap > 0 or _vic getVariable ["pl_set_repair_vic", false]) then {
+        if (_repairCap > 0 or _vic getVariable ["pl_is_repair_vehicle", false]) then {
             _vic setVariable ["pl_is_repair_vehicle", true];
-            _vic setVariable ["pl_repair_supplies", pl_max_repair_supplies_per_vic];
+            if ((_vic getVariable ["pl_repair_supplies", -1]) == -1) then {_vic setVariable ["pl_repair_supplies", pl_max_repair_supplies_per_vic]};
             _vic setVariable ["pl_bridge_available", true];
             _vic setRepairCargo 0;
 
             if (_vic isKindOf "Tank") then {
-                _engVic setVariable ["pl_line_charges", 4];
+                if ((_vic getVariable ["pl_line_charges", -1]) == -1) then {_vic setVariable ["pl_line_charges", 4]};
             };
 
-            [group (driver _vic)] spawn {
-                params ["_grp"];
-                _grp setvariable ["pl_is_repair_group", true];
-                sleep 5;
-                [_grp, "f_truck_rep_pl"] call pl_change_group_icon;
-            };
+            // [group (driver _vic)] spawn {
+            //     params ["_grp"];
+            //     _grp setvariable ["pl_is_repair_group", true];
+            //     sleep 5;
+            //     [_grp, "f_truck_rep_pl"] call pl_change_group_icon;
+            // };
         } else {
             if (([_vic] call pl_is_apc) or ([_vic] call pl_is_ifv) or _vic isKindOf "Car") then {
                 _vic setVariable ["pl_supplies", 40];
@@ -773,6 +773,22 @@ pl_vehicle_setup = {
         };
 
         if ((typeof _vic) isEqualTo "gm_ge_army_bibera0") then {_vic setVariable ["pl_bridge_available", true];};
+
+        if (_vic getVariable ["pl_is_mine_vic", false]) then {
+            if ((_vic getVariable ["pl_virtual_mines", -1]) == -1) then {_vic setVariable ["pl_virtual_mines", 150]};
+        };
+
+        if (_vic getVariable ["pl_is_mc_lc_vehicle", false]) then {
+            if ((_vic getVariable ["pl_line_charges", -1]) == -1) then {_vic setVariable ["pl_line_charges", 4]};
+        };
+        
+        if (_vic getVariable ["pl_is_eng_apc", false]) then {
+            _vic setVariable ["pl_is_mine_vic", true];
+            _vic setVariable ["pl_is_mc_lc_vehicle", true];
+            if ((_vic getVariable ["pl_virtual_mines", -1]) == -1) then {_vic setVariable ["pl_virtual_mines", 150]};
+            if ((_vic getVariable ["pl_line_charges", -1]) == -1) then {_vic setVariable ["pl_line_charges", 4]};
+            _vic setVariable ["pl_bridge_available", true];
+        };
 
         // Missile alert
         _vic addEventHandler ["IncomingMissile", {
@@ -1024,22 +1040,22 @@ pl_ai_setUp_loop = {
 pl_auto_unstuck = {
     params ["_unit"];
 
-    _distance = _unit distance2D leader (group _unit);
-    if (_distance > 100 and _unit checkAIFeature "PATH" and !(_unit getVariable ["pl_engaging", false])) then {
-        doStop _unit;
-        _pos = (getPos _unit) findEmptyPosition [2, 50, typeOf _unit];
-        _unit setPos _pos;
-        _unit doFollow leader (group _unit);
-        _unit switchMove "";
-        if ([getPos _unit] call pl_is_indoor) then {
-            _b = nearestBuilding (getPos _unit);
-            _unit disableCollisionWith _b;
-            [_unit, _b] spawn {
-                sleep 15;
-                (_this#0) enableCollisionWith (_this#1);
-            };
-        };
-    };
+    // _distance = _unit distance2D leader (group _unit);
+    // if (_distance > 100 and _unit checkAIFeature "PATH" and !(_unit getVariable ["pl_engaging", false])) then {
+    //     doStop _unit;
+    //     _pos = (getPos _unit) findEmptyPosition [2, 50, typeOf _unit];
+    //     _unit setPos _pos;
+    //     _unit doFollow leader (group _unit);
+    //     _unit switchMove "";
+    //     if ([getPos _unit] call pl_is_indoor) then {
+    //         _b = nearestBuilding (getPos _unit);
+    //         _unit disableCollisionWith _b;
+    //         [_unit, _b] spawn {
+    //             sleep 15;
+    //             (_this#0) enableCollisionWith (_this#1);
+    //         };
+    //     };
+    // };
 };
 
 pl_vehicle_tree_stuck_fix = {
@@ -1073,6 +1089,96 @@ pl_vehicle_unstuck = {
             _x switchMove "";
         } forEach (units _group);
     };
+};
+
+
+pl_vehicle_unstuck_to_pos = {
+    params [["_group", (hcSelected player)#0]];
+    private ["_vic", "_cords", "_mPos"];
+    if (vehicle (leader _group) != leader _group) then {
+
+        _vic = vehicle (leader _group);
+        _type = typeOf _vic;
+
+        if (visibleMap or !(isNull findDisplay 2000)) then {
+            hintSilent "";
+            hint "Select Unstuck position on MAP (SHIFT + LMB to cancel)";
+            pl_show_obstacles = true;
+            pl_show_obstacles_pos = getPos (leader _group);
+
+            private _rangelimiter = 20;
+
+            _markerBorderName = str (random 2);
+            private _borderMarkerPos = getPos (leader _group);
+            if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+            createMarker [_markerBorderName, _borderMarkerPos];
+            _markerBorderName setMarkerShape "ELLIPSE";
+            _markerBorderName setMarkerBrush "Border";
+            _markerBorderName setMarkerColor "colorOrange";
+            _markerBorderName setMarkerAlpha 0.8;
+            _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+            onMapSingleClick {
+                pl_mine_cords = _pos;
+                pl_mapClicked = true;
+                if (_shift) then {pl_cancel_strike = true};
+                hintSilent "";
+                onMapSingleClick "";
+            };
+
+            while {!pl_mapClicked} do {
+                if (visibleMap) then {
+                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
+            };
+            pl_mapClicked = false;
+            if (pl_cancel_strike) exitWith {
+                pl_show_obstacles = false;
+                pl_mapClicked = false;
+            };
+
+            _cords = _mPos;
+            deleteMarker _markerBorderName;
+            pl_show_obstacles = false;
+            pl_mapClicked = false;
+        }
+        else
+        {
+            _cords = screenToWorld [0.5, 0.5];
+            _rangelimiter = 20;
+            if (_cords distance2D (getpos (leader _group))) > _rangelimiter then {
+                hint "Out of Range";
+            };
+        };
+
+        if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+
+        _vic setVehiclePosition [_cords, [], 0, "NONE"];
+    }
+    else
+    {
+        hint "Only for Vehicles";
+    };
+};
+
+
+pl_force_road = {
+    {
+        if (vehicle (leader _x) != leader _x) then {
+            _vic = vehicle (leader _x);
+
+            if (_vic getVariable ["pl_force_road", false]) then {
+                _vic forceFollowRoad false;
+                _vic setVariable ["pl_force_road", nil];
+            } else {
+                _vic forceFollowRoad true;
+                _vic setVariable ["pl_force_road", true];
+            };
+
+        };
+    } forEach (hcSelected player);  
 };
 
 pl_vehicle_soft_unstuck = {
@@ -1187,14 +1293,17 @@ pl_reset_vic = {
     _b = getBackpackCargo _vic;
     _vicInv = [_w, _t, _m ,_b];
 
-    _isSupply = _vic getVariable ["pl_is_supply_vehicle", false];
-    _isRepair = _vic getVariable ["pl_is_repair_vehicle", false];
-    _supplies = _vic getVariable ["pl_supplies", 0];
-    _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];
-    _repairCargo = _vic getVariable ["pl_repair_supplies", 0];
     _lifes = _vic getVariable ["pl_repair_lifes", 1];
     _varName = vehicleVarName _vic;
     _damage = getDammage _vic;
+
+    private _vars = [];
+    {
+        _value = _killed getVariable [_x, objNull];
+        if !(isNull _value) then {
+            _vars pushback [_x, _value];
+        };
+    } forEach ["pl_line_charges", "pl_bridge_available", "pl_is_supply_vehicle", "pl_supplies", "pl_avaible_reinforcements", "pl_is_repair_vehicle", "pl_repair_supplies", "pl_bridge_available", "pl_is_mine_vic", "pl_virtual_mines", "pl_is_mc_lc_vehicle", "pl_line_charges", "pl_is_eng_apc"];
 
     _crew = fullCrew _vic;
     _pos = getPosATLVisual _vic;
@@ -1250,32 +1359,11 @@ pl_reset_vic = {
     [_newVic] spawn pl_vehicle_tree_stuck_fix;
     [_newVic] spawn pl_auto_vic_speed;
     _newVic setVariable ["pl_repair_lifes", _lifes];
+
+    {
+        _newVic setVariable [_x#0, _x#1];
+    } forEach _vars;
     
-    if (_isSupply) then {
-        _newVic setVariable ["pl_avaible_reinforcements", _reinforcements];
-        _newVic setAmmoCargo 0;
-        [group (driver _newVic)] spawn {
-            params ["_grp"];
-            sleep 5;
-            [_grp, "support"] call pl_change_group_icon;
-        };
-    };
-
-    if (_supplies > 0) then {
-        _newVic setVariable ["pl_supplies", _supplies];
-    };
-
-    if (_isRepair) then {
-        _newVic setVariable ["pl_is_repair_vehicle", true];
-        _newVic setVariable ["pl_repair_supplies", _repairCargo];
-        _newVic setRepairCargo 0;
-        [group (driver _newVic)] spawn {
-            params ["_grp"];
-            sleep 5;
-            [_grp, "maint"] call pl_change_group_icon;
-        };
-    };
-
     _newVic addEventHandler ["IncomingMissile", {
             params ["_target", "_ammo", "_vehicle", "_instigator"];
 

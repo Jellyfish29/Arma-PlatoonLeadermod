@@ -34,6 +34,21 @@ pl_get_vic_health = {
     pl_side_color_rgb
 };
 
+pl_get_vic_speed_color = {
+    params ["_vic"];
+    _vicSpeedLimit = _vic getVariable 'pl_speed_limit';
+    _vicSpeedColor = [0.9, 0.9, 0.9,1];
+    switch (_vicSpeedLimit) do { 
+        case '50' : {_vicSpeedColor = [0.4,1,0.2,1]}; 
+        case '30' : {_vicSpeedColor = [0.9,0.9,0,1]};
+        case '15' : {_vicSpeedColor = [0.7,0,0,1]}; 
+        case 'CON' : {_vicSpeedColor = [0.92,0.24,0.07,1]}; 
+        default {_vicSpeedColor = [0.4,1,0.2,1]}; 
+    };
+    // if (_vic getVariable ["pl_force_road", false]) then {_vicSpeedColor = [0,0,0.8,1]};
+    _vicSpeedColor
+};
+
 pl_get_at_status = {
     params ["_group"];
     private ["_ammoStatus", "_liveStatus", "_missileCount", "_c "];
@@ -313,16 +328,10 @@ pl_draw_group_info = {
                         '',
                         2
                     ];
-                    _vicSpeedLimit = vehicle (leader _x) getVariable 'pl_speed_limit';
+
                     _vicSpeedPos = [(_pos select 0), (_pos select 1) + (pl_map_scale_y * 1.25)];
-                    _vicSpeedColor = [0.9, 0.9, 0.9,1];
-                    switch (_vicSpeedLimit) do { 
-                        case '50' : {_vicSpeedColor = [0.4,1,0.2,1]}; 
-                        case '30' : {_vicSpeedColor = [0.9,0.9,0,1]};
-                        case '15' : {_vicSpeedColor = [0.7,0,0,1]}; 
-                        case 'CON' : {_vicSpeedColor = [0.92,0.24,0.07,1]}; 
-                        default {_vicSpeedColor = [0.4,1,0.2,1]}; 
-                    };
+
+                    _vicSpeedColor = [vehicle (leader _x)] call pl_get_vic_speed_color;
                     
                     _display drawIcon [
                         '\A3\ui_f\data\map\markers\military\dot_CA.paa',
@@ -334,6 +343,20 @@ pl_draw_group_info = {
                         '',
                         2
                     ];
+
+                    if (vehicle (leader _x) getVariable ['pl_force_road', false]) then {
+                        _display drawIcon [
+                            '\A3\ui_f\data\map\MapControl\Tree_CA.paa',
+                            _vicSpeedColor,
+                            _vicSpeedPos,
+                            12,
+                            12,
+                            0,
+                            '',
+                            2
+                        ];
+                    };
+
                     if (_x getVariable ['pl_has_cargo', false]) then {
                         _cargoPos = [(_pos select 0) - (pl_map_scale_x * 2), _pos select 1];
                         _color = [0.9,0.9,0,1];

@@ -1516,27 +1516,11 @@ class RscHCGroupRootMenu
                 speechId=0;
             };
 
-            class PllineUp
-            {
-                title="Line Up on Road";
-                shortcuts[]={9};
-                shortcutsAction = "CommandingMenu9";
-                submenu="";
-                command=-5;
-                class params
-                {
-                    expression="[] spawn pl_line_up_on_road";
-                };
-                show="HCIsLeader";
-                enable="HCNotEmpty";
-                speechId=0;
-            };
-
             class PlReverseVic
             {
                 title="Reverse Vehicle Direction";
-                shortcuts[]={10};
-                shortcutsAction = "CommandingMenu9";
+                shortcuts[]={8};
+                shortcutsAction = "CommandingMenu8";
                 submenu="";
                 command=-5;
                 class params
@@ -1547,11 +1531,28 @@ class RscHCGroupRootMenu
                 enable="HCNotEmpty";
                 speechId=0;
             };
+
+            class PlunstuckToPos
+            {
+                title="Unstuck Vehicle to Mouse Pos";
+                shortcuts[]={9};
+                shortcutsAction = "CommandingMenu9";
+                submenu="";
+                command=-5;
+                class params
+                {
+                    expression="[] spawn pl_vehicle_unstuck_to_pos";
+                };
+                show="HCIsLeader";
+                enable="HCNotEmpty";
+                speechId=0;
+            };
+
             class PlUnstuckVic
             {
                 title="Unstuck Vehicle/Group";
-                shortcuts[]={11};
-                shortcutsAction = "CommandingMenu0";
+                shortcuts[]={10};
+                shortcutsAction = "CommandingMenu10";
                 submenu="";
                 command=-5;
                 class params
@@ -2873,6 +2874,84 @@ class CfgMarkers
         texture="\Plmod\gfx\marta\b_f_bridgetank_pl.paa";
     };
 
+    class b_f_engapctr_pl: b_f_tank_pl
+    {
+        name="Engineering APC tracked";
+        icon="\Plmod\gfx\marta\b_f_engapctr_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_engapctr_pl.paa";
+    };
+    class b_f_apcarv_pl: b_f_tank_pl
+    {
+        name="ARV APC Blufor";
+        icon="\Plmod\gfx\marta\b_f_apcarv_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_apcarv_pl.paa";
+    };
+
+    class o_f_engapctr_pl: o_f_tank_pl
+    {
+        name="Engineering APC tracked";
+        icon="\Plmod\gfx\marta\o_f_engapctr_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_engapctr_pl.paa";
+    };
+    class o_f_apcarv_pl: o_f_tank_pl
+    {
+        name="ARV APC Blufor";
+        icon="\Plmod\gfx\marta\o_f_apcarv_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_apcarv_pl.paa";
+    };
+
+    class n_f_engapctr_pl: n_f_tank_pl
+    {
+        name="Engineering APC tracked";
+        icon="\Plmod\gfx\marta\n_f_engapctr_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_engapctr_pl.paa";
+    };
+    class n_f_apcarv_pl: n_f_tank_pl
+    {
+        name="ARV APC Blufor";
+        icon="\Plmod\gfx\marta\n_f_apcarv_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_apcarv_pl.paa";
+    };
+
+    class b_f_air_fixed_pl: b_f_tank_pl
+    {
+        name="AIr Fixed BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_fixed_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_fixed_pl.paa";
+    };
+    class b_f_air_rotary_pl: b_f_tank_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_rotary_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_rotary_pl.paa";
+    };
+
+    class o_f_air_fixed_pl: o_f_tank_pl
+    {
+        name="AIr Fixed BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_fixed_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_fixed_pl.paa";
+    };
+    class o_f_air_rotary_pl: o_f_tank_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_rotary_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_rotary_pl.paa";
+    };
+
+    class n_f_air_fixed_pl: n_f_tank_pl
+    {
+        name="AIr Fixed BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_fixed_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_fixed_pl.paa";
+    };
+    class n_f_air_rotary_pl: n_f_tank_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_rotary_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_rotary_pl.paa";
+    };
+
     class unknown_f_pl: n_f_tank_pl
     {
         name="Unknown";
@@ -3018,6 +3097,25 @@ class cfgGroupIcons
         icon="\Plmod\gfx\marta\b_f_bridgetank_pl.paa";
         texture="\Plmod\gfx\marta\b_f_bridgetank_pl.paa";
     };
+    class b_f_engapcwe_pl: b_unknown_pl
+    {
+        name="Engineering APC wheeled";
+        icon="\Plmod\gfx\marta\b_f_engapcwe_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_engapcwe_pl.paa";
+    };
+    class b_f_engapctr_pl: b_unknown_pl
+    {
+        name="Engineering APC tracked";
+        icon="\Plmod\gfx\marta\b_f_engapctr_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_engapctr_pl.paa";
+    };
+    class b_f_apcarv_pl: b_unknown_pl
+    {
+        name="ARV APC Blufor";
+        icon="\Plmod\gfx\marta\b_f_apcarv_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_apcarv_pl.paa";
+    };
+
 
     class b_f_t_inf_pl: b_unknown_pl
     {
@@ -3184,6 +3282,25 @@ class cfgGroupIcons
         icon="\Plmod\gfx\marta\o_f_tank_sup_pl.paa";
         texture="\Plmod\gfx\marta\o_f_tank_sup_pl.paa";
     };
+    class o_f_engapcwe_pl: o_unknown_pl
+    {
+        name="Engineering APC wheeled";
+        icon="\Plmod\gfx\marta\o_f_engapcwe_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_engapcwe_pl.paa";
+    };
+    class o_f_engapctr_pl: o_unknown_pl
+    {
+        name="Engineering APC tracked";
+        icon="\Plmod\gfx\marta\o_f_engapctr_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_engapctr_pl.paa";
+    };
+    class o_f_apcarv_pl: o_unknown_pl
+    {
+        name="ARV APC Opfor";
+        icon="\Plmod\gfx\marta\o_f_apcarv_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_apcarv_pl.paa";
+    };
+
     class o_f_heli_pl: o_unknown_pl
     {
         name="tank support Independet";
@@ -3363,6 +3480,25 @@ class cfgGroupIcons
         icon="\Plmod\gfx\marta\n_f_tank_sup_pl.paa";
         texture="\Plmod\gfx\marta\n_f_tank_sup_pl.paa";
     };
+    class n_f_engapcwe_pl: n_unknown_pl
+    {
+        name="Engineering APC wheeled";
+        icon="\Plmod\gfx\marta\n_f_engapcwe_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_engapcwe_pl.paa";
+    };
+    class n_f_engapctr_pl: n_unknown_pl
+    {
+        name="Engineering APC tracked";
+        icon="\Plmod\gfx\marta\n_f_engapctr_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_engapctr_pl.paa";
+    };
+    class n_f_apcarv_pl: n_unknown_pl
+    {
+        name="ARV APC Independent";
+        icon="\Plmod\gfx\marta\n_f_apcarv_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_apcarv_pl.paa";
+    };
+
     class n_f_heli_pl: n_unknown_pl
     {
         name="tank support Independet";

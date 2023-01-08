@@ -290,11 +290,11 @@
 ] call CBA_fnc_addSetting;
 
 [
-    "pl_medevac_Heli_1",
+    "pl_supply_Heli_1",
     "EDITBOX",
     ["Supply Heli","Define Classname for Supply Heli"],
     ["Platoon Leader", "Fire Support"],
-    ['B_Heli_Transport_01_F'],
+    ['B_Heli_Transport_03_F'],
     nil,
     {},
     true

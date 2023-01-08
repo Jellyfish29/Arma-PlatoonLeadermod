@@ -695,6 +695,11 @@ pl_opfor_flanking_move = {
         _targetPos = getPos (leader (group (_units#0)));
     };
 
+    // if ((random 1) > 0.5) then {
+    //     _targetPos = [_units] call pl_find_centroid_of_units;
+    // };
+
+
 	private _targetDir = (leader _grp) getDir _targetPos;
 	private _flankDistance = ((leader _grp) distance2D _targetPos) * 0.7;
 	_leftPos = (getPos (leader _grp)) getPos [_flankDistance, _targetDir + 90];
@@ -753,6 +758,10 @@ pl_opfor_attack_closest_enemy = {
     } else {
     	_atkPos = getPos (leader (group (_units#0)));
 	};
+
+    // if ((random 1) > 0.5) then {
+    //     _atkPos = [_units] call pl_find_centroid_of_units;
+    // };
 
     _wp = _grp addWaypoint [_atkPos, 20];
     _wp setWaypointType "MOVE";
@@ -878,7 +887,7 @@ pl_opfor_find_overwatch = {
 pl_opfor_join_grp = {
 	params ["_grp", "_side"];
 
-	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], 800]) select {side _x == _side and ((group _x) getVariable ["pl_opf_task", "advance"]) != "flanking"});
+	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], 300]) select {side _x == _side and ((group _x) getVariable ["pl_opf_task", "advance"]) != "flanking"});
 	_targets = _targets - (units _grp);
 	private _target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
 	if !(isNil "_target") exitWith {
@@ -892,8 +901,10 @@ pl_opfor_join_grp = {
 				_x setUnitPos "AUTO";
                 _x doMove (getPos (leader _targetGrp));
 				_x doFollow (leader _targetGrp);
+                _x setVariable ["pl_no_centoid", true];
 			};
 		} forEach (units _grp);
+        // deleteGroup _group;
 		true
 	};
 	false
@@ -1017,7 +1028,7 @@ pl_opfor_support_inf = {
 pl_opfor_vic_suppress = {
 	params ["_grp"];
 
-    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank"], 1000]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
+    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank"], 600]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
     if !(_targets isEqualto []) then {
     	private _target = _targets#0;
 	    {
@@ -1043,7 +1054,7 @@ pl_opfor_vic_suppress_cont = {
 	while {alive _vic and (speed _vic) <= 5} do {
         waitUntil {sleep 1, (behaviour (leader _grp)) == "COMBAT"};
 		[_grp] call pl_opfor_vic_suppress;
-		sleep 30;
+		sleep 60;
 	};
 };
 

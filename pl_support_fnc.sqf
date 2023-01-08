@@ -239,16 +239,16 @@ pl_cas = {
     sleep 8;
     switch (_key) do {
         case 1 : {
-        pl_cas_cd = time + 80;
+        pl_cas_cd = time + 60;//80;
      }; 
         case 2 : {
-        pl_cas_cd = time + 120;
+        pl_cas_cd = time + 60;//120;
      }; 
         case 3 : {
-        pl_cas_cd = time + 200;
+        pl_cas_cd = time + 60;//200;
     };
         case 4 : {
-        pl_cas_cd = time + 360;
+        pl_cas_cd = time + 60;//360;
     };
         default {pl_cas_cd = time + 60;}; 
     };
@@ -600,6 +600,7 @@ pl_fire_on_map_arty = {
 
 
 
+
 pl_interdiction_cas = {
     params ["_casTypeSad"];
     private ["_height", "_cd", "_cdType", "_dir", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
@@ -607,7 +608,7 @@ pl_interdiction_cas = {
     switch (_casTypeSad) do { 
         case 1 : {
             _height = 1500;
-            _flyHeight = 200;
+            _flyHeight = 100;
             _spawnDistance = 6000;
             _planeType = pl_cas_plane_1;
             // _planeType = "B_Plane_Fighter_01_F";
@@ -615,8 +616,8 @@ pl_interdiction_cas = {
             _groupId = "Reaper 1";
             _evacHeight = 2000;
             _cd = 300;
-            _onStationTime = 110;
-            _sadAreaSize = 1300;
+            _onStationTime = 240;
+            _sadAreaSize = 1000;
             _wpType = "SAD";
         }; 
         case 2 : {
@@ -742,7 +743,7 @@ pl_interdiction_cas = {
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _areaMarkerName};
         
-    if (pl_enable_beep_sound) then {playSound "beep"};
+    if (pl_enable_beep_sound) then {playSound "radioina"};
     [playerSide, "HQ"] sideChat "Strike Aircraft on the Way!";
 
     pl_sorties = pl_sorties - _sortiesCost;
@@ -761,6 +762,7 @@ pl_interdiction_cas = {
     _casGroup = createGroup playerside;
     _casGroup setGroupId [_groupId];
     _casGroup setVariable ["pl_not_addalbe", true];
+    _casGroup setVariable ["onTask", true];
 
     if (_casTypeSad == 3) then {
         _casGroup setCombatMode "BLUE";
@@ -790,11 +792,66 @@ pl_interdiction_cas = {
     _sadWp = _casGroup addWaypoint [_cords, 0];
     _sadWp setWaypointType _wpType;
 
+    private _weapons = [];
+    {
+        if (tolower ((_x call bis_fnc_itemType) select 1) in ["bomblauncher", "missilelauncher", "machinegun", "rocketLauncher", "LaserDesignator"]) then {
+            _modes = getarray (configfile >> "cfgweapons" >> _x >> "modes");
+            if (count _modes > 0) then {
+                _mode = _modes select 0;
+                if (_mode == "this") then {_mode = _x;};
+                    _weapons set [count _weapons,[_x,_mode]];
+            };
+        };
+    } foreach ((typeOf _plane) call bis_fnc_weaponsEntityType);
+
     switch (_casTypeSad) do { 
         case 1 : {
-            _casGroup setBehaviour "COMBAT";
+            // _casGroup setBehaviour "COMBAT";
             sleep 1;
-            waitUntil {(_plane distance2D _cords) < 3000};
+            waitUntil {(_plane distance2D _cords) < 4000};
+            deleteWaypoint _sadWp;
+
+            (driver _plane) disableAI "AUTOTARGET";
+            (driver _plane) disableAI "TARGET";
+
+            [_plane, _cords, _sadAreaSize, _weapons, _casGroup, _spawnPos,_flyHeight] spawn {
+                params ["_plane", "_cords", "_sadAreaSize", "_weapons", "_casGroup", "_spawnPos","_flyHeight"];
+                _targets = (nearestObjects [_cords, ["Car", "Tank"], _sadAreaSize, true]) select {side _x != playerSide};
+
+                {
+                    _target = _x;
+
+                    if (!alive _target) then {continue};
+
+                    if (_plane distance2D _target < 3000) then {
+                        _plane doMove ((getpos _plane) getPos [3000, _plane getDir _spawnPos]);
+
+
+                        waitUntil {sleep 0.25; !alive _plane or (getposasl _plane) distance2D _target > 2000 or !(_casGroup getVariable ["onTask", false])};
+                    };
+
+                    _plane doMove (getPos _target);
+                    _plane reveal _target;
+                    _plane dowatch _target;
+                    _plane dotarget _target;
+
+                    _plane flyInHeight _flyHeight;
+
+                    waitUntil {sleep 0.25; !alive _plane or (getposasl _plane) distance _target < 1000 or !(_casGroup getVariable ["onTask", false])};
+
+                    if (!alive _plane or !(_casGroup getVariable ["onTask", false])) exitWith {};
+
+                    sleep 2;
+
+                    {
+                        _plane fireattarget [_target,(_x select 0)];
+                    } foreach _weapons;
+
+                    _plane doTarget objNull;
+                    _plane doWatch objNull;
+
+                } forEach _targets;
+            };
         }; 
         case 2 : {
             _casGroup setBehaviour "COMBAT";
@@ -854,11 +911,11 @@ pl_interdiction_cas = {
 
     switch (_casTypeSad) do { 
         case 1 : {
-            pl_cas_cd = time + 120;
+            pl_cas_cd = time + 60;//120;
             _cd = pl_cas_cd;
         }; 
         case 2 : {
-            pl_cas_cd = time + 240;
+            pl_cas_cd = time + 60; //240;
             _cd = pl_cas_cd;
         };
         case 3 : {

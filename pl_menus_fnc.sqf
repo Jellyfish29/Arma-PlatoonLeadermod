@@ -126,8 +126,7 @@ pl_str_sop_disengageUnderAt = '<img color="#e5e500" image="\Plmod\gfx\pl_withdra
 pl_str_sop_autoFormation = '<img color="#e5e500" image="\A3\3den\data\Attributes\Formation\wedge_ca.paa"/><t> Independent Formations</t>';
 pl_str_sop_autoSpeed = '<img color="#e5e500" image="\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"/><t> Independent Speed</t>';
 
-pl_str_sop_attackSop = '<img color="#e5e500" image="A3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"/><t> Attack Task SOPs</t>';
-pl_str_sop_defendSop = '<img color="#e5e500" image="A3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"/><t> Defend Task SOPs</t>';
+pl_str_sop_force_road = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa"/><t> Stay on Roads</t>';
 
 pl_str_sop_resetSOP = '<img color="#b20000" image="\A3\3den\data\Attributes\default_ca.paa"/><t> Reset SOPs</t>';
 
@@ -154,8 +153,10 @@ pl_show_sop_menu = {
         [parseText '%7', [7], '', -5, [['expression', '[] call pl_toggle_auto_formation']], '1', 'HCNotEmpty'],
         [parseText '%8', [8], '', -5, [['expression', '[] call pl_toggle_auto_speed']], '1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%11', [9], '', -5, [['expression', '{[_x] call pl_reset_sop} forEach (hcSelected player)']], '1', 'HCNotEmpty']
-    ];", pl_str_sop_atkOnContact, pl_str_sop_defOnContact, pl_str_sop_disengageOnContact, pl_str_sop_unloadUnderAt, pl_str_sop_stopUnderAt, pl_str_sop_disengageUnderAt, pl_str_sop_autoFormation, pl_str_sop_autoSpeed, pl_str_sop_attackSop, pl_str_sop_defendSop, pl_str_sop_resetSOP];
+        [parseText '%10', [9], '', -5, [['expression', '[] call pl_force_road']], '1', 'HCNotEmpty'],
+        ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%11', [10], '', -5, [['expression', '{[_x] call pl_reset_sop} forEach (hcSelected player)']], '1', 'HCNotEmpty']
+    ];", pl_str_sop_atkOnContact, pl_str_sop_defOnContact, pl_str_sop_disengageOnContact, pl_str_sop_unloadUnderAt, pl_str_sop_stopUnderAt, pl_str_sop_disengageUnderAt, pl_str_sop_autoFormation, pl_str_sop_autoSpeed, pl_str_sop_attackSop, pl_str_sop_force_road, pl_str_sop_resetSOP];
     [] spawn {showCommandingMenu "#USER:pl_sop_menu";}
 };
 
@@ -291,7 +292,7 @@ pl_show_egineer_menu = {
         [parseText '%2', [2], '', -5, [['expression', '[] spawn pl_place_charge']], '%1', 'HCNotEmpty'],
         [parseText '%3', [3], '', -5, [['expression', '{[_x] spawn pl_detonate_charges} forEach (hcSelected player)']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%4', [4], '', -5, [['expression', '[] spawn pl_lay_mine_field']], '%1', 'HCNotEmpty'],
+        [parseText '%4', [4], '', -5, [['expression', '[] spawn pl_lay_mine_field_switch']], '%1', 'HCNotEmpty'],
         [parseText '%5', [5], '#USER:pl_mine_spacing_menu', -5, [['expression', '']], '%1', '1'],
         [parseText '%6', [6], '', -5, [['expression', '[] spawn pl_mine_clearing']], '1', 'HCNotEmpty'],
         [parseText '%11', [7], '', -5, [['expression', '[] spawn pl_mc_lc']], '1', 'HCNotEmpty'],
@@ -300,7 +301,7 @@ pl_show_egineer_menu = {
         [parseText '%8', [9], '', -5, [['expression', '[] spawn pl_repair_bridge']], '%1', 'HCNotEmpty'],
         [parseText '%10', [10], '', -5, [['expression', '[] spawn pl_create_bridge']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%9', [11], '', -5, [['expression', '{deleteMarker _x} forEach pl_engineering_markers; pl_engineering_markers = []']], '%1', 'HCNotEmpty']
+        [parseText '%9', [11], '', -5, [['expression', '{deleteMarker _x} forEach pl_engineering_markers; pl_engineering_markers = []']], '%1', '1']
 
     ];", pl_virtual_mines_enabled, pl_str_charge, pl_str_detonate, pl_str_lay_mine_field, pl_str_mine_field_spacing, pl_str_clear_mine, pl_str_des_bridge, pl_str_rpr_bridge, pl_str_clear_markers, pl_str_create_bridge, pl_str_mc_lc];
 };

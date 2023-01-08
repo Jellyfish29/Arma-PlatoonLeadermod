@@ -29,6 +29,7 @@ pl_reset = {
         _unit enableAI "FSM";
         _unit enableAI "AIMINGERROR";
         _unit enableAI "WEAPONAIM";
+        _unit enableAI "anim";
         _unit setUnitPos "AUTO";
         _unit setUnitTrait ["camouflageCoef", 1, true];
         _unit setVariable ["pl_engaging", false];
@@ -37,6 +38,7 @@ pl_reset = {
         _unit setVariable ['pl_is_ccp_medic', false];
         _unit setVariable ["pl_def_pos", nil];
         _unit setVariable ["pl_in_position", nil];
+        _unit setVariable ["pl_bounding_set_time", nil];
         // sleep 0.5;
         _unit limitSpeed 5000;
         _unit forceSpeed -1;
@@ -72,6 +74,7 @@ pl_reset = {
     _group setVariable ["pl_disembark_finished", nil];
     _group setVariable ["onTask", false];
     _group setVariable ["pl_on_hold", false];
+    _group setVariable ['pl_wp_reached', nil];
     // [_group] call pl_reset_sop;
 
     // if group is not leading a formation reset Task

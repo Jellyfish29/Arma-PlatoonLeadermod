@@ -4983,17 +4983,17 @@ pl_cas = {
 //     };
 // };
 
-// pl_get_assault_speed = {
-//  [_unit, _target];
+pl_get_assault_speed = {
+ [_unit, _target];
 
-//  _distance = _unit distance2D _target;
-//  _unit setHit ["legs", 0];
+ _distance = _unit distance2D _target;
+ _unit setHit ["legs", 0];
 
-//  if (_distance <= 20) exitWith {_unit disableAI "AIMINGERROR"; 2};
-//  _unit enableAI "AIMINGERROR";
-//  if (_distance < 50) exitWith {3};
-//  -1  
-// };
+ if (_distance <= 20) exitWith {_unit disableAI "AIMINGERROR"; 2};
+ _unit enableAI "AIMINGERROR";
+ if (_distance < 50) exitWith {3};
+ -1  
+};
 
 
 // pl_position_reached_check = {

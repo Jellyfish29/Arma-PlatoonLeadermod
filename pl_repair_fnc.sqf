@@ -6,6 +6,7 @@ pl_destroyed_vics_data = [];
 
 
 
+
 addMissionEventHandler ["EntityKilled",{
     params ["_killed", "_killer", "_instigator", "_useEffects"];
     if (_killed isKindOf "Man" or _killed isKindOf "Air") exitWith {};
@@ -48,6 +49,15 @@ addMissionEventHandler ["EntityKilled",{
             _loadout = _killed getVariable "pl_vic_inv";
             _lives = _killed getVariable "pl_repair_lifes";
 
+            private _vars = [];
+
+            {
+                _value = _killed getVariable [_x, nil];
+                if !(isNil "_value") then {
+                    _vars pushback [_x, _value];
+                };
+            } forEach ["pl_line_charges", "pl_bridge_available", "pl_is_supply_vehicle", "pl_supplies", "pl_avaible_reinforcements", "pl_is_repair_vehicle", "pl_repair_supplies", "pl_bridge_available", "pl_is_mine_vic", "pl_virtual_mines", "pl_is_mc_lc_vehicle", "pl_line_charges", "pl_is_eng_apc"];
+
             {
                 if (_killed == (_x#0)) exitWith {
                     deleteMarker (_x#1);
@@ -58,7 +68,7 @@ addMissionEventHandler ["EntityKilled",{
             deleteVehicle _killed;
             deleteGroup _vicGroup;
 
-            [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives, _symbolType, _killed getVariable ["pl_line_charges", 0], _killed getVariable ["pl_bridge_available", false]] spawn pl_create_new_vic;
+            [_type, _pos, _dir, _appereance, _loadout, _groupId, _lives, _symbolType, _vars] spawn pl_create_new_vic;
             
         } else {
 
@@ -73,9 +83,8 @@ addMissionEventHandler ["EntityKilled",{
 }];
 
 
-
 pl_create_new_vic = {
-    params ["_type", "_pos", "_dir", "_appereance", "_loadout", "_groupId", "_lives", "_symbolType", "_lineCharges", "_bridges"];
+    params ["_type", "_pos", "_dir", "_appereance", "_loadout", "_groupId", "_lives", "_symbolType", "_vars"];
     private ["_newVic"];
 
     sleep 0.3;
@@ -121,12 +130,14 @@ pl_create_new_vic = {
     _vicName = getText (configFile >> "CfgVehicles" >> _type >> "displayName");
     _markerName setMarkerText format ["%1", _groupid];
 
-    [_newVic] call pl_vehicle_setup;
     _lives = _lives - 1;
     _newVic setVariable ["pl_repair_lifes", _lives];
     _newVic setVariable ["pl_is_destroyed", true];
-    _newVic setVariable ["pl_line_charges", _lineCharges];
-    _newVic setVariable ["pl_bridge_available", _bridges];
+    {
+        _newVic setVariable [_x#0, _x#1];
+    } forEach _vars;
+
+    [_newVic] call pl_vehicle_setup;
 
     pl_destroyed_vics_data pushBack [_pos, _newVic, _markerName, _groupId, _smokeGroup, _markerName2];
 };
@@ -622,7 +633,7 @@ pl_create_bridge = {
 
     _engVic = vehicle (leader _group);
 
-    if (!(isNull _engVic) and !(_engVic getVariable ["pl_is_repair_vehicle", false]) and !((typeOf _engVic) isEqualTo "gm_ge_army_bibera0")) exitWith {hint "Requires Bridging vehicle"};
+    if (!(isNull _engVic) and !(_engVic getVariable ["pl_is_eng_apc", false]) and !((typeOf _engVic) isEqualTo "gm_ge_army_bibera0")) exitWith {hint "Requires Bridging vehicle"};
 
     if !(_engVic getVariable ["pl_bridge_available", false]) exitWith {hint "No Folding Bridge Available"};
 

@@ -458,16 +458,16 @@ pl_change_to_vic_symbols = {
             case "truck" : {
                 _symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status];
                 if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {_symbolType = format ["%1_%2_truck_med_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_symbolType = format ["%1_%2_truck_rep_pl", pl_side_prefix, _status]}}}};
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8 or (_vic getVariable ["pl_is_supply_vehicle", false])) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0 or (_vic getVariable ["pl_is_supply_vehicle", false])) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0 or  (_vic getVariable ["pl_is_repair_vehicle", false])) then {_symbolType = format ["%1_%2_truck_rep_pl", pl_side_prefix, _status]}}}};
             };
             case "car" : {
                 _symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status];
                 if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {_symbolType = format ["%1_%2_truck_med_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_symbolType = format ["%1_%2_truck_rep_pl", pl_side_prefix, _status]}}}};
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier")) > 8 or (_vic getVariable ["pl_is_supply_vehicle", false])) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0 or (_vic getVariable ["pl_is_supply_vehicle", false])) then {_symbolType = format ["%1_%2_truck_sup_pl", pl_side_prefix, _status]} else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0 or (_vic getVariable ["pl_is_repair_vehicle", false])) then {_symbolType = format ["%1_%2_truck_rep_pl", pl_side_prefix, _status]}}}};
             };
             case "MRAP" : {
                 _symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status];
@@ -486,9 +486,15 @@ pl_change_to_vic_symbols = {
                         _symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status];
                     };
                 } else {
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0 or (_vic getVariable ["pl_is_repair_vehicle", false])) then {
+                    if ([_vic] call pl_is_apc) then {
+                        _symbolType = format ["%1_%2_apcarv_pl", pl_side_prefix, _status]
+                    } else {
+                        _symbolType = format ["%1_%2_tank_rep_pl", pl_side_prefix, _status];
+                    };
+                } else {
                 if (getNumber ( configFile >> "CfgVehicles" >> typeOf _vic >> "attendant" ) isEqualTo 1) then {_symbolType = format ["%1_%2_tank_med_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0) then {_symbolType = format ["%1_%2_tank_rep_pl", pl_side_prefix, _status]} else {
-                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0) then {_symbolType = format ["%1_%2_tank_sup_pl", pl_side_prefix, _status]}}}};
+                if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportAmmo")) > 0 or (_vic getVariable ["pl_is_supply_vehicle", false])) then {_symbolType = format ["%1_%2_tank_sup_pl", pl_side_prefix, _status]}}}};
             };
             case "APC" : {
                 if ([_vic] call pl_is_ifv) then {
@@ -497,6 +503,7 @@ pl_change_to_vic_symbols = {
                 } else {
                     _symbolType = format ["%1_%2_apctr_pl", pl_side_prefix, _status];
                     if (_vic isKindOf "Car") then {_symbolType = format ["%1_%2_apcwe_pl", pl_side_prefix, _status]};
+                    if ((getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportRepair")) > 0 or (_vic getVariable ["pl_is_repair_vehicle", false])) then {_symbolType = format ["%1_%2_apcarv_pl", pl_side_prefix, _status]};
                 };
             };
             case "IFV" : {
@@ -512,6 +519,13 @@ pl_change_to_vic_symbols = {
         };
         if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) then {
             _symbolType = format ["%1_%2_artgun_pl", pl_side_prefix, _status];
+        };
+        if (_vic getVariable ["pl_is_eng_apc", false]) then {
+            if (_vic isKindOf "Tank") then {
+                _symbolType = format ["%1_%2_engapctr_pl", pl_side_prefix, _status];
+            } else {
+                _symbolType = format ["%1_%2_engapcwe_pl", pl_side_prefix, _status];
+            };
         };
 
         // if (_unitText == "tank" and !(["apctr", _symbolType] call BIS_fnc_inString) and !(["ifvtr", _symbolType] call BIS_fnc_inString)) then {

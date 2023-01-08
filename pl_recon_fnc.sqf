@@ -193,7 +193,36 @@ Pl_marta = {
             private _vic = vehicle (leader _opfGrp);
 
             if !((leader _opfGrp) == commander (vehicle (leader _opfGrp)) or (leader _opfGrp) == driver (vehicle (leader _opfGrp)) or (leader _opfGrp) == gunner (vehicle (leader _opfGrp))) exitwith {_exit = true;};
-            if (_vic isKindOf "Air") then {_exit = true;};
+            if (_vic isKindOf "Air") then {
+                if !(_vic getVariable ["pl_marta_air_spotted", false]) then {
+                    switch (_unitText) do { 
+                        case "fast mover" : {_markerTypeType = format ["%1_f_air_fixed_pl", _sidePrefix]}; 
+                        case "gunship" : {_markerTypeType = format ["%1_f_air_rotary_pl", _sidePrefix]};
+                        case "helicopter" : {_markerTypeType = format ["%1_f_air_rotary_pl", _sidePrefix]}; 
+                        default {_markerTypeType = format ["%1_f_air_rotary_pl", _sidePrefix]}; 
+                    };
+
+                    _vic setVariable ["pl_marta_air_spotted", true];
+
+                    [_vic, _markerTypeType, _sideColor] spawn {
+                        params ["_vic", "_markerTypeType", "_sideColor"];
+                            _markerNameVic = createMarker [str (random 4), getPos _vic];
+                            _markerNameVic setMarkerType _markerTypeType;
+                            _markerNameVic setMarkerSize [1.1, 1.1];
+                            _markerNameVic setMarkerColor _sideColor;
+
+                            while {alive _vic and !(isNull _vic)} do {
+                                sleep 1;
+                                _markerNameVic setMarkerPos (getPos _vic);
+                            };
+
+                            deleteMarker _markerNameVic
+
+                    };
+                };
+
+                _exit = true;
+            };
             
             switch (_unitText) do {
                 case "truck" : {
@@ -272,7 +301,7 @@ Pl_marta = {
             [_opfGrp, _unitText, _opfDir] spawn pl_marta_spotrep;
 
             _markerNameGroup setMarkerSize [_markerSize, _markerSize];
-            // _markerNameGroup setMarkerColor _sideColor;
+            _markerNameGroup setMarkerColor _sideColor;
             // first time call out
         } else {
             _markerNameGroup setMarkerPos _centoid;
@@ -339,19 +368,20 @@ Pl_marta = {
                 params ["_markerNameDestroyed", "_markerNameGroup", "_grp"];
                 _callsign = groupId _grp;
 
-                sleep 600;
-
-                _markerNameGroup setMarkerAlpha 0.3;
-                _markerNameGroup setMarkerColor "colorGrey";
-                _markerNameGroup setMarkerSize [0.5, 0.5];
-
                 pl_marta_dic deleteat (_callsign);
                 if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
 
+                sleep 600;
+
+                _markerNameGroup setMarkerAlpha 0.6;
+                _markerNameGroup setMarkerColor "colorGrey";
+                _markerNameGroup setMarkerSize [0.7, 0.7];
+
+
                 // deleteMarker _markerName;
                 _markerNameDestroyed setMarkerColor "colorGrey";
-                _markerNameDestroyed setMarkerAlpha 0.3;
-                _markerNameDestroyed setMarkerSize [0.4, 0.4];
+                _markerNameDestroyed setMarkerAlpha 0.45;
+                _markerNameDestroyed setMarkerSize [0.6, 0.6];
                 // deleteGroup _grp;
                 // _grp setVariable ["pl_marta_no_delete", nil];
 
@@ -411,19 +441,20 @@ pl_marta_cleanup = {
                     _x setMarkerAlpha 0.5;
                 } forEach _markers;
 
+                pl_marta_dic deleteat (_callsign);
+                if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
+
                 sleep 600;
 
                 {
-                    _x setMarkerAlpha 0.3;
+                    _x setMarkerAlpha 0.6;
                     _x setMarkerColor "colorGrey";
-                    _x setMarkerSize [0.5, 0.5];
+                    _x setMarkerSize [0.7, 0.7];
                 } forEach _markers;
-                pl_marta_dic deleteat (_callsign);
-                if (_callsign in pl_opfor_wp_dic) then {pl_opfor_wp_dic deleteat _callsign};
                 // deleteMarker _markerName;
                 _markerName setMarkerColor "colorGrey";
-                _markerName setMarkerAlpha 0.3;
-                _markerName setMarkerSize [0.4, 0.4];
+                _markerName setMarkerAlpha 0.45;
+                _markerName setMarkerSize [0.6, 0.6];
                 // deleteGroup _grp;
                 // _grp setVariable ["pl_marta_no_delete", nil];
 

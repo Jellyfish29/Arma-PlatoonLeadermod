@@ -269,6 +269,9 @@ pl_ccp_revive_action = {
     _medic setUnitPos "AUTO";
     doStop _medic;
     private _pos = getPos _healtarget;
+    if !(isNull objectParent _healtarget) then {
+        _pos = getPos (vehicle _healtarget);
+    };
     _pos = [0.5 - (random 1), 0.5 - (random 1)] vectorAdd _pos;
     _medic doMove _pos;
     // _medic setDestination [_pos,"LEADER DIRECT", true];
@@ -282,6 +285,13 @@ pl_ccp_revive_action = {
     waitUntil {sleep 0.5; ((_medic distance2D _pos) < 5) or !(_group getVariable [_waitVar, true]) or (!alive _healTarget) or (!alive _medic) or (_medic getVariable ["pl_wia", false])};
     
     if (_group getVariable [_waitVar, true] and (alive _healTarget) and (alive _medic) and !(_medic getVariable ["pl_wia", false]) and ((_medic distance2D _pos) <= 5)) then {
+
+        if !(isNull objectParent _healtarget) then {
+            moveOut _healtarget;
+            _healtarget setPos (getPos _medic);
+
+            sleep 1;
+        };
         // _medic setUnitPos "MIDDLE";
 
         _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500};
@@ -301,6 +311,7 @@ pl_ccp_revive_action = {
             _medic setDir -90;
             _medic playAction "medicStart";
             _medic disableAI "ANIM";
+            // while {_reviveTime > time and (_group getVariable [_waitVar, true])} do {
             while {_reviveTime > time and (_group getVariable [_waitVar, true])} do {
               _medic switchMove selectRandom ["AinvPknlMstpSnonWrflDnon_medic3", "AinvPknlMstpSnonWrflDnon_medic2", "AinvPknlMstpSnonWrflDnon_medic1", "AinvPknlMstpSnonWrflDnon_medic4"];
               _time = time + 5;
@@ -660,6 +671,10 @@ pl_ccp = {
 
         while {(_group getVariable ["onTask", true]) and (alive _medic) and !(_medic getVariable ["pl_wia", false])} do {
             _reviveTargets = _ccpPos nearObjects ["Man", _reviveRange];
+            {
+                _reviveTargets = _reviveTargets + _x;
+            } forEach ((nearestObjects [_ccpPos, ["Tank", "Car", "Truck"], _reviveRange, true]) apply {crew _x});
+
             _healTargets = _ccpPos nearObjects ["Man", _healRange];
             {
                 if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and (_group getVariable ["onTask", true])) then {

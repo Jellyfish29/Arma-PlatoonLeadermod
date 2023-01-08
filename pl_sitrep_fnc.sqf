@@ -160,22 +160,29 @@ pl_sitrep_solo = {
         _vicName = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");
         _unitDamage = getDammage _vic;
         _unitDamage = 100 - (round (_unitDamage * 100));
+        _ammoCargo = _vic getVariable ["pl_supplies", 0];
         _message = _message + format ["
             <br /><br /><t color='#cccccc' size='1' align='left'>Vehicle: %1</t>
             <br /><t color='#cccccc' size='0.8' align='left'>Status</t><t color='#cccccc' size='1' align='right'>%2%3</t>", _vicName, _unitDamage, "%"];
-        if (_vic getVariable ["pl_is_supply_vehicle", false] or _vic getVariable ["pl_is_repair_vehicle", false] or getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car") then {
-            _ammoCargo = _vic getVariable ["pl_supplies", 0];
+        if (_vic getVariable ["pl_is_supply_vehicle", false] or _vic getVariable ["pl_is_repair_vehicle", false] or getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car" or (_vic getVariable ["pl_is_eng_apc", false]) or _ammoCargo > 0) then {
             _repairCargo = _vic getVariable ["pl_repair_supplies", 0];
             _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];
             private _bridge = "NO";
             if (_vic getVariable ["pl_bridge_available", false]) then {_bridge = "YES"};
+            _miclics = _vic getVariable ["pl_line_charges", 0];
+            _mines = _vic getVariable ["pl_virtual_mines", 0];
 
             _message = _message + format ["
+            <br />
             <br /><t color='#cccccc' size='0.8' align='left'>Ammo/Medical Supplies: </t><t color='#cccccc' size='1' align='right'>%1</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>Reinforcements: </t><t color='#cccccc' size='1' align='right'>%3</t>
+            <br />
             <br /><t color='#cccccc' size='0.8' align='left'>Repair Supplies: </t><t color='#cccccc' size='1' align='right'>%4</t>
-            <br /><t color='#cccccc' size='0.8' align='left'>Available Reinforcements: </t><t color='#cccccc' size='1' align='right'>%3</t>
-            <br /><t color='#cccccc' size='0.8' align='left'>Folding Bridge Available: </t><t color='#cccccc' size='1' align='right'>%5</t>"
-            , _ammoCargo, "%", _reinforcements, _repairCargo, _bridge];
+            <br />
+            <br /><t color='#cccccc' size='0.8' align='left'>VLB: </t><t color='#cccccc' size='1' align='right'>%5</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>MIC LICs: </t><t color='#cccccc' size='1' align='right'>%6</t>
+            <br /><t color='#cccccc' size='0.8' align='left'>Mines: </t><t color='#cccccc' size='1' align='right'>%7</t>"
+            , _ammoCargo, "%", _reinforcements, _repairCargo, _bridge, _miclics, _mines];
 
         };
     };

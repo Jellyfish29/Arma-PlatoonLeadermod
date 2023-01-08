@@ -85,31 +85,65 @@ pl_load_ap = {
 };
 
 pl_quick_suppress = {
-    params ["_unit", "_targetPos"];
+    params ["_unit", "_target", ["_light", false]];
 
-    _vis = lineIntersectsSurfaces [eyePos _unit, _targetPos, _unit, vehicle _unit, true, 1];
+    if !(alive _target) exitWith {false};
+    private _targetpos = getPosASL _target;
+
+    if (_light) then {
+        _unit doSuppressiveFire _target;
+    } else {
+
+        _vis = lineIntersectsSurfaces [eyePos _unit, _targetPos, _unit, vehicle _unit, true, 1];
+
+        if !(_vis isEqualTo []) then {
+            _targetPos = (_vis select 0) select 0;
+        };
+        
+        if ((_targetPos distance2D _unit) > 15 and !([_unit, _targetPos] call pl_friendly_check)) then {
+            _unit doSuppressiveFire _targetPos;
+        } else {
+            _unit doSuppressiveFire _target;
+        };
+    };
+
+    true
+};
+
+pl_get_fire_position = {
+    params ["_unit", "_target", "_maxDistance"];
+    private ["_movePos"];
+
+    _vis = lineIntersectsSurfaces [eyePos _unit, getPosASL _target, _unit, vehicle _unit, true, 1];
 
     if !(_vis isEqualTo []) then {
-        _targetPos = (_vis select 0) select 0;
-    };
-    
-    if ((_targetPos distance2D _unit) > 25 and !([_unit, _targetPos] call pl_friendly_check)) then {
-        _unit doSuppressiveFire _targetPos;
+        if ((((_vis select 0) select 0) distance2D _unit) < _maxDistance) then {
+            _movePos = (_vis select 0) select 0;
+        };
+    } else {
+        _movePos = getPos _unit;
     };
 
+    _m = createMarker [str (random 3), _movePos];
+    _m setMarkerType "mil_dot";
+
+    _movePos
 };
 
 pl_enable_force_move = {
-    params ["_unit", "_state"];
+    params ["_unit", "_state", ["_light", false]];
     if (_state) then {
         _unit enableAI "PATH";
         _unit disableAI "COVER";
-        _unit disableAI "AUTOTARGET";
-        _unit disableAI "TARGET";
         _unit disableAI "SUPPRESSION";
-        _unit disableAI "WEAPONAIM";
-        _unit setUnitCombatMode "BLUE";
         _unit setBehaviourStrong "AWARE";
+        _unit setUnitCombatMode "WHITE";
+        // if !(_light) then {
+            _unit disableAI "AUTOTARGET";
+            _unit disableAI "TARGET";
+            _unit disableAI "WEAPONAIM";
+            _unit setUnitCombatMode "BLUE";
+        // };
     }
     else
     {
@@ -137,8 +171,8 @@ pl_position_reached_check = {
                 _unit setHit ["legs", 0];
                 _unit switchMove "";
                 _unit setUnitPos "AUTO";
-                doStop _unit;
-                _unit setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _unit));
+                // doStop _unit;
+                // _unit setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _unit));
 
                 sleep 0.5;
 
@@ -171,6 +205,21 @@ pl_not_reachable_escape = {
         false
     };
     true
+};
+
+
+pl_find_cover_postion = {
+    params ["_cords", ["_radius", 15]];
+    private ["_valid"];
+
+    private _covers = (nearestTerrainObjects [_cords, pl_valid_covers, _radius, true, true]); //select {!(isObjectHidden _x)};
+    private _return = _cords;
+
+    if ((count _covers) > 0) then {
+        _return = getPos (_covers#0);
+    };
+
+    _return
 };
 
 
@@ -389,7 +438,7 @@ pl_clear_obstacles = {
 
 pl_is_apc = {
     params ["_vic"];
-    if (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC") exitWith {true};
+    // if (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC") exitWith {true};
 
     _isAPCtr = {
         if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
@@ -447,6 +496,8 @@ pl_canMove = {
 
     if (_wheelCount > 2) exitWith {false};
 
+    if (!alive (driver _vic) or ((lifeState (driver _vic)) isEqualto "INCAPACITATED")) exitWith {false};
+
     true
 };
 
@@ -473,7 +524,7 @@ pl_is_ifv = {
     _isIFVtr = {
         if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
         false
-    } forEach ["Puma", "m2a2", "bmp2", "bmp1", "ifv", "m2a1", "m2a3", "m2", "warrior", "marder", "cannon"];
+    } forEach ["Puma", "m2a2", "bmp2", "bmp1", "ifv", "m2a1", "m2a3", "m2", "warrior", "marder", "cannon0", "bmp", "bmd"];
     _isIFVtr
 };
 
@@ -488,7 +539,7 @@ pl_find_centroid_of_group = {
         _sumX = _sumX + ((getPos _x)#0);
         _sumY = _sumY + ((getPos _x)#1);
 
-    } forEach (units _group);
+    } forEach ((units _group) select {(_x distance2D (leader _group)) < 250});
 
     // _m = createMarker [str (random 2), [_sumX / _len, _sumY / _len, (getPosASL (leader _group))#2]];
     // _m setMarkerType "mil_dot";
@@ -512,6 +563,25 @@ pl_find_centroid_of_groups = {
     } forEach _groups;
 
     [_sumX / _len, _sumY / _len, (getPosASL (leader (_groups#0)))#2] 
+};
+
+pl_find_centroid_of_units = {
+    params ["_units"];
+
+    private _sumX = 0;
+    private _sumY = 0;
+    private _len = count (units _group);
+
+    {
+        _sumX = _sumX + ((getPos _x)#0);
+        _sumY = _sumY + ((getPos _x)#1);
+
+    } forEach (_units select {(_x distance2D (leader _group)) < 250});
+
+    // _m = createMarker [str (random 2), [_sumX / _len, _sumY / _len, (getPosASL (leader _group))#2]];
+    // _m setMarkerType "mil_dot";
+
+    [_sumX / _len, _sumY / _len, (getPosASL (leader _group))#2] 
 };
 
 pl_countdown_on_map = {
