@@ -363,74 +363,92 @@
 
 // [plane_1, getPosASL player] spawn pl_plane_fire_at_pos;
 
-pl_vehicle_unstuck_to_pos = {
-    params [["_group", (hcSelected player)#0]];
-    private ["_vic", "_cords", "_mPos"];
-    if (vehicle (leader _group) != leader _group) then {
+// pl_vehicle_unstuck_to_pos = {
+//     params [["_group", (hcSelected player)#0]];
+//     private ["_vic", "_cords", "_mPos"];
+//     if (vehicle (leader _group) != leader _group) then {
 
-        _vic = vehicle (leader _group);
-        _type = typeOf _vic;
+//         _vic = vehicle (leader _group);
+//         _type = typeOf _vic;
 
-        if (visibleMap or !(isNull findDisplay 2000)) then {
-            hintSilent "";
-            hint "Select Unstuck position on MAP (SHIFT + LMB to cancel)";
-            pl_show_obstacles = true;
-            pl_show_obstacles_pos = getPos (leader _group);
+//         if (visibleMap or !(isNull findDisplay 2000)) then {
+//             hintSilent "";
+//             hint "Select Unstuck position on MAP (SHIFT + LMB to cancel)";
+//             pl_show_obstacles = true;
+//             pl_show_obstacles_pos = getPos (leader _group);
 
-            private _rangelimiter = 20;
+//             private _rangelimiter = 20;
 
-            _markerBorderName = str (random 2);
-            private _borderMarkerPos = getPos (leader _group);
-            if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
-            createMarker [_markerBorderName, _borderMarkerPos];
-            _markerBorderName setMarkerShape "ELLIPSE";
-            _markerBorderName setMarkerBrush "Border";
-            _markerBorderName setMarkerColor "colorOrange";
-            _markerBorderName setMarkerAlpha 0.8;
-            _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+//             _markerBorderName = str (random 2);
+//             private _borderMarkerPos = getPos (leader _group);
+//             if !(_taskPlanWp isEqualTo []) then {_borderMarkerPos = waypointPosition _taskPlanWp};
+//             createMarker [_markerBorderName, _borderMarkerPos];
+//             _markerBorderName setMarkerShape "ELLIPSE";
+//             _markerBorderName setMarkerBrush "Border";
+//             _markerBorderName setMarkerColor "colorOrange";
+//             _markerBorderName setMarkerAlpha 0.8;
+//             _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
 
-            onMapSingleClick {
-                pl_mine_cords = _pos;
-                pl_mapClicked = true;
-                if (_shift) then {pl_cancel_strike = true};
-                hintSilent "";
-                onMapSingleClick "";
-            };
+//             onMapSingleClick {
+//                 pl_mine_cords = _pos;
+//                 pl_mapClicked = true;
+//                 if (_shift) then {pl_cancel_strike = true};
+//                 hintSilent "";
+//                 onMapSingleClick "";
+//             };
 
-            while {!pl_mapClicked} do {
-                if (visibleMap) then {
-                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-                } else {
-                    _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
-                };
-            };
-            pl_mapClicked = false;
-            if (pl_cancel_strike) exitWith {
-                pl_show_obstacles = false;
-                pl_mapClicked = false;
-            };
+//             while {!pl_mapClicked} do {
+//                 if (visibleMap) then {
+//                     _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+//                 } else {
+//                     _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+//                 };
+//             };
+//             pl_mapClicked = false;
+//             if (pl_cancel_strike) exitWith {
+//                 pl_show_obstacles = false;
+//                 pl_mapClicked = false;
+//             };
 
-            _cords = _mPos;
-            deleteMarker _markerBorderName;
-            pl_show_obstacles = false;
-            pl_mapClicked = false;
-        }
-        else
-        {
-            _cords = screenToWorld [0.5, 0.5];
-            _rangelimiter = 20;
-            if (_cords distance2D (getpos (leader _group))) > _rangelimiter then {
-                hint "Out of Range";
-            };
-        };
+//             _cords = _mPos;
+//             deleteMarker _markerBorderName;
+//             pl_show_obstacles = false;
+//             pl_mapClicked = false;
+//         }
+//         else
+//         {
+//             _cords = screenToWorld [0.5, 0.5];
+//             _rangelimiter = 20;
+//             if (_cords distance2D (getpos (leader _group))) > _rangelimiter then {
+//                 hint "Out of Range";
+//             };
+//         };
 
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+//         if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
-        _vic setVehiclePosition [_cords, [], 0, "NONE"];
-    }
-    else
-    {
-        hint "Only for Vehicles";
-    };
+//         _vic setVehiclePosition [_cords, [], 0, "NONE"];
+//     }
+//     else
+//     {
+//         hint "Only for Vehicles";
+//     };
+// };
+
+
+
+
+
+pl_get_grenade_muzzle = {
+	// AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+	params ["_grenade"];
+	_muzzleRaw = (format ["%1 in (getArray (_x >> 'Magazines'))", str _grenade]) configClasses (configfile >> "CfgWeapons" >> "Throw");
+
+	_muzzleRawArray = ((str(_muzzleRaw#0)) splitString "/");
+	_muzzle = _muzzleRawArray select ((count _muzzleRawArray) - 1);
+
+	_muzzle
 };
 
+_oof = ["gm_handgrenade_frag_dm51a1"] call pl_get_grenade_muzzle;
+
+systemChat _oof;

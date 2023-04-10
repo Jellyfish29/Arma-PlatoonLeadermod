@@ -1475,7 +1475,7 @@ pl_attach_inf = {
 
     // _group = (hcSelected player) select 0;
 
-    if (vehicle (leader _group) != leader _group) exitWith {_group setVariable ["pl_change_kampfweise", true]; [_group, 1] spawn pl_change_kampfweise};
+    // if (vehicle (leader _group) != leader _group) exitWith {_group setVariable ["pl_change_kampfweise", true]; [_group, 1] spawn pl_change_kampfweise};
 
     if (_group getVariable ["pl_vic_attached", false]) exitWith {_group setVariable ["pl_vic_attached", false]; _group setVariable ["pl_attached_infGrp", nil];};
 
@@ -1611,7 +1611,7 @@ pl_attach_inf = {
     player hcSetGroup [_group];
 
     pl_follow_array_other = pl_follow_array_other - [[_vicGroup, _group]];
-    [_group] call pl_reset;
+    if !(_group getVariable ["pl_task_planed", false]) then {[_group] call pl_reset};
     _vic forceSpeed -1;
     _vic limitSpeed 50;
     _vic setVariable ["pl_speed_limit", "50"];
@@ -1625,7 +1625,7 @@ pl_attach_vic = {
     if (_group getVariable ["pl_inf_attached", false]) exitWith {_group setVariable ["pl_inf_attached", nil]; _group setVariable ["pl_attached_vicGrp", nil];};
 
     // unload mounted Infgroup and attach Vehicle after dismount
-    if (_group getVariable ["pl_has_cargo", false]) exitWith {[_group, 2] spawn pl_change_kampfweise};
+    // if (_group getVariable ["pl_has_cargo", false]) exitWith {[_group, 2] spawn pl_change_kampfweise};
 
     if (vehicle (leader _group) == (leader _group)) exitWith {hint "Vehicle Only Task!"};
 
@@ -1702,7 +1702,7 @@ pl_attach_vic = {
         };
 
         _time = time + 10;
-        waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
+        waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic) or !(_infGroup getVariable ["pl_inf_attached", false])};
     };
 
     _infGroup setVariable ["pl_inf_attached", nil];

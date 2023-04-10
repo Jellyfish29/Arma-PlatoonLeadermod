@@ -75,6 +75,7 @@ pl_reset = {
     _group setVariable ["onTask", false];
     _group setVariable ["pl_on_hold", false];
     _group setVariable ['pl_wp_reached', nil];
+    _group enableAttack false;
     // [_group] call pl_reset_sop;
 
     // if group is not leading a formation reset Task

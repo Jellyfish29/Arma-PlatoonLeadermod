@@ -656,12 +656,13 @@ pl_opfor_defence_suppression = {
                     _targetPos = (_vis select 0) select 0;
                 };
 
-                if ((_targetPos distance2D _unit) > 25) then {
-                     _unit doSuppressiveFire _targetPos;
-              //       _m = createMarker [str (random 1), _targetPos];
-		            // _m setMarkerType "mil_dot";
-		            // _m setMarkerSize [0.5, 0.5];
-                };
+              //   if ((_targetPos distance2D _unit) > 25) then {
+              //        _unit doSuppressiveFire _targetPos;
+              // //       _m = createMarker [str (random 1), _targetPos];
+		      //       // _m setMarkerType "mil_dot";
+		      //       // _m setMarkerSize [0.5, 0.5];
+              //   };
+              _unit doSuppressiveFire _target;
             } forEach _firers;
 
             _time = time + 10;

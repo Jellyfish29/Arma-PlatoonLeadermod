@@ -333,8 +333,7 @@ pl_360 = {
 
 
 pl_disengage = {
-    params [["_group", (hcSelected player) select 0], ["_retreatPos", []], ["_takePosition", false]];
-    private ["_enemyDir"];
+    params [["_group", (hcSelected player) select 0], ["_retreatPos", []], ["_takePosition", false], ["_facing", 1000]];
 
     if ((visibleMap or !(isNull findDisplay 2000)) and _retreatPos isEqualTo []) then {
         if (visibleMap) then {
@@ -347,6 +346,10 @@ pl_disengage = {
     if !(canMove (vehicle (leader _group))) exitWith {};
 
     private _startPos = getPos (leader _group);
+
+    if (_facing == 1000) then {
+        _facing = _retreatPos getDir _startPos;
+    };
 
     _markerPos = _startPos getPos [(_startPos distance2D _retreatPos) / 2, _startPos getDir _retreatPos];
 
@@ -476,7 +479,7 @@ pl_disengage = {
 
         } else {
 
-            [_group, [], _retreatPos, _retreatPos getDir _startPos, false, true, 15] spawn pl_defend_position;
+            [_group, [], _retreatPos, _facing, false, true, 15] spawn pl_defend_position;
 
             sleep 5;
 
@@ -892,9 +895,9 @@ pl_defend_position = {
             objNull
         } forEach _units;
     };
-    {_units pushBack _x} forEach _atSoldiers;
-    {_units pushBack _x} forEach _mgGunners;
-    _units pushBack _medic;
+    {_units pushBackUnique _x} forEach _atSoldiers;
+    {_units pushBackUnique _x} forEach _mgGunners;
+    if !(isNull _medic) then {_units pushBack _medic};
 
     if (_group getVariable ["pl_sop_def_suppress", false]) then {
         [_group, _defenceWatchPos, _medic] spawn pl_defence_suppression;
@@ -1065,13 +1068,13 @@ pl_defend_position = {
         };
         _losOffset = _losOffset + (_defenceAreaSize / _accuracy);
 
-        _losPos = [_losPos, 1] call pl_convert_to_heigth_ASL;
+        _losPos = [_losPos, 1.75] call pl_convert_to_heigth_ASL;
 
         private _losCount = 0;
-        for "_l" from 10 to 510 step 50 do {
+        for "_l" from 10 to 600 step 20 do {
 
             _checkPos = _losPos getPos [_l, _watchDir];
-            _checkPos = [_checkPos, 1] call pl_convert_to_heigth_ASL;
+            _checkPos = [_checkPos, 1.75] call pl_convert_to_heigth_ASL;
             _vis = lineIntersectsSurfaces [_losPos, _checkPos, objNull, objNull, true, 1, "VIEW"];
 
             if !(_vis isEqualTo []) exitWith {};
@@ -1350,12 +1353,14 @@ pl_defend_position = {
 
 pl_at_defence = {
     params ["_atSoldier", "_group", "_defencePos", "_defenceAreaSize", "_defenceDir", "_startPos", "_atEscord"];
-    private ["_checkPosArray", "_watchPos", "_targets", "_debugMarkers"];
+    private ["_checkPosArray", "_watchPos", "_targets", "_debugMarkers", "_rifle"];
 
     _atEscord = objNull;
 
+    sleep 0.5;
+
     _time = time + 10;
-    waitUntil {sleep 0.5;  time >= _time or !(_group getVariable ["pl_in_position", false]) };
+    waitUntil {sleep 0.5;  time >= _time or !(_group getVariable ["pl_in_position", false])};
     if !(_group getVariable ["pl_in_position", false]) exitWith {};
 
     _watchPos = (getPos _atSoldier) getPos [100, _defenceDir];
@@ -1364,6 +1369,7 @@ pl_at_defence = {
     private _weaponIndex = (_weaponInfo#0)#0;
     private _muzzleName = (_weaponInfo#0)#3;
     private _firemode = (_weaponInfo#0)#4;
+    _rifle = primaryweapon _atSoldier;
 
     _defenceAreaSize = _defenceAreaSize + 50;
 
@@ -1430,6 +1436,8 @@ pl_at_defence = {
 
                 [(group (driver _target)), true] call Pl_marta;
 
+                // _group enableAttack true;
+
                 {
                     doStop _x;
                     _x enableAI "PATH";
@@ -1444,9 +1452,8 @@ pl_at_defence = {
                     _x setVariable ["pl_engaging", true];
                 } forEach [_atSoldier, _atEscord];
                 _atSoldier disableAI "AIMINGERROR";
-                // _atSoldier setUnitCombatMode "BLUE";
-                // _atSoldier disableAI "WEAPONAIM";
-                // _atSoldier disableAI "FSM";
+                _atSoldier doTarget objNull;
+                _atSoldier doWatch objNull;
 
                 _group setVariable ["pl_grp_active_at_soldier", _atSoldier];
                 pl_at_attack_array pushBack [_atSoldier, _target, _atEscord];
@@ -1454,12 +1461,7 @@ pl_at_defence = {
                 _movePos = ([_checkPosArray, [], {_atSoldier distance2D _x}, "ASCEND"] call BIS_fnc_sortBy) select 0;
                 _atSoldier setHit ["legs", 0];
                 _atSoldier doMove _movePos;
-                _atSoldier reveal [_target, 2];
-                _atSoldier doTarget _target;
-                // _atSoldier setDestination [_movePos, "LEADER DIRECT", true];
-                // [_atSoldier, _movePos] call pl_unit_move_exact_pos;
                 _atEscord doFollow _atSoldier;
-                // _escort doMove _movePos;
 
                 // _m = createMarker [str (random 1), _movePos];
                 // _m setMarkerType "mil_dot";
@@ -1471,34 +1473,24 @@ pl_at_defence = {
 
                     _time = time + (((_atSoldier distance _movePos) / 1.6) + 10);
                     sleep 0.5;
-                    waitUntil {sleep 0.5; (time > _time or (_atSoldier distance2D _movePos) < 15 or !alive _atSoldier or ((lifeState _atSoldier) isEqualto "INCAPACITATED") or !((group _atSoldier) getVariable ["pl_in_position", false]) or ((secondaryWeaponMagazine _atSoldier) isEqualTo []) or ((secondaryWeapon _atSoldier) isEqualTo "") or !alive _target or (count (crew _target) == 0)) or (([_targets, [], {_x distance2D (getPos _atSoldier)}, "ASCEND"] call BIS_fnc_sortBy)#0) != _target};
+                    // or (_atSoldier distance2D _movePos) < 1.5 
+                    waitUntil {sleep 0.5; (time > _time or unitReady _atSoldier or !alive _atSoldier or ((lifeState _atSoldier) isEqualto "INCAPACITATED") or !((group _atSoldier) getVariable ["pl_in_position", false]) or ((secondaryWeaponMagazine _atSoldier) isEqualTo []) or ((secondaryWeapon _atSoldier) isEqualTo "") or !alive _target or (count (crew _target) == 0)) or (([_targets, [], {_x distance2D (getPos _atSoldier)}, "ASCEND"] call BIS_fnc_sortBy)#0) != _target};
+                    // waitUntil {sleep 0.5; (time > _time or !alive _atSoldier or ((lifeState _atSoldier) isEqualto "INCAPACITATED") or !((group _atSoldier) getVariable ["pl_in_position", false]) or ((secondaryWeaponMagazine _atSoldier) isEqualTo []) or ((secondaryWeapon _atSoldier) isEqualTo "") or !alive _target or (count (crew _target) == 0)) or (([_targets, [], {_x distance2D (getPos _atSoldier)}, "ASCEND"] call BIS_fnc_sortBy)#0) != _target};
                     if ((group _atSoldier) getVariable ["pl_in_position", false] and alive _atSoldier and !((lifeState _atSoldier) isEqualto "INCAPACITATED")) then {
                         _atEscord doFollow _atSoldier;
-                        // _atSoldier enableAI "WEAPONAIM";
-                        // _atSoldier enableAI "FSM";
-                        // [_atSoldier, _movePos] call pl_unit_move_exact_pos;
                         sleep 0.1; 
-                        // doStop _atSoldier;
-                        // _atSoldier action ["SwitchWeapon", _atSoldier, _atSoldier, _weaponIndex];
-                        // _atSoldier setUnitPos "UP";
-                        
-                        // waitUntil {sleep 0.5; !(_group getVariable ["pl_hold_fire", false]) or !alive _atSoldier or _atSoldier getVariable["pl_wia", false] or !alive _target};
-                        // sleep 1;
-                        // _atSoldier setUnitCombatMode "RED";
-                        // _atSoldier doFire _target;
-                        // _fired = _atSoldier fireAtTarget [_target, _muzzleName];
+                        _atSoldier reveal [_target, 2];
+                        _atSoldier doTarget _target;
+                        _atSoldier doFire _target;
 
-                        // _atSoldier forceWeaponFire [_muzzleName, _firemode];
-
-                        _time = time + 10;
+                        _time = time + 5;
                         waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["pl_in_position", false]) or !alive _target or ((secondaryWeaponMagazine _atSoldier) isEqualTo []) or ((secondaryWeapon _atSoldier) isEqualTo "")};
                         _atSoldier doWatch objNull;
+                        _atSoldier doTarget objNull;
                         // pl_at_attack_array = pl_at_attack_array - [[_atSoldier, _movePos]];
                     };
                 };
             };
-
-
 
             pl_at_attack_array = pl_at_attack_array - [[_atSoldier, _target, _atEscord]];
             _atSoldier setVariable ['pl_is_at', false];
@@ -1516,14 +1508,14 @@ pl_at_defence = {
 
             if ((!alive _target or (count (crew _target) == 0)) and (_targets isEqualto [] or ((secondaryWeaponMagazine _atSoldier) isEqualTo []) or ((secondaryWeapon _atSoldier) isEqualTo ""))) then {
                 {
-                    [_x] spawn pl_move_back_to_def_pos;
+                    [_x] call pl_move_back_to_def_pos;
                 } forEach [_atSoldier, _atEscord];
             };
         } else {
             {
                 if ((_x distance2D (_x getVariable ["pl_def_pos", _defencePos])) > 20) then {
                     doStop _x;
-                    [_x] spawn pl_move_back_to_def_pos;
+                    [_x] call pl_move_back_to_def_pos;
                 };
             } forEach [_atSoldier, _atEscord];
         };
@@ -1594,10 +1586,11 @@ pl_defence_rearm = {
     waitUntil {sleep 0.5;  time >= time or !(_group getVariable ["onTask", true]) };
     if !(_group getVariable ["onTask", true]) exitWith {};
 
-    while {_group getVariable ["onTask", true] and (count (units _group)) > 3} do {
+    while {sleep 0.2; _group getVariable ["onTask", true] and (count (units _group)) > 3} do {
 
         // _supplyPoints = (nearestObjects [_defencePos, ["Car", "Tank"], 255, true]) select {(_x getVariable ["pl_is_rearm_point", false]) and (_x getVariable ["pl_supplies", 0]) > 0};
         private _supplyPoints = (_defencePos nearEntities [["Car", "Tank"], 255]) select {(_x getVariable ["pl_is_rearm_point", false]) and (_x getVariable ["pl_supplies", 0]) > 0};
+        private _attachedVic = objNull;
 
         if (_group getVariable ["pl_inf_attached", false]) then {
             _vicGroup = _group getVariable ["pl_attached_vicGrp", grpNull];
@@ -1618,79 +1611,96 @@ pl_defence_rearm = {
                     objNull
                 } foreach (units _group);
 
-                if !(isNull _supplySoldier) then {
+                if (_supplyPoint != _attachedVic) then {
 
-                    _supplyPos = getPos _supplyPoint;
-                    _startPos = _supplySoldier getVariable ["pl_def_pos", _defencePos];
-                    _supplySoldier enableAI "PATH";
-                    _supplySoldier setBehaviourStrong "AWARE";
-                    _supplySoldier setUnitCombatMode "BLUE";
-                    _supplySoldier disableAI "TARGET";
-                    _supplySoldier disableAI "AUTOTARGET";
-                    _supplySoldier disableAI "COVER";
-                    _supplySoldier disableAI "AUTOCOMBAT";
-                    _supplySoldier setUnitPos "AUTO";
-                    _supplySoldier setVariable ["pl_is_ccp_medic", true];
-                    _supplySoldier setVariable ["pl_engaging", true];
-                    _supplySoldier setHit ["legs", 0];
+                    if !(isNull _supplySoldier) then {
 
-                    _supplySoldier doMove _supplyPos;
-                    // _supplySoldier setDestination [_supplyPos, "LEADER DIRECT", true];
+                        _supplyPos = getPos _supplyPoint;
+                        _startPos = _supplySoldier getVariable ["pl_def_pos", _defencePos];
+                        _supplySoldier enableAI "PATH";
+                        _supplySoldier setBehaviourStrong "AWARE";
+                        _supplySoldier setUnitCombatMode "BLUE";
+                        _supplySoldier disableAI "TARGET";
+                        _supplySoldier disableAI "AUTOTARGET";
+                        _supplySoldier disableAI "COVER";
+                        _supplySoldier disableAI "AUTOCOMBAT";
+                        _supplySoldier setUnitPos "AUTO";
+                        _supplySoldier setVariable ["pl_is_ccp_medic", true];
+                        _supplySoldier setVariable ["pl_engaging", true];
+                        _supplySoldier setHit ["legs", 0];
 
-                    pl_supply_draw_array pushBack [_defencePos, _supplyPos, [0.9,0.7,0.1,0.8]];
+                        _supplySoldier doMove _supplyPos;
+                        _supplySoldier setDestination [_supplyPos, "LEADER DIRECT", true];
 
-                    sleep 0.2;
+                        pl_supply_draw_array pushBack [_defencePos, _supplyPos, [0.9,0.7,0.1,0.8]];
 
-                    waitUntil {sleep 0.5; unitReady _supplySoldier or ((_supplySoldier distance2D _supplyPos) < 5) or (!alive _supplySoldier) or !((group _supplySoldier) getVariable ["onTask", true])};
+                        sleep 0.2;
 
-                    if !((group _supplySoldier) getVariable ["onTask", true]) exitWith {pl_supply_draw_array = pl_supply_draw_array - [[_defencePos, _supplyPos, [0.9,0.7,0.1,0.8]]]};
+                        _timeOut = time + 80;
+                        waitUntil {sleep 0.5; ((_supplySoldier distance2D _supplyPos) < 5) or (!alive _supplySoldier) or !((group _supplySoldier) getVariable ["onTask", true]) or time > _timeOut};
 
-                    doStop _supplySoldier;
-                    _time = time + 2;
-                    waitUntil {sleep 1; time >= _time or !((group _supplySoldier) getVariable ["onTask", true])};
-                    _supplySoldier doWatch _startPos;
-                    // _supplySoldier playActionNow "GestureFollow";
-                    _time = time + 8;
-                    waitUntil {sleep 1; time >= _time or !((group _supplySoldier) getVariable ["onTask", true])};
-                    // _supplySoldier playActionNow "GestureGo";
-                    _time = time + 2;
-                    waitUntil {sleep 1; time >= _time or !((group _supplySoldier) getVariable ["onTask", true])};
+                        if !((group _supplySoldier) getVariable ["onTask", true]) exitWith {pl_supply_draw_array = pl_supply_draw_array - [[_defencePos, _supplyPos, [0.9,0.7,0.1,0.8]]]};
 
-                    _supplySoldier setHit ["legs", 0];
-                    _supplySoldier doMove _startPos;
-                    // _supplySoldier setDestination [_startPos, "LEADER DIRECT", true];
+                        if (time > _timeOut) then {continue};
+                        doStop _supplySoldier;
+                        _time = time + 2;
+                        waitUntil {sleep 1; time >= _time or !((group _supplySoldier) getVariable ["onTask", true])};
+                        _supplySoldier doWatch _startPos;
+                        // _supplySoldier playActionNow "GestureFollow";
+                        _time = time + 8;
+                        waitUntil {sleep 1; time >= _time or !((group _supplySoldier) getVariable ["onTask", true])};
+                        // _supplySoldier playActionNow "GestureGo";
+                        _time = time + 2;
+                        waitUntil {sleep 1; time >= _time or !((group _supplySoldier) getVariable ["onTask", true])};
 
-                    sleep 0.2;
+                        _supplySoldier setHit ["legs", 0];
+                        _supplySoldier doMove _startPos;
+                        // _supplySoldier setDestination [_startPos, "LEADER DIRECT", true];
 
-                    waitUntil {sleep 0.5; unitReady _supplySoldier or ((_supplySoldier distance2D _startPos) < 6) or (!alive _supplySoldier) or !((group _supplySoldier) getVariable ["onTask", true])};
+                        sleep 0.2;
 
-                    pl_supply_draw_array = pl_supply_draw_array - [[_defencePos, _supplyPos, [0.9,0.7,0.1,0.8]]];
+                        waitUntil {sleep 0.5; unitReady _supplySoldier or ((_supplySoldier distance2D _startPos) < 6) or (!alive _supplySoldier) or !((group _supplySoldier) getVariable ["onTask", true])};
 
-                    _supplySoldier setVariable ["pl_is_ccp_medic", false];
-                    _supplySoldier enableAI "TARGET";
-                    _supplySoldier enableAI "AUTOTARGET";
-                    _supplySoldier enableAI "COVER";
-                    _supplySoldier enableAI "AUTOCOMBAT";
-                    _supplySoldier setVariable ["pl_engaging", false];
-                    _supplySoldier setUnitCombatMode "YELLOW";
+                        pl_supply_draw_array = pl_supply_draw_array - [[_defencePos, _supplyPos, [0.9,0.7,0.1,0.8]]];
 
-                    if (alive _supplySoldier and ((group _supplySoldier) getVariable ["onTask", true]) and (_supplySoldier distance2D _startPos) < 8) then {
-                        [_supplySoldier, 15,  getDir _supplySoldier] spawn pl_find_cover;
+                        _supplySoldier setVariable ["pl_is_ccp_medic", false];
+                        _supplySoldier enableAI "TARGET";
+                        _supplySoldier enableAI "AUTOTARGET";
+                        _supplySoldier enableAI "COVER";
+                        _supplySoldier enableAI "AUTOCOMBAT";
+                        _supplySoldier setVariable ["pl_engaging", false];
+                        _supplySoldier setUnitCombatMode "YELLOW";
 
-                        {
-                            if (_ammoCargo > 0) then {
-                                _loadout = _x getVariable "pl_loadout";
-                                if !((getUnitLoadout _x) isEqualTo _loadout) then {
-                                    _x setUnitLoadout [_loadout, true];
-                                    _ammoCargo = _ammoCargo - 1;
+                        if (alive _supplySoldier and ((group _supplySoldier) getVariable ["onTask", true]) and (_supplySoldier distance2D _startPos) < 8) then {
+                            [_supplySoldier, 15,  getDir _supplySoldier] spawn pl_find_cover;
+
+                            {
+                                if (_ammoCargo > 0) then {
+                                    _loadout = _x getVariable "pl_loadout";
+                                    if !((getUnitLoadout _x) isEqualTo _loadout) then {
+                                        _x setUnitLoadout [_loadout, true];
+                                        _ammoCargo = _ammoCargo - 1;
+                                    };
+                                    sleep 2;
                                 };
-                                sleep 2;
-                            };
-                        } forEach (units _group);
-                        _supplyPoint setVariable ["pl_supplies", _ammoCargo];
-                    } else {
-                        _supplySoldier doFollow (leader _group);
+                            } forEach (units _group);
+                            _supplyPoint setVariable ["pl_supplies", _ammoCargo];
+                        } else {
+                            _supplySoldier doFollow (leader _group);
+                        };
                     };
+                } else {
+                    {
+                        if (_ammoCargo > 0) then {
+                            _loadout = _x getVariable "pl_loadout";
+                            if !((getUnitLoadout _x) isEqualTo _loadout) then {
+                                _x setUnitLoadout [_loadout, true];
+                                _ammoCargo = _ammoCargo - 1;
+                            };
+                            sleep 2;
+                        };
+                    } forEach (units _group);
+                    _supplyPoint setVariable ["pl_supplies", _ammoCargo];
                 };
             };
         };
@@ -1853,8 +1863,8 @@ pl_defend_position_vehicle = {
             _group setVariable ["pl_has_cargo", false];
 
             waitUntil {sleep 0.5; (({vehicle _x != _x} count (units _infGroup)) == 0) or (!alive _vic) or !(_group getVariable ["onTask", false])};
-            sleep 2;
-            waitUntil {sleep 0.5; ({unitReady _x or (lifeState _x isEqualTo "INCAPACITATED") or !alive _x} count (units _infGroup)) == (count (units _infGroup)) or !(_group getVariable ["onTask", false])};
+            // sleep 2;
+            // waitUntil {sleep 0.5; ({unitReady _x or (lifeState _x isEqualTo "INCAPACITATED") or !alive _x} count (units _infGroup)) == (count (units _infGroup)) or !(_group getVariable ["onTask", false])};
 
             {
                 player hcSetGroup [_x];
@@ -1866,7 +1876,7 @@ pl_defend_position_vehicle = {
             _group setVariable ["pl_attached_infGrp", nil];
         };
 
-        sleep 1;
+        sleep 0.1;
 
         deleteMarker _markerName;
         private _defPos = (getPos _vic) getPos [5, _watchDir];
@@ -1875,7 +1885,7 @@ pl_defend_position_vehicle = {
 
             [_infGroup, [], _defPos , _watchDir] spawn pl_defend_position;
 
-            sleep 1;
+            sleep 0.1;
 
             [_group, _infGroup] spawn pl_attach_vic;
         };
@@ -1980,7 +1990,7 @@ pl_defend_position_vehicle = {
             _tankFireposChangeEH = _vic addEventHandler ["Fired", {
                 params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_gunner"];
 
-                if (["CANNON", toUpper _weapon] call BIS_fnc_inString and !(_unit getVariable ["pl_tank_def_move", false])) then {
+                if ((["CANNON", toUpper _weapon] call BIS_fnc_inString or ["120", _weapon] call BIS_fnc_inString or ["105", _weapon] call BIS_fnc_inString or ["125", _weapon] call BIS_fnc_inString) and !(_unit getVariable ["pl_tank_def_move", false])) then {
 
                     // _unit removeEventHandler [_thisEvent, _thisEventHandler];
 
@@ -1993,7 +2003,7 @@ pl_defend_position_vehicle = {
 
                         sleep 0.5;
 
-                        [_unit, _unit getPos [-20, getDirVisual _unit] , 10, 1.5] call pl_vic_reverse_to_pos;
+                        [_unit, _unit getPos [-20, getDirVisual _unit] , 8, 1.5] call pl_vic_reverse_to_pos;
 
                         if !(group (driver _unit) getVariable ["onTask", false]) exitWith {};
 

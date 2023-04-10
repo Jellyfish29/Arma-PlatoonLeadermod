@@ -390,7 +390,7 @@ pl_friendly_check = {
     // _m setMarkerColor "colorGreen";
     
     _distance = _unit distance2D _pos; 
-    _allies = (_pos nearEntities [["Man", "Car", "Tank"], 25 + (_distance * 0.25)]) select {side _x == side _unit};
+    _allies = (_pos nearEntities [["Man", "Car", "Tank"], 45 + (_distance * 0.25)]) select {side _x == side _unit};
     // player sideChat str _allies;
     if !(_allies isEqualTo []) exitWith {true};
     false
@@ -570,18 +570,18 @@ pl_find_centroid_of_units = {
 
     private _sumX = 0;
     private _sumY = 0;
-    private _len = count (units _group);
+    private _len = count _units;
 
     {
         _sumX = _sumX + ((getPos _x)#0);
         _sumY = _sumY + ((getPos _x)#1);
 
-    } forEach (_units select {(_x distance2D (leader _group)) < 250});
+    } forEach _units;
 
     // _m = createMarker [str (random 2), [_sumX / _len, _sumY / _len, (getPosASL (leader _group))#2]];
     // _m setMarkerType "mil_dot";
 
-    [_sumX / _len, _sumY / _len, (getPosASL (leader _group))#2] 
+    [_sumX / _len, _sumY / _len, getPosASL (_units#0)#2] 
 };
 
 pl_countdown_on_map = {
@@ -621,6 +621,17 @@ pl_stringReplace = {
         _pos = _str find _find;
     };    
     _return + _str;
+};
+
+pl_get_grenade_muzzle = {
+    // AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+    params ["_grenade"];
+    _muzzleRaw = (format ["%1 in (getArray (_x >> 'Magazines'))", str _grenade]) configClasses (configfile >> "CfgWeapons" >> "Throw");
+
+    _muzzleRawArray = ((str(_muzzleRaw#0)) splitString "/");
+    _muzzle = _muzzleRawArray select ((count _muzzleRawArray) - 1);
+
+    _muzzle
 };
 
 // _m = createMarker [str (random 1), [g1] call pl_find_centroid_of_group];

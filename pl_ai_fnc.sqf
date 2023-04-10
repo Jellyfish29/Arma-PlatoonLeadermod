@@ -10,6 +10,7 @@ pl_max_mines_per_explo = parseNumber pl_max_mines_per_explo;
 pl_abandoned_markers = [];
 pl_at_targets_indicator = [];
 pl_bleedout_time = 1000;
+pl_plow_vehicles = ["B_APC_Tracked_01_CRV_F", "B_T_APC_Tracked_01_CRV_F", "rhsusf_stryker_m1132_m2_wd", "rhsusf_stryker_m1132_m2_d"];
 
 pl_share_info = {
 
@@ -789,6 +790,8 @@ pl_vehicle_setup = {
             if ((_vic getVariable ["pl_line_charges", -1]) == -1) then {_vic setVariable ["pl_line_charges", 4]};
             _vic setVariable ["pl_bridge_available", true];
         };
+
+        if ((typeof _vic) in pl_plow_vehicles) then {_vic setVariable ["pl_is_eng_vic_plow", true]};
 
         // Missile alert
         _vic addEventHandler ["IncomingMissile", {

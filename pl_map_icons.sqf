@@ -1096,7 +1096,7 @@ pl_draw_unit_group_lines = {
                     if (alive _x) then {
                         _pos2 = getPos _x;
                         _color = pl_side_color_rgb;
-                        if (_x getVariable ['pl_wia', false]) then {_color = [0.9,0,0,1]};
+                        if (_x getVariable ['pl_wia', false]) then {_color = [0.9,0,0,0.4]};
                         _display drawLine [
                             _pos1,
                             _pos2,

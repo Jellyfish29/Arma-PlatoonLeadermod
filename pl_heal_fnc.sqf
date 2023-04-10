@@ -483,7 +483,7 @@ pl_injured_drag = {
 
 
 pl_ccp = {
-    params [["_group", hcSelected player select 0], ["_isMedevac", false], ["_escort", nil], ["_reviveRange", 100], ["_healRange", 25], ["_medic", nil], ["_taskPlanWp", []]];
+    params [["_group", hcSelected player select 0], ["_isMedevac", false], ["_escort", objNull], ["_reviveRange", 100], ["_healRange", 25], ["_medic", objNull], ["_taskPlanWp", []]];
     private ["_mPos", "_healTarget", "_escort", "_group", "_ccpPos", "_markerNameOuter", "_markerNameInner", "_markerNameCCP", "_marker3D", "_ccpVic"];
 
     // _group = hcSelected player select 0;
@@ -500,7 +500,6 @@ pl_ccp = {
     } forEach (units _group);
 
     if (isNull _medic) exitWith {hint "No Medic"};
-
 
     pl_ccp_size = 150;
     _markerNameCCP = str (random 3);
