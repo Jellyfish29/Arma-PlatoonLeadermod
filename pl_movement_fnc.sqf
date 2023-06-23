@@ -23,12 +23,17 @@ pl_set_waypoint = {
     [_group] call pl_reset;
     sleep 0.2;
 
+    _group setVariable ["pl_on_march", true];
     _group addWaypoint [_cords, 0];
     
     if (vehicle (leader _group) != (leader _group)) then {
         vehicle (leader _group) doMove _cords;
         vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
     };
+
+    sleep 1;
+    waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
+    _group setVariable ["pl_on_march", nil];
 };
 
 // {if ((count (waypoints _x)) == 0) then {
@@ -679,12 +684,12 @@ pl_follow = {
                         if ((speed (vehicle _leader)) > 1) then {
                             _newPos = [((getPos _leader) select 0) + ((_posOffset select 0) * 15), ((getPos _leader) select 1) + ((_posOffset select 1) * 15)];
                             (vehicle _leader) doMove _newPos;
-                            // (vehicle _leader) setDestination [_newPos, "VEHICLE PLANNED" , false];
+                            (vehicle _leader) setDestination [_newPos, "VEHICLE PLANNED" , false];
                         };
                         if ((speed player) > 1) then {
                             _newPos = [((getPos player) select 0) + (_relPos select 0), ((getPos player) select 1) + (_relPos select 1)];
                             (vehicle _leader) doMove _newPos;
-                            // (vehicle _leader) setDestination [_newPos, "VEHICLE PLANNED" , false];
+                            (vehicle _leader) setDestination [_newPos, "VEHICLE PLANNED" , false];
                         };
                     }
                     else
@@ -692,6 +697,7 @@ pl_follow = {
                         _newPos = [((getPos player) select 0) + (_relPos select 0), ((getPos player) select 1) + (_relPos select 1)];
                         _leader limitSpeed 15;
                         _leader doMove _newPos;
+                        (vehicle _leader) setDestination [_newPos, "VEHICLE PLANNED" , false];
                         {
                             if (_x != _leader) then {
                                 _x doFollow _leader;
@@ -844,7 +850,7 @@ pl_move_as_formation = {
         };
         _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
         _newPos = _relPos vectorAdd _cords;
-        _gWp = _x addWaypoint [_newPos, 0];
+        _gWp = _x addWaypoint [_newPos, -1];
         _gwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]"];
         // _gWp synchronizeWaypoint _syncWps;
         _syncWps pushBack _gWp;
@@ -1387,6 +1393,17 @@ pl_vic_advance_to_pos_reverse = {
     [_group] call pl_reset;
 };
 
+pl_advance_to_pos_switch = {
+    params ["_vic", "_pos", ["_speed", 4]];
+
+    _relDir = _vic getRelDir _pos;
+    if (_relDir >= 90 and _relDir <= 270) then {
+        [_vic, _pos, _speed] call pl_vic_reverse_to_pos;
+    } else {
+        [_vic, _pos, _speed] call pl_vic_advance_to_pos_static;
+    };  
+};
+
 pl_vic_turn_in_place = {
     params ["_vic", "_targetPos"];
 
@@ -1477,7 +1494,7 @@ pl_move_on_path = {
 };
 
 pl_get_to_cover_positions = {
-    params ["_unitsRaw", "_cords", "_watchDir", ["_defenceAreaSize", 20], ["_allowGarrion", true], ["_losWatchPos", []]];
+    params ["_unitsRaw", "_cords", "_watchDir", ["_defenceAreaSize", 20], ["_allowGarrion", true], ["_losWatchPos", []], ["_force", true], ["_defendMode", 0]];
 
     _defenceWatchPos = _cords getPos [250, _watchDir];
     _defenceWatchPos = ASLToATL _defenceWatchPos;
@@ -1830,71 +1847,103 @@ pl_get_to_cover_positions = {
 
     for "_i" from 0 to (count _units) - 1 step 1 do {
         private _cover = false;
+        private _unit = _units#_i;
+        private _unitWatchDir = 0;
 
-        _unitWatchDir = _watchDir;
+        switch (_defendMode) do { 
+            case 0 : {
+                _unitWatchDir = _watchDir;
+                // move to optimal Pos first
+                if (_i < (count _validPos)) then {
+                    _defPos = _validPos#_i;
+                    
+                    _debugMColor = "colorBlue";
+                }
+                else
+                {
+                    _cover = true;
+                    // if no more covers avaible move to left or right side of best cover
+                        // deploy along a line
+                    if (_buildings isEqualTo []) then {
+                        _dirOffset = 90;
+                        if (_i % 2 == 0) then {_dirOffset = -90};
+                        // _defPos = [_posOffset *(sin (_watchDir + _dirOffset)), _posOffset *(cos (_watchDir + _dirOffset)), 0] vectorAdd _cords;
+                        _defPos = _cords getPos [_posOffset, _watchDir + _dirOffset];
+                        if (_i % 2 == 0) then {_posOffset = _posOffset + _posOffsetStep};
+                        _debugMColor = "colorBlue";
+                    }
+                    else
+                    {
+                        if (_losIdx > (count _validLosPos) - 1) then {_losIdx = 1};
+                        _defPos = (_validLosPos#_losIdx)#0;
+                        _losIdx = _losIdx + 2;
+                        _debugMColor = "colorOrange";
+                    };
+                };
 
-        // move to optimal Pos first
-        if (_i < (count _validPos)) then {
-            _defPos = _validPos#_i;
-            _unit = _units#_i;
-            _debugMColor = "colorBlue";
-        }
-        else
-        {
-            _cover = true;
-            _unit = _units#_i;
-            // if no more covers avaible move to left or right side of best cover
-                // deploy along a line
-            if (_buildings isEqualTo []) then {
-                _dirOffset = 90;
-                if (_i % 2 == 0) then {_dirOffset = -90};
-                // _defPos = [_posOffset *(sin (_watchDir + _dirOffset)), _posOffset *(cos (_watchDir + _dirOffset)), 0] vectorAdd _cords;
-                _defPos = _cords getPos [_posOffset, _watchDir + _dirOffset];
-                if (_i % 2 == 0) then {_posOffset = _posOffset + _posOffsetStep};
-                _debugMColor = "colorBlue";
-            }
-            else
-            {
-                if (_losIdx > (count _validLosPos) - 1) then {_losIdx = 1};
-                _defPos = (_validLosPos#_losIdx)#0;
-                _losIdx = _losIdx + 2;
-                _debugMColor = "colorOrange";
-            };
+                // seelct best Medic Pos
+                if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
+                    if (_unit == _medic) then {
+                        _defPos = _ccpPos;
+                    };
+                };
+
+                // select Best Mg Pos
+                if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun" or ([secondaryWeapon _unit] call BIS_fnc_itemtype) select 1 == "MissileLauncher") then {
+                    _defPos = (_mgPos#_mgIdx);
+                    _mgIdx = _mgIdx + 1;
+                    _debugMColor = "colorRed";
+                };
+
+                // if (_unit == (leader _group) and !(_buildings isEqualTo []) and (_defPos distance2D _cords) > 20) then {
+                //     _defPos = _cords findEmptyPosition [0, 25, typeOf _unit];
+                //     _cover = true;
+                //     _debugMColor = "colorYellow";
+                // };
+
+                if (isNil "_defPos") then {
+                    if !(_covers isEqualTo []) then {
+                        _defPos = getpos (selectRandom _covers);
+                    } else {
+                        _defPos = _cords findEmptyPosition [0, _defenceAreaSize];
+                    };
+                    _debugMColor = "colorGrey";
+                };
+            }; 
+
+            case 1 : {
+
+                _unitWatchDir = (360 / (count _units)) * _i;
+                _searchPos = _cords getPos [_defenceAreaSize * 0.9, _unitWatchDir];
+
+                _defPos = [];
+                if ((count _validPos) > 0) then {
+                    _defPos = {
+                        if ((_x distance2D _searchPos) < 15) exitWith {
+                            _debugMColor = "colorBlue";
+                            _validPos deleteAt (_validPos find _x);
+                            _x
+                         };
+                        []
+                    } forEach _validPos;
+
+                };
+
+                if (_defPos isEqualTo []) then {
+                    _debugMColor = "colorOrange";
+                    _defPos = _searchPos;
+                    _cover = true;
+                };
+
+            }; 
+            default {}; 
         };
 
-        // seelct best Medic Pos
-        if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
-            if (_unit == _medic) then {
-                _defPos = _ccpPos;
-            };
-        };
-
-        // select Best Mg Pos
-        if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun" or ([secondaryWeapon _unit] call BIS_fnc_itemtype) select 1 == "MissileLauncher") then {
-            _defPos = (_mgPos#_mgIdx);
-            _mgIdx = _mgIdx + 1;
-            _debugMColor = "colorRed";
-        };
-
-        // if (_unit == (leader _group) and !(_buildings isEqualTo []) and (_defPos distance2D _cords) > 20) then {
-        //     _defPos = _cords findEmptyPosition [0, 25, typeOf _unit];
-        //     _cover = true;
-        //     _debugMColor = "colorYellow";
-        // };
-
-        if (isNil "_defPos") then {
-            if !(_covers isEqualTo []) then {
-                _defPos = getpos (selectRandom _covers);
-            } else {
-                _defPos = _cords findEmptyPosition [0, _defenceAreaSize];
-            };
-            _debugMColor = "colorGrey";
-        };
 
         _defPos = ATLToASL _defPos;
         private _unitPos = "UP";
         if !([_defPos] call pl_is_indoor) then {
-            // _unitPos = "MIDDLE";
+            _unitPos = "MIDDLE";
             _cover = true;
         };
         _checkPos = [10*(sin _watchDir), 10*(cos _watchDir), 1] vectorAdd _defPos;
@@ -1911,25 +1960,19 @@ pl_get_to_cover_positions = {
             // _watchPos = _checkPos;
         };
 
-        _defPos = ASLToATL _defPos;
+        _defPos = ASLToATL _defPos;        
 
         // _m = createMarker [str (random 1), _defPos];
         // _m setMarkerType "mil_dot";
         // _m setMarkerSize [0.5, 0.5];
         // _m setMarkerColor _debugMColor;
 
-        // _helper = createVehicle ["Sign_Sphere25cm_F", _defPos, [], 0, "none"];
-        // _helper setObjectTexture [0,'#(argb,8,8,3)color(0,1,0,1)'];
-
-        [_unit, _defPos, _watchPos, _unitWatchDir, _unitPos, _cover, _cords, _defenceWatchPos, _watchDir] spawn {
-            params ["_unit", "_defPos", "_watchPos", "_unitWatchDir", "_unitPos", "_cover", "_cords", "_defenceWatchPos", "_defenceDir"];
+        [_unit, _defPos, _watchPos, _unitWatchDir, _unitPos, _cover, _cords, _defenceWatchPos, _watchDir, _force] spawn {
+            params ["_unit", "_defPos", "_watchPos", "_unitWatchDir", "_unitPos", "_cover", "_cords", "_defenceWatchPos", "_defenceDir", "_force"];
             private ["_check"];
-            // _m = createMarker [str (random 1), _defPos];
-            // _m setMarkerType "mil_dot";
-            // _m setMarkerSize [0.5, 0.5];
-
 
             if (!(alive _unit) or isNil "_defPos") exitWith {};
+
             doStop _unit;
             // waitUntil {sleep 0.5; unitReady _unit or !alive _unit};
             sleep 0.1;
@@ -1938,9 +1981,11 @@ pl_get_to_cover_positions = {
             _unit setVariable ["pl_def_pos", _defPos];
             _unit setVariable ["pl_def_pos_sec", []];
             _unit setVariable ["pl_engaging", true];
-            _unit disableAI "AUTOCOMBAT";
-            _unit disableAI "AUTOTARGET";
-            _unit disableAI "TARGET";
+            if (_force) then {
+                _unit disableAI "AUTOCOMBAT";
+                _unit disableAI "AUTOTARGET";
+                _unit disableAI "TARGET";
+            };
             _unit setUnitTrait ["camouflageCoef", 0.7, true];
             _unit setVariable ["pl_damage_reduction", true];
             _unit doMove _defPos;
@@ -1972,6 +2017,7 @@ pl_get_to_cover_positions = {
                 _unit disableAI "PATH";
                 _unit doWatch _watchPos;
                 _unit setUnitPos _unitPos;
+                
             }
             else
             {
@@ -1988,5 +2034,70 @@ pl_get_to_cover_positions = {
             sleep 0.5;
             _unit setVariable ["pl_in_position", true];
         };
+
+        {
+            deleteMarker _x;
+        } forEach _buildingMarkers;
     };
 };
+
+pl_get_fire_pos = {
+    params ["_firer", "_target", ["_area", 100]];
+
+    _checkPosArray = [];
+    private _atkDir = _firer getDir _target;
+    private _lineStartPos = (getPos _firer) getPos [(_area + 100)  / 2, _atkDir - 90];
+    _lineStartPos = _lineStartPos getPos [8, _atkDir];
+    private _lineOffsetHorizon = 0;
+    private _lineOffsetVertical = (_target distance2D _firer) / 60;
+
+    for "_i" from 0 to 60 do {
+        for "_j" from 0 to 60 do { 
+            _checkPos = _lineStartPos getPos [_lineOffsetHorizon, _atkDir + 90];
+            _lineOffsetHorizon = _lineOffsetHorizon + ((_area + 100) / 60);
+
+            _checkPos = [_checkPos, 2] call pl_convert_to_heigth_ASL;
+
+
+
+            _vis = lineIntersectsSurfaces [_checkPos, AGLToASL (unitAimPosition _target), _target, vehicle _target, true, 1, "VIEW"];
+            // _vis2 = [_target, "VIEW", _target] checkVisibility [_checkPos, AGLToASL (unitAimPosition _target)];
+            if (_vis isEqualTo []) then {
+                _checkPosArray pushBack _checkPos;
+            };
+            _lineStartPos = _lineStartPos getPos [_lineOffsetVertical, _atkDir];
+            _lineOffsetHorizon = 0;
+        };
+    };
+    _movePos = ([_checkPosArray, [], {_firer distance2D _x}, "DESCEND"] call BIS_fnc_sortBy) select 0;
+
+    _m = createMarker [str (random 2), _movePos];
+    _m setMarkerType "mil_dot";
+
+    _movePos
+};
+
+pl_vehicle_move_as_group = {
+  
+    _allgroups = hcSelected player;
+    private _vicGroups = [];
+    private _allVehicles = [];
+
+    {
+        if (leader _x != vehicle (leader _x)) then {
+            _vicGroups pushback _x;
+            _allVehicles pushback (vehicle (leader _x));
+            (vehicle (leader _x)) setVariable ["pl_vic_crew_callsign", groupId _x];
+        };
+    } forEach _allGroups;
+
+    if (count _vicGroups < 2) exitWith {hint "Select more than one Vehicle"};
+
+    _primeGroup = _vicGroups#0;
+    {
+        (units _x) joinSilent _primeGroup;
+    } forEach _vicGroups;
+
+};
+
+

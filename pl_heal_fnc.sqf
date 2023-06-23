@@ -129,7 +129,7 @@ pl_heal_group = {
                             // if (_enemies isEqualTo []) then {
                                 if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and !(_group getVariable ["onTask", true])) then {
                                     _medic setVariable ["pl_is_ccp_medic", true];
-                                    _h1 = [_group, _medic, objNull, _x, [] , 40, "pl_healing_active"] spawn pl_ccp_revive_action;
+                                    _h1 = [_group, _medic, objNull, _x, [] , 20, "pl_healing_active"] spawn pl_ccp_revive_action;
                                     waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
                                     _medic setVariable ["pl_is_ccp_medic", false];
                                 };
@@ -257,6 +257,8 @@ pl_ccp_revive_action = {
     params ["_group", "_medic", "_escort", "_healTarget", "_ccpPos", "_reviveTime", "_waitVar", ["_minDragRange", 0]];
     // player sideChat str (alive _healTarget);
 
+    if !(alive _healTarget) exitWith {};
+
     _healTarget setVariable ["pl_beeing_treatet", true];
     _medic disableAI "AUTOCOMBAT";
     _medic disableAI "AUTOTARGET";
@@ -295,7 +297,9 @@ pl_ccp_revive_action = {
         // _medic setUnitPos "MIDDLE";
 
         _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500};
-        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0  ) then {
+        _closeEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 200};
+        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0) then {
+            if ((count _closeEnemies) > 0) then {[_medic, (getpos _medic) getPos [65, _medic getDir _healTarget]] call pl_throw_smoke_at_pos};
             if ((_ccpPos distance2D _healTarget) > _minDragRange and ((_ccpPos distance2D _healTarget) < 200)) then {
                 _escort doFollow _medic;
                 _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
@@ -513,7 +517,7 @@ pl_ccp = {
     _markerNameOuter setMarkerBrush "SolidBorder";
     _markerNameOuter setMarkerColor pl_side_color;
     _markerNameOuter setMarkerAlpha 0.35;
-    _markerNameOuter setMarkerSize [pl_ccp_size, pl_ccp_size];
+    _markerNameOuter setMarkerSize [_reviveRange, _reviveRange];
 
     _markerNameInner = str (random 2);
     createMarker [_markerNameInner, getPos (leader _group)];
@@ -684,7 +688,7 @@ pl_ccp = {
             } forEach (_healTargets select {side _x isEqualTo playerSide});
 
             {
-                if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and (_group getVariable ["onTask", true])) then {
+                if (_x getVariable ["pl_wia", false] and !(_x getVariable ["pl_beeing_treatet", false]) and (_group getVariable ["onTask", true])) then {
                     if !(isNil "_escort") then {
                         _h1 = [_group, _medic, _escort, _x, _ccpPos, 20, "onTask", _healRange] spawn pl_ccp_revive_action;
                         waitUntil {sleep 0.5; (scriptDone _h1) or !(_group getVariable ["onTask", true])};

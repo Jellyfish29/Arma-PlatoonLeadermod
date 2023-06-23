@@ -19,10 +19,10 @@ pl_get_group_health = {
 
 pl_get_unit_color = {
     params ["_unit"];
-    if (_unit getVariable ['pl_wia', false]) exitWith {[0.9,0,0,1]}; //[0.7,0,0,1]
+    if (_unit getVariable ['pl_wia', false]) exitWith {[0.9,0,0,0.5]}; //[0.7,0,0,1]
     if (_unit getVariable ['pl_firing', false]) exitWith {[0.92,0.24,0.07,1]};
-    if (_unit getVariable ['pl_is_ccp_medic', false]) exitWith {[0.4,1,0.2,0.9]};
-    if (_unit getVariable ['pl_is_at', false]) exitWith {[1,0.7,0.4,0.9]};
+    if (_unit getVariable ['pl_is_ccp_medic', false]) exitWith {[0.4,1,0.2,0.8]};
+    if (_unit getVariable ['pl_is_at', false]) exitWith {[1,0.7,0.4,0.5]};
     pl_side_color_rgb
 };
 
@@ -144,7 +144,7 @@ pl_draw_group_info = {
                     _unit = _x;
                     if ((isNull objectParent _x or _unit getVariable ['pl_in_static', false]) and (alive _unit)) then {
                         _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _unit) >> 'icon');
-                        _size = 12;
+                        _size = 10;
                         _unitColor = [_unit] call pl_get_unit_color;
                         _display drawIcon [
                             _icon,
@@ -1444,8 +1444,8 @@ pl_draw_kia_unit = {
             {
                 _unit = _x;
                 _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _unit) >> 'icon');
-                _size = 12;
-                _unitColor = [0,0,0,1];
+                _size = 10;
+                _unitColor = [0,0,0,0.6];
                 _display drawIcon [
                     _icon,
                     _unitColor,
@@ -1720,13 +1720,14 @@ pl_open_tac_map = {
     // setGroupIconsVisible [true,false]; 
     if !(isNull findDisplay 2000) exitWith {
         pl_last_tac_zoom = ctrlMapScale (findDisplay 2000 displayCtrl 2000);
-        // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.1, 0.5];
+        // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.35, 0.15];
+        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.5, 0.5];
         // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
         (findDisplay 2000) closeDisplay 1;
-        playSound "HintCollapse";
+        // playSound "HintCollapse";
         // ctrlDelete (uiNamespace getVariable "pl_pouch_gfx");
     };
-    playSound "HintExpand";
+    // playSound "HintExpand";
     // player playAction "Gear";
     _map = findDisplay 46 createDisplay "pl_RscMap";
     _map displayAddEventHandler ["KeyDown", {call cba_events_fnc_keyHandlerDown}];
@@ -1739,8 +1740,8 @@ pl_open_tac_map = {
     //     pl_pouch_gfx ctrlCommit 0;
     // };
 
-    // (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, pl_last_tac_zoom, pl_last_tac_pos];
-    (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
+    (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, pl_last_tac_zoom, pl_last_tac_pos];
+    // (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
     ctrlMapAnimCommit (findDisplay 2000 displayCtrl 2000);
     sleep 0.1;
 

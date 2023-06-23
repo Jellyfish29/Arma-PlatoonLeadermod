@@ -161,6 +161,48 @@ pl_opfor_find_cover = {
     };
 };
 
+pl_opfor_get_cover_pos = {
+    params ["_coverPos", "_watchDir", "_radius"];
+    private ["_valid"];
+
+    _covers = nearestTerrainObjects [getPos _unit, pl_valid_covers, _radius, true, true];
+    _watchPos = (getPos _unit) getPos [1000, _watchDir];
+    private _unitPos = "MIDDLE";
+    if ((count _covers) > 0) then {
+        {
+            if !(_x in pl_covers) exitWith {
+                pl_covers pushBack _x;
+                _coverPos = (getPos _x) getPos [1.5, _watchDir - 180];
+                _pronePos = [getPos _unit, 0.2] call pl_convert_to_heigth_ASL;
+                _checkPos = [(getPos _unit) getPos [25, _watchDir], 1] call pl_convert_to_heigth_ASL;
+                _visP = lineIntersectsSurfaces [_pronePos, _checkPos, _unit, vehicle _unit, true, 1, "VIEW"];
+                if (_visP isEqualTo []) then {
+                    _unitPos = "DOWN";
+                } else {
+                    _unitPos = "MIDDLE";
+                };
+                [_x] spawn {
+                    params ["_cover"];
+                    sleep 5;
+                    pl_covers deleteAt (pl_covers find _cover);
+                };
+            };
+        } forEach _covers;
+    }
+    else
+    {
+        _pronePos = [getPos _unit, 0.2] call pl_convert_to_heigth_ASL;
+        _checkPos = [(getPos _unit) getPos [25, _watchDir], 1] call pl_convert_to_heigth_ASL;
+        _visP = lineIntersectsSurfaces [_pronePos, _checkPos, _unit, vehicle _unit, true, 1, "VIEW"];
+        if (_visP isEqualTo []) then {
+            _unitPos = "DOWN";
+        } else {
+            _unitPos = "MIDDLE";
+        };
+    };
+    [_coverPos, _unitPos]
+};
+
 pl_opfor_advance = {
 	params ["_grp"];
 
@@ -207,7 +249,7 @@ pl_opfor_defend_position = {
         _watchDir = getDir (leader _grp);
     };
 
-    _defenceAreaSize = 35;
+    _defenceAreaSize = 50;
     _buildings = nearestTerrainObjects [_cords, ["BUILDING", "RUIN", "HOUSE"], _defenceAreaSize, true];
 
     _defenceWatchPos = _cords getPos [250, _watchDir];
@@ -491,6 +533,7 @@ pl_opfor_defend_position = {
                 _dirOffset = 90;
                 if (_i % 2 == 0) then {_dirOffset = -90};
                 _defPos = [_posOffset *(sin (_watchDir + _dirOffset)), _posOffset *(cos (_watchDir + _dirOffset)), 0] vectorAdd _cords;
+                _defPos = ([_defPos, _watchDir, 25] call pl_opfor_get_cover_pos)#0;
                 if (_i % 2 == 0) then {_posOffset = _posOffset + _posOffsetStep};
                 _debugMColor = "colorBlue";
             }
@@ -498,6 +541,7 @@ pl_opfor_defend_position = {
             {
                 if (_losIdx > (count _validLosPos) - 1) then {_losIdx = 1};
                 _defPos = (_validLosPos#_losIdx)#0;
+                _defPos = ([_defPos, _watchDir, 10] call pl_opfor_get_cover_pos)#0;
                 _losIdx = _losIdx + 2;
                 _debugMColor = "colorOrange";
             };
@@ -519,8 +563,10 @@ pl_opfor_defend_position = {
         if (isNil "_defPos") then {
             if !(_covers isEqualTo []) then {
                 _defPos = getpos (selectRandom _covers);
+                _defPos = ([_defPos, _watchDir, 25] call pl_opfor_get_cover_pos)#0;
             } else {
                 _defPos = _cords findEmptyPosition [0, _defenceAreaSize];
+                _defPos = ([_defPos, _watchDir, 25] call pl_opfor_get_cover_pos)#0;
             };
             _debugMColor = "colorGrey";
         };
@@ -528,7 +574,7 @@ pl_opfor_defend_position = {
         _defPos = ATLToASL _defPos;
         private _unitPos = "UP";
         if !([_defPos] call pl_is_indoor) then {
-            // _unitPos = "MIDDLE";
+            _unitPos = "MIDDLE";
             _cover = true;
         };
         _checkPos = [10*(sin _watchDir), 10*(cos _watchDir), 1] vectorAdd _defPos;
@@ -567,8 +613,9 @@ pl_opfor_defend_position = {
             // _m setMarkerType "mil_dot";
             // _m setMarkerSize [0.5, 0.5];
 
-            if (dynamicSimulationEnabled (group _unit)) then {
+            if !(simulationEnabled _unit) then {
                 _defPos set [2, 0];
+                // _cover = [_defPos, _unitWatchDir, 5] call pl_opfor_get_cover_pos;
                 _unit setPosATL _defPos;
                 _unit setUnitPos _unitPos;
                 _unit setDir _unitWatchDir;
@@ -602,24 +649,24 @@ pl_opfor_defend_position = {
                 _unit enableAI "AUTOTARGET";
                 _unit enableAI "TARGET";
                 // _unit enableAI "FSM";
-                if !(_cover) then {
+                // if !(_cover) then {
                     doStop _unit;
                     _unit disableAI "PATH";
                     _unit doWatch _watchPos;
                     _unit setUnitPos _unitPos;
-                }
-                else
-                {
-                    if ([_defPos] call pl_is_forest or [_defPos] call pl_is_city) then {
-                        [_unit, _watchPos, _unitWatchDir, 3, false] spawn pl_opfor_find_cover;
-                    } else {
-                        [_unit, _watchPos, _unitWatchDir, 10, false] spawn pl_opfor_find_cover;
-                    };
-                };
-                if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun") then {
-                    [_unit, _watchPos, _unitWatchDir, 0, false, false, "", true] spawn pl_opfor_find_cover;
-                    // _m setMarkerColor "colorRed";
-                };
+                // }
+                // else
+                // {
+                //     if ([_defPos] call pl_is_forest or [_defPos] call pl_is_city) then {
+                //         [_unit, _watchPos, _unitWatchDir, 3, false] spawn pl_opfor_find_cover;
+                //     } else {
+                //         [_unit, _watchPos, _unitWatchDir, 10, false] spawn pl_opfor_find_cover;
+                //     };
+                // };
+                // if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun") then {
+                //     [_unit, _watchPos, _unitWatchDir, 0, false, false, "", true] spawn pl_opfor_find_cover;
+                //     // _m setMarkerColor "colorRed";
+                // };
             };
         };
     };
@@ -693,7 +740,7 @@ pl_opfor_flanking_move = {
     if !(_knownUnits isEqualto []) then {
         _targetPos = getPos (leader (group (_knownUnits#0)));
     } else {
-        _targetPos = getPos (leader (group (_units#0)));
+        _targetPos = getPos (leader (group (_units#([0, (count _units) - 1] call BIS_fnc_randomInt))));
     };
 
     // if ((random 1) > 0.5) then {
@@ -757,7 +804,7 @@ pl_opfor_attack_closest_enemy = {
     if !(_knownUnits isEqualto []) then {
     	_atkPos = getPos (leader (group (_knownUnits#0)));
     } else {
-    	_atkPos = getPos (leader (group (_units#0)));
+    	_atkPos = getPos (leader (group (_units#([0, (count _units) - 1] call BIS_fnc_randomInt))));
 	};
 
     // if ((random 1) > 0.5) then {
@@ -809,8 +856,8 @@ pl_opfor_auto_formation = {
     while {sleep 0.5; {alive _x} count (units _grp) > 0} do {
 
         if ([getPos (leader _grp)] call pl_is_city) then {
-            if (formation _grp != "FILE") then {
-                _grp setFormation "FILE";
+            if (formation _grp != "VEE") then {
+                _grp setFormation "VEE";
                 (leader _grp) forceSpeed 3;
             }; 
         } else {
@@ -893,6 +940,7 @@ pl_opfor_join_grp = {
 	private _target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
 	if !(isNil "_target") exitWith {
 		private _targetGrp = group _target;
+        _targetGrp setVariable ["pl_is_join_target", true];
 		{
 			if (alive _x) then {
 				[_x] joinSilent _targetGrp;
@@ -906,6 +954,19 @@ pl_opfor_join_grp = {
 			};
 		} forEach (units _grp);
         // deleteGroup _group;
+
+        // retarded
+        [_targetGrp] spawn {
+            params ["_targetGrp"];
+            sleep 2;
+            [_targetGrp, (currentWaypoint _targetGrp)] setWaypointType "MOVE";
+            [_targetGrp, (currentWaypoint _targetGrp)] setWaypointPosition [getPosASL (leader _targetGrp), -1];
+            sleep 0.1;
+            deleteWaypoint [_targetGrp, (currentWaypoint _targetGrp)];
+            sleep 2;
+            _targetGrp setVariable ["pl_is_join_target", nil];
+        };
+
 		true
 	};
 	false

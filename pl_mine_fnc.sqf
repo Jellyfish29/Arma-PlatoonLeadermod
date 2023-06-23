@@ -1487,7 +1487,7 @@ pl_groups_with_charges = [];
 
 pl_place_charge = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
-    private ["_mPos", "_cords", "_exSpecialist", "_availableMines", "_markerName", "_markerBorderName"];
+    private ["_mPos", "_cords", "_exSpecialist", "_availableMines", "_markerName", "_markerBorderName", "_rangelimiter"];
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry Only Task!"};
 
@@ -1512,7 +1512,7 @@ pl_place_charge = {
         _markerName setMarkerBrush "Border";
         _markerName setMarkerSize [25, 25];
 
-        private _rangelimiter = 60;
+        _rangelimiter = 60;
 
         _markerBorderName = str (random 2);
         private _borderMarkerPos = getPos (leader _group);
@@ -1557,7 +1557,7 @@ pl_place_charge = {
     {
         _cords = screenToWorld [0.5, 0.5];
         _rangelimiter = 60;
-        if (_cords distance2D (getpos (leader _group))) > _rangelimiter then {
+        if ((_cords distance2D (getpos (leader _group))) > _rangelimiter) then {
             hint "Out of Range";
         };
     };

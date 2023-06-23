@@ -278,11 +278,11 @@ pl_supply_point = {
     } forEach (units _group) - [_ammoBearer];
 
 
-    {
-        if (((leader _x) distance2D _vic) <= pl_supply_area and !(_x getVariable ["pl_is_support", false])) then {
-            _suppliedGroups pushBackUnique _x;
-        };
-    } forEach (allGroups select {side _x == playerSide});
+    // {
+    //     if (((leader _x) distance2D _vic) <= pl_supply_area and !(_x getVariable ["pl_is_support", false])) then {
+    //         _suppliedGroups pushBackUnique _x;
+    //     };
+    // } forEach (allGroups select {side _x == playerSide});
 
     // Supply Loop -> Supllies every Group in Range once while actice
     while {(_group getVariable ["onTask", true] and (alive _ammoBearer))} do {

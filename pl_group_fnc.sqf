@@ -254,6 +254,8 @@ pl_show_group_icon = {
 pl_change_inf_icons = {
     params ["_group"];
 
+    // if !(_group getVariable ["pl_show_info", true]) exitWith {};
+
     if (_group == (group player)) exitWith {};
 
     private _size = "s";
@@ -395,15 +397,17 @@ pl_voice_radio_answer = {
         switch (_message) do { 
             case "confirm" : {_answerVoiceLine = selectRandom ["SentConfirmAttack", "SentConfirmOther", "SentSupportConfirm"]};
             case "suppress" : {_answerVoiceLine = selectRandom ["SentConfirmSuppress"]}; 
-            case "contact" : {_answerVoiceLine = selectRandom ["SentEnemyContact", "SentOpenFireInCombat"]};
-            case "kia" : {_answerVoiceLine = selectRandom ["SentUnitKilled", "SentUnitKilled", "SentEndangered"]}; 
-            case "destroyed" : {_answerVoiceLine = "SentObjectDestroyedUnknown"}; 
+            case "contact" : {_answerVoiceLine = selectRandom ["SentEnemyContact", "SentOpenFireInCombat", "SentUnderFire", "SentContact"]};
+            case "kia" : {_answerVoiceLine = selectRandom ["SentUnitKilled", "SentUnitKilled"]}; 
+            case "destroyed" : {_answerVoiceLine = selectRandom ["SentObjectDestroyedUnknown", "SentEndangered", "SentWitnessKilled"]}; 
             case "damaged" : {_answerVoiceLine = selectRandom ["SentDammageCritical", "SentEndangered"]}; 
             case "atk_complete" : {_answerVoiceLine = "SentClear"};
             case "attack" : {_answerVoiceLine = "SentNotifyAttack"};
             case "wia" : {_answerVoiceLine = "SentHealthCritical"};
+            case "disengage" : {_answerVoiceLine = selectRandom ["SentUnderFire", "SentCoverMe"]};
             default {_answerVoiceLine = ""};
         };
+
 
         [_group, _answerVoiceLine, _delay] spawn {
             params ["_group", "_answerVoiceLine", "_delay"];

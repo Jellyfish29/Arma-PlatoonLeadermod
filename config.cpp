@@ -14,6 +14,16 @@ class cfgFunctions
             };
         };
     };
+
+    class PLDCM
+    {
+        tag = "PLDCM";
+        class Start
+        {
+            file = "\Plmod\functions";
+            class ModuleStart{};
+        }
+    }
 //     class A3
 //     {
 //         class A2
@@ -4176,10 +4186,14 @@ class pl_RscMap
             shadow = 1;
             moveOnEdges = 0;
             idc = 2000;
+            // x = 0.2 * safezoneW + safezoneX;
+            // y = 0.024 * safezoneH + safezoneY;
+            // w = 0.433125 * safezoneW;
+            // h = 0.462 * safezoneH;
             x = 0.2 * safezoneW + safezoneX;
-            y = 0.024 * safezoneH + safezoneY;
-            w = 0.433125 * safezoneW;
-            h = 0.462 * safezoneH;
+            y = 0.2 * safezoneH + safezoneY;
+            w = 0.6 * safezoneW;
+            h = 0.6 * safezoneH;
 
 
         };
@@ -4196,11 +4210,30 @@ $[
 ]
 */
 
-
+class CfgFactionClasses
+{
+    class NO_CATEGORY;
+    class PLDCM_faction: NO_CATEGORY
+    {
+        //displayName = "Random Displacements Campaign";
+        displayName = "Dynamic Combat Mission";
+        priority = 0.1;
+        side = 7;
+    };
+};
 
 class CfgVehicles
 {
-    class Module_F;
+    class Logic;
+    class Module_F: Logic
+    {
+        class ArgumentsBaseUnits
+        {
+            class Units;
+        };
+        class ModuleDescription;
+    };
+
     class MartaManager: Module_F
     {
         author="$STR_A3_Bohemia_Interactive";
@@ -4213,7 +4246,141 @@ class CfgVehicles
             init="if (isnil 'BIS_marta_mainscope') then {BIS_marta_mainscope = _this select 0; if (isServer) then {private [""_ok""];_ok = _this execVM ""Plmod\overwrites\marta_main.sqf""}};";
         };
     };
+
+    class PLDCM_core: Module_F
+    {
+        author = "Jellyfish";
+        _generalMacro = "PLDCM_CORE";
+        scope = 2;
+        displayName = "Core";
+        icon = "";
+        category = "PLDCM_faction";
+        function = "PLDCM_fnc_ModuleStart";
+        functionPriority = 1;
+        isGlobal = 1;
+        isTriggerActivated = 0;
+        isDisposable = 0;
+        class Arguments
+        {
+            class PLDCM_ModuleEnemySide
+            {
+                displayName = "Enemy side";
+                description = "Side the enemy units will spawn on";
+                typeName = "STRING";
+                class values
+                {
+                    class WEST
+                    {
+                        name = "NATO";
+                        value = "NATO";
+                    };
+                    class EAST
+                    {
+                        name = "CSAT";
+                        value = "CSAT";
+                        default = 1;
+                    };
+                    class RES
+                    {
+                        name = "Resistance";
+                        value = "RESISTANCE";
+                    };
+                };
+            };
+            class PLDCM_ModuleEnemyStrength
+            {
+                displayName = "Enemy Strength";
+                description = "Strength og the Enemy";
+                typeName = "NUMBER";
+                class values
+                {
+                    class ZERO
+                    {
+                        name = "Company";
+                        value = "0";
+                    };
+                    class ONE
+                    {
+                        name = "Reinforced Company";
+                        value = "1";
+                        default = 1;
+                    };
+                    class TWO
+                    {
+                        name = "Battalion";
+                        value = "2";
+                    };
+                    class THREE
+                    {
+                        name = "Reinforced Battalion";
+                        value = "3";
+                    };
+                };
+            };
+            class PLDCM_ModuleWeather
+            {
+                displayName = "Weather";
+                description = "Use dynamic weather?";
+                typeName = "STRING";
+                class values
+                {
+                    class TRUE
+                    {
+                        name = "True";
+                        value = "TRUE";
+                        default = 1;
+                    };
+                    class FALSE
+                    {
+                        name = "False";
+                        value = "FALSE";
+                    };
+                };
+            };
+            class PLDCM_ModuleCivilians
+            {
+                displayName = "Enable Civilians";
+                description = "";
+                typeName = "STRING";
+                class values
+                {
+                    class TRUE
+                    {
+                        name = "True";
+                        value = "TRUE";
+                        default = 1;
+                    };
+                    class FALSE
+                    {
+                        name = "False";
+                        value = "FALSE";
+                    };
+                };
+            };
+            class PLDCM_ModulePlacePlayer
+            {
+                displayName = "Place Player";
+                description = "";
+                typeName = "STRING";
+                class values
+                {
+                    class TRUE
+                    {
+                        name = "True";
+                        value = "TRUE";
+                        default = 1;
+                    };
+                    class FALSE
+                    {
+                        name = "False";
+                        value = "FALSE";
+                    };
+                };
+            };
+        };
+    };
 };
+
 
 // class Pl_radial_menu {
 

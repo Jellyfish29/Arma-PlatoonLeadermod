@@ -35,7 +35,54 @@ pl_get_ammo_group_state = {
     if (_magCountAll < (_magsDefault * 0.25)) then {
         _ammoState = ["Red", "#b20000", [0.7,0,0,1]];
     };
+
+    // if (vehicle (leader _group) != (leader _group)) then {
+    //     _ammoState = [vehicle (leader _group)] call pl_get_vehicle_ammo_state;
+    // };
+
     _ammoState
+};
+
+pl_get_vehicle_ammo_state = {
+    params ["_vic"];
+    private _currentAmmo = 100 - (round ((((needService _vic)#2)) * 100));
+
+    private _ammoState = [_currentAmmo, "#66ff33", [0.4,1,0.2,1]];
+    if (_currentAmmo <= 60) then {
+        _ammoState = [_currentAmmo, "#e5e500", [0.9,0.9,0,1]];
+    };
+    if (_currentAmmo <= 25) then {
+        _ammoState = [_currentAmmo, "#b20000", [0.7,0,0,1]];
+    };
+    _ammoState
+};
+
+pl_get_vehicle_fuel_state = {
+    params ["_vic"];
+    private _currentFuel = 100 - (round ((((needService _vic)#1)) * 100));
+
+    private _fuelState = [_currentFuel, "#66ff33", [0.4,1,0.2,1]];
+    if (_currentFuel <= 60) then {
+        _fuelState = [_currentFuel, "#e5e500", [0.9,0.9,0,1]];
+    };
+    if (_currentFuel <= 10) then {
+        _fuelState = [_currentFuel, "#b20000", [0.7,0,0,1]];
+    };
+    _fuelState
+};
+
+pl_get_vehicle_health_state = {
+    params ["_vic"];
+    private _vicHealth = 100 - (round ((getDammage _vic) * 100));
+
+    private _vicState = [_vicHealth, "#66ff33", [0.4,1,0.2,1]];
+    if (_vicHealth <= 80) then {
+        _vicState = [_vicHealth, "#e5e500", [0.9,0.9,0,1]];
+    };
+    if (_vicHealth <= 25) then {
+        _vicState = [_vicHealth, "#b20000", [0.7,0,0,1]];
+    };
+    _vicState
 };
 
 pl_get_mg_ammo_status_need = {
@@ -115,7 +162,6 @@ pl_sitrep_solo = {
         _magCount = 0;
         _missileCount = 0;
 
-
         _primary = primaryWeapon _x;
         _magCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})} count magazines _x);
 
@@ -123,7 +169,6 @@ pl_sitrep_solo = {
         if !(_secondary isEqualTo "") then {
             _missileCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> _secondary >> "magazines") apply {toUpper _x})} count magazines _x);
         };
-
 
         if (toUpper ((primaryWeaponMagazine _x)#0) in (getArray (configFile >> "CfgWeapons" >> _primary >> "magazines") apply {toUpper _x})) then {_magCount = _magCount + 1};
         if (toUpper ((secondaryWeaponMagazine _x)#0) in (getArray (configFile >> "CfgWeapons" >> _secondary >> "magazines") apply {toUpper _x})) then {_missileCount = _missileCount + 1};
@@ -138,9 +183,11 @@ pl_sitrep_solo = {
         if (_unitDamage <= 0) then {
             _unitDamageStr = "M.I.A";
         };
-        _message = _message + format ["<br /><t color='#cccccc' size='0.8' align='left'>- %1 / %2</t><t color='#cccccc' size='0.8' align='right'> x%3</t>",_unitDamageStr, _unitMos, _magCount];
+        _grenadeCount = [_x] call pl_get_grenade_ammo;
+        _message = _message + format ["<br /><t color='#cccccc' size='0.8' align='left'>- %1 / %2</t><t color='#cccccc' size='0.8' align='right'> x%3 / x%4 G</t>",_unitDamageStr, _unitMos, _magCount, _grenadeCount];
+
         if (_missileCount > 0) then{
-            _message = _message + format ["<t color='#cccccc' size='0.8' align='right'>/x%1 AT</t>", _missileCount];
+            _message = _message + format ["<t color='#cccccc' size='0.8' align='right'> / x%1 AT</t>", _missileCount];
         };
 
     } forEach (units _group);
@@ -161,9 +208,15 @@ pl_sitrep_solo = {
         _unitDamage = getDammage _vic;
         _unitDamage = 100 - (round (_unitDamage * 100));
         _ammoCargo = _vic getVariable ["pl_supplies", 0];
+        _ammoState = [_vic] call pl_get_vehicle_ammo_state;
+        _healthState = [_vic] call pl_get_vehicle_health_state;
+        _fuelState = [_vic] call pl_get_vehicle_fuel_state;
         _message = _message + format ["
-            <br /><br /><t color='#cccccc' size='1' align='left'>Vehicle: %1</t>
-            <br /><t color='#cccccc' size='0.8' align='left'>Status</t><t color='#cccccc' size='1' align='right'>%2%3</t>", _vicName, _unitDamage, "%"];
+            <br /><br /><t color='#ffffff' size='1' align='left'>Vehicle: %2</t>
+            <br /><t color='%3' size='0.8' align='left'>Health</t><t color='#cccccc' size='1' align='right'>%4%1</t>
+            <br /><t color='%5' size='0.8' align='left'>Ammo</t><t color='#cccccc' size='1' align='right'>%6%1</t>
+            <br /><t color='%7' size='0.8' align='left'>Fuel</t><t color='#cccccc' size='1' align='right'>%8%1</t>
+            ","%", _vicName, _healthState#1, _healthState#0, _ammoState#1, _ammoState#0, _fuelState#1, _fuelState#0];
         if (_vic getVariable ["pl_is_supply_vehicle", false] or _vic getVariable ["pl_is_repair_vehicle", false] or getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular") isEqualTo "APC" or _vic isKindOf "Car" or (_vic getVariable ["pl_is_eng_apc", false]) or _ammoCargo > 0) then {
             _repairCargo = _vic getVariable ["pl_repair_supplies", 0];
             _reinforcements = _vic getVariable ["pl_avaible_reinforcements", 0];

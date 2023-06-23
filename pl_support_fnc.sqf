@@ -1,4 +1,4 @@
-sleep 1;
+sleep 3;
 
 pl_cas_cords = [0,0,0];
 pl_arty_cords = [0,0,0];
@@ -133,7 +133,7 @@ pl_support_status = {
 
 pl_cas = {
     params ["_key"];
-    private ["_sortiesCost", "_cords", "_dir", "_support", "_casType", "_plane", "_cs", "_markerName"];
+    private ["_sortiesCost", "_cords", "_dir", "_support", "_casType", "_plane", "_cs", "_markerName", "_mPos"];
 
     switch (_key) do { 
         case 1 : {_sortiesCost = 1}; 
@@ -143,7 +143,7 @@ pl_cas = {
         default {_sortiesCost = 1}; 
     };
 
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
 
         if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
 
@@ -187,7 +187,12 @@ pl_cas = {
         };
 
         while {!pl_mapClicked} do {
-            _dir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
+            _dir = _cords getDir _mPos;
             _markerName setMarkerDir _dir;
         };
         pl_mapClicked = false;
@@ -261,13 +266,13 @@ pl_cas = {
 };
 
 pl_arty = {
-    private ["_salvos", "_markerName"];
+    private ["_salvos", "_markerName", "_mPos"];
 
     if (pl_arty_ammo < pl_arty_rounds) exitWith {
         // if (pl_enable_beep_sound) then {playSound "beep"};
         hint "Not enough ammunition left!";
     };
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
 
         _message = "Select STRIKE Location <br /><br />
         <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
@@ -288,7 +293,11 @@ pl_arty = {
             onMapSingleClick "";
         };
         while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
             _markerName setMarkerPos _mPos;
         };
         pl_mapClicked = false;
@@ -603,7 +612,7 @@ pl_fire_on_map_arty = {
 
 pl_interdiction_cas = {
     params ["_casTypeSad"];
-    private ["_height", "_cd", "_cdType", "_dir", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
+    private ["_height", "_cd", "_mPos", "_cdType", "_dir", "_ehPad", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
 
     switch (_casTypeSad) do { 
         case 1 : {
@@ -654,7 +663,8 @@ pl_interdiction_cas = {
             _evacHeight = 150;
             _onStationTime = 240;
             _sadAreaSize = 300;
-            _wpType = "TR UNLOAD";
+            // _wpType = "TR UNLOAD";
+            _wpType = "MOVE";
         };
 
         case 5 : {
@@ -672,7 +682,7 @@ pl_interdiction_cas = {
         default {}; 
     };
 
-    if (visibleMap) then {
+    if (visibleMap or !(isNull findDisplay 2000)) then {
 
         if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
 
@@ -697,7 +707,11 @@ pl_interdiction_cas = {
         };
 
         while {!pl_mapClicked} do {
-            _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            if (visibleMap) then {
+                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
             _areaMarkerName setMarkerPos _mPos;
         };
         pl_mapClicked = false;
@@ -804,69 +818,107 @@ pl_interdiction_cas = {
         };
     } foreach ((typeOf _plane) call bis_fnc_weaponsEntityType);
 
+    pl_rtb = false;
+
     switch (_casTypeSad) do { 
         case 1 : {
             // _casGroup setBehaviour "COMBAT";
             sleep 1;
-            waitUntil {(_plane distance2D _cords) < 4000};
+            waitUntil {(_plane distance2D _cords) < 4000 or pl_rtb};
             deleteWaypoint _sadWp;
 
             (driver _plane) disableAI "AUTOTARGET";
             (driver _plane) disableAI "TARGET";
 
-            [_plane, _cords, _sadAreaSize, _weapons, _casGroup, _spawnPos,_flyHeight] spawn {
-                params ["_plane", "_cords", "_sadAreaSize", "_weapons", "_casGroup", "_spawnPos","_flyHeight"];
-                _targets = (nearestObjects [_cords, ["Car", "Tank"], _sadAreaSize, true]) select {side _x != playerSide};
+            if !(pl_rtb) then {
 
-                {
-                    _target = _x;
-
-                    if (!alive _target) then {continue};
-
-                    if (_plane distance2D _target < 3000) then {
-                        _plane doMove ((getpos _plane) getPos [3000, _plane getDir _spawnPos]);
-
-
-                        waitUntil {sleep 0.25; !alive _plane or (getposasl _plane) distance2D _target > 2000 or !(_casGroup getVariable ["onTask", false])};
-                    };
-
-                    _plane doMove (getPos _target);
-                    _plane reveal _target;
-                    _plane dowatch _target;
-                    _plane dotarget _target;
-
-                    _plane flyInHeight _flyHeight;
-
-                    waitUntil {sleep 0.25; !alive _plane or (getposasl _plane) distance _target < 1000 or !(_casGroup getVariable ["onTask", false])};
-
-                    if (!alive _plane or !(_casGroup getVariable ["onTask", false])) exitWith {};
-
-                    sleep 2;
+                [_plane, _cords, _sadAreaSize, _weapons, _casGroup, _spawnPos,_flyHeight] spawn {
+                    params ["_plane", "_cords", "_sadAreaSize", "_weapons", "_casGroup", "_spawnPos","_flyHeight"];
+                    _targets = (nearestObjects [_cords, ["Car", "Tank"], _sadAreaSize, true]) select {side _x != playerSide};
 
                     {
-                        _plane fireattarget [_target,(_x select 0)];
-                    } foreach _weapons;
+                        _target = _x;
 
-                    _plane doTarget objNull;
-                    _plane doWatch objNull;
+                        if (!alive _target) then {continue};
 
-                } forEach _targets;
+                        if (_plane distance2D _target < 3000) then {
+                            _plane doMove ((getpos _plane) getPos [3000, _plane getDir _spawnPos]);
+
+
+                            waitUntil {sleep 0.25; !alive _plane or (getposasl _plane) distance2D _target > 2000 or !(_casGroup getVariable ["onTask", false])};
+                        };
+
+                        _plane doMove (getPos _target);
+                        _plane reveal _target;
+                        _plane dowatch _target;
+                        _plane dotarget _target;
+
+                        _plane flyInHeight _flyHeight;
+
+                        waitUntil {sleep 0.25; !alive _plane or (getposasl _plane) distance _target < 1000 or !(_casGroup getVariable ["onTask", false])};
+
+                        if (!alive _plane or !(_casGroup getVariable ["onTask", false])) exitWith {};
+
+                        sleep 2;
+
+                        {
+                            _plane fireattarget [_target,(_x select 0)];
+                        } foreach _weapons;
+
+                        _plane doTarget objNull;
+                        _plane doWatch objNull;
+
+                    } forEach _targets;
+                };
             };
         }; 
         case 2 : {
             _casGroup setBehaviour "COMBAT";
             sleep 1;
-            waitUntil {(_plane distance2D _cords) < 3000};
+            waitUntil {(_plane distance2D _cords) < 3000 or pl_rtb};
         };
         case 3 : {
             [_casGroup, true] spawn pl_recon;
             [_casGroup, "f_uav_pl"] call pl_change_group_icon;
         };
         case 4 : {
-            "Land_HelipadEmpty_F" createVehicle _cords;
+            // "Land_HelipadEmpty_F" createVehicle _cords;
+            _casGroup setBehaviour "CARELESS";
+
+            _pad = createVehicle ["Land_HelipadEmpty_F", _cords, [], 0, "CAN_COLLIDE"];
+            player setVariable ["pl_landing_pad", _pad];
+
+            _ehPad = player addEventHandler ["FiredMan", {
+                 params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_vehicle"];
+
+                 if (_weapon isEqualTo "Throw") then {
+
+                    _grenadeType = typeOf _projectile;
+
+                    if ((["green", _grenadeType] call BIS_fnc_inString) or (["yellow", _grenadeType] call BIS_fnc_inString) or (["blue", _grenadeType] call BIS_fnc_inString)) then {
+
+                        [_projectile] spawn {
+                            params ["_projectile"];
+                            sleep 5;
+                            _pad = player getVariable ["pl_landing_pad", objNull];
+                            _pad setVehiclePosition [getPos _projectile, [], 0, "CAN_COLLIDE"];
+                            
+                        };
+                        _unit removeEventHandler [_thisEvent, _thisEventHandler];
+                    };
+                };
+            }];
+
+            waitUntil {sleep 1; !alive _plane or (_plane distance2D _cords) <= 500};
+
+            _plane land "GET OUT";
+
             sleep 1;
-            waitUntil {(isTouchingGround _plane) or !alive _plane };
-            if (alive _plane) then {
+            waitUntil {sleep 1; (isTouchingGround _plane) or !alive _plane or pl_rtb};
+            if (alive _plane and !pl_rtb) then {
+
+                (driver _plane) disableAI "PATH";
+
                 private _gunner = gunner _plane;
                 private _medic = _casGroup createUnit [typeOf _gunner, [0,0,0], [], 0, "CAN_COLLIDE"];
                 _medic setUnitTrait ["Medic",true];
@@ -884,14 +936,42 @@ pl_interdiction_cas = {
                 } forEach [_medic, _gunner];
                 _ccpGroup selectLeader _gunner;
                 [_ccpGroup] call pl_set_up_ai;
-                sleep 5;
-                [_ccpGroup, true, _gunner, 300, 50] spawn pl_ccp;
+                sleep 0.5;
+                player hcRemoveGroup _ccpGroup;
+                _ccpGroup setVariable ["MARTA_customIcon", ["b_med"]];
+                _ccpGroup setVariable ["pl_not_addalbe", true];
+                [_ccpGroup, true, _gunner, _sadAreaSize, 50] spawn pl_ccp;
             };
         };
         case 5 : {
-            "Land_HelipadEmpty_F" createVehicle _cords;
-            waitUntil {(isTouchingGround _plane) or !alive _plane };
-            if (alive _plane) then {
+
+            _casGroup setBehaviour "CARELESS";
+            _pad = createVehicle ["Land_HelipadEmpty_F", _cords, [], 0, "CAN_COLLIDE"];
+            player setVariable ["pl_landing_pad", _pad];
+
+            _ehPad = player addEventHandler ["FiredMan", {
+                 params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_vehicle"];
+
+                 if (_weapon isEqualTo "Throw") then {
+
+                    _grenadeType = typeOf _projectile;
+
+                    if ((["green", _grenadeType] call BIS_fnc_inString) or (["yellow", _grenadeType] call BIS_fnc_inString) or (["blue", _grenadeType] call BIS_fnc_inString)) then {
+
+                        [_projectile] spawn {
+                            params ["_projectile"];
+                            sleep 5;
+                            _pad = player getVariable ["pl_landing_pad", objNull];
+                            _pad setVehiclePosition [getPos _projectile, [], 0, "CAN_COLLIDE"];
+
+                        };
+                        _unit removeEventHandler [_thisEvent, _thisEventHandler];
+                    };
+                };
+            }];
+
+            waitUntil {(isTouchingGround _plane) or !alive _plane or pl_rtb};
+            if (alive _plane and !pl_rtb) then {
                 _plane setVariable ["pl_is_supply_vehicle", true];
                 _plane setVariable ["pl_supplies", pl_max_supplies_per_vic];
                 _plane setVariable ["pl_avaible_reinforcements", pl_max_reinforcement_per_vic];
@@ -902,33 +982,38 @@ pl_interdiction_cas = {
         default {}; 
     };
 
-    sleep 40;
+    // sleep 40;
 
     deleteMarker _markerName;
     _time = time + _onStationTime;
-    waitUntil { time > _time };
+    waitUntil {sleep 1; time > _time or pl_rtb};
     deleteMarker _areaMarkerName;
 
     switch (_casTypeSad) do { 
         case 1 : {
-            pl_cas_cd = time + 60;//120;
+            pl_cas_cd = time + 120;
+            if (pl_rtb) then {pl_cas_cd = pl_cas_cd * (time / _time)};
             _cd = pl_cas_cd;
         }; 
         case 2 : {
-            pl_cas_cd = time + 60; //240;
+            pl_cas_cd = time + 120;
+            if (pl_rtb) then {pl_cas_cd = pl_cas_cd * (time / _time)};
             _cd = pl_cas_cd;
         };
         case 3 : {
             pl_uav_sad_cd = time + 360;
+            if (pl_rtb) then {pl_uav_sad_cd = pl_uav_sad_cd * (time / _time)};
             _cd = pl_uav_sad_cd;
             player disableUAVConnectability [_plane, true];
         };
         case 4 : {
             pl_medevac_sad_cd = time + 400;
+            if (pl_rtb) then {pl_medevac_sad_cd = pl_medevac_sad_cd * (time / _time)};
             _cd = pl_medevac_sad_cd;
         };
         case 5 : {
             pl_supply_sad_cd = time + 400;
+            if (pl_rtb) then {pl_supply_sad_cd = pl_supply_sad_cd * (time / _time)};
             _cd = pl_supply_sad_cd;
         }; 
         default {}; 
@@ -942,41 +1027,40 @@ pl_interdiction_cas = {
         (driver _plane) sideChat format ["%1: RTB", _groupId];
         if (pl_enable_map_radio) then {[group (driver _plane), "...RTB!", 25] call pl_map_radio_callout};
 
-        {
-            _x disableAI "AUTOCOMBAT";
-            _x disableAI "TARGET";
-            _x disableAI "AUTOTARGET";
-        } forEach (units _casGroup);
-
-        if (_casTypeSad == 4) then {
-
-        };
-
         switch (_casTypeSad) do { 
             case 1 : {}; 
             case 2 : {};
             case 3 : {};
             case 4 : {
-                [_ccpGroup] call pl_reset;
-                sleep 0.2;
-                _ccpGroup setVariable ["MARTA_customIcon", nil];
-                {
-                    _x assignAsCargo _plane;
-                    [_x] allowGetIn true;
-                    [_x] orderGetIn true;
-                    [_x] joinSilent _casGroup;
-                } forEach (units _ccpGroup);
 
-                _casGroup setGroupId [_groupId];
+                (driver _plane) enableAI "PATH";
+                player removeEventHandler ["FiredMan", _ehPad];
 
-                sleep 2;
-                _time = time + 40;
-                waitUntil {({_x in _plane} count (units _casGroup)) == (count (units _casGroup)) or time >= _time};
-                sleep 1;
+                if !(isNil "_ccpGroup") then {
+                    [_ccpGroup] call pl_reset;
+                    sleep 1;
+                    [_ccpGroup] call pl_reset;
+                    sleep 1;
+                    // _ccpGroup setVariable ["MARTA_customIcon", nil];
+                    {
+                        _x assignAsCargo _plane;
+                        [_x] allowGetIn true;
+                        [_x] orderGetIn true;
+                        [_x] joinSilent _casGroup;
+                    } forEach (units _ccpGroup);
+
+                    _casGroup setGroupId [_groupId];
+
+                    sleep 2;
+                    _time = time + 40;
+                    waitUntil {sleep 0.5; ({_x in _plane} count (units _casGroup)) == (count (units _casGroup)) or time >= _time};
+                    sleep 1;
+                };
             };
             case 5 : {
+                player removeEventHandler ["FiredMan", _ehPad];
                 _time = time + 40;
-                waitUntil {({_x in _plane} count (units _casGroup)) == (count (units _casGroup)) or time >= _time};
+                waitUntil {sleep 0.5; ({_x in _plane} count (units _casGroup)) == (count (units _casGroup)) or time >= _time};
             }; 
             default {}; 
         };

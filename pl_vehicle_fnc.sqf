@@ -572,6 +572,55 @@ pl_unload_at_combat = {
     [_group] spawn pl_reset;
 };
 
+pl_combat_dismount = {
+    params ["_group", "_cargo", "_vic"];
+    private ["_offset"];
+
+    for "_i" from 1 to (count _cargo) do {
+
+        _offset = 45;
+        if (_i % 2 == 0) then {_offset = -45};
+
+        _movePos = (getPos _vic) getpos [5 * _i, ((getDir _vic) - 180) + _offset];
+
+        // _m = createMarker [str (random 5), _movePos];
+        // _m setMarkerType "mil_dot";
+
+        [_cargo#(_i - 1), _movePos, getdir _vic] spawn {
+            params ["_unit", "_movePos", "_watchDir"];
+
+            _unit disableAI "AUTOTARGET";
+            _unit disableAI "TARGET";
+            _unit disableAI "AUTOCOMBAT";
+            _unit setCombatBehaviour "AWARE";
+            _unit setHit ["legs", 0];
+            unassignVehicle _unit;
+            doGetOut _unit;
+            [_unit] allowGetIn false;
+
+            waitUntil {sleep 0.1; (vehicle _unit) == _unit or ((group _unit) getVariable ["pl_stop_event", false])};
+            
+            if !(((group _unit) getVariable ["pl_stop_event", false])) then {
+
+                _unit doMove _movePos;
+                _unit setDestination [_movePos, "LEADER DIRECT", true];
+
+                waitUntil {sleep 0.1; unitReady _unit or ((group _unit) getVariable ["pl_stop_event", false])};
+
+                if !(((group _unit) getVariable ["pl_stop_event", false])) then {
+                    doStop _unit;
+                    _unit setUnitPos "DOWN";
+                    _unit enableAI "AUTOTARGET";
+                    _unit enableAI "TARGET";
+                    _unit doWatch (_movePos getPos [100, _watchDir]);
+                };
+            };
+        };
+    };
+
+    _group leaveVehicle _vic;
+};
+
 pl_convoy = {
     private ["_mPos"];
 
@@ -1514,10 +1563,14 @@ pl_attach_inf = {
             pl_vics = [cursorTarget];
         };
 
-        _vic = pl_vics#0;
+        if !(pl_vics isEqualTo []) then {
+            _vic = pl_vics#0;
+        };
     } else {
         pl_attach_form = "Line";
     };
+
+    if (isNull _vic) exitWith {hint "No Vehicle Selected"};
 
     _vicGroup = group (driver _vic);
     _attachForm = pl_attach_form;
@@ -1578,6 +1631,10 @@ pl_attach_inf = {
     player hcRemoveGroup _group;
     _group setVariable ["pl_choose_auto_formation", false];
 
+    {
+        _x disableCollisionWith _vic;
+    } forEach (units _group);
+
     // waitUntil {sleep 0.5; (!(_group getVariable ["onTask", false]) or !alive _vic) and unitReady (leader _group)};
 
 
@@ -1585,7 +1642,7 @@ pl_attach_inf = {
 
         _group setFormDir (getDir _vic);
         _group setFormation (formation _vicGroup);
-        if (speed _vic > 0) then {
+        if (speed _vic != 0) then {
             _leader = leader _group;
             _leader limitSpeed 14;
             _leaderPos = [5*(sin ((getDir _vic) - 180)), 5*(cos ((getDir _vic) - 180)), 0] vectorAdd getPos _vic;
@@ -1609,6 +1666,9 @@ pl_attach_inf = {
     _vicGroup setVariable ["pl_attached_infGrp", nil];
     _group setVariable ["pl_choose_auto_formation", true];
     player hcSetGroup [_group];
+    {
+        _x enableCollisionWith _vic;
+    } forEach (units _group);
 
     pl_follow_array_other = pl_follow_array_other - [[_vicGroup, _group]];
     if !(_group getVariable ["pl_task_planed", false]) then {[_group] call pl_reset};
@@ -1690,15 +1750,26 @@ pl_attach_vic = {
 
     player hcRemoveGroup _group;
 
+    {
+        _x disableCollisionWith _vic;
+    } forEach (units _infGroup);
+
     while {(alive _vic) and (_group getVariable ["onTask", false]) and (_infGroup getVariable ["pl_inf_attached", false])} do {
 
-        _ally = leader (_infGroup);
+        // _ally = leader (_infGroup);
+        // _allyDir = _vic getDir _ally;
+        // _movepos = (getPos _vic) getPos [(_vic distance2D _ally) - 10, _allyDir];
+        _groupCenter = [_infGroup] call pl_find_centroid_of_group;
 
-        _allyDir = _vic getDir _ally;
-        _movepos = (getPos _vic) getPos [(_vic distance2D _ally) - 10, _allyDir];
-        if (_vic distance2D _movePos > 20) then {
+        _movePos = _groupCenter getpos [10, _groupCenter getdir _vic];
+
+        if (_vic distance2D _movePos > 25) then {
             _vic doMove _movePos;
             _vic setDestination [_movePos, "VEHICLE PLANNED", true];
+        };
+
+        if !((missionNamespace getVariable [format ["targets_%1", _infGroup], []]) isEqualTo []) then {
+            [gunner _vic, selectRandom ([(missionNamespace getVariable format ["targets_%1", _infGroup]) select {alive _x and !(captive _x)}, [], {([_infGroup] call pl_find_centroid_of_group) distance2D _x}, "DESCEND"] call BIS_fnc_sortBy), false] call pl_quick_suppress;
         };
 
         _time = time + 10;
@@ -1708,6 +1779,9 @@ pl_attach_vic = {
     _infGroup setVariable ["pl_inf_attached", nil];
     _infGroup setVariable ["pl_attached_VicGrp", nil];
     player hcSetGroup [_group];
+    {
+        _x enableCollisionWith _vic;
+    } forEach (units _infGroup);
 
     pl_follow_array_other = pl_follow_array_other - [[_infGroup, _group]];
     [_group] call pl_reset;

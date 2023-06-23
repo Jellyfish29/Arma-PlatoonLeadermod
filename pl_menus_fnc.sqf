@@ -1,4 +1,4 @@
-sleep 1;
+sleep 3;
 // pl_support_enabled_setting = true;
 if (pl_cas_enabled) then {pl_cas_enabled = 1;} else {pl_cas_enabled = 0;};
 if (pl_arty_enabled) then {pl_arty_enabled = 1;} else {pl_arty_enabled = 0;};
@@ -187,11 +187,11 @@ pl_set_sop_onContact = {
 
     {
         _group = _x;
+        [_group] call pl_reset_sop;
         _group setVariable ["pl_sop_active", true];
         // {
         //     _group setVariable [_x, nil];
         // } forEach ["pl_sop_atkOnContact", "pl_sop_defOnContact", "pl_sop_disengageOnContact"];
-        [_group] call pl_reset_sop;
 
         switch (_sop) do { 
             case 1 : {_group setVariable ["pl_sop_atkOnContact", true]; _group setVariable ["pl_sop_icon", "\Plmod\gfx\pl_std_atk.paa"]}; 
@@ -211,9 +211,9 @@ pl_set_sop_onContact = {
 
 pl_reset_sop = {
     params ["_group"];
+    _group setVariable ["pl_sop_active", nil];
     {
         _group setVariable [_x, nil];
-        _group setVariable ["pl_sop_active", nil];
         // _group setVariable ["pl_sop_def_disenage", true];
         // _group setVariable ["pl_sop_def_ATEngagement", true];
         // _group setVariable ["pl_sop_def_resupply", true];
@@ -335,7 +335,9 @@ pl_show_cas_menu = {
         [parseText '%14', [8], '', -5, [['expression', '[3] spawn pl_interdiction_cas']], '1', '%7'],
         ['', [], '', -1, [['expression', '']], '1', '1'],
         [parseText '%15', [9], '', -5, [['expression', '[4] spawn pl_interdiction_cas']], '1', '%16'],
-        [parseText '%17', [9], '', -5, [['expression', '[5] spawn pl_interdiction_cas']], '1', '%18']
+        [parseText '%17', [10], '', -5, [['expression', '[5] spawn pl_interdiction_cas']], '1', '%18'],
+        ['', [], '', -1, [['expression', '']], '1', '1'],
+        ['RTB Current Mission', [11], '', -5, [['expression', 'pl_rtb = true']], '1', '1']
 
     ];", pl_cas_active, pl_cas_active, pl_cas_active, pl_cas_active, pl_cas_active, pl_cas_active, pl_uav_sad_enabled, pl_str_gun, pl_str_attack_run, pl_str_cluster, pl_str_jdam, pl_str_plane_sad, pl_str_helo_sad, pl_str_uav, pl_str_medevac, pl_medevac_sad_enabled, pl_str_supply_air, pl_supply_sad_enabled];
     showCommandingMenu "#USER:pl_cas_menu";

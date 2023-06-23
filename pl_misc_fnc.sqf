@@ -3,8 +3,10 @@ pl_reset = {
     params ["_group", ["_isNotWp", true]];
     // resets and stops Group
 
-    player hcRemoveGroup _group;
-    player hcSetGroup [_group];
+    if !(_group getVariable ["pl_not_addalbe", false]) then { 
+        player hcRemoveGroup _group;
+        player hcSetGroup [_group];
+    };
 
     // reset individual units variables
     [_group] spawn {
@@ -164,15 +166,16 @@ pl_reset = {
     _group setVariable ["pl_on_march", nil];
 };
 
+// AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 pl_spawn_reset = {
     {
         [_x] spawn {
             params ["_group"];
-            [_group] spawn pl_reset;
-            sleep 0.25;
-            [_group] spawn pl_reset;
-            sleep 0.25;
-            [_group] spawn pl_reset;
+            [_group] call pl_reset;
+            // sleep 0.25;
+            [_group] call pl_reset;
+            // sleep 0.25;
+            [_group] call pl_reset;
         };
     } forEach hcSelected player;
 };

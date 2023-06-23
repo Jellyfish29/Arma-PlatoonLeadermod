@@ -1,6 +1,6 @@
 sleep 1;
 
-_time = time + 7;
+_time = time + 10;
 
 waitUntil {time > _time};
 

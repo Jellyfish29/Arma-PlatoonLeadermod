@@ -59,6 +59,7 @@ pl_toggle_static = {
 pl_static_unpack = {
     params ["_supportUnits", "_group", "_weaponPos", "_targetPos"];
 
+
     // private _supportUnits = units _group;
     if ((count _supportUnits) < 2) exitWith {[false, []]};
     private _gunner = 
@@ -69,6 +70,7 @@ pl_static_unpack = {
     } forEach _supportUnits;
 
     if (isNull _gunner) exitWith {[false, []]}; // changed by Jellyfish
+    if (((backpack _gunner) in ["B_UAV_01_backpack_F", "O_UAV_01_backpack_F", "I_UAV_01_backpack_F", "I_E_UAV_01_backpack_F"]) or (_gunner getVariable ["pl_is_uav_operator", false])) exitWith {[false, []]};
 
     _group setVariable ["pl_static_bag_gun", backpack _gunner];
 

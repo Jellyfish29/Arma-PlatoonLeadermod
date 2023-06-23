@@ -1,4 +1,4 @@
-sleep 1;
+sleep 2;
 if !(pl_enable_vehicle_recovery) exitWith {};
 
 pl_show_dead_vehicles = false;
@@ -734,7 +734,7 @@ pl_create_bridge = {
 
     if (pl_cancel_strike) exitWith {deleteMarker _markerNameEnd; deleteMarker _markerNameStart; pl_cancel_strike = false};
 
-    if (!(surfaceIsWater _cordsStart) or !(surfaceIsWater _cordsEnd)) exitWith {deleteMarker _markerNameEnd; deleteMarker _markerNameStart; hint "Bridge has to be placed on Water"};
+    // if (!(surfaceIsWater _cordsStart) or !(surfaceIsWater _cordsEnd)) exitWith {deleteMarker _markerNameEnd; deleteMarker _markerNameStart; hint "Bridge has to be placed on Water"};
 
     deleteMarker _markerNameStart;
     deleteMarker _markerNameEnd;
@@ -801,21 +801,24 @@ pl_create_bridge = {
     _time = time + 110;
     [_time, 110, _placePos, _group, "colorOrange"] spawn pl_countdown_on_map;
 
-    // if ((typeof _engVic) isEqualTo "gm_ge_army_bibera0") then {
-    //     [_engVic] spawn {
-    //         params ["_engVic"];
-    //         _engVic animateSource ["gm_bridgeSupport_source", 1];
-    //         sleep 10;
-    //         _engVic animateSource ["gm_bridgePrepare_source", 1];
-    //         sleep 40;
-    //         _engVic animateSource ["gm_bridgeDeploy_source", 1];
-    //         sleep 50;
-    //         _engVic animateSource ["gm_bridgeDetach_source", 1];
-    //         sleep 1;
-    //         _engVic animateSource ["gm_bridgeSupport_source", 0];
-    //         _engVic animateSource ["gm_bridgePrepare_source", 0];
-    //     };
-    // };
+    if ((typeof _engVic) isEqualTo "gm_ge_army_bibera0") then {
+        [_engVic, _group] spawn {
+            params ["_engVic", "_group"];
+            _engVic animateSource ["gm_bridgeSupport_source", 1];
+            _timeOut = time + 10;
+            waitUntil {sleep 0.5; time >= _timeOut or !(_group getVariable ["onTask", false]) or !alive _engVic};
+            _engVic animateSource ["gm_bridgePrepare_source", 1];
+            _timeOut = time + 40;
+            waitUntil {sleep 0.5; time >= _timeOut or !(_group getVariable ["onTask", false]) or !alive _engVic};
+            _engVic animateSource ["gm_bridgeDeploy_source", 1];
+            _timeOut = time + 50;
+            waitUntil {sleep 0.5; time >= _timeOut or !(_group getVariable ["onTask", false]) or !alive _engVic};
+            _engVic animateSource ["gm_bridgeDetach_source", 1];
+            sleep 1;
+            _engVic animateSource ["gm_bridgeSupport_source", 0];
+            _engVic animateSource ["gm_bridgePrepare_source", 0];
+        };
+    };
         
     waitUntil {sleep 0.5; time >= _time or !(_group getVariable ["onTask", false]) or !alive _engVic};
 

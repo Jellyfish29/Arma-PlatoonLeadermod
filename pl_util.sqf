@@ -84,9 +84,40 @@ pl_load_ap = {
     };
 };
 
+pl_get_weapon = {
+    params ["_vic"];
+
+    private _type="";
+    private _turrets = allTurrets _vic;
+    private _turret = [];
+    private _weapons = [];
+    private _weapon = "";
+
+    {
+        _turret = _x;
+        // _weapon = {
+        //     if (((_x call BIS_fnc_itemType)select 1) isEqualTo "MissileLauncher") exitwith {_x};
+        //     ""
+        // } forEach (_vic weaponsTurret _turret);
+        // if !(_weapon isEqualTo "") exitwith {};
+        _weapon = {
+            if (((_x call BIS_fnc_itemType)select 1) isEqualTo "Cannon") exitwith {_x};
+            ""
+        } forEach (_vic weaponsTurret _turret);
+        if !(_weapon isEqualTo "") exitwith {};
+    } forEach _turrets;
+
+    // private _muzzles = getArray(configFile>>"cfgWeapons">>_weapon>>"muzzles");
+    // private _muzzle = _weapon;
+
+    _weapon
+};
+
+
 pl_quick_suppress = {
     params ["_unit", "_target", ["_light", false]];
 
+    if (isNil "_target") exitWith {false};
     if !(alive _target) exitWith {false};
     private _targetpos = getPosASL _target;
 
@@ -100,13 +131,18 @@ pl_quick_suppress = {
             _targetPos = (_vis select 0) select 0;
         };
         
-        if ((_targetPos distance2D _unit) > 15 and !([_unit, _targetPos] call pl_friendly_check)) then {
-            _unit doSuppressiveFire _targetPos;
-        } else {
-            _unit doSuppressiveFire _target;
+        if ((_targetPos distance2D _unit) > pl_suppression_min_distance) then {
+            if (((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun") or vehicle _unit != _unit) then { 
+                if !([_unit, _targetPos] call pl_friendly_check_strict) then {
+                    _unit doSuppressiveFire _targetPos;
+                }
+            } else {
+                if !([_unit, _targetPos] call pl_friendly_check) then {
+                    _unit doSuppressiveFire _targetPos;
+                };
+            };
         };
     };
-
     true
 };
 
@@ -188,6 +224,21 @@ pl_position_reached_check = {
     if ((_unit distance2D _movePos) < 4 or _counter >= 10) exitWith {[true, _counter, _movePos]};
 
     [false, _counter, _movePos]
+};
+
+pl_force_move_on_task = {
+    params ["_unit", "_movePos"];
+
+    private _counter = 0;
+
+    while {alive _unit and ((group _unit) getVariable ["onTask", false]) and (_unit distance2D _movePos) > 3.5} do {
+        _time = time + 6;
+        waitUntil {sleep 0.25; time > _time or !((group _unit) getVariable ["onTask", false]) or (_unit distance2D _movePos) < 4};
+        _check = [_unit, _movePos, _counter] call pl_position_reached_check;
+        if (_check#0) exitWith {};
+        _counter = _check#1;
+        _movePos = _check#2;
+    };
 };
 
 pl_not_reachable_escape = {
@@ -390,10 +441,52 @@ pl_friendly_check = {
     // _m setMarkerColor "colorGreen";
     
     _distance = _unit distance2D _pos; 
-    _allies = (_pos nearEntities [["Man", "Car", "Tank"], 45 + (_distance * 0.25)]) select {side _x == side _unit};
+    _allies = (_pos nearEntities [["Man", "Car", "Tank"], 30 + (_distance * 0.25)]) select {side _x == side _unit};
     // player sideChat str _allies;
     if !(_allies isEqualTo []) exitWith {true};
     false
+};
+
+pl_friendly_check_strict = {
+    params ["_unit", "_pos"];
+
+    // _m = createMarker [str (random 1), _pos];
+    // _m setMarkerType "mil_dot";
+    // _m setMarkerColor "colorGreen";
+    _size = 35;
+    
+    _distance = _unit distance2D _pos;
+    _intervals = round (_distance / _size);
+    _atkDir = _unit getDir _pos;
+    _startPos = (getPos _unit) getPos [_size * 0.66, _atkDir];
+    private _return = false;
+
+    _debugMarkers = [];
+
+    for "_i" from 1 to (_intervals + 1) do {
+        _checkPos = _startPos getPos [_size * _i, _atkDir];
+        _allies = (_checkPos nearEntities [["Man", "Car", "Tank"], _size]) select {side _x == side _unit and alive _x and !(captive _x)};
+
+        // _m = createMarker [str (random 1), _checkPos];
+        // _m setMarkerShape "ELLIPSE";
+        // _m setMarkerBrush "SolidBorder";
+        // _m setMarkerColor "colorGreen";
+        // _m setMarkerSize [_size, _size];
+        // _debugMarkers pushBack _m;
+
+        if !(_allies isEqualTo []) exitWith {_return = true};
+
+    };
+
+    // [_debugMarkers] spawn {
+    //     sleep 5;
+
+    //     {
+    //         deleteMarker _x;
+    //     } forEach (_this#0);
+    // };
+
+    _return
 };
 // [cursorTarget, target_1] spawn pl_fire_ugl_at_target;
 
@@ -531,15 +624,19 @@ pl_is_ifv = {
 pl_find_centroid_of_group = {
     params ["_group"];
 
+    _units = (units _group) select {alive _x and !((lifeState _x) isEqualTo "INCAPACITATED")};
+
     private _sumX = 0;
     private _sumY = 0;
-    private _len = count (units _group);
+    private _len = count _units;
+
+    if (_len == 0) exitWith {getPos (leader _group)};
 
     {
         _sumX = _sumX + ((getPos _x)#0);
         _sumY = _sumY + ((getPos _x)#1);
 
-    } forEach ((units _group) select {(_x distance2D (leader _group)) < 250});
+    } forEach (_units select {(_x distance2D (leader _group)) < 250});
 
     // _m = createMarker [str (random 2), [_sumX / _len, _sumY / _len, (getPosASL (leader _group))#2]];
     // _m setMarkerType "mil_dot";
@@ -584,6 +681,22 @@ pl_find_centroid_of_units = {
     [_sumX / _len, _sumY / _len, getPosASL (_units#0)#2] 
 };
 
+pl_find_centroid_of_points = {
+    params ["_points"];
+
+    private _sumX = 0;
+    private _sumY = 0;
+    private _len = count _points;
+
+    {
+        _sumX = _sumX + _X#0;
+        _sumY = _sumY + _x#1;
+
+    } forEach _points;
+
+    [_sumX / _len, _sumY / _len, 0]
+};
+
 pl_countdown_on_map = {
     params ["_time", "_addedTime", "_placePos", "_group", ["_color", pl_side_color]];
     private _m = createMarker [str (random 3), _placePos];
@@ -621,6 +734,59 @@ pl_stringReplace = {
         _pos = _str find _find;
     };    
     _return + _str;
+};
+
+pl_get_grenade_type = {
+    params ["_unit"];
+
+    _loadOut = getUnitLoadout _unit;
+    _uniform = _loadOut#3;
+    _vest = _loadOut#4;
+    _bag = _loadOut#5;
+
+    _complete = [];
+    if !(_uniform isEqualto []) then {_complete = _complete + (_uniform#1)};
+    if !(_vest isEqualto []) then {_complete = _complete + (_vest#1)};
+    if !(_bag isEqualto []) then {_complete = _complete + (_bag#1)};
+
+    _grenadeType = "";
+
+    _grenadeType = {
+        if ((([_x#0] call BIS_fnc_itemType)#1) isEqualTo "Grenade") exitWith {_x#0};
+        ""
+    } forEach _complete;
+
+    _grenadeType
+};
+
+pl_get_grenade_ammo = {
+    params ["_unit"];
+
+    _grenadeType = [_unit] call pl_get_grenade_type;
+    if (_grenadeType isEqualto "") exitWith {0};
+    {_x isEqualTo _grenadeType} count (magazines _unit)
+};
+
+pl_team_grenade_swap = {
+    params ["_teamA", "_teamC"];
+    {
+        _unitA = _x;
+        _grenadeTypeA = [_unitA] call pl_get_grenade_type;
+        _ammoCountA = [_unitA] call pl_get_grenade_ammo;
+
+        if (_ammoCountA <= 0) then {
+            {
+                _unitC = _x;
+                _grenadeTypeC = [_unitC] call pl_get_grenade_type;
+                _ammoCountC = [_unitC] call pl_get_grenade_ammo;
+
+                if (_ammoCountC > 0) then {
+                    _unitA addItem _grenadeTypeC;
+                    _unitC removeItem _grenadeTypeC;
+                };
+            } forEach _teamC;
+        };
+    } forEach _teamA;
 };
 
 pl_get_grenade_muzzle = {

@@ -107,7 +107,7 @@ pl_recon = {
             if (_leader distance2D _reconGrpLeader < (_group getVariable ["pl_recon_area_size", 1400])) then {
                 private _reveal = false;
                 if ((_reconGrpLeader knowsAbout _leader) > 0.105) then {_reveal = true};
-                [_opfGrp, _reveal] call Pl_marta;
+                [_opfGrp, _reveal, false, _group] call Pl_marta;
             };
         } forEach (allGroups select {([(side _x), playerside] call BIS_fnc_sideIsEnemy) and alive (leader _x)});
 
@@ -126,7 +126,7 @@ pl_recon = {
 
 
 pl_mark_targets_on_map = {
-    params ["_targets"];
+    params ["_targets", ["_group", grpNull]];
     // _time = time + 20;
 
     if (pl_enable_vanilla_marta) exitwith {};
@@ -138,7 +138,7 @@ pl_mark_targets_on_map = {
     } forEach _targets;
 
     {
-        [_x, true] call Pl_marta;
+        [_x, true, false, _group] call Pl_marta;
     } forEach _targetGroups;
 
 };
@@ -146,7 +146,7 @@ pl_mark_targets_on_map = {
 pl_marta_dic = createHashMap;
 
 Pl_marta = {
-    params ["_opfGrp", ["_reveal", false], ["_destroyed", false]];
+    params ["_opfGrp", ["_reveal", false], ["_destroyed", false], ["_revealerGroup", grpNull]];
     private ["_unitText", "_centoid"];
 
     if ((_opfGrp getVariable ["pl_not_recon_able", false]) and !_reveal) exitWith {};
@@ -174,10 +174,13 @@ Pl_marta = {
 
     if (_sideColor == "exit") exitWith {};
 
-    // 50 % chance to create Marker
-    if (((random 1) < 0.15 and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < 0.075 and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
+    _centoid = [_opfGrp] call pl_find_centroid_of_group;
+    private _chance = 0.05;
+    if ([_centoid] call pl_is_city) then {_chance = 0};
+    if ([_centoid] call pl_is_forest) then {_chance = 0.01};
 
-        _centoid = [_opfGrp] call pl_find_centroid_of_group;
+    if (((random 1) < (_chance + (_chance * 0.5)) and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < _chance and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
+
         _unitText = getText (configFile >> "CfgVehicles" >> typeOf (vehicle (leader _opfGrp)) >> "textSingular");
         private _exit = false;
 
@@ -298,7 +301,7 @@ Pl_marta = {
         if !(_callsign in pl_marta_dic) then {
             createMarker [_markerNameGroup, _centoid];
             pl_marta_dic set [_callsign, [_opfGrp, [_markerNameGroup, _markerNameStrength]]];
-            [_opfGrp, _unitText, _opfDir] spawn pl_marta_spotrep;
+            [_opfGrp, _unitText, _opfDir, _revealerGroup] spawn pl_marta_spotrep;
 
             _markerNameGroup setMarkerSize [_markerSize, _markerSize];
             _markerNameGroup setMarkerColor _sideColor;
@@ -393,10 +396,10 @@ Pl_marta = {
 
 
 pl_marta_spotrep = {
-    params ["_grp", "_unitText", "_opfDir"];
+    params ["_grp", "_unitText", "_opfDir", "_group"];
 
-    if !(pl_active_recon_groups isEqualTo []) then {
-        _group = selectRandom pl_active_recon_groups;
+    if !(isNull _group) then {
+        // _group = selectRandom pl_active_recon_groups;
         _grid = toupper (mapGridPosition (getPos (leader _grp)));
         _unitText = toUpper _unitText;
         private _message = format ["SPOTREP: Enemy %1 at %2", _unitText, _grid];
