@@ -43,14 +43,46 @@ pl_rearm = {
     }
     else
     {
-        pl_rearm_supplies = [cursorTarget];
-        _cords = getPos cursorTarget;
+
+        waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+        // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+            if !(isNull cursorObject) then {
+                _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorObject)#1)#2] vectorAdd (getPosATLVisual cursorObject));
+                _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+            };
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
+        };
+
+        if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+        _cords = getPosATL _cursorPosIndicator;
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+        deleteVehicle _cursorPosIndicator;
+
+
+        pl_rearm_supplies = [cursorObject];
+        _cords = getPos cursorObject;
     };
     _supplies = [pl_rearm_supplies, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;
     _targetBox = _supplies select 0;
     if (isNil "_targetBox") exitWith {hint "No available Supplies!"};
     if ((_targetBox distance2D _cords) >= 25) exitWith {hint "No available Supplies!"};
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -185,9 +217,13 @@ pl_supply_point = {
 
     if !(_valid) exitwith {hint "Too close to another supply point"};
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];
 
     // Taskplanning
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
 
@@ -465,9 +501,13 @@ pl_rearm_point = {
         if (pl_enable_map_radio) then {[_group, "...No Ammo left", 15] call pl_map_radio_callout};
     };
 
+    _group setVariable ["pl_task_pos", getPosATLVisual _vic];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];
 
     // Taskplanning
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition _taskPlanWp)) < 30) or !(_group getVariable ["pl_task_planed", false])};
 

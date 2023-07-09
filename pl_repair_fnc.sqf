@@ -298,7 +298,12 @@ pl_repair = {
 
         _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa";
 
+        _group setVariable ["pl_task_pos", _cords];
+        _group setVariable ["specialIcon", _icon];
+
         if (count _taskPlanWp != 0) then {
+
+            _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
             // add Arrow indicator
             pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -527,7 +532,29 @@ pl_repair_bridge = {
     }
     else
     {
-        _cords = screenToWorld [0.5, 0.5];
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+
+            _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+            _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
+        };
+
+        if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+        _cords = getPosATL _cursorPosIndicator;
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+        deleteVehicle _cursorPosIndicator;
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
@@ -564,6 +591,7 @@ pl_repair_bridge = {
     sleep 0.5;
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa";
+    _group setVariable ["pl_task_pos", _cords];
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
@@ -741,7 +769,12 @@ pl_create_bridge = {
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa";
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cordsStart, _taskPlanWp, _icon];

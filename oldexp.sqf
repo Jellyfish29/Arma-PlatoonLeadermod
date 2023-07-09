@@ -5199,3 +5199,811 @@ pl_get_assault_speed = {
 //     if !(_allies isEqualTo []) exitWith {true};
 //     false
 // };
+
+
+addMissionEventHandler ["Draw3D", {
+     
+    if (pl_enable_3d_icons and hcShownBar) then { 
+
+
+        {
+            _group = _x;
+            _pos3D = ASLToAGL getPosASLVisual (vehicle (leader _group));
+            private _alpha = 0.6;
+            _distance = round ((leader _group) distance2D player);
+
+            if (_distance < 600) then {
+
+                if (_group in (hcSelected player)) then {
+
+                    _alpha = 1;
+
+                    if (vehicle (leader _group) == (leader _group)) then {
+                        {
+                            _pos3DUnit = ASLToAGL getPosASLVisual _x;
+                            _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _x) >> 'icon');
+
+                            drawIcon3D [
+                                    _icon, //texture)
+                                    [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, 0.85], //color
+                                    [0,0,1] vectorAdd _pos3DUnit, //pos
+                                    0.55, //width
+                                    0.55, //height,
+                                    0, //angle,
+                                    "", //text,
+                                    true, //shadow,
+                                    0, //textSize,
+                                    'EtelkaMonospacePro', //font
+                                    "center", //textAlign,
+                                    false, //drawSideArrows,
+                                    0, //offsetX,
+                                    0 //offsetY
+                                ];
+                        } forEach (units _group);
+                    };
+                };
+
+                // if (_group getVariable ["inContact", false]) then {
+                //     _iconPos3D = [0, 0, 2] vectorAdd _pos3D;
+                //     drawIcon3D [
+                //         '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa', //texture)
+                //         [0.7,0,0,0.7], //color
+                //         _iconPos3D, //pos
+                //         0.4, //width
+                //         0.4, //height,
+                //         0, //angle,
+                //         "", //text,
+                //         false, //shadow,
+                //         0, //textSize,
+                //         'EtelkaMonospacePro', //font
+                //         "center", //textAlign,
+                //         false, //drawSideArrows,
+                //         0, //offsetX,
+                //         0 //offsetY
+                //     ];
+                // };
+
+                // show distance to player
+                drawIcon3D [
+                    "", //texture)
+                    [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _alpha], //color
+                    [0,0,5 + _distance * 0.06] vectorAdd _pos3D, //pos
+                    0.6, //width
+                    0.6, //height,
+                    0, //angle,
+                    format ["%1: %2m",groupid _group, _distance], //text,
+                    false, //shadow,
+                    0.02, //textSize,
+                    'EtelkaMonospacePro', //font
+                    "center", //textAlign,
+                    false, //drawSideArrows,
+                    0, //offsetX,
+                    0 //offsetY
+                ];
+
+                if ((_group getVariable ["onTask", false]) or (_group getVariable ["pl_task_planed", false])) then {
+
+                    _iconPos3DTask = [0, 0, 6] vectorAdd (_group getVariable ["pl_task_pos", _pos3D]);
+                    _icon = _group getVariable ["specialIcon", ""];
+
+                    drawIcon3D [
+                        _icon, //texture)
+                        [0.9,0.9,0,_alpha], //color
+                        _iconPos3DTask, //pos
+                        0.6, //width
+                        0.6, //height,
+                        0, //angle,
+                        format ["%1m", round (player distance2D _iconPos3DTask)], //text,
+                        false, //shadow,
+                        0.02, //textSize,
+                        'EtelkaMonospacePro', //font
+                        "center", //textAlign,
+                        false, //drawSideArrows,
+                        0, //offsetX,
+                        0 //offsetY
+                    ];
+
+                    drawLine3D [
+                        _iconPos3DTask,
+                        _group getVariable "pl_task_pos",
+                        [0.9,0.9,0,_alpha]
+                    ];
+
+                    private _grpLinePos = [0,0,2] vectorAdd _pos3D;
+                    if !((_group getVariable ["pl_grp_task_plan_wp", []]) isEqualTo []) then {
+                        _grpLinePos = [0,0,4] vectorAdd (waypointPosition (_group getVariable ["pl_grp_task_plan_wp", []]));
+                    };
+
+                    if ((_grpLinePos distance2D _iconPos3DTask) > 15) then {
+                        drawLine3D [
+                            _grpLinePos,
+                            _iconPos3DTask,
+                            [0.9,0.9,0,_alpha]
+                        ];
+                    };
+                };
+
+                // show WP
+                if (count (waypoints _group) > 0) then {
+
+                    _wps = waypoints _group;
+
+                    if (count _wps >= 2) then {
+
+                        for "_i" from (currentWaypoint _group) to (count _wps) -2 do {
+                            drawLine3D [
+                                [0,0,4] vectorAdd (waypointPosition (_wps#_i)),
+                                [0,0,4] vectorAdd (waypointPosition (_wps#(_i + 1))),
+                                [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _alpha]
+                            ];
+
+                            drawLine3D [
+                                waypointPosition (_wps#_i),
+                                [0,0,4] vectorAdd (waypointPosition (_wps#(_i))),
+                                [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _alpha]
+                            ];
+
+                            drawIcon3D [
+                                '\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa', //texture)
+                                [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _alpha], //color
+                                [0,0,4] vectorAdd (waypointPosition (_wps#_i)), //pos
+                                0.6, //width
+                                0.6, //height,
+                                0, //angle,
+                                "", //text,
+                                false, //shadow,
+                                0, //textSize,
+                                'EtelkaMonospacePro', //font
+                                "center", //textAlign,
+                                false, //drawSideArrows,
+                                0, //offsetX,
+                                0 //offsetY
+                            ];
+
+                        };
+                    };
+
+                    drawLine3D [
+                        waypointPosition (_wps#((count _wps) - 1)),
+                        [0,0,4] vectorAdd (waypointPosition (_wps#((count _wps) - 1))),
+                        [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _alpha]
+                    ];
+
+                    drawIcon3D [
+                            '\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa', //texture)
+                            [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _alpha], //color
+                            [0,0,4] vectorAdd (waypointPosition (_wps#((count _wps) - 1))), //pos
+                            0.6, //width
+                            0.6, //height,
+                            0, //angle,
+                            "", //text,
+                            false, //shadow,
+                            0, //textSize,
+                            'EtelkaMonospacePro', //font
+                            "center", //textAlign,
+                            false, //drawSideArrows,
+                            0, //offsetX,
+                            0 //offsetY
+                        ];
+
+                    if ((currentWaypoint _group) < (count _wps)) then {
+                        drawLine3D [
+                            getPos (leader _group),
+                            [0,0,4] vectorAdd (waypointPosition (_wps#(currentWaypoint _group))),
+                            [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _alpha]
+                        ];
+                    };
+                };
+
+            };
+
+        } forEach (allGroups select {hcLeader _x isEqualTo player});
+
+        {
+            _opfGrp = (pl_marta_dic get _x)#0;
+
+            _opfDistance = ([((leader _opfGrp) distance2D player) / 50, 0] call BIS_fnc_cutDecimals) * 50;
+
+            if (_opfDistance <= 1500) then {
+
+                _opfMarker =((pl_marta_dic get _x)#1)#0;
+                _opfColor = [leader _opfGrp, 0.5] call pl_get_side_color_rgb;
+                _opfPos3D = [0,0,_opfDistance * 0.025] vectorAdd (getmarkerPos [_opfMarker, false]);
+
+                drawIcon3D [
+                    format ['\Plmod\gfx\marta\%1.paa', markerType _opfMarker], //texture)
+                    _opfColor, //color
+                    _opfPos3D, //pos
+                    0.6, //width
+                    0.6, //height,
+                    0, //angle,
+                    format ["%1m", _opfDistance], //text,
+                    false, //shadow,
+                    0.02, //textSize,
+                    'EtelkaMonospacePro', //font
+                    "right", //textAlign,
+                    false, //drawSideArrows,
+                    0, //offsetX,
+                    0 //offsetY
+                ];
+
+                drawLine3D [
+                    _opfPos3D,
+                    getmarkerPos [_opfMarker, false],
+                    _opfColor
+                ];
+            };
+        } forEach (keys pl_marta_dic);
+
+
+        {
+            private _p1 = _x#0;
+            private _p2 = _x#1;
+
+            if !((typeName _p1) isEqualTo "ARRAY") then {
+                _p1 = getPosATL _p1;
+            };
+
+            if !((typeName _p2) isEqualTo "ARRAY") then {
+                _p2 = getPosATL _p2;
+            };
+
+            drawLine3D [
+                _p1,
+                _p2,
+                [0.9,0.9,0,1]
+            ];
+
+        } forEach pl_draw_3dline_array;
+
+
+        {
+
+            _targetPos3D = _x#0;
+            _spGrp  = _x#1;
+            _spDistance = round (_targetPos3D distance2D player);
+
+            drawIcon3D [
+                '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa', //texture)
+                [0.92,0.24,0.07,1], //color
+                [0,0,3] vectorAdd _targetPos3D, //pos
+                0.6, //width
+                0.6, //height,
+                0, //angle,
+                format ["%1m", _spDistance], //text,
+                false, //shadow,
+                0.02, //textSize,
+                'EtelkaMonospacePro', //font
+                "center", //textAlign,
+                false, //drawSideArrows,
+                0, //offsetX,
+                0 //offsetY
+            ];
+
+            drawLine3D [
+                [0,0,3] vectorAdd _targetPos3D,
+                [0,0,2] vectorAdd (getPosATLVisual (leader _spGrp)),
+                [1,0.0,0.0,1]
+            ];
+        } forEach pl_suppression_poses;
+
+    };
+}];
+
+pl_get_side_color_rgb = {
+    params ["_unit", ["_alpha", 0.7]];
+
+    private _sideColorRGB = [0,0.3,0.6,_alpha];
+
+    switch (side _unit) do { 
+        case west : {_sideColorRGB = [0,0.3,0.6,_alpha]}; 
+        case east : {_sideColorRGB = [0.5,0,0,_alpha]};
+        case resistance : {__sideColorRGB = [0,0.5,0,_alpha]};
+        default {_sideColorRGB = [0.5,0,0,_alpha]}; 
+    };
+
+    _sideColorRGB
+};
+
+
+while {!pl_mapClicked} do {
+                // sleep 0.1;
+                if (visibleMap) then {
+                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
+
+                if (inputAction "MoveForward" > 0) then {pl_sweep_area_size = pl_sweep_area_size + 2; sleep 0.05};
+                if (inputAction "MoveBack" > 0) then {pl_sweep_area_size = pl_sweep_area_size - 2; sleep 0.05};
+                if (inputAction "TurnLeft" > 0) then {pl_phase_line_distance = pl_phase_line_distance + 2; sleep 0.05};
+                if (inputAction "TurnRight" > 0) then {pl_phase_line_distance = pl_phase_line_distance - 2; sleep 0.05};
+                if (inputAction "LeanRight" > 0) then {pl_phase_line_dir = pl_phase_line_dir + 2; sleep 0.05};
+                if (inputAction "LeanLeft" > 0) then {pl_phase_line_dir = pl_phase_line_dir - 2; sleep 0.05};
+                _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
+                if (pl_sweep_area_size >= 120) then {pl_sweep_area_size = 120};
+                if (pl_sweep_area_size <= 5) then {pl_sweep_area_size = 5};
+                if (pl_phase_line_distance >= 100) then {pl_phase_line_distance = 100};
+                if (pl_phase_line_distance <= 0) then {pl_phase_line_distance = 0};
+
+                if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
+                    _markerName setMarkerPos _mPos;
+
+                    if (_mPos distance2D (leader _group) > pl_sweep_area_size + 15) then {
+                        _phaseDir = (_mPos getDir _rangelimiterCenter) + pl_phase_line_dir;
+                        _phasePos = _mPos getPos [pl_sweep_area_size + pl_phase_line_distance, _phaseDir];
+                        _markerPhaselineName setMarkerPos _phasePos;
+                        _markerPhaselineName setMarkerDir _phaseDir;
+                        _markerPhaselineName setMarkerSize [pl_sweep_area_size - 10, 0.5];
+
+                        _arrowPos = _phasePos getPos [-15, _phaseDir];
+                        _arrowDir = _phaseDir - 180;
+                        _arrowDis = (_rangelimiterCenter distance2D _mPos) / 2;
+
+                        _arrowMarkerName setMarkerPos _arrowPos;
+                        _arrowMarkerName setMarkerDir _arrowDir;
+                        _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
+                    } else {
+                        _arrowMarkerName setMarkerSize [0,0];
+                        _markerPhaselineName setMarkerSize [0,0];
+                    };
+
+                    if (pl_sweep_area_size >= 50) then {
+                        _markerPhaselineName setMarkerColor "colorOrange";
+                    } else {
+                        _markerPhaselineName setMarkerColor pl_side_color;
+                    };
+                };
+
+
+            };
+
+pl_draw_3dline_array = [];
+
+pl_3d_interface = {
+
+    private _eventHandlers3D = [];
+
+    while {true} do {
+
+        
+        if (pl_enable_3d_icons and hcShownBar) then {
+            {
+                _group = _x;
+                // _pos3D = getPosATLVisual (vehicle (leader _group));
+                private _alpha = 0.6;
+                _distance = round ((leader _group) distance2D player);
+
+                if (_distance < 600) then {
+
+                    if (pl_enable_map_radio) then {
+                        _radioText = _group getVariable ['pl_radio_text',''];
+                        if !(_radioText isEqualTo '') then {
+                            _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                                drawIcon3D [
+                                    '\A3\modules_f_curator\data\portraitRadioChannelCreate_ca.paa', //texture)
+                                    [0.9,0.9,0,0.8], //color
+                                    [0,0, 3 + (_thisArgs#1) * 0.03] vectorAdd (getPosATLVisual (_thisArgs#0)), //pos
+                                    0.7, //width
+                                    0.7, //height,
+                                    0, //angle,
+                                    _thisArgs#2, //text,
+                                    true, //shadow,
+                                    0.02, //textSize,
+                                    'EtelkaMonospacePro', //font
+                                    "right", //textAlign,
+                                    false, //drawSideArrows,
+                                    0, //offsetX,
+                                    0 //offsetY
+                                ];
+                            }, [vehicle (leader _group), _distance, _radioText]];
+                        };
+                    };
+
+                    if (_group in (hcSelected player)) then {
+
+                        _alpha = 1;
+
+                        if (vehicle (leader _group) == (leader _group)) then {
+                            {
+                                _unit = _x;
+                                // _pos3DUnit = [0,0,1] vectorAdd (getPosATLVisual _x);
+                                _icon = getText (configfile >> 'CfgVehicles' >> typeof (vehicle _x) >> 'icon');
+
+                                _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                                    drawIcon3D [
+                                        _thisArgs#0, //texture)
+                                        _thisArgs#2, //color
+                                        [0,0,1] vectorAdd (getPosATLVisual (_thisArgs#1)), //pos
+                                        0.55, //width
+                                        0.55, //height,
+                                        0, //angle,
+                                        "", //text,
+                                        true, //shadow,
+                                        0, //textSize,
+                                        'EtelkaMonospacePro', //font
+                                        "center", //textAlign,
+                                        false, //drawSideArrows,
+                                        0, //offsetX,
+                                        0 //offsetY
+                                    ];
+                                }, [_icon, _unit, [_unit] call pl_get_unit_color]];
+                            } forEach (units _group);
+                        };
+                    };
+
+                    if (_group getVariable ["inContact", false]) then {
+
+                        _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                            drawIcon3D [
+                                '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa', //texture)
+                                [0.7,0,0,0.7], //color
+                                [0, 0, 2] vectorAdd (getPosATLVisual (_thisArgs#0)), //pos
+                                0.4, //width
+                                0.4, //height,
+                                0, //angle,
+                                "", //text,
+                                false, //shadow,
+                                0, //textSize,
+                                'EtelkaMonospacePro', //font
+                                "center", //textAlign,
+                                false, //drawSideArrows,
+                                0, //offsetX,
+                                0 //offsetY
+                            ];
+                        }, [leader _group]];
+                    };
+
+                    // show distance to player  
+                    _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                        drawIcon3D [
+                            "", //texture)
+                            [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _thisArgs#2], //color
+                            [0,0,5 + (_thisArgs#0) * 0.06] vectorAdd (getPosATLVisual (leader (_thisArgs#1))), //pos
+                            0.6, //width
+                            0.6, //height,
+                            0, //angle,
+                            format ["%1: %2m",groupid (_thisArgs#1), _thisArgs#0], //text,
+                            false, //shadow,
+                            0.02, //textSize,
+                            'EtelkaMonospacePro', //font
+                            "center", //textAlign,
+                            false, //drawSideArrows,
+                            0, //offsetX,
+                            0 //offsetY
+                        ];
+                    }, [_distance, _group, _alpha]];
+
+                    if ((_group getVariable ["onTask", false]) or (_group getVariable ["pl_task_planed", false])) then {
+
+                        _iconPos3DTask = [0, 0, 6] vectorAdd (_group getVariable ["pl_task_pos", [0,0,0]]);
+                        _icon = _group getVariable ["specialIcon", ""];
+
+                        _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+
+                            drawIcon3D [
+                                _thisArgs#0, //texture)
+                                [0.9,0.9,0, _thisArgs#3], //color
+                                _thisArgs#1, //pos
+                                0.6, //width
+                                0.6, //height,
+                                0, //angle,
+                                format ["%1m", round (player distance2D (_thisArgs#1))], //text,
+                                false, //shadow,
+                                0.02, //textSize,
+                                'EtelkaMonospacePro', //font
+                                "center", //textAlign,
+                                false, //drawSideArrows,
+                                0, //offsetX,
+                                0 //offsetY
+                            ];
+
+                            drawLine3D [
+                                _thisArgs#1,
+                                (_thisArgs#2) getVariable "pl_task_pos",
+                                [0.9,0.9,0,_thisArgs#3]
+                            ];
+
+                            if !(((_thisArgs#2) getVariable ["pl_grp_task_plan_wp", []]) isEqualTo []) then {
+
+                                drawLine3D [
+                                    [0,0,4] vectorAdd (waypointPosition ((_thisArgs#2) getVariable ["pl_grp_task_plan_wp", []])),
+                                    _thisArgs#1,
+                                    [0.9,0.9,0,_thisArgs#3]
+                                ];
+
+                            } else {
+
+                                drawLine3D [
+                                    [0,0,2] vectorAdd (getPosATLVisual (leader (_thisArgs#2))),
+                                    _thisArgs#1,
+                                    [0.9,0.9,0,_thisArgs#3]
+                                ];
+                            };
+
+                        }, [_icon, _iconPos3DTask, _group, _alpha]];
+                    };
+
+                    // show WP
+                    if (count (waypoints _group) > 0) then {
+
+                        _wps = waypoints _group;
+
+                        if (count _wps >= 2) then {
+
+                            for "_i" from (currentWaypoint _group) to (count _wps) -2 do {
+
+                                _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                                    drawLine3D [
+                                        _thisArgs#0,
+                                        _thisArgs#1,
+                                        [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _thisArgs#2]
+                                    ];
+
+                                    drawLine3D [
+                                        _thisArgs#3,
+                                        _thisArgs#0,
+                                        [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _thisArgs#2]
+                                    ];
+
+                                    drawIcon3D [
+                                        '\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa', //texture)
+                                        [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _thisArgs#2], //color
+                                        _thisArgs#0, //pos
+                                        0.6, //width
+                                        0.6, //height,
+                                        0, //angle,
+                                        "", //text,
+                                        false, //shadow,
+                                        0, //textSize,
+                                        'EtelkaMonospacePro', //font
+                                        "center", //textAlign,
+                                        false, //drawSideArrows,
+                                        0, //offsetX,
+                                        0 //offsetY
+                                    ];
+                                }, [[0,0,4] vectorAdd (waypointPosition (_wps#_i)), [0,0,4] vectorAdd (waypointPosition (_wps#(_i + 1))), _alpha, waypointPosition (_wps#_i)]];
+                            };
+                        };
+
+                        _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+
+                            drawLine3D [
+                                _thisArgs#0,
+                                _thisArgs#1,
+                                [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _thisArgs#2]
+                            ];
+
+                            drawIcon3D [
+                                    '\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa', //texture)
+                                    [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _thisArgs#2], //color
+                                    _thisArgs#1, //pos
+                                    0.6, //width
+                                    0.6, //height,
+                                    0, //angle,
+                                    "", //text,
+                                    false, //shadow,
+                                    0, //textSize,
+                                    'EtelkaMonospacePro', //font
+                                    "center", //textAlign,
+                                    false, //drawSideArrows,
+                                    0, //offsetX,
+                                    0 //offsetY
+                                ];
+                            }, [waypointPosition (_wps#((count _wps) - 1)), [0,0,4] vectorAdd (waypointPosition (_wps#((count _wps) - 1))), _alpha]];
+
+                        if ((currentWaypoint _group) < (count _wps)) then {
+                            _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                                drawLine3D [
+                                    getPos (leader (_thisArgs#0)),
+                                    _thisArgs#1,
+                                    [pl_side_color_rgb#0, pl_side_color_rgb#1, pl_side_color_rgb#2, _thisArgs#2]
+                                ];
+                            }, [_group, [0,0,4] vectorAdd (waypointPosition (_wps#(currentWaypoint _group))), _alpha]];
+                        };
+                    };
+
+                };
+
+            } forEach (allGroups select {hcLeader _x isEqualTo player});
+
+            {
+                _opfGrp = (pl_marta_dic get _x)#0;
+
+                _opfDistance = ([((leader _opfGrp) distance2D player) / 50, 0] call BIS_fnc_cutDecimals) * 50;
+
+                if (_opfDistance <= 1500) then {
+
+                    _opfMarker =((pl_marta_dic get _x)#1)#0;
+
+                    _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                        drawIcon3D [
+                            _thisArgs#0, //texture)
+                            _thisArgs#1, //color
+                            _thisArgs#2, //pos
+                            0.6, //width
+                            0.6, //height,
+                            0, //angle,
+                            _thisArgs#3, //text,
+                            false, //shadow,
+                            0.02, //textSize,
+                            'EtelkaMonospacePro', //font
+                            "right", //textAlign,
+                            false, //drawSideArrows,
+                            0, //offsetX,
+                            0 //offsetY
+                        ];
+
+                        drawLine3D [
+                            _thisArgs#2,
+                            _thisArgs#4,
+                            _thisArgs#1
+                        ];
+                    },[
+                        format ['\Plmod\gfx\marta\%1.paa', markerType _opfMarker],
+                        [leader _opfGrp, 0.5] call pl_get_side_color_rgb,
+                        [0,0,_opfDistance * 0.025] vectorAdd (getmarkerPos [_opfMarker, false]),
+                        format ["%1m", _opfDistance],
+                        getmarkerPos [_opfMarker, false]]];
+                };
+            } forEach (keys pl_marta_dic);
+
+
+            {
+                _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                    drawLine3D [
+                        getPosATL (_thisArgs#0),
+                        getPosATL (_thisArgs#1),
+                        [0.9,0.9,0,1]
+                    ];
+                },[_x#0, _x#1]];
+
+            } forEach pl_draw_3dline_array;
+
+
+            {
+
+                _targetPos3D = _x#0;
+                _spGrp  = _x#1;
+                _spDistance = round (_targetPos3D distance2D player);
+
+                _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+
+                    drawIcon3D [
+                        '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa', //texture)
+                        [0.92,0.24,0.07,1], //color
+                        _thisArgs#0, //pos
+                        0.6, //width
+                        0.6, //height,
+                        0, //angle,
+                        _thisArgs#1, //text,
+                        false, //shadow,
+                        0.02, //textSize,
+                        'EtelkaMonospacePro', //font
+                        "center", //textAlign,
+                        false, //drawSideArrows,
+                        0, //offsetX,
+                        0 //offsetY
+                    ];
+
+                    drawLine3D [
+                        _thisArgs#0,
+                        _thisArgs#2,
+                        [1,0.0,0.0,1]
+                    ];
+                }, [[0,0,3] vectorAdd _targetPos3D, format ["%1m", _spDistance], [0,0,2] vectorAdd (getPosATLVisual (leader _spGrp))]];
+            } forEach pl_suppression_poses;
+
+        };
+
+        sleep 2.5;
+
+        {
+            removeMissionEventHandler ["Draw3D", _x];
+        } forEach _eventHandlers3D
+
+    };
+};
+
+pl_get_side_color_rgb = {
+    params ["_unit", ["_alpha", 0.7]];
+
+    private _sideColorRGB = [0,0.3,0.6,_alpha];
+
+    switch (side _unit) do { 
+        case west : {_sideColorRGB = [0,0.3,0.6,_alpha]}; 
+        case east : {_sideColorRGB = [0.5,0,0,_alpha]};
+        case resistance : {__sideColorRGB = [0,0.5,0,_alpha]};
+        default {_sideColorRGB = [0.5,0,0,_alpha]}; 
+    };
+
+    _sideColorRGB
+};
+
+[] spawn pl_3d_interface;
+
+
+
+pl_ooooooooooof = {
+
+waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicator distance2D player;
+                if (cursorTarget isKindOf "house") then {
+                    _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorTarget)#1)#2] vectorAdd (screenToWorld [0.5,0.5]));
+                } else {
+                    _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+                };
+                _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+            _cords = getPosATL _cursorPosIndicator;
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+            deleteVehicle _cursorPosIndicator;
+
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", _cords, [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+
+            waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            _cursorPosIndicatorDir = createVehicle ["Sign_Sphere25cm_F", screenToWorld [0.5,0.5], [], 0, "none"];
+
+            pl_draw_3dline_array pushback [_cursorPosIndicator, _cursorPosIndicatorDir];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicatorDir distance2D player;
+                _cursorPosIndicatorDir setPosATL ([0, 0, _viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+                _cursorPosIndicator setDir (_cords getDir _cursorPosIndicatorDir);
+                _cursorPosIndicatorDir setObjectScale (_viewDistance * 0.07);
+                _cursorPosIndicator setObjectScale ((_cursorPosIndicator distance2D player) * 0.07);
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_cursorPosIndicator, _cursorPosIndicatorDir]];
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+            
+            _defenceAreaSize = pl_garrison_area_size;
+            _watchDir = getDir _cursorPosIndicator;
+            _markerDirName setMarkerPos _cords;
+            _markerDirName setMarkerDir _watchDir;
+            deleteVehicle _cursorPosIndicator;
+            deleteVehicle _cursorPosIndicatorDir;
+
+            if (_group getVariable ["pl_on_march", false]) then {
+                _taskPlanWp = (waypoints _group) select ((count waypoints _group) - 1);
+                _group setVariable ["pl_task_planed", true];
+                _taskPlanWp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
+            };
+
+            _buildings = nearestTerrainObjects [_cords, ["BUILDING", "RUIN", "HOUSE"], _defenceAreaSize, true];
+
+
+        // vor taskplan
+        _group setVariable ["pl_task_pos", _cords];
+        _group setVariable ["specialIcon", _icon];
+
+        // in _taskplan
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
+
+};

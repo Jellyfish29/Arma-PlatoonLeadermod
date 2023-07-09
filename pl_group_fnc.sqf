@@ -274,7 +274,10 @@ pl_change_inf_icons = {
         };
     } forEach (units _group);
 
-    if (_engineers >= 2) then {_icon = format ["f_%1_eng_pl", _size]};
+    if (_engineers >= 2) then {
+        _icon = format ["f_%1_eng_pl", _size];
+        [_group] spawn pl_continous_mine_detection;
+    };
     if (_medics >= 2 or (_group getVariable ["pl_set_as_medical", false])) then {
         _icon = format ["f_%1_med_pl", _size];
         _group setVariable ["pl_set_as_medical", true];

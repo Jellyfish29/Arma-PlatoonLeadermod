@@ -278,14 +278,14 @@ pl_contact_report = {
                     _callsign = groupId (group _unit);
                     if ((vehicle _unit) isKindOf "Air") then {
                         if (pl_enable_beep_sound) then {playSound "beep"};
-                        if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Engaging Ground Targets", _callsign]};
-                            if (pl_enable_map_radio) then {[group _unit, "...Engaging Ground Targets!", 15] call pl_map_radio_callout};
+                        if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Taking Ground Fire!", _callsign]};
+                            if (pl_enable_map_radio) then {[group _unit, "...Taking Ground Fire!", 15] call pl_map_radio_callout};
                     }
                     else
                     {
                         if (pl_enable_beep_sound) then {playSound "beep"};
-                        if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Engaging Enemies", _callsign]};
-                        if (pl_enable_map_radio) then {[group _unit, "...Contact!", 15] call pl_map_radio_callout};
+                        if (pl_enable_chat_radio) then {_unit sideChat format ["%1: Incoming", _callsign]};
+                        if (pl_enable_map_radio) then {[group _unit, "...Incoming!", 15] call pl_map_radio_callout};
                         [group _unit, "contact", 1] call pl_voice_radio_answer;
 
                     };
@@ -398,20 +398,20 @@ pl_enemy_destroyed_report = {
 
 pl_auto_crouch = {
     params ["_unit"];
-    // while {alive _unit} do {
-    //     if ((behaviour _unit) isEqualTo "AWARE") then {
-    //         if (_unit checkAIFeature "PATH" and !((group _unit) getVariable ["onTask", false])) then {
-    //             if ((speed _unit) == 0) then {
-    //                 _unit setUnitPos "MIDDLE";
-    //                 waitUntil {sleep 1; (speed _unit) > 0 or !(alive _unit)};
-    //                 if ((unitPos _unit) == "MIDDLE") then {
-    //                     _unit setUnitPos "AUTO";
-    //                 };
-    //             };
-    //         };
-    //     };
-    //     sleep 3;
-    // };  
+    while {alive _unit} do {
+        if ((behaviour _unit) isEqualTo "AWARE") then {
+            if (_unit checkAIFeature "PATH" and !((group _unit) getVariable ["onTask", false])) then {
+                if ((speed _unit) == 0) then {
+                    _unit setUnitPos "MIDDLE";
+                    waitUntil {sleep 1; (speed _unit) > 0 or !(alive _unit)};
+                    if ((unitPos _unit) == "MIDDLE") then {
+                        _unit setUnitPos "AUTO";
+                    };
+                };
+            };
+        };
+        sleep 3;
+    };  
 };
 
 pl_auto_360 = {
@@ -435,6 +435,8 @@ pl_auto_360 = {
                             _leader playActionNow "GestureCover";
                             [units _group, [units _group] call pl_find_centroid_of_units, 0, 18, true, [], false, 1] call pl_get_to_cover_positions;
                             _group setVariable ["onTask", true];
+                            _group setVariable ["pl_task_pos", getPosATLVisual (leader _group)];
+                            _group setVariable ["specialIcon", "\A3\ui_f\data\map\markers\military\circle_CA.paa"];
                         };
                     };
                 };
@@ -447,7 +449,7 @@ pl_auto_360 = {
 
 };
 
-[] spawn pl_auto_360;
+// [] spawn pl_auto_360;
 
 pl_auto_formation = {
     params ["_group"];
@@ -898,6 +900,7 @@ pl_vehicle_setup = {
             if ((_vic getVariable ["pl_virtual_mines", -1]) == -1) then {_vic setVariable ["pl_virtual_mines", 150]};
             if ((_vic getVariable ["pl_line_charges", -1]) == -1) then {_vic setVariable ["pl_line_charges", 4]};
             _vic setVariable ["pl_bridge_available", true];
+            [(group (driver _vic))] spawn pl_continous_mine_detection;
         };
 
         if ((typeof _vic) in pl_plow_vehicles) then {_vic setVariable ["pl_is_eng_vic_plow", true]};

@@ -575,7 +575,12 @@ pl_ccp = {
 
     private _icon = "\Plmod\gfx\pl_ccp_marker.paa";
 
+    _group setVariable ["pl_task_pos", _ccpPos];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_ccpPos, _taskPlanWp, _icon];

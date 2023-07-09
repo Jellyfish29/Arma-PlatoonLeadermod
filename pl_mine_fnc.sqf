@@ -145,7 +145,7 @@ pl_mine_clearing_inf = {
     deleteMarker _markerBorderName;
 
     private _createLane = false;
-    if (pl_mine_sweep_area_lane_width <= 30) then {
+    if (pl_mine_sweep_area_lane_width <= 50) then {
         _createLane = true;
     } else {
         deleteMarker _markerNameLaunchPos;
@@ -155,7 +155,12 @@ pl_mine_clearing_inf = {
 
     private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa";
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -484,7 +489,12 @@ pl_mine_clearing_vic = {
 
     private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa";
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -756,7 +766,12 @@ pl_mc_lc = {
 
     private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -1059,7 +1074,12 @@ pl_lay_mine_field = {
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa";
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -1356,7 +1376,12 @@ pl_lay_mine_field_vic = {
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa";
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -1500,6 +1525,8 @@ pl_place_charge = {
 
     _availableMines = _exSpecialist getVariable ["pl_virtual_mines", 0];
 
+    _markerName = "";
+
     if (visibleMap or !(isNull findDisplay 2000)) then {
         hintSilent "";
         hint "Select MINE position on MAP (SHIFT + LMB to cancel)";
@@ -1555,17 +1582,45 @@ pl_place_charge = {
     }
     else
     {
-        _cords = screenToWorld [0.5, 0.5];
-        _rangelimiter = 60;
-        if ((_cords distance2D (getpos (leader _group))) > _rangelimiter) then {
-            hint "Out of Range";
+        waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", getPos player, [], 0, "none"];
+
+        systemChat str (getPos _cursorPosIndicator);
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+
+            _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+            _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
         };
+
+        if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+        _cords = getPosATL _cursorPosIndicator;
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+        deleteVehicle _cursorPosIndicator;
+
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerBorderName};
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
+
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
     
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -1794,6 +1849,8 @@ pl_destroy_bridge = {
 
     if ((count _bridges) <= 0) exitWith {hint format ["No Bridges in Area", groupId _group]};
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"];
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -1874,6 +1931,37 @@ pl_destroy_bridge = {
     if (pl_enable_beep_sound) then {playSound "radioina"};
     if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Bridge Destroyed", (groupId _group)]};
     if (pl_enable_map_radio) then {[_group, "...Bridge Destroyed", 20] call pl_map_radio_callout};
+};
+
+pl_marked_mines = [];
+
+pl_continous_mine_detection = {
+    params ["_engGroup"];
+
+    while {!(isnull _engGroup) and ({alive _x} count (units _engGroup)) > 0} do {
+
+
+        _detectedMines = allMines select {(_x distance2D (vehicle (leader _engGroup))) < 40 and !(_x in pl_marked_mines)};
+
+
+        {
+            if ((random 1) > 0.75 or _x mineDetectedBy playerSide) then {
+                playerSide revealMine _x;
+                pl_marked_mines pushBack _x;
+                _cm = createMarker [str (random 3), getPos _x];
+                _cm setMarkerType "mil_triangle";
+                _cm setMarkerSize [0.4, 0.4];
+                _cm setMarkerDir -180;
+                _cm setMarkerShadow false;
+                _cm setMarkerColor "colorRED";
+                pl_engineering_markers pushBack _cm;
+            };
+        } forEach _detectedMines;
+
+
+        sleep 15;
+
+    };
 };
 
 // mark roadbloacks

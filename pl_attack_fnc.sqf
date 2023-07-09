@@ -9,6 +9,8 @@ pl_draw_suppression_array = [];
 pl_sweep_cords = [0,0,0];
 pl_sweep_area_size = 35;
 pl_attack_mode = "normal";
+pl_suppression_poses = [];
+pl_assault_poses = [];
 
 
 pl_suppressive_fire_position = {
@@ -99,16 +101,45 @@ pl_suppressive_fire_position = {
         }
         else
         {
-            _cords = screenToWorld [0.5,0.5];
-            _area = 25;
+            _cursorPosIndicator = createVehicle ["Sign_Circle_F", [-1000, -1000, 0], [], 0, "none"];
+            _cursorPosIndicator2 = createVehicle ["Sign_Sphere25cm_F", [-1000, -1000, 0], [], 0, "none"];
+            _cursorPosIndicator setObjectScale 1.5;
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicator distance2D player;
+                // _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+                _cursorPosIndicator setPosATL (screenToWorld [0.5,0.5]);
+                _cursorPosIndicator2 setPosATL (screenToWorld [0.5,0.5]);
+                _cursorPosIndicator2 setObjectScale (_viewDistance * 0.025);
+                _cursorPosIndicator setDir (_leader getDir _cursorPosIndicator);
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+            deleteVehicle _cursorPosIndicator;
+            deleteVehicle _cursorPosIndicator2;
+
+            if (pl_cancel_strike) exitWith {};
+
+            _cords = getPosATL _cursorPosIndicator;
+
+            _area = pl_suppress_area_size;
+
+            _markerName setMarkerPos _cords;
         };
     } else {
         _markerName setMarkerPos _cords;
-        _area = 30;
+        _area = pl_suppress_area_size;
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
-
 
     if !(_sfpPos isEqualTo []) then {
 
@@ -149,6 +180,7 @@ pl_suppressive_fire_position = {
     
 
     _group setVariable ["pl_is_suppressing", true];
+    pl_suppression_poses pushback [_cords, _group];
     // check if enemy in Area
     // _allTargets = nearestObjects [_cords, ["Man", "Car", "Truck", "Tank"], _area, true];
     _getTargets = {
@@ -177,10 +209,6 @@ pl_suppressive_fire_position = {
         };
         private _return = ATLToASL (selectRandom _targetsPos);
         _return
-    };
-
-    _getVehicleTargets = {
-
     };
 
     private _units = (units _group);
@@ -254,6 +282,7 @@ pl_suppressive_fire_position = {
     //     [vehicle (leader _group)] call pl_load_ap;
     // };
 
+    pl_suppression_poses = pl_suppression_poses - [[_cords, _group]];
     deleteMarker _markerName;
     if (_group getVariable ["pl_in_position", false]) then {
         _markerPosName = format ["defenceAreaDir%1", _group];
@@ -639,11 +668,12 @@ pl_add_aslt_hit_eh = {
 
 pl_assault_position = {
     params ["_group", ["_taskPlanWp", []], ["_cords", []]];
-    private ["_mPos", "_phaseDistance", "_phaseDir", "_markerPhaselineName", "_cords", "_targets", "_markerName", "_icon", "_coverTeam","_manuverTeam", "_manuverPos", "_coverPos", "_breakingPoint", "_startPos", "_area", "_vicGroup", "_flankSide", "_flank"];
+    private ["_mPos", "_approachPos", "_lineArea", "_phaseDistance", "_phaseDir", "_markerPhaselineName", "_cords", "_targets", "_markerName", "_icon", "_coverTeam","_manuverTeam", "_manuverPos", "_coverPos", "_breakingPoint", "_startPos", "_area", "_vicGroup", "_flankSide", "_flank"];
 
     pl_sweep_area_size = 50;
     pl_phase_line_distance = 20;
     pl_phase_line_dir = 0;
+    pl_phase_line_size = pl_sweep_area_size / 2;
 
     if ((vehicle (leader _group) != leader _group and !(_group getVariable ["pl_has_cargo", false] or _group getVariable ["pl_vic_attached", false])) and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
 
@@ -673,107 +703,216 @@ pl_assault_position = {
 
     if (_cords isEqualTo []) then {
 
-        if !(visibleMap) then {
-            if (isNull findDisplay 2000) then {
-                [leader _group] call pl_open_tac_forced;
+        if (visibleMap or !(isNull findDisplay 2000)) then {
+
+            private _rangelimiterCenter = getPos (leader _group);
+            if !(_taskPlanWp isEqualTo []) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
+            if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
+            private _rangelimiter = 200;
+            _markerBorderName = str (random 2);
+            createMarker [_markerBorderName, _rangelimiterCenter];
+            _markerBorderName setMarkerShape "ELLIPSE";
+            _markerBorderName setMarkerBrush "Border";
+            _markerBorderName setMarkerColor "colorOrange";
+            _markerBorderName setMarkerAlpha 0.8;
+            _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+
+            _message = "Select Assault Location <br /><br />
+                <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>SELECT Position</t> <br />
+                <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />
+                <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
+            hint parseText _message;
+            onMapSingleClick {
+                pl_sweep_cords = _pos;
+                if (_shift) then {pl_cancel_strike = true};
+                pl_mapClicked = true;
+                hintSilent "";
+                onMapSingleClick "";
             };
-        };
-        private _rangelimiterCenter = getPos (leader _group);
-        if !(_taskPlanWp isEqualTo []) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
-        if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
-        private _rangelimiter = 200;
-        _markerBorderName = str (random 2);
-        createMarker [_markerBorderName, _rangelimiterCenter];
-        _markerBorderName setMarkerShape "ELLIPSE";
-        _markerBorderName setMarkerBrush "Border";
-        _markerBorderName setMarkerColor "colorOrange";
-        _markerBorderName setMarkerAlpha 0.8;
-        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
 
-        _message = "Select Assault Location <br /><br />
-            <t size='0.8' align='left'> -> LMB</t><t size='0.8' align='right'>SELECT Position</t> <br />
-            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />
-            <t size='0.8' align='left'> -> W / S</t><t size='0.8' align='right'>INCREASE / DECREASE Size</t> <br />";
-        hint parseText _message;
-        onMapSingleClick {
-            pl_sweep_cords = _pos;
-            if (_shift) then {pl_cancel_strike = true};
-            pl_mapClicked = true;
-            hintSilent "";
-            onMapSingleClick "";
-        };
+            private _rangelimiterCenter = getPos (leader _group);
+            if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
 
-        private _rangelimiterCenter = getPos (leader _group);
-        if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
+            player enableSimulation false;
 
-        player enableSimulation false;
+            while {!pl_mapClicked} do {
+                // sleep 0.1;
+                if (visibleMap) then {
+                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
 
-        while {!pl_mapClicked} do {
-            // sleep 0.1;
-            if (visibleMap) then {
-                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                if (inputAction "MoveForward" > 0) then {pl_sweep_area_size = pl_sweep_area_size + 2; sleep 0.05};
+                if (inputAction "MoveBack" > 0) then {pl_sweep_area_size = pl_sweep_area_size - 2; sleep 0.05};
+                _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
+                if (pl_sweep_area_size >= 120) then {pl_sweep_area_size = 120};
+                if (pl_sweep_area_size <= 5) then {pl_sweep_area_size = 5};
+
+                if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
+                    _markerName setMarkerPos _mPos;
+                    _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
+                };
+            };
+
+            pl_mapClicked = false;
+
+            _cords = getMarkerPos _markerName;
+
+            _rangelimiter = pl_sweep_area_size * 2.5;
+            _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+            _rangelimiterCenter = _cords;
+            _markerBorderName setMarkerPos _cords;
+
+            onMapSingleClick {
+                pl_sweep_cords = _pos;
+                if (_shift) then {pl_cancel_strike = true};
+                pl_mapClicked = true;
+                hintSilent "";
+                onMapSingleClick "";
+            };
+
+            while {!pl_mapClicked} do {
+                // sleep 0.1;
+                if (visibleMap) then {
+                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
+
+                if (inputAction "MoveForward" > 0) then {pl_phase_line_size = pl_phase_line_size + 2; sleep 0.05};
+                if (inputAction "MoveBack" > 0) then {pl_phase_line_size = pl_phase_line_size - 2; sleep 0.05};
+                if (pl_phase_line_size >= pl_sweep_area_size + 25) then {pl_phase_line_size = pl_sweep_area_size + 25};
+                if (pl_phase_line_size <= 15) then {pl_phase_line_size = 15};
+
+                if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
+
+                    _markerPhaselineName setMarkerPos _mPos;
+                    _markerPhaselineName setMarkerDir (_mPos getDir _cords);
+                    _markerPhaselineName setMarkerSize [pl_phase_line_size, 0.5];
+
+                    _arrowMarkerName setMarkerPos _mPos;
+                    _arrowMarkerName setMarkerDir (_mPos getDir _cords);
+
+                    if (pl_phase_line_size >= 25) then {
+                        _markerPhaselineName setMarkerColor "colorOrange";
+                    } else {
+                        _markerPhaselineName setMarkerColor pl_side_color;
+                    };
+
+                };
+            };
+
+            pl_mapClicked = false;
+
+            player enableSimulation true;
+
+            deleteMarker _markerBorderName;
+
+            _approachPos = getMarkerPos _markerPhaselineName;
+            _lineArea = pl_phase_line_size;
+
+            _markerName setMarkerPos _cords;
+            _markerName setMarkerBrush "Border";
+            _area = pl_sweep_area_size;
+
+        // 3d Order
+        } else {
+
+            waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicator distance2D player;
+                if (cursorTarget isKindOf "house") then {
+                    _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorTarget)#1)#2] vectorAdd (screenToWorld [0.5,0.5]));
+                } else {
+                    _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+                };
+                _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+            _cords = getPosATL _cursorPosIndicator;
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+            deleteVehicle _cursorPosIndicator;
+
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", _cords, [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+            waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            _cursorPosIndicatorDir = createVehicle ["Sign_Sphere25cm_F", screenToWorld [0.5,0.5], [], 0, "none"];
+
+            pl_draw_3dline_array pushback [_cursorPosIndicator, _cursorPosIndicatorDir];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicatorDir distance2D player;
+                _cursorPosIndicatorDir setPosATL ([0, 0, _viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+                _cursorPosIndicator setDir (_cursorPosIndicatorDir getDir _cords);
+                _cursorPosIndicatorDir setObjectScale (_viewDistance * 0.07);
+                _cursorPosIndicator setObjectScale ((_cursorPosIndicator distance2D player) * 0.07);
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            _approachPos = getPosATL _cursorPosIndicatorDir;
+
+            _area = (_approachPos distance2D _cords) * 0.6;
+            _lineArea = _area * 0.7;
+            if (_area > 60) then {_area = 60};
+            _phaseDir = _approachPos getDir _cords;
+            _markerName setMarkerPos _cords;
+            _markerName setMarkerBrush "Border";
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_cursorPosIndicator, _cursorPosIndicatorDir]];
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+            deleteVehicle _cursorPosIndicator;
+            deleteVehicle _cursorPosIndicatorDir;
+
+            // _phaseDir = (leader _group) getDir _cords;
+
+            if (_group getVariable ["pl_on_march", false]) then {
+                _taskPlanWp = (waypoints _group) select ((count waypoints _group) - 1);
+                _group setVariable ["pl_task_planed", true];
+                _taskPlanWp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
+                // _phaseDir = (waypointPosition _taskPlanWp) getDir _cords;
+            };
+
+            _markerPhaselineName setMarkerPos _approachPos;
+            _arrowPos = (getMarkerPos _markerPhaselineName) getPos [- 15, _phaseDir - 180];
+            _markerPhaselineName setMarkerDir _phaseDir;
+            _markerPhaselineName setMarkerSize [_area - 10, 0.5];
+            _arrowMarkerName setMarkerPos _arrowPos;
+            _arrowMarkerName setMarkerDir _phaseDir;
+            _markerName setMarkerSize [_area, _area];
+
+            if (_area >= 50) then {
+                _markerPhaselineName setMarkerColor "colorOrange";
             } else {
-                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                _markerPhaselineName setMarkerColor pl_side_color;
             };
-
-            if (inputAction "MoveForward" > 0) then {pl_sweep_area_size = pl_sweep_area_size + 2; sleep 0.05};
-            if (inputAction "MoveBack" > 0) then {pl_sweep_area_size = pl_sweep_area_size - 2; sleep 0.05};
-            if (inputAction "TurnLeft" > 0) then {pl_phase_line_distance = pl_phase_line_distance + 2; sleep 0.05};
-            if (inputAction "TurnRight" > 0) then {pl_phase_line_distance = pl_phase_line_distance - 2; sleep 0.05};
-            if (inputAction "LeanRight" > 0) then {pl_phase_line_dir = pl_phase_line_dir + 2; sleep 0.05};
-            if (inputAction "LeanLeft" > 0) then {pl_phase_line_dir = pl_phase_line_dir - 2; sleep 0.05};
-            _markerName setMarkerSize [pl_sweep_area_size, pl_sweep_area_size];
-            if (pl_sweep_area_size >= 120) then {pl_sweep_area_size = 120};
-            if (pl_sweep_area_size <= 5) then {pl_sweep_area_size = 5};
-            if (pl_phase_line_distance >= 100) then {pl_phase_line_distance = 100};
-            if (pl_phase_line_distance <= 0) then {pl_phase_line_distance = 0};
-
-            if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
-                _markerName setMarkerPos _mPos;
-
-                if (_mPos distance2D (leader _group) > pl_sweep_area_size + 15) then {
-                    _phaseDir = (_mPos getDir _rangelimiterCenter) + pl_phase_line_dir;
-                    _phasePos = _mPos getPos [pl_sweep_area_size + pl_phase_line_distance, _phaseDir];
-                    _markerPhaselineName setMarkerPos _phasePos;
-                    _markerPhaselineName setMarkerDir _phaseDir;
-                    _markerPhaselineName setMarkerSize [pl_sweep_area_size - 10, 0.5];
-
-                    _arrowPos = _phasePos getPos [-15, _phaseDir];
-                    _arrowDir = _phaseDir - 180;
-                    _arrowDis = (_rangelimiterCenter distance2D _mPos) / 2;
-
-                    _arrowMarkerName setMarkerPos _arrowPos;
-                    _arrowMarkerName setMarkerDir _arrowDir;
-                    _arrowMarkerName setMarkerSize [1.5, _arrowDis * 0.02];
-                } else {
-                    _arrowMarkerName setMarkerSize [0,0];
-                    _markerPhaselineName setMarkerSize [0,0];
-                };
-
-                if (pl_sweep_area_size >= 50) then {
-                    _markerPhaselineName setMarkerColor "colorOrange";
-                } else {
-                    _markerPhaselineName setMarkerColor pl_side_color;
-                };
-            };
-
 
         };
 
-        player enableSimulation true;
-
-        pl_mapClicked = false;
-        deleteMarker _markerBorderName;
-        _cords = getMarkerPos _markerName;
-        _markerName setMarkerPos _cords;
-        _markerName setMarkerBrush "Border";
-        _area = pl_sweep_area_size;
-        _phaseDistance = pl_phase_line_distance;
-        _phaseDir = pl_phase_line_dir;
     } else {
         _area = (((leader _group) distance2D _cords) / 2) + 30;
-        _phaseDistance = 25;
-        _phaseDir = 0;
+        _lineArea = _area * 0.7;
         _markerName setMarkerPos _cords;
         _markerName setMarkerBrush "Border";
     };
@@ -785,7 +924,13 @@ pl_assault_position = {
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa";
 
+
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -851,8 +996,6 @@ pl_assault_position = {
 
     private _machinegunner = objNull;
     private _medic = objNull;
-
-    private _approachPos = _cords getPos [_area + _phaseDistance, (_cords getDir _startPos) + _phaseDir];
 
     private _startUnitCount = {alive _x and !((lifeState _x) isEqualto "INCAPACITATED")} count (units _group);
     _breakingPoint = round (_startUnitCount * 0.66);
@@ -1076,7 +1219,7 @@ pl_assault_position = {
         private _losPos = [];
         private _validLosPos = [];
         private _losCount = 0;
-        private _lineArea = _area * 0.75;
+        // private _lineArea = _area * 0.75;
         private _losDir = _watchDir;
 
         for "_j" from 0 to _accuracy do {
@@ -1289,16 +1432,16 @@ pl_assault_position = {
                                             if ((_unit distance2D _target) < 250) then {
                                                 _pointDir = _target getDir _checkPos;
                                                 if (_pointDir >= (_targetDir - 50) and _pointDir <= (_targetDir + 50)) then {
-                                                    _m setMarkerColor "colorORANGE";
+                                                    // _m setMarkerColor "colorORANGE";
                                                 } else {
                                                     if (_target distance2D _checkPos >= 30) then {
                                                         _checkPosArray pushBack _checkPos;
-                                                        _m setMarkerColor "colorRED";
+                                                        // _m setMarkerColor "colorRED";
                                                     };
                                                 };
                                             } else {
                                                 _checkPosArray pushBack _checkPos;
-                                                _m setMarkerColor "colorRED";
+                                                // _m setMarkerColor "colorRED";
                                             };
                                         };
                                     };
@@ -1485,6 +1628,8 @@ pl_assault_position = {
     pl_draw_text_array = pl_draw_text_array - [["ENY", _leftPos, 0.02, pl_side_color_rgb]];
     pl_draw_text_array = pl_draw_text_array - [["ENY", _rightPos, 0.02, pl_side_color_rgb]];
     pl_draw_text_array = pl_draw_text_array - [["SEIZE", _cords, 0.025, pl_side_color_rgb]]; 
+
+    pl_assault_poses = pl_assault_poses - [[_cords, _group, _taskPlanWp]];
 
     if (_group getVariable ["onTask", true]) then {
         [_group] call pl_reset;

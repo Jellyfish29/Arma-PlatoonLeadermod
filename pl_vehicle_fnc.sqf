@@ -54,8 +54,42 @@ pl_getIn_vehicle = {
         }
         else
         {
-            pl_vics = [cursorTarget];
-            _cords = getPos cursorTarget;
+            waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicator distance2D player;
+                if (cursorObject isKindOf "Car" or cursorObject isKindOf "Tank" or cursorObject isKindOf "Truck") then {
+                    _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorObject)#1)#2] vectorAdd (getPosATLVisual cursorObject));
+                    _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+                };
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+            _cords = getPosATL _cursorPosIndicator;
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+            deleteVehicle _cursorPosIndicator;
+
+            pl_vics = [cursorObject];
+            _cords = getPos cursorObject;
+
+            if (_group getVariable ["pl_on_march", false]) then {
+                _taskPlanWp = (waypoints _group) select ((count waypoints _group) - 1);
+                _group setVariable ["pl_task_planed", true];
+                _taskPlanWp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
+            };
         };
     } else {
         _cords = getPos _vic;
@@ -104,10 +138,15 @@ pl_getIn_vehicle = {
 
     if !(isNil "_targetVic") then {
 
+        _group setVariable ["pl_task_pos", getPos _targetVic];
+        _group setVariable ["specialIcon", '\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa'];
+
 
         [group (driver _targetVic)] call pl_hold;
 
         if (count _taskPlanWp != 0) then {
+
+            _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
             private _wPos = waypointPosition _taskPlanWp;
 
@@ -223,7 +262,6 @@ pl_getIn_vehicle = {
             // _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa"];
             // _group addVehicle _targetVic;
             private _ii = 0;
-            pl_testo = _allSeatsReady;
             {
                 _unit = _x;
                 if !(_unit in (crew _targetVic)) then {
@@ -403,6 +441,10 @@ pl_unload_at_position_planed = {
     if (_cargoGroups isEqualTo []) exitWith {[_vicGroup] call pl_dismount_cargo};
 
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_task_pos", waypointPosition _taskPlanWp];
+        _group setVariable ["specialIcon", '\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa'];
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         private _cargoGroup = _cargoGroups#0;
         _wpPos = waypointPosition _taskPlanWp;
@@ -1320,7 +1362,42 @@ pl_crew_vehicle = {
     }
     else
     {
-        pl_vics = [cursorTarget];
+        waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+        // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+            if (cursorObject isKindOf "Car" or cursorObject isKindOf "Tank" or cursorObject isKindOf "Truck") then {
+                _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorObject)#1)#2] vectorAdd (getPosATLVisual cursorObject));
+                _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+            };
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
+        };
+
+        if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+        _cords = getPosATL _cursorPosIndicator;
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+        deleteVehicle _cursorPosIndicator;
+
+        pl_vics = [cursorObject];
+        _cords = getPos cursorObject;
+
+        if (_group getVariable ["pl_on_march", false]) then {
+            _taskPlanWp = (waypoints _group) select ((count waypoints _group) - 1);
+            _group setVariable ["pl_task_planed", true];
+            _taskPlanWp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
+        };
     };
     _targetVic = pl_vics select 0;
 
@@ -1328,7 +1405,12 @@ pl_crew_vehicle = {
 
     private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa";
 
+    _group setVariable ["pl_task_pos", getPosATLVisual _targetVic];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         private _wPos = waypointPosition _taskPlanWp;
         private _cords = getPos _targetVic;
@@ -1560,7 +1642,36 @@ pl_attach_inf = {
         }
         else
         {
-            pl_vics = [cursorTarget];
+            waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicator distance2D player;
+                if (cursorObject isKindOf "Car" or cursorObject isKindOf "Tank" or cursorObject isKindOf "Truck") then {
+                    _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorObject)#1)#2] vectorAdd (getPosATLVisual cursorObject));
+                    _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+                };
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+            _cords = getPosATL _cursorPosIndicator;
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+            deleteVehicle _cursorPosIndicator;
+
+            pl_vics = [cursorObject];
+            _cords = getPos cursorObject;
         };
 
         if !(pl_vics isEqualTo []) then {
@@ -1577,7 +1688,6 @@ pl_attach_inf = {
 
     if (_vicGroup getVariable ["pl_vic_attached", false]) exitWith {Hint "Vehicle already has Infantry attached"};
 
-
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
     [_group] call pl_reset;
@@ -1590,8 +1700,12 @@ pl_attach_inf = {
 
     sleep 0.5;
 
+    _leader = leader _group;
+    pl_draw_3dline_array pushback [_leader, _vic];
+
     _group setVariable ["setSpecial", true];
     _group setVariable ["onTask", true];
+    _group setVariable ["pl_task_pos", getPosATLVisual _vic];
     _group setVariable ["specialIcon", '\Plmod\gfx\pl_mech_task.paa'];
     _vicGroup setVariable ["pl_vic_attached", true];
     _vicGroup setVariable ["pl_attached_infGrp", _group];
@@ -1642,8 +1756,13 @@ pl_attach_inf = {
 
         _group setFormDir (getDir _vic);
         _group setFormation (formation _vicGroup);
+        _group setVariable ["pl_task_pos", getPosATLVisual _vic];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _vic];
+
         if (speed _vic != 0) then {
-            _leader = leader _group;
+            // _leader = leader _group;
             _leader limitSpeed 14;
             _leaderPos = [5*(sin ((getDir _vic) - 180)), 5*(cos ((getDir _vic) - 180)), 0] vectorAdd getPos _vic;
             _leader doMove _leaderPos;
@@ -1660,6 +1779,7 @@ pl_attach_inf = {
         // sleep 2;
         _time = time + 2;
         waitUntil {sleep 0.1; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _vic]];
     };
 
     _vicGroup setVariable ["pl_vic_attached", nil];
@@ -1712,6 +1832,38 @@ pl_attach_vic = {
             while {!pl_mapClicked} do {sleep 0.1};
             pl_mapClicked = false;
             pl_follow_array_other_setup = pl_follow_array_other_setup - [_group];
+        } else {
+
+            waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicator distance2D player;
+                if (cursorObject isKindOf "Man") then {
+                    _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorObject)#1)#2] vectorAdd (getPosATLVisual cursorObject));
+                    _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+                };
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+            _cords = getPosATL _cursorPosIndicator;
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+            deleteVehicle _cursorPosIndicator;
+
+            pl_vics = [cursorObject];
+            _cords = getPos cursorObject;
         };
 
         if (pl_vics isEqualTo []) exitWith {l_cancel_strike = true};

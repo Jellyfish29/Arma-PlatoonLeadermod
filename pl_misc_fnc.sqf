@@ -77,6 +77,8 @@ pl_reset = {
     _group setVariable ["onTask", false];
     _group setVariable ["pl_on_hold", false];
     _group setVariable ['pl_wp_reached', nil];
+    // _group setVariable ["pl_task_pos", nil];
+    _group setVariable ["pl_grp_task_plan_wp", nil];
     _group enableAttack false;
     // [_group] call pl_reset_sop;
 
@@ -88,6 +90,7 @@ pl_reset = {
         if !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\truck_ca.paa") then {
             if !(_group getVariable ["pl_on_hold", false]) then {
                 _group setVariable ["setSpecial", false];
+                _group setVariable ["specialIcon", ""];
             };
         };
     };

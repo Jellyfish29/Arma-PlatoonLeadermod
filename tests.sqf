@@ -1,20 +1,32 @@
+pl_marked_mines = [];
+
+pl_continous_mine_detection = {
+    params ["_engGroup"];
+
+    while {!(isnull _engGroup) and ({alive _x} count (units _engGroup)) > 0} do {
 
 
-pl_player_group_fast_cover = {
+        _detectedMines = allMines select {(_x distance2D (vehicle (leader _engGroup))) < 40 and !(_x in pl_marked_mines)};
 
-    _group = group player
-    _group setVariable ["onTask", true];    
-    private _units = (units _group) - [player];
 
-    _units = [objNull] + _units;
+        {
+            if ((random 1) > 0.75 or _x mineDetectedBy playerSide) then {
+                playerSide revealMine _x;
+                pl_marked_mines pushBack _x;
+                _cm = createMarker [str (random 3), getPos _x];
+                _cm setMarkerType "mil_triangle";
+                _cm setMarkerSize [0.4, 0.4];
+                _cm setMarkerDir -180;
+                _cm setMarkerShadow false;
+                _cm setMarkerColor "colorRED";
+                pl_engineering_markers pushBack _cm;
+            };
+        } forEach _detectedMines;
 
-    player playAction "GestureCover";
 
-    if ((behaviour player) == "COMBAT") then {
-        [_units, getPos player, 0, 15, true, [], false, 0] call pl_get_to_cover_positions;
-    } else {
-        [_units, getPos player, getDirVisual player, 15, true, [], false, 1] call pl_get_to_cover_positions;
-    };  
+        sleep 15;
+
+    };
 };
 
-[] call pl_player_group_fast_cover;
+[g1] spawn pl_continous_mine_detection;

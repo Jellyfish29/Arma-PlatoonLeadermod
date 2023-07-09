@@ -179,14 +179,52 @@ pl_garrison = {
         if (_buildingMarker == "") exitWith {};
         _buildingMarker setMarkerAlpha 0.5;
     } else {
-        _building = cursorTarget;
-        if (isNull _building) exitWith {};
+
+        waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+            if (cursorObject isKindOf "house") then {
+                _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorTarget)#1)#2] vectorAdd (getPosATL cursorObject));
+                _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+                _building = cursorObject;
+            };
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
+        };
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+        deleteVehicle _cursorPosIndicator;
+        if (pl_cancel_strike) exitWith {};
+
+        _buildingMarker = [_building] call BIS_fnc_boundingBoxMarker;
+
+        if (_group getVariable ["pl_on_march", false]) then {
+            _taskPlanWp = (waypoints _group) select ((count waypoints _group) - 1);
+            _group setVariable ["pl_task_planed", true];
+            _taskPlanWp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
+        };
+
     };
+
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
 
     private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa";
     private _cords = getPos _building;
 
+    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["specialIcon", _icon];
+
     if (count _taskPlanWp != 0) then {
+
+        _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
         // add Arrow indicator
         pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -335,11 +373,16 @@ pl_360 = {
 pl_disengage = {
     params [["_group", (hcSelected player) select 0], ["_retreatPos", []], ["_takePosition", false], ["_facing", 1000]];
 
-    if ((visibleMap or !(isNull findDisplay 2000)) and _retreatPos isEqualTo []) then {
-        if (visibleMap) then {
-            _retreatPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+
+    if (_retreatPos isEqualTo []) then {
+        if ((visibleMap or !(isNull findDisplay 2000)) and _retreatPos isEqualTo []) then {
+            if (visibleMap) then {
+                _retreatPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+            } else {
+                _retreatPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            };
         } else {
-            _retreatPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            _retreatPos = screenToWorld [0.5, 0.5]
         };
     };
 
@@ -371,6 +414,7 @@ pl_disengage = {
     _group setVariable ["onTask", true];
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\run_ca.paa"];
+    _group setVariable ["pl_task_pos", _retreatPos];
 
     pl_draw_disengage_array pushBack [_group, _retreatPos];
     [_group, "disengage", 1] call pl_voice_radio_answer;
@@ -391,7 +435,7 @@ pl_disengage = {
             private _posArray = [];
 
             for "_di" from 0 to 360 step (360 / (count _units)) do {
-                _movePos = _retreatPos getPos [5, _di];
+                _movePos = _retreatPos getPos [7, _di];
                 _posArray pushBack _movePos;
             };
 
@@ -478,7 +522,7 @@ pl_disengage = {
 
             waitUntil {sleep 0.5; ({scriptDone _x} count _moveScripts) == (count _moveScripts) or !(_group getVariable "onTask")};
 
-            [_group] call pl_reset;
+            // [_group] call pl_reset;
 
         } else {
 
@@ -527,7 +571,7 @@ pl_disengage = {
 
 pl_defend_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []] , ["_cords", []], ["_watchDir", 0], ["_sfp", false], ["_retreat", false], ["_area", 35]];
-    private ["_mPos", "_ccpPos", "_defendMode", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord", "_dirMarkerType", "_unitPos"];
+    private ["_mPos", "_ccpPos", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord", "_dirMarkerType", "_unitPos"];
 
 
 
@@ -537,27 +581,18 @@ pl_defend_position = {
 
     if (_cords isEqualTo []) then {
 
-        if !(visibleMap) then {
-            if (isNull findDisplay 2000) then {
-                [leader _group] call pl_open_tac_forced;
-            };
-        };
+        // if !(visibleMap) then {
+        //     if (isNull findDisplay 2000) then {
+        //         [leader _group] call pl_open_tac_forced;
+        //     };
+        // };
 
         hintSilent "";
-
-        _markerAreaName = format ["%1garrison%2", _group, random 2];
-        createMarker [_markerAreaName, [0,0,0]];
-        _markerAreaName setMarkerShape "ELLIPSE";
-        _markerAreaName setMarkerBrush "SolidBorder";
-        _markerAreaName setMarkerColor pl_side_color;
-        _markerAreaName setMarkerAlpha 0.35;
-        _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
 
         private _dirMarkerType = "marker_position";
         if (_sfp) then {_dirMarkerType = "marker_sfp"};
         if (_retreat) then {_dirMarkerType = "marker_position_eny"};
 
-        _markerAreaName setMarkerPos pl_defence_cords;
         _markerDirName = format ["defenceAreaDir%1%2", _group, random 2];
         createMarker [_markerDirName, pl_defence_cords];
         _markerDirName setMarkerPos pl_defence_cords;
@@ -565,96 +600,105 @@ pl_defend_position = {
         _markerDirName setMarkerColor pl_side_color;
 
 
-        private _rangelimiterCenter = getPos (leader _group);
-        if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
-        private _rangelimiter = 200;
-        _markerBorderName = str (random 2);
-        createMarker [_markerBorderName, _rangelimiterCenter];
-        _markerBorderName setMarkerShape "ELLIPSE";
-        _markerBorderName setMarkerBrush "Border";
-        _markerBorderName setMarkerColor "colorOrange";
-        _markerBorderName setMarkerAlpha 0.8;
-        _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
+        // on Map Command
+        if (visibleMap or !(isNull findDisplay 2000)) then {
 
-        pl_garrison_area_size = _area;
-        pl_defend_mode = 0;
+            _markerAreaName = format ["%1garrison%2", _group, random 2];
+            createMarker [_markerAreaName, [0,0,0]];
+            _markerAreaName setMarkerShape "ELLIPSE";
+            _markerAreaName setMarkerBrush "SolidBorder";
+            _markerAreaName setMarkerColor pl_side_color;
+            _markerAreaName setMarkerAlpha 0.35;
+            _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
 
-        pl_360_area = false;
-        private _staticStr = "NO";
-        private _staticColor = '#ff0000';
-        if ([_group] call pl_get_has_static and (_group getVariable ["pl_allow_static", false])) then {_staticStr = "YES"; _staticColor = '#00ff00'};
-        _message = format ["Select Area <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br /><t size='0.8' align='left'>-> W/S</t><t size='0.8' align='right'>Increase/Decrease Size</t><br /><t size='0.8' align='left'>-> Deploy Static Weapon</t><t size='0.8' align='right'>%2</t>", _staticColor, _staticStr];
-        hint parseText _message;
+            private _rangelimiterCenter = getPos (leader _group);
+            if (count _taskPlanWp != 0) then {_rangelimiterCenter = waypointPosition _taskPlanWp};
+            private _rangelimiter = 200;
+            _markerBorderName = str (random 2);
+            createMarker [_markerBorderName, _rangelimiterCenter];
+            _markerBorderName setMarkerShape "ELLIPSE";
+            _markerBorderName setMarkerBrush "Border";
+            _markerBorderName setMarkerColor "colorOrange";
+            _markerBorderName setMarkerAlpha 0.8;
+            _markerBorderName setMarkerSize [_rangelimiter, _rangelimiter];
 
-        onMapSingleClick {
-            pl_defence_cords = _pos;
-            pl_mapClicked = true;
-            if (_shift) then {pl_cancel_strike = true};
-            hintSilent "";
-            onMapSingleClick "";
-        };
+            pl_garrison_area_size = _area;
+            pl_defend_mode = 0;
 
+            pl_360_area = false;
+            private _staticStr = "NO";
+            private _staticColor = '#ff0000';
+            if ([_group] call pl_get_has_static and (_group getVariable ["pl_allow_static", false])) then {_staticStr = "YES"; _staticColor = '#00ff00'};
+            _message = format ["Select Area <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br /><t size='0.8' align='left'>-> W/S</t><t size='0.8' align='right'>Increase/Decrease Size</t><br /><t size='0.8' align='left'>-> Deploy Static Weapon</t><t size='0.8' align='right'>%2</t>", _staticColor, _staticStr];
+            hint parseText _message;
 
-        player enableSimulation false;
-
-        while {!pl_mapClicked} do {
-            if (visibleMap) then {
-                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            } else {
-                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
-            };
-            if (inputAction "MoveForward" > 0) then {pl_garrison_area_size = pl_garrison_area_size + 5; sleep 0.05};
-            if (inputAction "MoveBack" > 0) then {pl_garrison_area_size = pl_garrison_area_size - 5; sleep 0.05};
-            if (inputAction "TurnLeft" > 0) then {pl_defend_mode = pl_defend_mode + 1; sleep 0.3};
-            if (inputAction "TurnRight" > 0) then {pl_defend_mode = pl_defend_mode - 1; sleep 0.3};
-            if (pl_garrison_area_size >= 110) then {pl_garrison_area_size = 110};
-            if (pl_garrison_area_size <= 10) then {pl_garrison_area_size = 10};
-            if (pl_defend_mode > 1) then {pl_defend_mode = 0};
-            if (pl_defend_mode < 0) then {pl_defend_mode = 1};
-
-            _buildings = nearestTerrainObjects [_mPos, ["BUILDING", "RUIN", "HOUSE"], pl_garrison_area_size, true];
-
-            if (!(_buildings isEqualTo []) or pl_defend_mode == 1) then {
-                _markerAreaName setMarkerShape "ELLIPSE";
-                _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
-            } else {
-                _markerAreaName setMarkerShape "RECTANGLE";
-                _markerAreaName setMarkerSize [pl_garrison_area_size, 2];
+            onMapSingleClick {
+                pl_defence_cords = _pos;
+                pl_mapClicked = true;
+                if (_shift) then {pl_cancel_strike = true};
+                hintSilent "";
+                onMapSingleClick "";
             };
 
-            switch (pl_defend_mode) do { 
-                case 0 : {_markerDirName setMarkerType _dirMarkerType;}; 
-                case 1 : {_markerDirName setMarkerType "mil_circle";}; 
-                default {_markerDirName setMarkerType _dirMarkerType;}; 
+
+            player enableSimulation false;
+
+            while {!pl_mapClicked} do {
+                if (visibleMap) then {
+                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
+                if (inputAction "MoveForward" > 0) then {pl_garrison_area_size = pl_garrison_area_size + 5; sleep 0.05};
+                if (inputAction "MoveBack" > 0) then {pl_garrison_area_size = pl_garrison_area_size - 5; sleep 0.05};
+                if (inputAction "TurnLeft" > 0) then {pl_defend_mode = pl_defend_mode + 1; sleep 0.3};
+                if (inputAction "TurnRight" > 0) then {pl_defend_mode = pl_defend_mode - 1; sleep 0.3};
+                if (pl_garrison_area_size >= 110) then {pl_garrison_area_size = 110};
+                if (pl_garrison_area_size <= 10) then {pl_garrison_area_size = 10};
+                if (pl_defend_mode > 1) then {pl_defend_mode = 0};
+                if (pl_defend_mode < 0) then {pl_defend_mode = 1};
+
+                _buildings = nearestTerrainObjects [_mPos, ["BUILDING", "RUIN", "HOUSE"], pl_garrison_area_size, true];
+
+                if (!(_buildings isEqualTo []) or pl_defend_mode == 1) then {
+                    _markerAreaName setMarkerShape "ELLIPSE";
+                    _markerAreaName setMarkerSize [pl_garrison_area_size, pl_garrison_area_size];
+                } else {
+                    _markerAreaName setMarkerShape "RECTANGLE";
+                    _markerAreaName setMarkerSize [pl_garrison_area_size, 2];
+                };
+
+                switch (pl_defend_mode) do { 
+                    case 0 : {_markerDirName setMarkerType _dirMarkerType;}; 
+                    case 1 : {_markerDirName setMarkerType "mil_circle";}; 
+                    default {_markerDirName setMarkerType _dirMarkerType;}; 
+                };
+
+                if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
+                    _watchDir = _rangelimiterCenter getDir _mPos;
+                    _markerAreaName setMarkerPos _mPos;
+                    _markerDirName setMarkerPos _mPos;
+                    _markerDirName setMarkerDir _watchDir;
+                    _markerAreaName setMarkerDir _watchDir;
+                };
             };
 
-            if ((_mPos distance2D _rangelimiterCenter) <= _rangelimiter) then {
-                _watchDir = _rangelimiterCenter getDir _mPos;
-                _markerAreaName setMarkerPos _mPos;
-                _markerDirName setMarkerPos _mPos;
-                _markerDirName setMarkerDir _watchDir;
-                _markerAreaName setMarkerDir _watchDir;
-            };
-        };
+            player enableSimulation true;
 
-        player enableSimulation true;
+            pl_mapClicked = false;
+            if (pl_cancel_strike) exitWith {deleteMarker _markerBorderName; deleteMarker _markerDirName; deleteMarker _markerAreaName};
 
-        pl_mapClicked = false;
-        if (pl_cancel_strike) exitWith {deleteMarker _markerBorderName; deleteMarker _markerDirName; deleteMarker _markerAreaName};
-
-        _message = "Select Defence FACING <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
-        hint parseText _message;
-        
-        sleep 0.1;
-        deleteMarker _markerBorderName;
-        _cords = getMarkerPos _markerAreaName;
-        _markerDirName setMarkerPos _cords;
-        // _cords = pl_defence_cords;
-        _defenceAreaSize = pl_garrison_area_size;
-        _defendMode = pl_defend_mode;
-
-        if (_defendMode == 0) then {
+            _message = "Select Defence FACING <br /><br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />";
+            hint parseText _message;
+            
+            sleep 0.1;
+            deleteMarker _markerBorderName;
+            _cords = getMarkerPos _markerAreaName;
+            _markerDirName setMarkerPos _cords;
+            // _cords = pl_defence_cords;
+            _defenceAreaSize = pl_garrison_area_size;
+            
 
             onMapSingleClick {
                 pl_defenceWatchPos = _pos;
@@ -679,12 +723,89 @@ pl_defend_position = {
             };
             pl_mapClicked = false;
             // pl_show_watchpos_selector = false;
+            deletemarker _markerAreaName;
+
+        // 3d World Command 
+        } else {
+
+            waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicator distance2D player;
+                if (cursorTarget isKindOf "house") then {
+                    _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorTarget)#1)#2] vectorAdd (screenToWorld [0.5,0.5]));
+                } else {
+                    _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+                };
+                _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+            _cords = getPosATL _cursorPosIndicator;
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+            deleteVehicle _cursorPosIndicator;
+
+            _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", _cords, [], 0, "none"];
+
+            _leader = leader _group;
+            pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+
+            waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+            _cursorPosIndicatorDir = createVehicle ["Sign_Sphere25cm_F", screenToWorld [0.5,0.5], [], 0, "none"];
+
+            pl_draw_3dline_array pushback [_cursorPosIndicator, _cursorPosIndicatorDir];
+
+            while {inputAction "Action" <= 0} do {
+                _viewDistance = _cursorPosIndicatorDir distance2D player;
+                _cursorPosIndicatorDir setPosATL ([0, 0, _viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+                _cursorPosIndicator setDir (_cords getDir _cursorPosIndicatorDir);
+                _cursorPosIndicatorDir setObjectScale (_viewDistance * 0.07);
+                _cursorPosIndicator setObjectScale ((_cursorPosIndicator distance2D player) * 0.07);
+
+                if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+                sleep 0.025
+            };
+
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_cursorPosIndicator, _cursorPosIndicatorDir]];
+            pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+            
+            _defenceAreaSize = pl_garrison_area_size;
+            _watchDir = getDir _cursorPosIndicator;
+            _markerDirName setMarkerPos _cords;
+            _markerDirName setMarkerDir _watchDir;
+            deleteVehicle _cursorPosIndicator;
+            deleteVehicle _cursorPosIndicatorDir;
+
+            if (_group getVariable ["pl_on_march", false]) then {
+                _taskPlanWp = (waypoints _group) select ((count waypoints _group) - 1);
+                _group setVariable ["pl_task_planed", true];
+                _taskPlanWp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
+            };
+
+            _buildings = nearestTerrainObjects [_cords, ["BUILDING", "RUIN", "HOUSE"], _defenceAreaSize, true];
+
         };
 
-        if (pl_cancel_strike) exitWith {deleteMarker _markerDirName; deleteMarker _markerAreaName};
+        if (pl_cancel_strike) exitWith {deleteMarker _markerDirName};
 
         // _defenceWatchPos = pl_defenceWatchPos;
-        deletemarker _markerAreaName;
+
 
         _defenceAreaSize = pl_garrison_area_size;
 
@@ -692,7 +813,14 @@ pl_defend_position = {
             [_group, _cords] spawn pl_suppressive_fire_position;
         };
 
+        _group setVariable ["pl_task_pos", _cords];
+        _group setVariable ["specialIcon", _icon];
+
+        // systemChat str (_group getVariable "pl_task_pos");
+
         if (count _taskPlanWp != 0) then {
+
+            _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
             // add Arrow indicator
             pl_draw_planed_task_array_wp pushBack [_cords, _taskPlanWp, _icon];
@@ -718,6 +846,7 @@ pl_defend_position = {
             _group setVariable ["pl_task_planed", false];
             _group setVariable ["pl_unload_task_planed", false];
             _group setVariable ["pl_execute_plan", nil];
+            _group setVariable ["pl_grp_task_plan_wp", nil];
         };
 
         // if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
@@ -727,7 +856,6 @@ pl_defend_position = {
 
         pl_garrison_area_size = _area;
         _defenceAreaSize = pl_garrison_area_size;
-        _defendMode = 0;
         _buildings = nearestTerrainObjects [_cords, ["BUILDING", "RUIN", "HOUSE"], _defenceAreaSize, true];
 
         _markerDirName = format ["delayDir%1", _group];
@@ -739,9 +867,12 @@ pl_defend_position = {
         _markerDirName setMarkerType _dirMarkerType;
         _markerDirName setMarkerColor pl_side_color;
         _markerDirName setMarkerDir _watchDir;
+
+        _group setVariable ["pl_task_pos", _cords];
+        _group setVariable ["specialIcon", _icon];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; deleteMarker _markerAreaName;};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName};
 
     
     // if ((count _validBuildings == 0)) exitWith {hint "No buildings in Area!"; deleteMarker _markerAreaName; deleteMarker _markerDirName;};
@@ -1154,93 +1285,62 @@ pl_defend_position = {
         private _cover = false;
         _unit = _units#_i;
 
-        switch (_defendMode) do { 
-            case 0 : {
-                _unitWatchDir = _watchDir;
-                // move to optimal Pos first
-                if (_i < (count _validPos)) then {
-                    _defPos = _validPos#_i;
-                    
-                    _debugMColor = "colorBlue";
-                }
-                else
-                {
-                    _cover = true;
-                    // if no more covers avaible move to left or right side of best cover
-                        // deploy along a line
-                    if (_buildings isEqualTo []) then {
-                        _dirOffset = 90;
-                        if (_i % 2 == 0) then {_dirOffset = -90};
-                        // _defPos = [_posOffset *(sin (_watchDir + _dirOffset)), _posOffset *(cos (_watchDir + _dirOffset)), 0] vectorAdd _cords;
-                        _defPos = _cords getPos [_posOffset, _watchDir + _dirOffset];
-                        if (_i % 2 == 0) then {_posOffset = _posOffset + _posOffsetStep};
-                        _debugMColor = "colorBlue";
-                    }
-                    else
-                    {
-                        if (_losIdx > (count _validLosPos) - 1) then {_losIdx = 1};
-                        _defPos = (_validLosPos#_losIdx)#0;
-                        _losIdx = _losIdx + 2;
-                        _debugMColor = "colorOrange";
-                    };
-                };
+        _unitWatchDir = _watchDir;
+        // move to optimal Pos first
+        if (_i < (count _validPos)) then {
+            _defPos = _validPos#_i;
+            
+            _debugMColor = "colorBlue";
+        }
+        else
+        {
+            _cover = true;
+            // if no more covers avaible move to left or right side of best cover
+                // deploy along a line
+            if (_buildings isEqualTo []) then {
+                _dirOffset = 90;
+                if (_i % 2 == 0) then {_dirOffset = -90};
+                // _defPos = [_posOffset *(sin (_watchDir + _dirOffset)), _posOffset *(cos (_watchDir + _dirOffset)), 0] vectorAdd _cords;
+                _defPos = _cords getPos [_posOffset, _watchDir + _dirOffset];
+                if (_i % 2 == 0) then {_posOffset = _posOffset + _posOffsetStep};
+                _debugMColor = "colorBlue";
+            }
+            else
+            {
+                if (_losIdx > (count _validLosPos) - 1) then {_losIdx = 1};
+                _defPos = (_validLosPos#_losIdx)#0;
+                _losIdx = _losIdx + 2;
+                _debugMColor = "colorOrange";
+            };
+        };
 
-                // seelct best Medic Pos
-                if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
-                    if (_unit == _medic) then {
-                        _defPos = _ccpPos;
-                    };
-                };
+        // seelct best Medic Pos
+        if (!(isNil "_medic") and pl_enabled_medical and (_group getVariable ["pl_healing_active", false])) then {
+            if (_unit == _medic) then {
+                _defPos = _ccpPos;
+            };
+        };
 
-                // select Best Mg Pos
-                if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun" or ([secondaryWeapon _unit] call BIS_fnc_itemtype) select 1 == "MissileLauncher") then {
-                    _defPos = (_mgPos#_mgIdx);
-                    _mgIdx = _mgIdx + 1;
-                    _debugMColor = "colorRed";
-                };
+        // select Best Mg Pos
+        if ((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun" or ([secondaryWeapon _unit] call BIS_fnc_itemtype) select 1 == "MissileLauncher") then {
+            _defPos = (_mgPos#_mgIdx);
+            _mgIdx = _mgIdx + 1;
+            _debugMColor = "colorRed";
+        };
 
-                // if (_unit == (leader _group) and !(_buildings isEqualTo []) and (_defPos distance2D _cords) > 20) then {
-                //     _defPos = _cords findEmptyPosition [0, 25, typeOf _unit];
-                //     _cover = true;
-                //     _debugMColor = "colorYellow";
-                // };
+        // if (_unit == (leader _group) and !(_buildings isEqualTo []) and (_defPos distance2D _cords) > 20) then {
+        //     _defPos = _cords findEmptyPosition [0, 25, typeOf _unit];
+        //     _cover = true;
+        //     _debugMColor = "colorYellow";
+        // };
 
-                if (isNil "_defPos") then {
-                    if !(_covers isEqualTo []) then {
-                        _defPos = getpos (selectRandom _covers);
-                    } else {
-                        _defPos = _cords findEmptyPosition [0, _defenceAreaSize];
-                    };
-                    _debugMColor = "colorGrey";
-                };
-            }; 
-
-            case 1 : {
-
-                _unitWatchDir = (360 / (count _units)) * _i;
-                _searchPos = _cords getPos [_defenceAreaSize * 0.9, _unitWatchDir];
-
-                _defPos = [];
-                if ((count _validPos) > 0) then {
-                    _defPos = {
-                        if ((_x distance2D _searchPos) < 15) exitWith {
-                            _debugMColor = "colorBlue";
-                            _validPos deleteAt (_validPos find _x);
-                            _x
-                         };
-                        []
-                    } forEach _validPos;
-
-                };
-
-                if (_defPos isEqualTo []) then {
-                    _debugMColor = "colorOrange";
-                    _defPos = _searchPos;
-                    _cover = true;
-                };
-
-            }; 
-            default {}; 
+        if (isNil "_defPos") then {
+            if !(_covers isEqualTo []) then {
+                _defPos = getpos (selectRandom _covers);
+            } else {
+                _defPos = _cords findEmptyPosition [0, _defenceAreaSize];
+            };
+            _debugMColor = "colorGrey";
         };
 
 
@@ -1591,14 +1691,17 @@ pl_at_defence = {
 
 pl_defence_suppression = {
     params ["_group", "_watchPos", "_medic"];
-    private ["_targetsPos", "_firers", "_target"];
+    private ["_targetsPos", "_firers", "_target", "_allPos"];
 
     private  _time = time + 20;
     waitUntil {sleep 0.5;  time >= time or !(_group getVariable ["onTask", true]) };
     if !(_group getVariable ["onTask", true]) exitWith {};
+    _allPos = [];
+
+    private _allTargets = [];
 
     while {_group getVariable ["onTask", false]} do {
-        waitUntil {sleep 0.5; !(_group getVariable ["pl_hold_fire", false]) and (isNull (_group getVariable ["pl_grp_active_at_soldier", objNull]))};
+        waitUntil {sleep 0.5; !(_group getVariable ["pl_hold_fire", false]) and !(_group getVariable ["pl_is_suppressing", false]) and (isNull (_group getVariable ["pl_grp_active_at_soldier", objNull]))};
         // _allTargets = nearestObjects [_watchPos, ["Man", "Car"], 350, true];
         _enemyTargets = (_watchPos nearEntities [["Man", "Car"], 275]) select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and ((leader _group) knowsAbout _x) > 0};
         if (count _enemyTargets > 0) then {
@@ -1637,20 +1740,34 @@ pl_defence_suppression = {
                     if (((primaryweapon _x call BIS_fnc_itemtype) select 1 == "MachineGun") or vehicle _unit != _unit) then { 
                         if !([_unit, _targetPos] call pl_friendly_check_strict) then {
                             _unit doSuppressiveFire _targetPos;
+                            _allTargets pushback (getPosATLVisual _target);
                         };
                     } else {
                         if !([_unit, _targetPos] call pl_friendly_check) then {
                             _unit doSuppressiveFire _targetPos;
+                            _allTargets pushback (getPosATLVisual _target);
                         };
                     };
                 };
             } forEach _firers;
 
-            _time = time + 10;
+            if !(_allTargets isEqualto []) then {
+                _allPos = [_allTargets] call pl_find_centroid_of_points;
+
+                pl_suppression_poses pushback [_allPos, _group];
+            };
+
+            _time = time + 15;
             waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", true])};
+
+            
         };
         _time = time + 5;
         waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", true])};
+
+        if !(_allPos isEqualto []) then {
+            pl_suppression_poses = pl_suppression_poses - [[_allPos, _group]];
+        };
     };
 };
 
@@ -1954,7 +2071,7 @@ pl_defend_position_vehicle = {
 
             sleep 0.1;
 
-            [_group, _infGroup] spawn pl_attach_vic;
+            // [_group, _infGroup] spawn pl_attach_vic;
         };
 
     } else {
@@ -1993,7 +2110,7 @@ pl_defend_position_vehicle = {
 
                     sleep 0.5;
 
-                    [_unit, _unit getPos [-20, getDirVisual _unit] , 10, 1.5] call pl_vic_reverse_to_pos;
+                    [_unit, _unit getPos [-20, getDirVisual _unit] , 10, 0.5] call pl_vic_reverse_to_pos;
 
                     _time = time + 10;
 
@@ -2030,7 +2147,7 @@ pl_defend_position_vehicle = {
 
                     sleep 0.5;
 
-                    [_unit, _unit getPos [-20, getDirVisual _unit] , 10, 1.5] call pl_vic_reverse_to_pos;
+                    [_unit, _unit getPos [-20, getDirVisual _unit] , 10, 0.5] call pl_vic_reverse_to_pos;
 
                     _time = time + 10;
 
@@ -2070,7 +2187,7 @@ pl_defend_position_vehicle = {
 
                         sleep 0.5;
 
-                        [_unit, _unit getPos [-20, getDirVisual _unit] , 8, 1.5] call pl_vic_reverse_to_pos;
+                        [_unit, _unit getPos [-20, getDirVisual _unit] , 8, 0.5] call pl_vic_reverse_to_pos;
 
                         if !(group (driver _unit) getVariable ["onTask", false]) exitWith {};
 

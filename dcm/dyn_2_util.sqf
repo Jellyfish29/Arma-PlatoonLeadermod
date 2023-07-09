@@ -200,10 +200,13 @@ dyn2_place_player = {
     params ["_pos", "_dest"];
     private ["_startPos", "_infGroups", "_vehicles", "_roads", "_road", "_roadsPos", "_dir", "_roadPos"];
 
+    if !(dyn2_PlacePlayer) exitwith {};
+
     dyn2_player_vic = vehicle player;
 
-    _startPos = getMarkerPos "dyn2_spawn";
-    deleteMarker "dyn2_spawn";
+    // _startPos = getMarkerPos "dyn2_spawn";
+    // deleteMarker "dyn2_spawn";
+    _startPos = getPos player;
     _vehicles = nearestObjects [_startPos,["LandVehicle"],200];
     
     private _campaignDir = _pos getDir _dest;
@@ -239,9 +242,9 @@ dyn2_place_player = {
         _endings = [_endings, [], {_x distance2D _dest}, "ASCEND"] call BIS_fnc_sortBy;
         _dir = (_endings#1) getDir (_endings#0);
 
-        _m = createMarker [str (random 1), _roadPos];
-        _m setMarkerType "mil_dot";
-        _m setMarkerText (str _i);
+        // _m = createMarker [str (random 1), _roadPos];
+        // _m setMarkerType "mil_dot";
+        // _m setMarkerText (str _i);
 
         (_vehicles#_i) setVehiclePosition [_roadPos, [], 0, "NONE"];
 

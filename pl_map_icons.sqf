@@ -26,6 +26,21 @@ pl_get_unit_color = {
     pl_side_color_rgb
 };
 
+pl_get_side_color_rgb = {
+    params ["_unit", ["_alpha", 0.7]];
+
+    private _sideColorRGB = [0,0.3,0.6,_alpha];
+
+    switch (side _unit) do { 
+        case west : {_sideColorRGB = [0,0.3,0.6,_alpha]}; 
+        case east : {_sideColorRGB = [0.5,0,0,_alpha]};
+        case resistance : {__sideColorRGB = [0,0.5,0,_alpha]};
+        default {_sideColorRGB = [0.5,0,0,_alpha]}; 
+    };
+
+    _sideColorRGB
+};
+
 pl_get_vic_health = {
     params ["_vic"];
     if !([_vic] call pl_canMove) exitWith {[0.49,0.06,0.8,0.8]}; // 7E11CA};

@@ -850,7 +850,8 @@ pl_move_as_formation = {
         };
         _relPos = [(_pos1 select 0) - (_pos2 select 0), (_pos1 select 1) - (_pos2 select 1)];
         _newPos = _relPos vectorAdd _cords;
-        _gWp = _x addWaypoint [_newPos, -1];
+        // _newPos = [_newPos#0, _newPos#1];
+        _gWp = _x addWaypoint [_newPos, 0];
         _gwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]"];
         // _gWp synchronizeWaypoint _syncWps;
         _syncWps pushBack _gWp;
@@ -1029,7 +1030,31 @@ pl_cross_bridge = {
     }
     else
     {
-        _cords = screenToWorld [0.5, 0.5];
+        waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+        // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+            _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+            _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
+        };
+
+        if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+        _cords = getPosATL _cursorPosIndicator;
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+        deleteVehicle _cursorPosIndicator;
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
@@ -1085,6 +1110,9 @@ pl_cross_bridge = {
 
     _closest = ([_allEndings, [], {_x distance2D (leader _group)}, "ASCEND"] call BIS_fnc_sortBy)#0;
     _furthest = ([_allEndings, [], {_x distance2D (leader _group)}, "DESCEND"] call BIS_fnc_sortBy)#0;
+    
+    _group setVariable ["pl_task_pos", _closest];
+    _group setVariable ["specialIcon", '\A3\ui_f\data\igui\cfg\simpleTasks\types\move_ca.paa'];
 
     if (vehicle (leader _group) == (leader _group)) then {
         _group setVariable ["pl_on_march", true];
@@ -1263,10 +1291,40 @@ pl_vic_advance_to_pos = {
 
     if !([_vic] call pl_canMove) exitWith {hint "Vehicle cant move!"};
 
-    if (visibleMap) then {
-        _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+
+        if (visibleMap) then {
+            _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+        
     } else {
-        _pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+        // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+            _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+            _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
+        };
+
+        if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+        _pos = getPosATL _cursorPosIndicator;
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+        deleteVehicle _cursorPosIndicator;
     };
 
     pl_draw_disengage_array pushBack [_group, _pos];
@@ -1334,10 +1392,40 @@ pl_vic_advance_to_pos_reverse = {
 
     if !([_vic] call pl_canMove) exitWith {hint "Vehicle cant move!"};
 
-    if (visibleMap) then {
-        _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+
+        if (visibleMap) then {
+            _pos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        } else {
+            _pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        };
+
     } else {
-        _pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+        waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+        // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+            _cursorPosIndicator setPosATL ([0,0,_viewDistance * 0.01] vectorAdd (screenToWorld [0.5,0.5]));
+            _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
+        };
+
+        if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+        _pos = getPosATL _cursorPosIndicator;
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+        deleteVehicle _cursorPosIndicator;
     };
 
     // if ((_vic distance2D _pos) > 75) then {_pos = (getPos _vic) getPos [70, _vic getDir _pos]};#
