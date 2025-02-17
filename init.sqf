@@ -29,10 +29,10 @@ execVm "Plmod\pl_movement_fnc.sqf";
 
 
 switch (side player) do { 
-    case west : {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.4]; pl_side_prefix = "b"; pl_opfor_prefix = "o"}; 
-    case east : {pl_side_color = "colorOpfor"; pl_side_color_rgb = [0.5,0,0,0.4]; pl_side_prefix = "o"; pl_opfor_prefix = "b"};
-    case resistance : {pl_side_color = "colorIndependent"; pl_side_color_rgb = [0,0.5,0,0.4]; pl_side_prefix = "n"; pl_opfor_prefix = "o"};
-    default {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.4]; pl_side_prefix = "b"; pl_opfor_prefix = "o"}; 
+    case west : {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.8]; pl_side_prefix = "b"; pl_opfor_prefix = "o"}; 
+    case east : {pl_side_color = "colorOpfor"; pl_side_color_rgb = [0.5,0,0,0.8]; pl_side_prefix = "o"; pl_opfor_prefix = "b"};
+    case resistance : {pl_side_color = "colorIndependent"; pl_side_color_rgb = [0,0.5,0,0.8]; pl_side_prefix = "n"; pl_opfor_prefix = "o"};
+    default {pl_side_color = "colorBlufor"; pl_side_color_rgb = [0,0.3,0.6,0.8]; pl_side_prefix = "b"; pl_opfor_prefix = "o"}; 
 };
 
 

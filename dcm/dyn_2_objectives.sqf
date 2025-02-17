@@ -3,7 +3,8 @@ dyn2_SIDE_mission_spawner = {
 
 	// Secondary
 
-	private _sideMissionTypes = ["road", "destroy_vic", "destroy_chache", "mortar", "hill", "position", "heli_crash", "allied_help", "civilian_help", "hvt", "attack_cp", "defend_cp", "_defend"];
+	// private _sideMissionTypes = ["road", "destroy_vic", "destroy_chache", "mortar", "hill", "position", "heli_crash", "allied_help", "civilian_help", "hvt", "attack_cp", "defend_cp", "_defend"];
+	private _sideMissionTypes = ["road", "destroy_vic", "destroy_chache", "mortar", "hill", "position", "_defend"];
 	private _sideMissionType = selectRandom _sideMissionTypes;
 	private	_selectedMissionTypes = [];
 	private _success = false;
@@ -29,13 +30,7 @@ dyn2_SIDE_mission_spawner = {
 			case "destroy_chache" : {_success = [_locPos, _playerStart] call dyn2_SIDE_destroy_chache};
 			case "hill" : {_success = [_locPos, _playerStart] call dyn2_SIDE_capture_hill};
 			case "position" : {_success = [_locPos, _playerStart] call dyn2_SIDE_destroy_position};
-			case "heli_crash" : {_success = [_locPos, _playerStart] call dyn2_SIDE_secure_crash_site};
-			case "allied_help" : {_success = [_locPos, _playerStart] call dyn2_help_allies_qrf;};
 			case "mortar" : {_success = [_locPos, _playerStart] call dyn2_SIDE_destroy_mortar};
-			case "civilian_help" : {_success = [_locPos, _playerStart] call dyn2_SIDE_free_civilians};
-			case "hvt" : {_success = [_locPos, _playerStart] call dyn2_SIDE_capture_HVT};
-			case "attack_cp" : {_success = [_locPos, _playerStart] call dyn2_SIDE_destroy_CP};
-			case "defend_cp" : {_success = [_locPos, _playerStart] call dyn2_SIDE_defend_CP};
 			case "defend" : {_success = [_locPos, _playerStart] call dyn2_SIDE_defend};
 			default {}; 
 		};

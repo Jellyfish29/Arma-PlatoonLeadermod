@@ -664,7 +664,7 @@ pl_interdiction_cas = {
             _onStationTime = 240;
             _sadAreaSize = 300;
             // _wpType = "TR UNLOAD";
-            _wpType = "MOVE";
+            _wpType = "TR UNLOAD";
         };
 
         case 5 : {
@@ -909,9 +909,9 @@ pl_interdiction_cas = {
                 };
             }];
 
-            waitUntil {sleep 1; !alive _plane or (_plane distance2D _cords) <= 500};
+            // waitUntil {sleep 1; !alive _plane or (_plane distance2D _cords) <= 500};
 
-            _plane land "GET OUT";
+            // _plane land "GET OUT";
 
             sleep 1;
             waitUntil {sleep 1; (isTouchingGround _plane) or !alive _plane or pl_rtb};

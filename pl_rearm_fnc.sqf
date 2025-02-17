@@ -217,7 +217,7 @@ pl_supply_point = {
 
     if !(_valid) exitwith {hint "Too close to another supply point"};
 
-    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["pl_task_pos", getPosATLVisual _vic];
     _group setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"];
 
     // Taskplanning

@@ -19,10 +19,10 @@ pl_get_group_health = {
 
 pl_get_unit_color = {
     params ["_unit"];
-    if (_unit getVariable ['pl_wia', false]) exitWith {[0.9,0,0,0.5]}; //[0.7,0,0,1]
+    if (_unit getVariable ['pl_wia', false]) exitWith {[0.9,0,0,0.8]}; //[0.7,0,0,1]
     if (_unit getVariable ['pl_firing', false]) exitWith {[0.92,0.24,0.07,1]};
-    if (_unit getVariable ['pl_is_ccp_medic', false]) exitWith {[0.4,1,0.2,0.8]};
-    if (_unit getVariable ['pl_is_at', false]) exitWith {[1,0.7,0.4,0.5]};
+    if (_unit getVariable ['pl_is_ccp_medic', false]) exitWith {[0.4,1,0.2,0.9]};
+    if (_unit getVariable ['pl_is_at', false]) exitWith {[1,0.7,0.4,0.8]};
     pl_side_color_rgb
 };
 
@@ -1735,25 +1735,32 @@ pl_open_tac_map = {
     // setGroupIconsVisible [true,false]; 
     if !(isNull findDisplay 2000) exitWith {
         pl_last_tac_zoom = ctrlMapScale (findDisplay 2000 displayCtrl 2000);
-        // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.35, 0.15];
-        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.5, 0.5];
+        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.5, 1.117];
+        // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.5, 0.5];
         // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
         (findDisplay 2000) closeDisplay 1;
-        // playSound "HintCollapse";
+        playSound "HintCollapse";
+        player playAction "Default";
         // ctrlDelete (uiNamespace getVariable "pl_pouch_gfx");
     };
-    // playSound "HintExpand";
-    // player playAction "Gear";
+    playSound "HintExpand";
+    player playAction "Gear";
     _map = findDisplay 46 createDisplay "pl_RscMap";
     _map displayAddEventHandler ["KeyDown", {call cba_events_fnc_keyHandlerDown}];
     _map displayAddEventHandler ["KeyUp", {call cba_events_fnc_keyHandlerUp}];
 
-    // with uiNamespace do {
-    //     pl_pouch_gfx = findDisplay 2000 ctrlCreate ["RscPicture", -1];
-    //     pl_pouch_gfx ctrlSetPosition [0.385 * safezoneW + safezoneX, -0.009 * safezoneH + safezoneY,2.5,2.5 ];
-    //     pl_pouch_gfx ctrlSetText "plmod\gfx\pl_mapbag_1.paa";
-    //     pl_pouch_gfx ctrlCommit 0;
-    // };
+    with uiNamespace do {
+        pl_pouch_gfx = findDisplay 2000 ctrlCreate ["RscPicture", -1];
+
+        if ((date#0) < 2016) then {
+            pl_pouch_gfx ctrlSetPosition [0.1 * safezoneW + safezoneX, 0.5 * safezoneH + safezoneY,2,2];
+            pl_pouch_gfx ctrlSetText "plmod\gfx\pl_mapbag_1.paa";
+        } else {
+            pl_pouch_gfx ctrlSetPosition [0.28 * safezoneW + safezoneX, 0.47 * safezoneH + safezoneY,1.07,1.35];
+            pl_pouch_gfx ctrlSetText "plmod\gfx\pl_tactical_phone_case1.paa";
+        };
+        pl_pouch_gfx ctrlCommit 0;
+    };
 
     (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, pl_last_tac_zoom, pl_last_tac_pos];
     // (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];

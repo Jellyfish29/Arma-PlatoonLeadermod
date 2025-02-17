@@ -6007,3 +6007,264 @@ waitUntil {sleep 0.1; inputAction "Action" <= 0};
         _group setVariable ["pl_grp_task_plan_wp", _taskPlanWp];
 
 };
+
+
+// Spawn statt call?
+
+pl_vic_turn_in_place = {
+    params ["_vic", "_targetPos"];
+
+    if !([_vic] call pl_canMove) exitWith {};
+
+    if (_vic getRelDir _targetPos <= 2.5) exitWith {}; 
+
+    _vic engineOn false;
+    _vic engineOn true;
+    _vic disableBrakes true;
+    private _degreesToRotate = _vic getRelDir _targetPos;
+    private _posOrneg = 1; // This drives whether unit rotates clockwise or counter-clockwise
+    private _increment = 0.4;
+    _degreesToRotate = _vic getRelDir _targetPos;
+    _posOrneg = 1;
+    if (_degreesToRotate > 180) then
+    {
+        _posOrneg = -1;
+    };
+
+    _vicDir = (getDirVisual _vic);
+
+    // _vic setDir _vicDir;
+
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+
+
+
+    _turnScript = [_vic, _vicDir, _degreesToRotate, group (driver _vic)] spawn {
+        params ["_vic", "_vicDir", "_degreesToRotate", "_vicGroup"];
+
+        if (_degreesToRotate > 180) then
+        {
+            // systemChat format ["from %1 to %2 -0.5",(getDirVisual _vic), (getDirVisual _vic) - _degreesToRotate];
+            for "_t" from _vicDir to _vicDir - _degreesToRotate step -0.5 do {
+                _vic setDir _t;
+
+                sleep 0.01;
+
+                if (!([_vic] call pl_canMove) or !(_vicGroup getVariable ["pl_on_march", false])) exitWith {};
+            };
+        } else {
+        // systemChat format ["from %1 to %2 +0.5",_vicDir, _vicDir + _degreesToRotate];
+            for "_t" from _vicDir to _vicDir + _degreesToRotate step 0.5 do {
+                _vic setDir _t;
+
+                sleep 0.01;
+
+                if (!([_vic] call pl_canMove) or !(_vicGroup getVariable ["pl_on_march", false])) exitWith {};
+            };
+        };
+
+        
+    };
+
+    waitUntil {scriptDone _turnScript};
+
+    sleep 0.5;
+
+    _vic disableBrakes false;
+    if ((group (driver _vic)) getVariable ["pl_on_march", false]) then {
+        _vic setDir (_vic getDir _targetPos);
+        (group (driver _vic)) setVariable ["pl_on_march", nil];
+    };
+};
+
+
+pl_tow_vehicle = {
+    params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
+    private ["_cords", "_engVic"];
+
+    if (vehicle (leader _group) != leader _group) then {
+        _engVic = vehicle (leader _group);
+        _vicType = typeOf _engVic;
+    } else {
+        if (_group getVariable ["pl_is_repair_group", false]) then {
+            _engVic = {
+                if (_x getUnitTrait "engineer") exitWith {_x};
+                objNull;
+            } forEach (units _group);
+        };
+        _engVic setVariable ["pl_is_repair_vehicle", true];
+    };
+
+    if (visibleMap or !(isNull findDisplay 2000)) then {
+        if (_taskPlanWp isEqualTo []) then {
+            pl_show_vehicles_pos = getPos (leader _group);
+        } else {
+            pl_show_vehicles_pos = waypointPosition _taskPlanWp;
+        };
+        pl_show_vehicles = true;
+        hint "Select TRANSPORT on Map";
+        onMapSingleClick {
+            pl_mapClicked = true;
+            pl_vic_pos = _pos;
+            pl_vics = nearestObjects [_pos, ["Car", "Truck", "Tank", "Air"], 50, true];
+            hintSilent "";
+            onMapSingleClick "";
+        };
+        while {!pl_mapClicked} do {sleep 0.1};
+        pl_show_vehicles = false;
+        pl_mapClicked = false;
+        _cords = pl_vic_pos;
+    }
+    else
+    {
+        waitUntil {sleep 0.1; inputAction "Action" <= 0};
+
+        // _cursorPosIndicator = createVehicle ["Sign_Arrow_Direction_Yellow_F", screenToWorld [0.5,0.5], [], 0, "none"];
+        _cursorPosIndicator = createVehicle ["Sign_Arrow_Large_Yellow_F", [-1000, -1000, 0], [], 0, "none"];
+
+        _leader = leader _group;
+        pl_draw_3dline_array pushback [_leader, _cursorPosIndicator];
+
+        while {inputAction "Action" <= 0} do {
+            _viewDistance = _cursorPosIndicator distance2D player;
+            if (cursorObject isKindOf "Car" or cursorObject isKindOf "Tank" or cursorObject isKindOf "Truck") then {
+                _cursorPosIndicator setPosATL ([0, 0, ((boundingBox cursorObject)#1)#2] vectorAdd (getPosATLVisual cursorObject));
+                _cursorPosIndicator setObjectScale (_viewDistance * 0.05);
+            };
+
+            if (inputAction "selectAll" > 0) exitWith {pl_cancel_strike = true};
+
+            sleep 0.025
+        };
+
+        if (pl_cancel_strike) exitWith {deleteVehicle _cursorPosIndicator; pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]]};
+
+        _cords = getPosATL _cursorPosIndicator;
+
+        pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _cursorPosIndicator]];
+
+        deleteVehicle _cursorPosIndicator;
+
+        pl_vics = [cursorObject];
+        _cords = getPos cursorObject;
+
+        if (_group getVariable ["pl_on_march", false]) then {
+            _taskPlanWp = (waypoints _group) select ((count waypoints _group) - 1);
+            _group setVariable ["pl_task_planed", true];
+            _taskPlanWp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
+        };
+    };
+
+    pl_vics = [pl_vics, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy;
+    _targetVic = pl_vics#0;
+
+
+
+    _rearPosTargetvic = (getPos _targetVic) getPos [-5, getDirVisual _targetVic];
+
+    systemChat str (typeOf _targetVic);
+
+    _m = createMarker [str (random 1), _rearPosTargetvic];
+    _m setMarkerType "mil_dot";
+
+    [_engVic, _rearPosTargetvic, 4, 0.5, true] call pl_vic_advance_to_pos_static;
+
+    _rope = ropeCreate [_engVic, [0,0,-1], _targetVic, [0,0,-1]];
+
+    _targetVic awake true;
+    _targetVic disableBrakes true;
+    _targetVic setVelocityModelSpace [0, -0.5 , 0];
+
+    // sleep 1;
+
+    [_engVic, (getPos _targetVic) getPos [-80, getDirVisual _targetVic], 4, 0.5, true] call pl_vic_reverse_to_pos;
+
+
+    _engVic ropeDetach _rope;
+    _targetVic ropeDetach _rope;
+    _targetVic disableBrakes false;
+    ropeDestroy _rope
+
+};
+
+
+pl_vic_turn_in_place = {
+    params ["_vic", "_targetPos"];
+
+    if !([_vic] call pl_canMove) exitWith {};
+
+    if (_vic getRelDir _targetPos <= 2.5) exitWith {}; 
+
+    // _vic engineOn false;
+    // _vic engineOn true;
+    _sound = playSound3d ["a3\sounds_f_tank\vehicles\armor\lt_01\lt_01_engine_ext_burst01.wss", _vic];
+    if (_vic isKindOf "Tank") then {
+        _sound2 = playSound3d ["a3\sounds_f\vehicles\armor\treads\ext_treads_hard_01.wss", _vic];
+    };
+    _vic disableBrakes true;
+    private _degreesToRotate = _vic getRelDir _targetPos;
+    private _posOrneg = 1; // This drives whether unit rotates clockwise or counter-clockwise
+    private _increment = 0.4;
+    _degreesToRotate = _vic getRelDir _targetPos;
+    _posOrneg = 1;
+    if (_degreesToRotate > 180) then
+    {
+        _posOrneg = -1;
+    };
+
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+
+    _s1 = [_vic, _posOrneg, _increment, _targetPos] spawn {
+        params ["_vic", "_posOrneg", "_increment", "_targetPos"];
+        while {(_vic getRelDir _targetPos) >= 1.2 and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+            _vic setDir (getDir _vic + (_increment * _posOrneg));
+            if (_vic isKindOf "Car" or _vic isKindOf "Truck") then {
+                _vic setVelocityModelSpace [0,-2,0];
+            };
+            sleep 0.01;
+            if !([_vic] call pl_canMove) exitWith {};
+        };
+    };
+    waitUntil {sleep 0.1; scriptDone _s1};
+    _vic setDir (_vic getDir _targetPos);
+    _vic disableBrakes false;
+    if ((group (driver _vic)) getVariable ["pl_on_march", false]) then {
+        _vic setDir (_vic getDir _targetPos);
+        (group (driver _vic)) setVariable ["pl_on_march", nil];
+    };
+
+};
+
+pl_vic_advance_to_pos_static = {
+    params ["_vic", "_pos", ["_speed", 4], ["_acs", 0.5], ["_exitOnObstacle", false]];
+
+    if !([_vic] call pl_canMove) exitWith {};
+
+    [_vic, _pos] call pl_vic_turn_in_place;
+    // _vic setDir (_vic getDir _pos);
+
+    private _startPos = getPos _vic;
+    private _distancetoTravel = (_startPos distance2d _pos) - 1;
+    (group (driver _vic)) setVariable ["pl_on_march", true];
+    _vic disableBrakes true;
+    _vic engineOn false;
+    _vic engineOn true;
+    _n = _speed;
+    while {_vic distance2D _startPos < _distancetoTravel and alive _vic and ((group (driver _vic)) getVariable ["pl_on_march", false])} do {
+
+        _vic disableBrakes true;
+        if (count (((getPos _vic) getPos [8, getdir _vic]) nearEntities [["Car", "Tank", "Truck"], 7]) <= 0) then {
+            if (_n > 0) then {_n = _n - _acs};
+            _vic setVelocityModelSpace [0, (_speed - _n),0];
+        } else {
+            _n = _speed;
+            _vic disableBrakes false;
+            if (_exitOnObstacle) then {break};
+        };
+        // if (time % 2 == 0) then {_vic setDir (_vic getDir _pos)};
+        sleep 0.5;
+        if !([_vic] call pl_canMove) exitWith {};
+    };
+    _vic disableBrakes false;
+    (group (driver _vic)) setVariable ["pl_on_march", nil];
+};

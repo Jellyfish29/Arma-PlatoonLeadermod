@@ -1733,17 +1733,26 @@ pl_defence_suppression = {
                 if !(_vis isEqualTo []) then {
                     _targetPos = (_vis select 0) select 0;
                 };
+                private _distance = ((eyePos _unit) vectorDistance _targetPos) - 2;
+                _targetpos = (eyePos _unit) vectorAdd (((eyePos _unit) vectorFromTo _targetpos) vectorMultiply _distance);
+
+                // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+                // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+                // _helper1 setposASL _targetpos;
+
                 if ((random 1) > 0.8) then {
                     [_x, selectRandom _enemyTargets] spawn pl_fire_ugl_at_target;
                 };
-                if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !(_group getVariable ["pl_hold_fire", false])) then {
+                if ((_targetPos distance2D _unit) > pl_suppression_min_distance and (_targetpos distance2D _target) <= 50 and !(_group getVariable ["pl_hold_fire", false])) then {
                     if (((primaryweapon _x call BIS_fnc_itemtype) select 1 == "MachineGun") or vehicle _unit != _unit) then { 
                         if !([_unit, _targetPos] call pl_friendly_check_strict) then {
+                            _unit doWatch _targetPos;
                             _unit doSuppressiveFire _targetPos;
                             _allTargets pushback (getPosATLVisual _target);
                         };
                     } else {
                         if !([_unit, _targetPos] call pl_friendly_check) then {
+                            _unit doWatch _targetPos;
                             _unit doSuppressiveFire _targetPos;
                             _allTargets pushback (getPosATLVisual _target);
                         };
@@ -2040,7 +2049,10 @@ pl_defend_position_vehicle = {
                 [_infGroup] call pl_show_group_icon;
             };
 
-            [_infGroup, _cargo, _vic] call pl_combat_dismount;
+
+            if !(isNull _infGroup) then {
+                [_infGroup, _cargo, _vic, 90, 4] call pl_combat_dismount;
+            };
 
             _vic setVariable ["pl_on_transport", nil];
             _group setVariable ["pl_has_cargo", false];
@@ -2056,8 +2068,16 @@ pl_defend_position_vehicle = {
 
         } else {
             _infGroup = _group getVariable ["pl_attached_infGrp", grpNull];
+            _infGroup setVariable ["pl_task_planed", true];
             _group setVariable ["pl_vic_attached", false];
             _group setVariable ["pl_attached_infGrp", nil];
+
+            // [units _infGroup, _cords, _watchDir, 45, false] spawn pl_get_to_cover_positions;
+            sleep 0.5;
+            [_infGroup, units _infGroup, _vic, 90, 4] call pl_combat_dismount;
+            sleep 0.5;
+            _timeOut = time + 15;
+             waitUntil {sleep 0.5; time >= _timeOut or ({(_x getVariable ["pl_in_position", false]) or (lifeState _x isEqualTo "INCAPACITATED") or !alive _x} count (units _infGroup)) == (count (units _infGroup)) or !(_group getVariable ["onTask", false])};
         };
 
         sleep 0.1;
@@ -2067,11 +2087,43 @@ pl_defend_position_vehicle = {
 
         if (_group getVariable ["onTask", false]) then {
 
-            [_infGroup, [], _defPos , _watchDir] spawn pl_defend_position;
+            // [_infGroup, [], _defPos , _watchDir] spawn pl_defend_position;
+
+            _infGroup setVariable ["onTask", true];
+            _infGroup setVariable ["pl_task_pos", _cords];
+            _infGroup setVariable ["specialIcon", "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"];
+            _infGroup setVariable ["setSpecial", true];
+            _infGroup setVariable ["pl_task_planed", false];
 
             sleep 0.1;
 
             // [_group, _infGroup] spawn pl_attach_vic;
+
+            if (_infGroup getVariable ["pl_sop_def_suppress", false]) then {
+                [_infGroup, _cords getPos [250, _watchDir], objNull] spawn pl_defence_suppression;
+            };
+
+            {
+                _unit = _x;
+                if (_unit checkAIFeature "PATH") then {
+                    [_unit, 0, _watchDir] spawn pl_find_cover;
+                };
+                _unit setUnitTrait ["camouflageCoef", 0.7, true];
+                _unit setVariable ["pl_damage_reduction", true];
+                _unit setVariable ["pl_def_pos", getPos _unit];
+                _unit setVariable ["pl_def_pos_sec", []];
+                _unit setVariable ["pl_engaging", true];
+                if (getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1) then {
+                    [(group _unit), _unit, getpos _unit] spawn pl_defence_ccp;
+                };
+                if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
+                    if ((group _unit) getVariable ["pl_sop_def_ATEngagement", false]) then {
+                        [_unit, group _unit, _cords, 50, _watchDir, getPos _unit, objNull] spawn pl_at_defence;
+                    };
+                    sleep 0.1;
+                };
+
+            } forEach (units _infGroup);
         };
 
     } else {

@@ -769,7 +769,7 @@ pl_create_bridge = {
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa";
 
-    _group setVariable ["pl_task_pos", _cords];
+    _group setVariable ["pl_task_pos", _cordsStart];
     _group setVariable ["specialIcon", _icon];
 
     if (count _taskPlanWp != 0) then {
@@ -861,13 +861,19 @@ pl_create_bridge = {
         _bridge enableSimulation false;
         _bridge allowDamage false;
         _bridge setDir _dir;
-        while {underwater _bridge} do {
-            _bPos = getPosATLVisual _bridge;
-            _bridge setPosATL [_bPos#0, _bPos#1, (_bPos#2) + 0.5];
-        };
 
-        _bPos = getPosATLVisual _bridge;
-        _bridge setPosATL [_bPos#0, _bPos#1, (_bPos#2) + 1];
+        if ([_placePos] call pl_is_water) then {
+            while {underwater _bridge} do {
+                _bPos = getPosATLVisual _bridge;
+                _bridge setPosATL [_bPos#0, _bPos#1, (_bPos#2) + 0.5];
+            };
+
+            _bPos = getPosATLVisual _bridge;
+            _bridge setPosATL [_bPos#0, _bPos#1, (_bPos#2) + 1];
+        } else {
+            _bPos = getPosATLVisual _bridge;
+            _bridge setPosATL [_bPos#0, _bPos#1, (getPosATLVisual _engVic)#2];
+        };
 
         _engVic setVariable ["pl_bridge_available", false];
 

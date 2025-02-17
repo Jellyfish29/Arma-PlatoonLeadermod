@@ -455,7 +455,7 @@ pl_change_to_vic_symbols = {
         if (_group == group player and !_force) exitWith {};
         if (_vic isKindOf "Air" and !_force) exitWith {};
         // if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1 and !_force) exitwith {};
-        if ((((assignedVehicleRole (leader _group)) select 0) isEqualTo "cargo" or ((assignedVehicleRole (leader _group)) select 0) isEqualTo "turret") and (leader _group) != commander _vic and (leader _group) != gunner _vic and !_force) exitWith {};
+        if ((((assignedVehicleRole (leader _group)) select 0) isEqualTo "cargo" or ((assignedVehicleRole (leader _group)) select 0) isEqualTo "turret") and (leader _group) != commander _vic and (leader _group) != gunner _vic and (leader _group) != effectiveCommander _vic and !_force) exitWith {};
 
         private _unitText = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular");
         private _status = "f";

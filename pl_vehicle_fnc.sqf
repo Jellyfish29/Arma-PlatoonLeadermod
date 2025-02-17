@@ -615,15 +615,15 @@ pl_unload_at_combat = {
 };
 
 pl_combat_dismount = {
-    params ["_group", "_cargo", "_vic"];
+    params ["_group", "_cargo", "_vic", ["_offsetValue", 45], ["_spacing", 5]];
     private ["_offset"];
 
     for "_i" from 1 to (count _cargo) do {
 
-        _offset = 45;
-        if (_i % 2 == 0) then {_offset = -45};
+        _offset = _offsetValue;
+        if (_i % 2 == 0) then {_offset = -_offsetValue};
 
-        _movePos = (getPos _vic) getpos [5 * _i, ((getDir _vic) - 180) + _offset];
+        _movePos = (getPos _vic) getpos [_spacing * _i, ((getDir _vic) - 180) + _offset];
 
         // _m = createMarker [str (random 5), _movePos];
         // _m setMarkerType "mil_dot";
@@ -647,6 +647,8 @@ pl_combat_dismount = {
                 _unit doMove _movePos;
                 _unit setDestination [_movePos, "LEADER DIRECT", true];
 
+                sleep 0.5;
+
                 waitUntil {sleep 0.1; unitReady _unit or ((group _unit) getVariable ["pl_stop_event", false])};
 
                 if !(((group _unit) getVariable ["pl_stop_event", false])) then {
@@ -655,6 +657,7 @@ pl_combat_dismount = {
                     _unit enableAI "AUTOTARGET";
                     _unit enableAI "TARGET";
                     _unit doWatch (_movePos getPos [100, _watchDir]);
+                    _unit setVariable ["pl_in_position", true];
                 };
             };
         };
@@ -1778,7 +1781,7 @@ pl_attach_inf = {
 
         // sleep 2;
         _time = time + 2;
-        waitUntil {sleep 0.1; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic)};
+        waitUntil {sleep 0.1; time >= _time or !(_group getVariable ["onTask", true]) or !(alive _vic) or !(_vicGroup getVariable ["pl_vic_attached", false])};
         pl_draw_3dline_array = pl_draw_3dline_array - [[_leader, _vic]];
     };
 

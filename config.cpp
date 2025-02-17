@@ -203,10 +203,20 @@ class RscHCGroupRootMenu
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=4;
         };
-        class Empty6: Empty1
+        class Empty6
         {
-            title="";
-            show="0";
+            title="<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\column_ca.paa'/><t> Move on Path</t>";
+            shortcuts[]={};
+            command=-5;
+            class Params
+            {
+                expression="[] spawn pl_move_as_column";
+            };
+            show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
+            enable="HCNotEmpty";
+            speechId=0;
+            cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
+            priority=1;
         };
         class Empty7: Empty1
         {
@@ -4190,12 +4200,16 @@ class pl_RscMap
             // y = 0.024 * safezoneH + safezoneY;
             // w = 0.433125 * safezoneW;
             // h = 0.462 * safezoneH;
-            x = 0.2 * safezoneW + safezoneX;
-            y = 0.2 * safezoneH + safezoneY;
-            w = 0.6 * safezoneW;
-            h = 0.6 * safezoneH;
 
+            // x = 0.2 * safezoneW + safezoneX;
+            // y = 0.2 * safezoneH + safezoneY;
+            // w = 0.6 * safezoneW;
+            // h = 0.6 * safezoneH;
 
+            x = 0.29375 * safezoneW + safezoneX;
+            y = 0.676 * safezoneH + safezoneY;
+            w = 0.4125 * safezoneW;
+            h = 0.319 * safezoneH;
         };
     };
     access = 0;
@@ -4321,19 +4335,19 @@ class CfgVehicles
             {
                 displayName = "Weather";
                 description = "Use dynamic weather?";
-                typeName = "STRING";
+                typeName = "BOOL";
                 class values
                 {
                     class TRUE
                     {
                         name = "True";
-                        value = "TRUE";
+                        value = "true";
                         default = 1;
                     };
                     class FALSE
                     {
                         name = "False";
-                        value = "FALSE";
+                        value = "false";
                     };
                 };
             };
@@ -4341,19 +4355,19 @@ class CfgVehicles
             {
                 displayName = "Enable Civilians";
                 description = "";
-                typeName = "STRING";
+                typeName = "BOOL";
                 class values
                 {
                     class TRUE
                     {
                         name = "True";
-                        value = "TRUE";
+                        value = "true";
                         default = 1;
                     };
                     class FALSE
                     {
                         name = "False";
-                        value = "FALSE";
+                        value = "false";
                     };
                 };
             };
@@ -4361,13 +4375,13 @@ class CfgVehicles
             {
                 displayName = "Place Player";
                 description = "";
-                typeName = "STRING";
+                typeName = "BOOL";
                 class values
                 {
                     class TRUE
                     {
                         name = "True";
-                        value = "TRUE";
+                        value = "true";
                         default = 1;
                     };
                     class FALSE

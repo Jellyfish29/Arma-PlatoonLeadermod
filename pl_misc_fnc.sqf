@@ -108,6 +108,7 @@ pl_reset = {
         _vic = vehicle (leader _group);
         _vic forceSpeed -1;
         _vic disableBrakes false;
+        _vic sendSimpleCommand "STOP";
         if ((_vic getVariable ["pl_speed_limit", ""]) isEqualTo "CON") then {
             _vic setVariable ["pl_speed_limit", "50"];
             _vic limitSpeed 50;

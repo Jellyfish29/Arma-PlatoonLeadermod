@@ -1,4 +1,7 @@
 dyn_random_weather = {
+
+    if !(dyn2_weather) exitwith {0};
+ 
     skipTime -24;
     _overcast = selectRandom [0, 0, 0.1, 0.1, 0.3, 0.5, 0.8, 0.9, 1];
     // _overcast = 1;
@@ -42,6 +45,8 @@ dyn_random_weather = {
 
 dyn2_cvivilian_presence = {
     params ["_loc", ["_civAmount", 30], ["_maxParkedCars", 10], ["_maxMovingCars", 6], ["_area", 400]];
+
+    if !(dyn2_Civilians) exitwith {0};
 
     private _locPos = getPos _loc;
     private _allBuildings = nearestObjects [getPos _loc, ["house"], _area];

@@ -1622,6 +1622,31 @@ pl_inf_trans_set_up = {
 //     };
 // }];
 
+pl_switch_effective_vic_cmd_action = {
+    params ["_target", "_caller", "_actionId", "_arguments"];
+
+    // allows the player to command from a tank commnander position without beeing effective commander of that tank. Allows giving effective command of the vehicle to the AI Gunner or Driver. Player should be in a different group from the crew
+
+    if ((vehicle player) != player) then {
+        if (effectiveCommander (vehicle player) == player) then {
+            if (gunner (vehicle player) != player) then {
+                (vehicle player) setEffectiveCommander (gunner (vehicle player));
+                hint "Gunner is Commander"
+            } else {
+                (vehicle player) setEffectiveCommander (driver (vehicle player));
+                hint "Driver is Commander"
+            };
+        } else {
+            if (gunner (vehicle player) != player) then {
+                (vehicle player) setEffectiveCommander player;
+                hint "Player is Commander"
+            };
+        };
+    } else {
+        hint "Only usable inside vehicle"
+    };
+};
+
 
 /////////////////// Start Set Up ///////////////////////////
 pl_start_set_up = {
@@ -1657,9 +1682,24 @@ pl_start_set_up = {
     if (pl_hc_active) then {
 
         [group player] call pl_set_up_ai;
+
+        // player addAction
+        //     [
+        //         "Switch Vehicle Command",
+        //         {
+        //             [] call pl_switch_effective_vic_cmd_action;
+        //         },
+        //         "(vehicle player) != player"
+        //     ];
+
         [] spawn pl_ai_setUp_loop;
 
         sleep 2;
+
+        // sleep 0.1;
+        if (((vehicle player) != player) and (group (driver (vehicle player)) != (group player))) then {
+            [group player] call pl_inf_trans_set_up;
+        };
 
         {
             _leader = leader _x;
@@ -1700,6 +1740,10 @@ pl_start_set_up = {
             };
 
         } forEach (allGroups select {side _x isEqualTo playerSide and hcLeader _x == player});
+
+
+
+
     };
 
     sleep 1;
@@ -1731,5 +1775,7 @@ pl_start_set_up = {
 
 //auto formation OK
 //auto speed OK
+
+
 
 

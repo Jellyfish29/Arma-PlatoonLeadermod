@@ -750,6 +750,7 @@ pl_opfor_flanking_move = {
 
 	private _targetDir = (leader _grp) getDir _targetPos;
 	private _flankDistance = ((leader _grp) distance2D _targetPos) * 0.7;
+    if (_flankDistance > 400) then {_flankDistance = 400};
 	_leftPos = (getPos (leader _grp)) getPos [_flankDistance, _targetDir + 90];
 	_rightPos = (getPos (leader _grp)) getPos [_flankDistance, _targetDir - 90];
 
