@@ -47,6 +47,7 @@ pl_remove_3d_icon = {
 
 
 pl_draw_3dline_array = [];
+pl_tac_map_active = false;
 
 pl_3d_interface = {
 
@@ -55,7 +56,7 @@ pl_3d_interface = {
     while {true} do {
 
         
-        if (pl_enable_3d_icons and hcShownBar) then {
+        if ((pl_enable_3d_icons or (pl_enable_3d_icons_tacmap and pl_tac_map_active)) and hcShownBar) then {
             {
                 _group = _x;
                 if (_group == group player) then {continue};
@@ -306,46 +307,49 @@ pl_3d_interface = {
 
             } forEach (allGroups select {hcLeader _x isEqualTo player});
 
-            {
-                _opfGrp = (pl_marta_dic get _x)#0;
 
-                _opfDistance = ([((leader _opfGrp) distance2D player) / 50, 0] call BIS_fnc_cutDecimals) * 50;
+            if (pl_enable_3d_icons_marta) then {
+                {
+                    _opfGrp = (pl_marta_dic get _x)#0;
 
-                if (_opfDistance <= 1500) then {
+                    _opfDistance = ([((leader _opfGrp) distance2D player) / 50, 0] call BIS_fnc_cutDecimals) * 50;
 
-                    _opfMarker =((pl_marta_dic get _x)#1)#0;
+                    if (_opfDistance <= 1500) then {
 
-                    _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
-                        drawIcon3D [
-                            _thisArgs#0, //texture)
-                            _thisArgs#1, //color
-                            _thisArgs#2, //pos
-                            0.6, //width
-                            0.6, //height,
-                            0, //angle,
-                            _thisArgs#3, //text,
-                            false, //shadow,
-                            0.02, //textSize,
-                            'EtelkaMonospacePro', //font
-                            "right", //textAlign,
-                            false, //drawSideArrows,
-                            0, //offsetX,
-                            0 //offsetY
-                        ];
+                        _opfMarker =((pl_marta_dic get _x)#1)#0;
 
-                        drawLine3D [
-                            _thisArgs#2,
-                            _thisArgs#4,
-                            _thisArgs#1
-                        ];
-                    },[
-                        format ['\Plmod\gfx\marta\%1.paa', markerType _opfMarker],
-                        [leader _opfGrp, 0.5] call pl_get_side_color_rgb,
-                        [0,0,_opfDistance * 0.025] vectorAdd (getmarkerPos [_opfMarker, false]),
-                        format ["%1m", _opfDistance],
-                        getmarkerPos [_opfMarker, false]]];
-                };
-            } forEach (keys pl_marta_dic);
+                        _eventHandlers3D pushback addMissionEventHandler ["Draw3D", {
+                            drawIcon3D [
+                                _thisArgs#0, //texture)
+                                _thisArgs#1, //color
+                                _thisArgs#2, //pos
+                                0.6, //width
+                                0.6, //height,
+                                0, //angle,
+                                _thisArgs#3, //text,
+                                false, //shadow,
+                                0.02, //textSize,
+                                'EtelkaMonospacePro', //font
+                                "right", //textAlign,
+                                false, //drawSideArrows,
+                                0, //offsetX,
+                                0 //offsetY
+                            ];
+
+                            drawLine3D [
+                                _thisArgs#2,
+                                _thisArgs#4,
+                                _thisArgs#1
+                            ];
+                        },[
+                            format ['\Plmod\gfx\marta\%1.paa', markerType _opfMarker],
+                            [leader _opfGrp, 0.5] call pl_get_side_color_rgb,
+                            [0,0,_opfDistance * 0.025] vectorAdd (getmarkerPos [_opfMarker, false]),
+                            format ["%1m", _opfDistance],
+                            getmarkerPos [_opfMarker, false]]];
+                    };
+                } forEach (keys pl_marta_dic);
+            };
 
 
             {
@@ -395,7 +399,7 @@ pl_3d_interface = {
 
         };
 
-        sleep 2.5;
+        sleep 1;
 
         {
             removeMissionEventHandler ["Draw3D", _x];

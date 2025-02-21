@@ -335,16 +335,64 @@ pl_select_group = {
 };
 
 
+pl_head_cam = objNull;
+
 pl_remote_camera_in = {
     params ["_leader"];
 
-    if !(isNil "_leader") then {
+    if (isNil "_leader") exitWith {};
 
-        player setVariable ["pl_camera_mode", cameraView];
-        _leader switchCamera "GROUP";
-        // _leader switchCamera "EXTERNAL";
+    if (alive _leader and !(_leader getVariable ["pl_wia", false])) then {
+
+        cutRsc ["RscStatic", "PLAIN"];
+
+        if ((vehicle _leader) == _leader) then {
+
+            player setVariable ["pl_camera_mode", cameraView];
+            pl_head_cam = "Sign_Sphere10cm_F" createVehicleLocal [0,0,0];    
+            pl_head_cam hideObjectGlobal true;    
+            pl_head_cam attachTo [_leader, [0.18,-0.15,0.17], "head",true];
+            pl_head_cam switchCamera "INTERNAL";  
+            pl_head_cam setObjectTextureGlobal [0,""];
+            pl_head_cam setVariable ["pl_camera_mode", "INTERNAL"];
+        } else {
+
+            player setVariable ["pl_camera_mode", cameraView];
+            pl_head_cam setVariable ["pl_camera_mode", "GUNNER"];
+
+            if (!(isNull (gunner (vehicle _leader))) and (alive (gunner (vehicle _leader)))) then {
+                (gunner (vehicle _leader)) switchCamera "GUNNER";
+            } else {
+                _leader switchCamera "GUNNER";
+            };
+        };
+
+        
         openMap [false, false];
-        // [getPos _leader] spawn pl_open_tac_forced;
+
+        [_leader] spawn {
+            params ["_leader"];
+
+            sleep 0.5;
+
+            cutRsc ["RscNoise", "PLAIN"];
+
+            private _grp = group _leader;
+
+            waitUntil {sleep 0.1; visibleMap or !(alive _leader) or (_leader getVariable ["pl_wia", false]) or (isNull pl_head_cam) or (cameraView isNotEqualTo (pl_head_cam getVariable ["pl_camera_mode", "INTERNAL"]))};
+
+            if (isNull pl_head_cam) exitWith {};
+
+            [] call pl_remote_camera_out;
+
+            if (visibleMap or (cameraView isNotEqualTo (pl_head_cam getVariable ["pl_camera_mode", "INTERNAL"]))) exitWith {};
+
+            private _aliveUnits = (units _grp) select {alive _x and !(_x getVariable ["pl_wia", false])};
+
+            if ((count _aliveUnits) > 0) then { 
+                [selectRandom _aliveUnits] call pl_remote_camera_in;
+            };  
+        };
     };
 };
 
@@ -354,7 +402,14 @@ pl_spawn_cam = {
 
 pl_remote_camera_out = {
 
+
+    cutText ["", "PLAIN"];
     player switchCamera (player getVariable ["pl_camera_mode", "INTERNAL"]);
+    detach pl_head_cam;
+    pl_head_cam setVariable ["pl_camera_mode", ""];
+    deleteVehicle pl_head_cam;
+    pl_head_cam = objNull;
+    
     // [] spawn pl_open_tac_map;
 };
 

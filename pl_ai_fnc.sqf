@@ -79,7 +79,7 @@ pl_share_info_opfor = {
             [_targets, (leader _group)] call pl_reveal_targets_opfor;
         };
 
-        sleep 30;
+        sleep 15;
     };
 };
 
@@ -102,7 +102,8 @@ pl_reveal_targets_opfor = {
     {
         _t = _x;
         {
-            if (((leader _x) distance2D _leader) < (pl_radio_range / 2) and ((_leader distance2D _t) < 300)) then {
+            // if (((leader _x) distance2D _leader) < (pl_radio_range / 2) and ((_leader distance2D _t) < 300)) then {
+            if (((leader _x) distance2D _leader) < pl_radio_range) then {
                 _x reveal _t;
             };
         } forEach (allGroups select {side _x != playerSide});
@@ -466,14 +467,14 @@ pl_auto_formation = {
         waitUntil {sleep 1; !(_group getVariable ["pl_vic_attached", false]) and (_group getVariable ["pl_choose_auto_formation", false])};
 
         if ([getPos (leader _group)] call pl_is_city) then {
-            if (formation _group != "VEE") then {
-                _group setFormation "VEE";
+            if (formation _group != "DIAMOND") then {
+                _group setFormation "DIAMOND";
             }; 
         } else {
             if ((currentWaypoint _group) < count (waypoints _group)) then {
                 _dest = waypointPosition ((waypoints _group) select (count (waypoints _group) - 1));
                 _distance = _dest distance2D (leader _group);
-                if (_distance > 100 and behaviour (leader _group) != "COMBAT") then {
+                if (_distance > 300 and behaviour (leader _group) != "COMBAT") then {
                     if (formation _group != "STAG COLUMN") then {
                         _group setFormation "STAG COLUMN";
                     };
@@ -737,6 +738,16 @@ pl_set_up_ai = {
 
     [_group] call pl_ammo_bearer;
     if (_group != (group player)) then {[_group] spawn pl_auto_formation};
+
+    {
+        if (_x getUnitTrait "Medic") exitWith {
+            [_group] spawn {
+                params ["_g"];
+                sleep 2;
+                [_g] spawn pl_heal_group;
+            };
+        };
+    } forEach (units _group);
         
     _magCountAll = 0;
     {    

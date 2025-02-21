@@ -30,6 +30,8 @@ pl_mortar_rounds = 4;
 pl_arty_cords = [0,0,0];
 pl_cas_active = 1;
 pl_cas_cd = 0;
+pl_current_med_evac_heli = objNull;
+pl_current_supply_heli = objNull;
 
 // if (isNil{pl_support_module_active}) then {
 //     pl_arty_ammo = 30;
@@ -142,6 +144,8 @@ pl_cas = {
         case 4 : {_sortiesCost = 5}; 
         default {_sortiesCost = 1}; 
     };
+
+    if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
 
     if (visibleMap or !(isNull findDisplay 2000)) then {
 
@@ -305,6 +309,13 @@ pl_arty = {
     else
     {
         pl_arty_cords = screenToWorld [0.5,0.5];
+
+        _markerName = createMarker ["pl_arty_marker", pl_arty_cords];
+        _markerName setMarkerColor pl_side_color;
+        _markerName setMarkerShape "ELLIPSE";
+        _markerName setMarkerBrush "Border";
+        // _markerName setMarkerAlpha 0.9;
+        _markerName setMarkerSize [pl_arty_dispersion, pl_arty_dispersion];
     };
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
     pl_arty_enabled = 0;
@@ -682,6 +693,8 @@ pl_interdiction_cas = {
         default {}; 
     };
 
+    if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
+
     if (visibleMap or !(isNull findDisplay 2000)) then {
 
         if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
@@ -884,6 +897,7 @@ pl_interdiction_cas = {
         case 4 : {
             // "Land_HelipadEmpty_F" createVehicle _cords;
             _casGroup setBehaviour "CARELESS";
+            pl_current_med_evac_heli = _plane;
 
             _pad = createVehicle ["Land_HelipadEmpty_F", _cords, [], 0, "CAN_COLLIDE"];
             player setVariable ["pl_landing_pad", _pad];
@@ -914,8 +928,9 @@ pl_interdiction_cas = {
             // _plane land "GET OUT";
 
             sleep 1;
-            waitUntil {sleep 1; (isTouchingGround _plane) or !alive _plane or pl_rtb};
-            if (alive _plane and !pl_rtb) then {
+            waitUntil {sleep 1; (isTouchingGround _plane) or !(alive _plane) or !(canmove _plane) or ((fullCrew _plane) isEqualTo []) or pl_rtb};
+
+            if ((alive _plane) and (canmove _plane) and ((fullCrew _plane) isNotEqualTo []) and !pl_rtb) then {
 
                 (driver _plane) disableAI "PATH";
 
@@ -948,6 +963,7 @@ pl_interdiction_cas = {
             _casGroup setBehaviour "CARELESS";
             _pad = createVehicle ["Land_HelipadEmpty_F", _cords, [], 0, "CAN_COLLIDE"];
             player setVariable ["pl_landing_pad", _pad];
+            pl_current_supply_heli = _plane;
 
             _ehPad = player addEventHandler ["FiredMan", {
                  params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_vehicle"];
@@ -1010,11 +1026,13 @@ pl_interdiction_cas = {
             pl_medevac_sad_cd = time + 400;
             if (pl_rtb) then {pl_medevac_sad_cd = pl_medevac_sad_cd * (time / _time)};
             _cd = pl_medevac_sad_cd;
+            pl_current_med_evac_heli = objNull;
         };
         case 5 : {
             pl_supply_sad_cd = time + 400;
             if (pl_rtb) then {pl_supply_sad_cd = pl_supply_sad_cd * (time / _time)};
             _cd = pl_supply_sad_cd;
+            pl_current_supply_heli = objNull;
         }; 
         default {}; 
     };

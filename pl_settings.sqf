@@ -78,6 +78,28 @@
     true
 ] call CBA_fnc_addSetting;
 
+[
+    "pl_opfor_allow_ai_retreat",
+    "CHECKBOX",
+    ["Allow Enhanced AI Retreat","Enables Retreat Logic if using Enhanced AI"],
+    ["Platoon Leader","AI"],
+    true,
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_opfor_allow_ai_surrender",
+    "CHECKBOX",
+    ["Allow Enhanced AI Surrender/Fleeing","Enables Surrender/Flee Logic if using Enhanced AI"],
+    ["Platoon Leader","AI"],
+    true,
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
 
 [
     "pl_suppression_min_distance", 
@@ -314,7 +336,29 @@
 [
     "pl_enable_3d_icons",
     "CHECKBOX",
-    ["Enable 3D Icons","Enable Extra 3D Icons when selecting or hovering over a group"],
+    ["Always Enable 3D Icons","Always Enable These 3D Icons: Group Status, Task Markers, Enemy Markers"],
+    ["Platoon Leader", "UI"],
+    [true],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_enable_3d_icons_tacmap",
+    "CHECKBOX",
+    ["Enable 3D Icons when opening Tac Map","Shows all 3d Icons when in TacMap Mode"],
+    ["Platoon Leader", "UI"],
+    [true],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
+    "pl_enable_3d_icons_marta",
+    "CHECKBOX",
+    ["Enable 3D Enemy Target Icons","Show enemy Targets as 3D Icons"],
     ["Platoon Leader", "UI"],
     [true],
     nil,

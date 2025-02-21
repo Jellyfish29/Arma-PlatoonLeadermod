@@ -42,7 +42,7 @@ pl_suppressive_fire_position = {
             if !(_sfpPos isEqualTo []) then {
                 _leaderPos = _sfpPos;
             };
-            private _rangelimiter = 500;
+            private _rangelimiter = 1500;
             if (vehicle (leader _group) != (leader _group)) then { _rangelimiter = 2000};
 
             _markerBorderName = str (random 2);
@@ -226,10 +226,22 @@ pl_suppressive_fire_position = {
         };
     };
 
+    private _allHelpers = [];
+
+    {
+        _x setVariable ["pl_current_unitPos", unitPos _x];
+
+        if ((unitPos _x) isEqualto "Down") then {
+            _x setUnitPos "Middle";
+        };
+    } forEach _units;
+
+    sleep 0.3;
+
     while {(_group getVariable ["pl_is_suppressing", true]) and !(isNull _group)} do {
         {
             _unit = _x;
-            if (_unit != (vehicle _unit) or (((primaryweapon _unit call BIS_fnc_itemtype) select 1) == "MachineGun") or (random 1) > 0.25) then {
+            if (_unit != (vehicle _unit) or (((primaryweapon _unit call BIS_fnc_itemtype) select 1) == "MachineGun") or (random 1) > 0) then {
                 if (_unit != (vehicle _unit) and (_unit) == gunner (vehicle _unit)) then {
                     _vic = vehicle _unit;
                     _vicTargets = _cords nearEntities [["Car", "Truck", "Tank"], _area] select {alive _x and (side _x) != playerSide and (_group knowsAbout _x) > 0};
@@ -258,25 +270,33 @@ pl_suppressive_fire_position = {
 
 
                 _pos = [_cords, _area] call _getTargets;
-                _vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1];
+                private _targetDistance = _unit distance2D _pos;
+                _vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1, "FIRE"];
 
                 if !(_vis isEqualTo []) then {
                     _targetPos = (_vis select 0) select 0;
                     private _distance = ((eyePos _unit) vectorDistance _targetPos) - 2;
                     _targetpos = (eyePos _unit) vectorAdd (((eyePos _unit) vectorFromTo _targetpos) vectorMultiply _distance);
-                    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and (_targetpos distance2D _pos) <= 50 and !([_unit, _targetPos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1)) then {
+                    // if ((_targetPos distance2D _unit) > pl_suppression_min_distance and (_targetpos distance2D _pos) <= 50 and !([_unit, _targetPos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1)) then {
+                    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_unit, _targetPos] call pl_friendly_check) and (_unit distance2D _targetPos) > _targetDistance * 0.3) then {
+
                         _unit doWatch _targetPos;
                         _unit doSuppressiveFire _targetPos;
 
                         // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
                         // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
                         // _helper1 setposASL _targetpos;
+                        // _allHelpers pushback _helper1;
+
+
+                        // _unit doWatch _helper1;
+                        // _unit doSuppressiveFire _helper1;
 
                     };
                 } else {
                     private _distance = ((eyePos _unit) vectorDistance _pos) - 2;
                     _pos = (eyePos _unit) vectorAdd (((eyePos _unit) vectorFromTo _pos) vectorMultiply _distance);
-                    if ((_pos distance2D _unit) > pl_suppression_min_distance and !([_unit, _pos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1)) then {
+                    if ((_pos distance2D _unit) > pl_suppression_min_distance and !([_unit, _pos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1) and (_unit distance2D _targetPos) > _targetDistance * 0.5) then {
                         _unit doWatch _pos;
                         _unit doSuppressiveFire _pos;
                     };
@@ -296,6 +316,15 @@ pl_suppressive_fire_position = {
     if (leader _group != vehicle (leader _group)) then {
         [vehicle (leader _group)] call pl_load_ap;
     };
+
+    {
+        _x setUnitPos (_x getVariable ["pl_current_unitPos", "Middle"]);
+        _x setVariable ["pl_current_unitPos", nil];
+    } forEach (units _group);
+
+    {
+      deleteVehicle _x;
+    } forEach _allHelpers;
 
     pl_suppression_poses = pl_suppression_poses - [[_cords, _group]];
     deleteMarker _markerName;

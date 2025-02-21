@@ -196,11 +196,19 @@ pl_position_reached_check = {
     params ["_unit", "_movePos", "_counter"];
 
     // player sideChat (str _counter);
+    private _end = false;
+    if (_counter >= 10) exitWith {[true, _counter, _movePos, true]};
 
-    if ((_unit distance2D _movePos) > 4 and ((group _unit) getVariable ["onTask", false]) and alive _unit and !((lifeState _unit) isEqualto "INCAPACITATED")) then {
-        if ((((currentCommand _unit) isNotEqualTo "MOVE") or ((speed _unit) == 0))) then {
+    if ((_unit distance _movePos) > 1.5 and ((group _unit) getVariable ["onTask", false]) and alive _unit and !((lifeState _unit) isEqualto "INCAPACITATED") and !((animationState _unit) in ["ladderrifleuploop", "laddercivilstatic"])) then {
+        // if ((((currentCommand _unit) isNotEqualTo "MOVE") or ((speed _unit) == 0))) then {
+        if (unitReady _unit or ((currentCommand _unit) isNotEqualTo "MOVE") or (speed _unit) == 0) then {
 
-            _movePos = [-(_counter / 2) + (random _counter), -(_counter / 2) + (random _counter), 0] vectorAdd _movePos;
+            _movePos = [-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd _movePos;
+
+            // _m = createMarker [str (random 1), _movePos];
+            // _m setMarkerType "mil_dot";
+            // _m setMarkerSize [0.5, 0.5];
+            // _m setMarkerColor "colorOrange";
 
             [_unit, _movePos] spawn {
                 params ["_unit", "_movePos"];
@@ -221,9 +229,9 @@ pl_position_reached_check = {
         };
     };
 
-    if ((_unit distance2D _movePos) < 4 or _counter >= 10) exitWith {[true, _counter, _movePos]};
+    if ((_unit distance _movePos) < 0.5) exitWith {[true, _counter, _movePos, false]};
 
-    [false, _counter, _movePos]
+    [false, _counter, _movePos, false]
 };
 
 pl_force_move_on_task = {
@@ -296,8 +304,8 @@ pl_convert_to_heigth_ASL = {
 
 pl_is_indoor = {
     params ["_pos"];
-    _pos = AGLToASL _pos;
-    if (lineIntersects [_pos, _pos vectorAdd [0, 0, 10]]) exitWith {true};
+    // _pos = AGLToASL _pos;
+    if (lineIntersects [_pos, _pos vectorAdd [0, 0, 30]]) exitWith {true};
     false
 };
 

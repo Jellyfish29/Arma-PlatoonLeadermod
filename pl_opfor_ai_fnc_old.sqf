@@ -270,11 +270,11 @@ pl_opfor_suppress = {
 				_unit = _x;
 				private _pos = selectRandom _targetsPos;
 		        _pos = ATLToASL _pos;
-				_vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1];
+				_vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1, "FIRE"];
 		        if !(_vis isEqualTo []) then {
 		            _pos = (_vis select 0) select 0;
 		        };
-		        if ((_pos distance2D _unit) > pl_suppression_min_distance) then {
+		        if ((_pos distance2D _unit) > 4) then {
 		        	_unit doSuppressiveFire _pos;
 		        };
 			} forEach (units _grp);

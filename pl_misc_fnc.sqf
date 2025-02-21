@@ -333,6 +333,14 @@ pl_hold_fire = {
     _group setCombatMode "GREEN";
     _group setVariable ["pl_hold_fire", true];
     _group setVariable ["pl_combat_mode", true];
+
+    if ((vehicle (leader _group)) != (leader _group)) then {
+        {
+            (group (_x#0)) setCombatMode "GREEN";
+            (group (_x#0)) setVariable ["pl_hold_fire", true];
+            (group (_x#0)) setVariable ["pl_combat_mode", true];
+        } forEach (fullCrew [vehicle (leader _group), "cargo", false]);
+    };
 };
 
 pl_open_fire = {
@@ -344,6 +352,14 @@ pl_open_fire = {
     _group setCombatMode "YELLOW";
     _group setVariable ["pl_hold_fire", false];
     _group setVariable ["pl_combat_mode", false];
+
+    if ((vehicle (leader _group)) != (leader _group)) then {
+        {
+            (group (_x#0)) setCombatMode "YELLOW";
+            (group (_x#0)) setVariable ["pl_hold_fire", false];
+            (group (_x#0)) setVariable ["pl_combat_mode", false];
+        } forEach (fullCrew [vehicle (leader _group), "cargo", false]);
+    };
 };
 
 

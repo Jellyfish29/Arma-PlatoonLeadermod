@@ -93,7 +93,7 @@ pl_heal_group = {
     params [["_group", (hcSelected player) select 0]];
     private ["_medic", "_healTarget", "_escort"];
 
-    if (_group getVariable ["pl_healing_active", false]) exitWith {if (pl_enable_beep_sound) then {playSound "beep"}; _group setVariable ["pl_healing_active", false]};
+    if (_group getVariable ["pl_healing_active", false]) exitWith {_group setVariable ["pl_healing_active", false]};
 
     if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
 
@@ -108,7 +108,7 @@ pl_heal_group = {
     if !(isNil "_medic") then {
         if !(_medic getVariable "pl_wia") then {
 
-            if (pl_enable_beep_sound) then {playSound "beep"};
+            // if (pl_enable_beep_sound) then {playSound "beep"};
 
             _group setVariable ["pl_healing_active", true];
             // _medic setVariable ["pl_is_ccp_medic", true];
@@ -125,30 +125,30 @@ pl_heal_group = {
                     if !(_group getVariable ["onTask", false]) then {
                         {
                             _enemySides = [side player] call BIS_fnc_enemySides;
-                            // _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
-                            // if (_enemies isEqualTo []) then {
+                            _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
+                            if (_enemies isEqualTo []) then {
                                 if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and !(_group getVariable ["onTask", true])) then {
                                     _medic setVariable ["pl_is_ccp_medic", true];
                                     _h1 = [_group, _medic, objNull, _x, [] , 20, "pl_healing_active"] spawn pl_ccp_revive_action;
                                     waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
                                     _medic setVariable ["pl_is_ccp_medic", false];
                                 };
-                            // };
+                            };
                         } forEach ((units _group) select {_x getVariable ["pl_wia", false]});;
                         // _medic sideChat "Tick";
-                        // {
-                            // _enemySides = [side player] call BIS_fnc_enemySides;
-                            // _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
-                            // if ((count _enemies) <= 0 and !(_group getVariable ["onTask", true])) then {
-                            //     if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
-                            //         _medic setVariable ["pl_is_ccp_medic", true];
-                            //         _h1 = [_medic, _x, nil, "pl_healing_active"] spawn pl_medic_heal;
-                            //         waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
-                            //         _medic setVariable ["pl_is_ccp_medic", false];
-                            //     };
-                            // };
-                        // } forEach (units _group);
-                        // _medic setVariable ["pl_is_ccp_medic", true];
+                        {
+                            _enemySides = [side player] call BIS_fnc_enemySides;
+                            _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
+                            if ((count _enemies) <= 0 and !(_group getVariable ["onTask", true])) then {
+                                if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
+                                    _medic setVariable ["pl_is_ccp_medic", true];
+                                    _h1 = [_medic, _x, nil, "pl_healing_active"] spawn pl_medic_heal;
+                                    waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
+                                    _medic setVariable ["pl_is_ccp_medic", false];
+                                };
+                            };
+                        } forEach (units _group);
+                        _medic setVariable ["pl_is_ccp_medic", true];
                         _medic setVariable ["pl_is_ccp_medic", false];
                     };
                 };
@@ -254,7 +254,7 @@ pl_bleedout = {
 
 
 pl_ccp_revive_action = {
-    params ["_group", "_medic", "_escort", "_healTarget", "_ccpPos", "_reviveTime", "_waitVar", ["_minDragRange", 0]];
+    params ["_group", "_medic", "_escort", "_healTarget", "_ccpPos", "_reviveTime", "_waitVar", ["_minDragRange", 0], ["_alwaysDrag", false]];
     // player sideChat str (alive _healTarget);
 
     if !(alive _healTarget) exitWith {};
@@ -298,9 +298,9 @@ pl_ccp_revive_action = {
 
         _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500};
         _closeEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 200};
-        if (!(_ccpPos isEqualTo []) and (count _nearEnemies) > 0) then {
+        if (!(_ccpPos isEqualTo []) and ((count _nearEnemies) > 0 or _alwaysDrag)) then {
             if ((count _closeEnemies) > 0) then {[_medic, (getpos _medic) getPos [65, _medic getDir _healTarget]] call pl_throw_smoke_at_pos};
-            if ((_ccpPos distance2D _healTarget) > _minDragRange and ((_ccpPos distance2D _healTarget) < 200)) then {
+            if (((_ccpPos distance2D _healTarget) > _minDragRange and ((_ccpPos distance2D _healTarget) < 200)) or _alwaysDrag) then {
                 _escort doFollow _medic;
                 _dragScript = [_medic, _healTarget, _ccpPos] spawn pl_injured_drag;
                 waitUntil {sleep 0.5; scriptDone _dragScript};

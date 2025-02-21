@@ -439,6 +439,10 @@ pl_draw_group_info = {
                     _formPos = [(_pos select 0), (_pos select 1) - pl_map_scale_y];
                     _form = formation _x;
                     _formIcon = '\A3\3den\data\Attributes\Formation\wedge_ca.paa';
+                    _formationColor = [0.9,0.9,0,1];
+                    if (_x getVariable ['pl_choose_auto_formation', false]) then {
+                        _formationColor = [0.92,0.24,0.07,1];
+                    };
                     switch (_form) do { 
                         case 'COLUMN' : {_formIcon = '\A3\3den\data\Attributes\Formation\column_ca.paa'}; 
                         case 'STAG COLUMN' : {_formIcon = '\A3\3den\data\Attributes\Formation\stag_column_ca.paa'}; 
@@ -453,7 +457,7 @@ pl_draw_group_info = {
                     };
                     _display drawIcon [
                         _formIcon,
-                        [0.9,0.9,0,1],
+                        _formationColor,
                         _formPos,
                         15,
                         15,
@@ -1740,11 +1744,14 @@ pl_open_tac_map = {
         // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
         (findDisplay 2000) closeDisplay 1;
         playSound "HintCollapse";
-        player playAction "Default";
+        // player playAction "Default";
+        pl_tac_map_active = false;
         // ctrlDelete (uiNamespace getVariable "pl_pouch_gfx");
     };
+
     playSound "HintExpand";
-    player playAction "Gear";
+    // player playAction "Gear";
+    pl_tac_map_active = true;
     _map = findDisplay 46 createDisplay "pl_RscMap";
     _map displayAddEventHandler ["KeyDown", {call cba_events_fnc_keyHandlerDown}];
     _map displayAddEventHandler ["KeyUp", {call cba_events_fnc_keyHandlerUp}];
@@ -1778,16 +1785,22 @@ pl_open_tac_forced = {
 
     playSound "HintExpand";
     // player playAction "Gear";
+    pl_tac_map_active = true;
     _map = findDisplay 46 createDisplay "pl_RscMap";
     _map displayAddEventHandler ["KeyDown", {call cba_events_fnc_keyHandlerDown}];
     _map displayAddEventHandler ["KeyUp", {call cba_events_fnc_keyHandlerUp}];
 
-    // with uiNamespace do {
-    //     pl_pouch_gfx = findDisplay 2000 ctrlCreate ["RscPicture", -1];
-    //     pl_pouch_gfx ctrlSetPosition [0.5237812 * safezoneW + safezoneX,0.234 * safezoneH + safezoneY,1,1 ];
-    //     pl_pouch_gfx ctrlSetText "plmod\gfx\pl_mapmag_1.paa";
-    //     pl_pouch_gfx ctrlCommit 0;
-    // };
+    with uiNamespace do {
+        pl_pouch_gfx = findDisplay 2000 ctrlCreate ["RscPicture", -1];
+        if ((date#0) < 2016) then {
+            pl_pouch_gfx ctrlSetPosition [0.1 * safezoneW + safezoneX, 0.5 * safezoneH + safezoneY,2,2];
+            pl_pouch_gfx ctrlSetText "plmod\gfx\pl_mapbag_1.paa";
+        } else {
+            pl_pouch_gfx ctrlSetPosition [0.28 * safezoneW + safezoneX, 0.47 * safezoneH + safezoneY,1.07,1.35];
+            pl_pouch_gfx ctrlSetText "plmod\gfx\pl_tactical_phone_case1.paa";
+        };
+        pl_pouch_gfx ctrlCommit 0;
+    };
 
     (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, _pos];
     ctrlMapAnimCommit (findDisplay 2000 displayCtrl 2000);
@@ -1802,6 +1815,92 @@ pl_map_ehs = {
     params ["_control"];
 
     pl_boxsel_active = false;
+    pl_mousewheel_idx = 0;                  // 0: Buddy OW, 1: Set WP, 2: Bounding OW
+    pl_mousewheel_idx_ALT = 0;              // 0: VIC Revers, 1: VIC Forward , 2: Move On Path
+    pl_mousewheel_idx_CTRL = 0;             // 0: Add WP
+    pl_mousewheel_idx_CTRL_ALT = 0;         // 0: Disengage
+
+
+    // enable use of LMB in TavMap 
+    // DONT USE to resource Heavy
+
+    // [] spawn {
+
+    //     while {(findDisplay 2000) isNotEqualto displayNull} do {
+
+    //         // mouse wheel UP
+    //         if (inputAction "prevAction" > 0) then {
+
+    //             // LCTRL
+    //             if (inputAction "curatorGroupMod" > 0) then {
+
+    //                 pl_mousewheel_idx_CTRL = pl_mousewheel_idx_CTRL - 1;
+    //                 if (pl_mousewheel_idx_CTRL < 0) then {pl_mousewheel_idx_CTRL = 0};
+
+    //             } else {
+
+    //                 // ALT
+    //                 if (inputAction "lookAround" > 0) then {
+
+    //                     pl_mousewheel_idx_ALT = pl_mousewheel_idx_ALT - 1;
+    //                     if (pl_mousewheel_idx_ALT < 0) then {pl_mousewheel_idx_ALT = 2};
+
+    //                 } else {
+
+    //                     // LCTR + ALT
+    //                     if ((inputAction "curatorGroupMod" > 0) and (inputAction "lookAround" > 0)) then {
+
+    //                         pl_mousewheel_idx_CTRL_ALT = pl_mousewheel_idx_CTRL_ALT - 1;
+    //                         if (pl_mousewheel_idx_CTRL_ALT < 0) then {pl_mousewheel_idx_CTRL_ALT = 0};
+
+    //                     // NONE
+    //                     } else {
+
+    //                         pl_mousewheel_idx = pl_mousewheel_idx - 1;
+    //                         if (pl_mousewheel_idx < 0) then {pl_mousewheel_idx = 2};
+    //                     };
+    //                 };
+    //             };
+    //             waitUntil {inputAction "prevAction" == 0};
+    //         };
+
+    //         // mouse wheel down
+    //         if (inputAction "nextAction" > 0) then {
+
+    //             // LCTRL
+    //             if (inputAction "curatorGroupMod" > 0) then {
+
+    //                 pl_mousewheel_idx_CTRL = pl_mousewheel_idx_CTRL + 1;
+    //                 if (pl_mousewheel_idx_CTRL > 0) then {pl_mousewheel_idx_CTRL = 0};
+
+    //             } else {
+
+    //                 // ALT
+    //                 if (inputAction "lookAround" > 0) then {
+
+    //                     pl_mousewheel_idx_ALT = pl_mousewheel_idx_ALT + 1;
+    //                     if (pl_mousewheel_idx_ALT > 2) then {pl_mousewheel_idx_ALT = 0};
+
+    //                 } else {
+
+    //                     // LCTR + ALT
+    //                     if ((inputAction "curatorGroupMod" > 0) and (inputAction "lookAround" > 0)) then {
+
+    //                         pl_mousewheel_idx_CTRL_ALT = pl_mousewheel_idx_CTRL_ALT + 1;
+    //                         if (pl_mousewheel_idx_CTRL_ALT > 0) then {pl_mousewheel_idx_CTRL_ALT = 0};
+
+    //                     // NONE
+    //                     } else {
+                        
+    //                         pl_mousewheel_idx = pl_mousewheel_idx + 1;
+    //                         if (pl_mousewheel_idx > 2) then {pl_mousewheel_idx = 0};
+    //                     };
+    //                 };
+    //             };
+    //             waitUntil {inputAction "nextAction" == 0};
+    //         };
+    //     };
+    // };
 
     // change cursor
     _control ctrlAddEventHandler ["MouseMoving", {
@@ -1911,9 +2010,62 @@ pl_map_ehs = {
         // };
     }];
 
-    // _control ctrlAddEventHandler ["MouseButtonDown", {
-    //     params ["_displayOrControl", "_button", "_xPos", "_yPos", "_shift", "_ctrl", "_alt"];
+    _control ctrlAddEventHandler ["MouseButtonDown", {
+        params ["_displayOrControl", "_button", "_xPos", "_yPos", "_shift", "_ctrl", "_alt"];
 
-    //     hintSilent str getMousePosition;
-    // }];
+        // LMB
+        if ((_button == 0) and (count (hcSelected player) > 0)) then {
+
+            if (count (hcSelected player) > 1 and (!pl_draw_formation_mouse)) then {[hcSelected player, true] spawn pl_move_as_formation}; if (count (hcSelected player) <= 1) then {[] spawn pl_march};
+
+            //LCTRL
+            // if (inputAction "curatorGroupMod" > 0) then {
+
+            //     if (pl_mousewheel_idx_CTRL == 0) then {
+
+            //         switch (pl_mousewheel_idx_CTRL) do { 
+            //             // Add WP
+            //             case 0 : {if (count (hcSelected player) > 1 and (!pl_draw_formation_mouse)) then {[hcSelected player, true] spawn pl_move_as_formation}; if (count (hcSelected player) <= 1) then {[] spawn pl_march};}; 
+            //             default {}; 
+            //         };
+            //     };
+
+            // } else {
+
+            //     // ALT
+            //     if (inputAction "lookAround" > 0) then {
+
+            //         switch (pl_mousewheel_idx_ALT) do { 
+            //             case 0 : {[] spawn pl_vic_advance_to_pos}; 
+            //             case 1 : {[] spawn pl_vic_advance_to_pos_reverse};
+            //             case 2 : {[] spawn pl_move_as_column}; 
+            //             default {}; 
+            //         };
+
+            //     } else {
+
+            //         // ALT + LCTRL
+            //         if ((inputAction "curatorGroupMod" > 0) and (inputAction "lookAround" > 0)) then {
+
+            //             switch (pl_mousewheel_idx_CTRL_ALT) do { 
+            //                 case 0 : {{[_x] spawn pl_disengage}forEach (hcSelected player)}; 
+            //                 default {}; 
+            //             };
+
+            //         // NONE
+            //         } else {
+            //             switch (pl_mousewheel_idx) do { 
+            //                 case 0 : {['buddy'] spawn pl_bounding_switch}; 
+            //                 case 1 : {{[_x] spawn pl_set_waypoint} forEach (hcSelected player)};
+            //                 case 2 : {['team'] spawn pl_bounding_switch}; 
+            //                 default {}; 
+            //             };
+            //         };
+
+            //     };
+            // };
+        };
+    }];
 };
+
+

@@ -2,6 +2,7 @@
 // if !(pl_opfor_enhanced_ai) exitwith {};
 
 pl_opfor_pow_pos = getPos player;
+pl_opfor_join_range = 250;
 
 pl_opfor_ai_helper_debug = {
 	params ["_grp"];
@@ -33,6 +34,22 @@ pl_opfor_reset = {
 	params ["_grp"];
 
 	_grp setvariable ["pl_opf_in_pos", false];
+
+
+    [_grp] spawn {
+        params ["_group"];
+        _group setVariable ["pl_stop_event", true];
+        sleep 2;
+        _group setVariable ["pl_stop_event", nil];
+    };
+
+    private _leader = leader _grp;
+    (units _grp) joinSilent _grp;
+
+    if (alive _leader) then {
+        _grp selectLeader _leader;
+    };
+
 	{
         _unit = _x;
         // if ((currentCommand _unit) isEqualTo "SUPPORT") then {
@@ -40,6 +57,7 @@ pl_opfor_reset = {
         // };
         if !(_grp getVariable ["pl_on_hold", false]) then {_unit enableAI "PATH"};
         _unit enableAI "AUTOCOMBAT";
+        _unit enableAI "PATH";
         _unit enableAI "AUTOTARGET";
         _unit enableAI "TARGET";
         _unit enableAI "SUPPRESSION";
@@ -48,6 +66,7 @@ pl_opfor_reset = {
         _unit enableAI "FSM";
         _unit enableAI "AIMINGERROR";
         _unit enableAI "WEAPONAIM";
+        _unit enableAI "FIREWEAPON";
         _unit setUnitPos "AUTO";
         _unit setUnitTrait ["camouflageCoef", 1, true];
         _unit setVariable ["pl_damage_reduction", false];
@@ -59,9 +78,13 @@ pl_opfor_reset = {
         };
     } forEach (units _grp);
 
-    _leader = leader _grp;
-    (units _grp) joinSilent _grp;
-    _grp selectLeader _leader;
+
+    _grp setCombatMode "YELLOW";
+    _grp enableAttack false;
+
+    if (vehicle _leader != _leader) then {
+        (vehicle _leader) limitSpeed 45;
+    };
 
     [_grp, (currentWaypoint _grp)] setWaypointType "MOVE";
     [_grp, (currentWaypoint _grp)] setWaypointPosition [getPosASL (leader _grp), -1];
@@ -71,6 +94,14 @@ pl_opfor_reset = {
         deleteWaypoint [_grp, _i];
     };
 };
+
+// pl_opfor_reset = {
+//     params ["_grp"];
+//     [_grp] call pl_opfor_reset_execute;
+//     [_grp] call pl_opfor_reset_execute;
+//     [_grp] call pl_opfor_reset_execute;
+
+// };
 
 pl_opfor_auto_unstuck = {
     params ["_grp"];
@@ -213,14 +244,16 @@ pl_opfor_advance = {
 			_x disableAI "AUTOCOMBAT";
 			_x setCombatBehaviour "AWARE";
 			_x setUnitPos "AUTO";
+            _x enableAI "PATH";
 			if !(_x == leader _grp) then {
 				_x doFollow (leader _grp);
 			};
 		} forEach (units _grp);
 		_grp setBehaviour "AWARE";
-		_grp setFormation "LINE";
+		// _grp setFormation "LINE";
 		_grp setSpeedMode "NORMAL";
-		_grp allowFleeing 0.2;
+		_grp allowFleeing 0;
+        _grp enableAttack false;
 	};
 };
 
@@ -672,9 +705,11 @@ pl_opfor_defend_position = {
     };
 };
 
+
+
 pl_opfor_defence_suppression = {
     params ["_grp", "_watchPos", "_medic"];
-    private ["_targetsPos", "_firers", "_time"];
+    private ["_targetsPos", "_targetDistance", "_firers", "_time"];
 
     private  _time = time + 10;
     waitUntil {sleep 0.5;  time >= time or !(_grp getVariable ["pl_opf_in_pos", true]) };
@@ -682,7 +717,7 @@ pl_opfor_defence_suppression = {
 
     while {_grp getVariable ["pl_opf_in_pos", false]} do {
         // _allTargets = nearestObjects [_watchPos, ["Man", "Car"], 350, true];
-        _enemyTargets = (_watchPos nearEntities [["Man", "Car"], 350]) select {(side _x) == playerSide and ((leader _grp) knowsAbout _x) > 0};
+        _enemyTargets = (_watchPos nearEntities [["Man", "Car"], 400]) select {(side _x) == playerSide and ((leader _grp) knowsAbout _x) > 0};
         if (count _enemyTargets > 0) then {
             _firers = [];
             {
@@ -691,38 +726,86 @@ pl_opfor_defence_suppression = {
                     // _x setUnitTrait ["camouflageCoef", 0.5, false];
                     // _x setVariable ["pl_damage_reduction", true];
                 } else {
-                    if ((random 1) > 0.6) then {_firers pushBackUnique _x;}
+                    if ((random 1) > 0.65) then {_firers pushBackUnique _x;}
                 };
             } forEach ((units _grp) select {!(_x checkAIFeature "PATH") and _x != _medic});
             {
                 _unit = _x;
                 _target = selectRandom _enemyTargets;
+                _targetDistance = _unit distance2d _target;
                 _targetPos = getPosASL _target;
                 _vis = lineIntersectsSurfaces [eyePos _unit, _targetPos, _unit, vehicle _unit, true, 1]; 
                 if !(_vis isEqualTo []) then {
                     _targetPos = (_vis select 0) select 0;
                 };
 
-              //   if ((_targetPos distance2D _unit) > 25) then {
-              //        _unit doSuppressiveFire _targetPos;
-              // //       _m = createMarker [str (random 1), _targetPos];
-		      //       // _m setMarkerType "mil_dot";
-		      //       // _m setMarkerSize [0.5, 0.5];
-              //   };
-              _unit doSuppressiveFire _target;
+                // if (_unit distance2D _targetPos > 20 and ([_unit, _targetPos] call pl_friendly_check) and (_unit distance2D _targetPos) > _targetDistance * 0.3) then {
+                if ((_targetPos distance2D _unit) > 20 and ([_unit, _targetPos] call pl_friendly_check)) then {
+
+
+                    _unit doWatch _targetPos;
+                    _unit doSuppressiveFire _targetPos;
+                    // _m = createMarker [str (random 1), _targetPos];
+		            // _m setMarkerType "mil_dot";
+		            // _m setMarkerSize [0.5, 0.5];
+
+                    // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+                    // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+                    // _helper1 setposASL _targetpos;
+                };
+              // _unit doSuppressiveFire _target;
             } forEach _firers;
 
-            _time = time + 10;
+            _time = time + 20;
             waitUntil {sleep 1; time > _time or !(_grp getVariable ["pl_opf_in_pos", true])};
         };
-        sleep 10;
+        sleep 20;
     };
 };
 
+pl_opfor_add_wp_path = {
+    params ["_grp", "_start", "_dest", ["_wpInterval", 100]];
+
+    private _destdistance = _start distance2D _dest;
+    private _intervals = (round (_destdistance / _wpInterval)) - 1;
+    private _lastPos = _start;
+    private _wpPos = [];
+
+    for "_i" from 0 to _intervals do {
+        _wpPos = _lastPos getPos [_wpInterval, _start getDir _dest];
+        _wp = _grp addWaypoint [_wpPos, 5];
+        _wp setWaypointType "MOVE";
+        _lastPos = _wpPos;
+    };
+};
+
+pl_get_close_enemy = {
+    params ["_grp"];
+
+    private _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 1000]) select {(side _x == playerSide and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0.1};
+
+    if ((count _knownUnits) <= 0) exitWith {objNull};
+
+    _knownUnits = [_knownUnits, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
+    private _targetPos = getPos (leader (group (_knownUnits#0)));
+
+    private _closeToKnow = selectRandom (allUnits select {(side _x) == playerSide and ((getPos _x) distance2D _targetPos) <= 350});
+
+    _closeToKnow
+};
 
 pl_opfor_flanking_move = {
-	params ["_grp"];
+	params ["_grp", ["_flankDistanceOverride", -1]];
 	private ["_fankPos", "_targetPos"];
+
+    // private _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 800]) select {(side _x == playerSide and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0};
+
+    // if ((count _knownUnits) <= 0) exitWith {};
+
+    private _targetUnit = [_grp] call pl_get_close_enemy;
+
+    if (isNull _targetUnit) exitWith {};
+
 
 	[_grp] call pl_opfor_reset;
 
@@ -732,33 +815,32 @@ pl_opfor_flanking_move = {
 
     sleep 0.5;
 
-    _units = allUnits select {side _x == playerSide and alive _x and hcLeader (group _x) == player};
-    _units = [_units, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
-    _knownUnits = _units select {((leader _grp) knowsAbout _x) > 0.1};
+    // _knownUnits = [_knownUnits, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
     
+    // _targetPos = getPos (leader (group (_knownUnits#0)));
 
-    if !(_knownUnits isEqualto []) then {
-        _targetPos = getPos (leader (group (_knownUnits#0)));
-    } else {
-        _targetPos = getPos (leader (group (_units#([0, (count _units) - 1] call BIS_fnc_randomInt))));
-    };
-
-    // if ((random 1) > 0.5) then {
-    //     _targetPos = [_units] call pl_find_centroid_of_units;
-    // };
-
+    _targetPos = getPos _targetUnit;
 
 	private _targetDir = (leader _grp) getDir _targetPos;
 	private _flankDistance = ((leader _grp) distance2D _targetPos) * 0.7;
     if (_flankDistance > 400) then {_flankDistance = 400};
+    if (_flankDistanceOverride > 0) then {_flankDistance = _flankDistanceOverride};
 	_leftPos = (getPos (leader _grp)) getPos [_flankDistance, _targetDir + 90];
 	_rightPos = (getPos (leader _grp)) getPos [_flankDistance, _targetDir - 90];
 
 	_flankPos = ([[_leftPos, _rightPos], [], {count (_x nearEntities [["Man"], 350])}, "ASCEND"] call BIS_fnc_sortBy)#0;
+    _flankPos2 = _flankPos getPos [_flankDistance, _targetDir];
 
-	_grp addWaypoint [_flankPos, 0];
-	_grp addWaypoint [_flankPos getPos [_flankDistance, _targetDir], 0];
-	_grp addWaypoint [_targetPos, 0];
+    if ((surfaceIsWater _flankPos) or (surfaceIsWater _flankPos2)) exitWith {[_grp] spawn pl_opfor_attack_closest_enemy};
+
+    [_grp, getPos (leader _grp), _flankPos] call pl_opfor_add_wp_path;
+    [_grp, _flankPos, _flankPos2] call pl_opfor_add_wp_path;
+    [_grp, _flankPos2, _targetPos] call pl_opfor_add_wp_path;
+
+	// _grp addWaypoint [_flankPos, 20];
+	// _grp addWaypoint [_flankPos2, 20];
+	// _grp addWaypoint [_targetPos, 20];
+
 	{
 		_x enableAI "PATH";
 		_x disableAI "AUTOCOMBAT";
@@ -771,13 +853,17 @@ pl_opfor_flanking_move = {
 		if !(_x == leader _grp) then {
 			_x doFollow (leader _grp);
 		} else {
-			_x doMove _flankPos;
-			_x playActionNow "GestureAdvance";
+			if ((vehicle _x) != _x) then {
+                // (vehicle _x) doMove _flankPos;
+            } else {
+                // _x doMove _flankPos;
+                _x playActionNow "GestureAdvance";
+            };
 		};
 	} forEach (units _grp);
 	_grp allowFleeing 0;
 	_grp setBehaviour "AWARE";
-	_grp setFormation "WEDGE";
+	// _grp setFormation "WEDGE";
 	_grp setSpeedMode "FULL";
 };
 
@@ -785,42 +871,36 @@ pl_opfor_attack_closest_enemy = {
 	params ["_grp"];
 	private ["_atkPos"];
 
-	[_grp] call pl_opfor_reset;
+    // private _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 800]) select {(side _x == playerSide and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0.1};
 
-	sleep 0.5;
+    // if ((count _knownUnits) <= 0) exitWith {};
+
+    private _targetUnit = [_grp] call pl_get_close_enemy;
+
+    if (isNull _targetUnit) exitWith {};
+
+    [_grp] call pl_opfor_reset;
+
+    sleep 0.5;
 
     [_grp] call pl_opfor_advance;
 
     sleep 0.5;
-	
-	// [_grp] spawn {
-	// params ["_grp"];
 
-
-    _units = allUnits select {side _x == playerSide and alive _x and hcLeader (group _x) == player};
-    _units = [_units, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
-    _knownUnits = _units select {((leader _grp) knowsAbout _x) > 0.1};
+    // _knownUnits = [_knownUnits, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
     
+    // _targetPos = getPos (leader (group (_knownUnits#0)));
 
-    if !(_knownUnits isEqualto []) then {
-    	_atkPos = getPos (leader (group (_knownUnits#0)));
+    _targetPos = getPos _targetUnit;
+
+    [_grp, getPos (leader _grp), _targetPos] call pl_opfor_add_wp_path;
+
+    if ((vehicle (leader _grp)) != (leader _grp)) then {
+        // vehicle (leader _grp) doMove _targetPos;
     } else {
-    	_atkPos = getPos (leader (group (_units#([0, (count _units) - 1] call BIS_fnc_randomInt))));
-	};
-
-    // if ((random 1) > 0.5) then {
-    //     _atkPos = [_units] call pl_find_centroid_of_units;
-    // };
-
-    _wp = _grp addWaypoint [_atkPos, 20];
-    _wp setWaypointType "MOVE";
-
-	// {
-	// 	_x disableAI "AUTOCOMBAT";
-	// } forEach (units _grp);
-	// _grp setBehaviour "AWARE";
-	(leader _grp) doMove _atkPos;
-	(leader _grp) playActionNow "GestureAdvance";
+    	// (leader _grp) doMove _atkPos;
+    	(leader _grp) playActionNow "GestureAdvance";
+    };
 };
 
 pl_opfor_assault = {
@@ -844,8 +924,11 @@ pl_opfor_assault = {
         _x limitSpeed 15;
         _x doMove _movePos;
         _x setDestination [_movePos, "LEADER DIRECT", true];
+        _x disableAI "AUTOCOMBAT";
         _x lookAt _target;
 	} forEach (units _grp);
+
+    _grp setBehaviour "AWARE";
 };
 
 
@@ -857,8 +940,8 @@ pl_opfor_auto_formation = {
     while {sleep 0.5; {alive _x} count (units _grp) > 0} do {
 
         if ([getPos (leader _grp)] call pl_is_city) then {
-            if (formation _grp != "VEE") then {
-                _grp setFormation "VEE";
+            if (formation _grp != "FILE") then {
+                _grp setFormation "FILE";
                 (leader _grp) forceSpeed 3;
             }; 
         } else {
@@ -866,7 +949,7 @@ pl_opfor_auto_formation = {
             if ((currentWaypoint _grp) < count (waypoints _grp)) then {
                 _dest = waypointPosition ((waypoints _grp) select (count (waypoints _grp) - 1));
                 _distance = _dest distance2D (leader _grp);
-                if (_distance > 100 and behaviour (leader _grp) != "COMBAT") then {
+                if (_distance > 300 and (behaviour (leader _grp) != "COMBAT")) then {
                     if (formation _grp != "STAG COLUMN") then {
                         _grp setFormation "STAG COLUMN";
                     };
@@ -933,101 +1016,297 @@ pl_opfor_find_overwatch = {
 	[false, [0,0,0], [0,0,0]]
 };
 
-pl_opfor_join_grp = {
-	params ["_grp", "_side"];
+// Tactical Retreats
+pl_opfor_retreat_zones = createHashMapFromArray [[[0,0,0], [0, 1000, 100000000]]];
+pl_opfor_retreat_zone_size = 1000;
+pl_opfor_join_range = 100;
+pl_opfor_retreat_breackpoint = 0.5;
+// pl_opfor_allow_ai_retreat = true;
+// pl_opfor_allow_ai_surrender = true;
 
-	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], 300]) select {side _x == _side and ((group _x) getVariable ["pl_opf_task", "advance"]) != "flanking"});
+[] spawn {
+ 
+    while {pl_opfor_allow_ai_retreat} do {
+
+        private _markers = [];
+
+        {
+            _fightingPos = _x;
+            _joinValues = _y;
+
+            if (pl_debug) then {
+                _m =  createMarker [str (random 5), _x];
+                _m setMarkerShape "ELLIPSE";
+                _m setMarkerBrush "Border";
+                _m setMarkerColor "colorOrange";
+                _m setMarkerAlpha 0.8;
+                _m setMarkerSize [pl_opfor_retreat_zone_size, pl_opfor_retreat_zone_size];
+                
+                _m2 = createMarker [str (random 5), _x];
+                _m2 setMarkerType "mil_dot";
+                _m2 setMarkerSize [1,1];
+                _m2 setMarkerColor "colorOrange";
+                _m2 setMarkerText (format ["%1  /  %2  /  %3", _joinValues#0, _joinValues#1, (_joinValues#2) - time]);
+
+                _markers pushback _m;
+                _markers pushback _m2;
+            };
+
+            if (time >= (_joinValues#2)) then {pl_opfor_retreat_zones deleteAt _x};
+
+            if ((_joinValues#0) >= (_joinValues#1)) then {
+
+                {
+                    _x setvariable ["pl_opfor_retreat", true];
+                    // sleep (random 1);
+                } forEach (allGroups select {side _x != playerSide and side _x != civilian and ((leader _x) distance2D _fightingPos) <= pl_opfor_retreat_zone_size});
+
+                pl_opfor_retreat_zones deleteAt _x;
+            };
+
+
+        } forEach pl_opfor_retreat_zones;
+
+        sleep 2;
+
+        {
+            deleteMarker _x;
+        } forEach _markers;
+    };
+};
+
+pl_opfor_join_grp = {
+	params ["_grp", "_side", ["_joinRange", pl_opfor_join_range]];
+
+    if !(pl_opfor_allow_ai_surrender) exitwith {false};
+    if (count ((units _grp) select {alive _x}) <= 0) exitWith {false};
+
+	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], _joinRange]) select {side _x == _side and ((group _x) getVariable ["pl_opf_task", "advance"]) != "flanking"});
 	_targets = _targets - (units _grp);
 	private _target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
-	if !(isNil "_target") exitWith {
-		private _targetGrp = group _target;
-        _targetGrp setVariable ["pl_is_join_target", true];
-		{
-			if (alive _x) then {
-				[_x] joinSilent _targetGrp;
-				_x enableAI "PATH";
-				_x disableAI "AUTOCOMBAT";
-				_x setBehaviour "AWARE";
-				_x setUnitPos "AUTO";
-                _x doMove (getPos (leader _targetGrp));
-				_x doFollow (leader _targetGrp);
-                _x setVariable ["pl_no_centoid", true];
-			};
-		} forEach (units _grp);
-        // deleteGroup _group;
+    private _return = false;
 
-        // retarded
-        [_targetGrp] spawn {
-            params ["_targetGrp"];
-            sleep 2;
-            [_targetGrp, (currentWaypoint _targetGrp)] setWaypointType "MOVE";
-            [_targetGrp, (currentWaypoint _targetGrp)] setWaypointPosition [getPosASL (leader _targetGrp), -1];
-            sleep 0.1;
-            deleteWaypoint [_targetGrp, (currentWaypoint _targetGrp)];
-            sleep 2;
-            _targetGrp setVariable ["pl_is_join_target", nil];
+
+	if !(isNil "_target") then {
+
+        // look for or create a Retreat Zone; when enough groups have /died/joined/surrenderres all groups in zone will retreat
+        private _keyPos = [];
+        private _retreatLevelBreackpoint = 1000;
+        private _retreatLevel = 0;
+        private _retreatTime = time + 0;
+
+        {
+            if ((getPos _target) distance2D _x <= pl_opfor_retreat_zone_size) then {
+                _keyPos = _x;
+                _retreatLevel = _y#0;
+                _retreatLevelBreackpoint = _y#1;
+                _retreatTime = _y#2;
+            };
+        } forEach pl_opfor_retreat_zones;
+
+        if (_retreatLevel <= _retreatLevelBreackpoint) then {
+
+    		private _targetGrp = group _target;
+            _targetGrp setVariable ["pl_is_join_target", true];
+    		{
+    			if (alive _x) then {
+    				[_x] joinSilent _targetGrp;
+    				_x enableAI "PATH";
+    				_x disableAI "AUTOCOMBAT";
+    				_x setBehaviour "AWARE";
+    				_x setUnitPos "AUTO";
+                    _x doMove (getPos (leader _targetGrp));
+    				_x doFollow (leader _targetGrp);
+                    _x setVariable ["pl_no_centoid", true];
+                    _x setUnitLoadout (_x getVariable ["pl_loadout", getUnitLoadout _x]);
+                    _x setCaptive false;
+    			};
+    		} forEach (units _grp);
+            deleteGroup _grp;
+
+            // retarded
+            [_targetGrp] spawn {
+                params ["_targetGrp"];
+                // sleep 2;
+                // [_targetGrp, (currentWaypoint _targetGrp)] setWaypointType "MOVE";
+                // [_targetGrp, (currentWaypoint _targetGrp)] setWaypointPosition [getPosASL (leader _targetGrp), -1];
+                // sleep 0.1;
+                // deleteWaypoint [_targetGrp, (currentWaypoint _targetGrp)];
+                sleep 2;
+                _targetGrp setVariable ["pl_is_join_target", nil];
+            };
+
+            {
+                [_x] joinSilent _targetGrp;
+            } forEach (units _targetGrp);
+
+            if (_keyPos isNotEqualto []) then {
+
+                _retreatLevel = _retreatLevel + 1;
+
+                pl_opfor_retreat_zones set [_keyPos, [_retreatLevel, _retreatLevelBreackpoint, _retreatTime]];
+
+            } else {
+                _retreatLevelBreackpoint = count (allGroups select {side _x == (side _targetGrp) and ((leader _x) distance2D (getPos _target)) <= pl_opfor_retreat_zone_size and (({alive _x} count (units _x)) > 0)});
+                _retreatLevelBreackpoint = round (_retreatLevelBreackpoint * pl_opfor_retreat_breackpoint);
+                if (_retreatLevelBreackpoint >= 2) then {
+                    pl_opfor_retreat_zones set [getPos _target, [1, _retreatLevelBreackpoint, time + (80 * _retreatLevelBreackpoint)]];
+                };
+            };
+
+            _return = true;
+        } else {
+            _return = false;
         };
-
-		true
 	};
-	false
+	_return
 };
 
 pl_opfor_surrender = {
 	params ["_grp"];
 
-	sleep 5;
+	sleep 2;
+
+    // look for or create a Retreat Zone; when enough groups have /died/joined/surrenderres all groups in zone will retreat
+    private _keyPos = [];
+    private _retreatLevelBreackpoint = 1000;
+    private _retreatLevel = 0;
+    private _retreatTime = time + 0;
+
+    {
+        if (getPos (leader _grp) distance2D _x <= pl_opfor_retreat_zone_size) then {
+            _keyPos = _x;
+            _retreatLevel = _y#0;
+            _retreatLevelBreackpoint = _y#1;
+            _retreatTime = _y#2;
+        };
+    } forEach pl_opfor_retreat_zones;
+
+    if (_keyPos isNotEqualto []) then {
+
+        _retreatLevel = _retreatLevel + 1;
+
+        pl_opfor_retreat_zones set [_keyPos, [_retreatLevel, _retreatLevelBreackpoint, _retreatTime]];
+
+    } else {
+        _retreatLevelBreackpoint = count (allGroups select {side _x == (side _grp) and (leader _x) distance2D (getPos (leader _grp)) <= pl_opfor_retreat_zone_size and (({alive _x} count (units _x)) > 0)});
+        _retreatLevelBreackpoint = round (_retreatLevelBreackpoint * pl_opfor_retreat_breackpoint);
+        if (_retreatLevelBreackpoint >= 2) then {
+            pl_opfor_retreat_zones set [getPos (leader _grp), [1, _retreatLevelBreackpoint, time + (80 * _retreatLevelBreackpoint)]];
+        };
+    };
+
+    if !(pl_opfor_allow_ai_surrender) exitwith {deleteGroup _grp};
+
+    if (count ((units _grp) select {alive _x}) <= 0) exitWith {deleteGroup _grp};
 
 	[_grp] spawn pl_opfor_reset;
 
+    private _leader = leader _grp;
+
     _grp setvariable ["pl_has_surrendered", true];
-	_surrenderGrp = createGroup [civilian , true];
+	// _surrenderGrp = createGroup [side _grp , true];
+    _grp selectLeader (selectRandom ((units _grp) select {alive _x}));
 
 	{
 		if (alive _x) then {
-			[_x] joinSilent _surrenderGrp;
 			_x setCaptive true;
-			removeAllWeapons _x;
-			_x disableAI "PATH";
-			_x setUnitPos "DOWN";
+            _x setVariable ["pl_loadout", getUnitLoadout _x];
+			// removeAllWeapons _x;
+            removeBackpack _x;
+            if ((random 1) > 0.5) then {
+                removeHeadgear _x;
+            };
+            if ((random 1) > 0.5) then {
+                removeVest _x;
+            };
+            if ((random 1) > 0.5) then {
+                removeAllWeapons _x;
+            };
+            if ((random 1) > 0.25) then {
+                _x setHit ["legs", 0.5];
+            };
 			_x enableDynamicSimulation true;
+            _x disableAI "AUTOCOMBAT";
+            _x allowFleeing 1;
 			// [_x] spawn {
 			// 	sleep 5;
 			// 	(_this#0) playActionNow selectRandom ["agonyStart", "surrender"];
 			// };
 		};
 	} forEach (units _grp) ;
-	_surrenderGrp setBehaviour "CARELESS";
-	_surrenderGrp setSpeedMode "LIMITED";
 
-	// sleep 80;
+	_grp setBehaviour "AWARE";
+    // allowFleeing
+	// _grp setSpeedMode "LIMITED";
 
-	waitUntil {sleep 5; !((((getPos (leader _surrenderGrp)) nearEntities [["Man", "Tank", "Car"], 120]) select {side _x == playerSide}) isEqualto [])};
+    sleep 2;
 
-	{
+    private _opforSide = side _grp;
 
-		if (alive _x) then {
-			[_x] spawn {
-				(_this#0) setUnitPos "MIDDLE";
-				sleep 3;
-				(_this#0) playActionNow "surrender";
-			};
-			sleep 0.5 + (random 2);
-		};
-	} forEach (units _surrenderGrp) ;
+    // if (isNull pl_opfor_retreat_road) then {
 
-	waitUntil {sleep 5; !((((getPos (leader _surrenderGrp)) nearEntities [["Man", "Tank", "Car"], 10]) select {side _x == playerSide}) isEqualto [])};
+        private _enyCentroid = [allGroups select {(side _x) isEqualTo playerSide}] call pl_find_centroid_of_groups;
 
-	{
-		_x forceSpeed 1;
-		_x enableAI "PATH";
-		_x switchMove "";
-		_x setUnitPos "UP";
-		_x doMove pl_opfor_pow_pos;
-	} forEach (units _surrenderGrp);
-	_surrenderGrp addWaypoint [pl_opfor_pow_pos , 100];
+        _retreatRoad = [(getPos _leader) getPos [worldSize * 0.1, _enyCentroid getDir _leader], 1500] call BIS_fnc_nearestRoad;
+    // };
+
+    private _retreatPos = getPos _retreatRoad;
+
+    {
+     // _x forceSpeed 1;
+         _x enableAI "PATH";
+         _x switchMove "";
+         _x setUnitPos "UP";
+    } forEach (units _grp);
+
+    [_grp, getPos (leader _grp), _retreatPos, 150] call pl_opfor_add_wp_path;
+
+
+    [_grp] spawn {
+        params ["_grp"];
+
+    	waitUntil {sleep 5; !((((getPos (leader _grp)) nearEntities [["Man", "Tank", "Car"], 75]) select {side _x == playerSide}) isEqualto [])};
+
+        [_grp] call pl_opfor_reset;
+
+        {
+            if (alive _x) then {
+                _x playActionNow "surrender";
+                _x disableAI "PATH";
+                _x setUnitPos "DOWN";
+                _x enableDynamicSimulation true;
+            };
+        } forEach (units _grp) ;
+
+        waitUntil {sleep 5; !((((getPos (leader _grp)) nearEntities [["Man", "Tank", "Car"], 25]) select {side _x == playerSide}) isEqualto [])};
+
+        [_grp] call pl_opfor_reset;
+
+        {
+            _x forceSpeed 1;
+            _x enableAI "PATH";
+            _x switchMove "";
+            _x setUnitPos "UP";
+            _x doMove pl_opfor_pow_pos;
+        } forEach (units _grp);
+        [_grp, getPos (leader _grp), pl_opfor_pow_pos, 150] call pl_opfor_add_wp_path;
+    };
+
+    [_grp, _retreatPos, _opforSide] spawn {
+        params ["_grp", "_retreatPos", "_opforSide"];
+
+        private _timeOut = time + ([200, 500] call BIS_fnc_randomInt);
+        // _timeOut = time + 2;
+        waitUntil {sleep 5; time >= _timeOut or ((leader _grp) distance2D _retreatPos < 300)};
+
+        while {sleep 1; (count ((units _grp) select {alive _x})) > 0} do {
+            if ([_grp, _opforSide, 400] call pl_opfor_join_grp) exitWith {};
+
+            sleep 10;
+        };
+    };
 };
-
 
 
 pl_opfor_drop_cargo = {
@@ -1040,69 +1319,269 @@ pl_opfor_drop_cargo = {
     // (driver _vic) disableAI "PATH";
     doStop _vic;
     _vic forceSpeed 0;
-	{
-        _unit = _x;
-        if !(_unit in (units _grp)) then {
-            unassignVehicle _unit;
-            doGetOut _unit;
-            [_unit] allowGetIn false;
-        };
-    } forEach _cargo;
+	// {
+    //     _unit = _x;
+    //     if !(_unit in (units _grp)) then {
+    //         unassignVehicle _unit;
+    //         doGetOut _unit;
+    //         [_unit] allowGetIn false;
+    //     };
+    // } forEach _cargo;
+
+    [_grp, _cargo, _vic] spawn pl_opfor_combat_dismount;
 
     {
         _x leaveVehicle _vic;
     } forEach _cargoGroups;
     private _cargoPers = [];
 
-    waitUntil {sleep 0.5; (({vehicle _x != _x} count _cargo) == 0) or (!alive _vic)};
-    sleep 2;
-    // {_x enableAI "PATH"} forEach (units _grp);
+};
+
+pl_opfor_combat_dismount = {
+    params ["_group", "_cargo", "_vic", ["_offsetValue", 45], ["_spacing", 5]];
+    private ["_offset"];
+
+    for "_i" from 1 to (count _cargo) do {
+
+        _offset = _offsetValue;
+        if (_i % 2 == 0) then {_offset = -_offsetValue};
+
+        _movePos = (getPos _vic) getpos [_spacing * _i, ((getDir _vic) - 180) + _offset];
+
+        // _m = createMarker [str (random 5), _movePos];
+        // _m setMarkerType "mil_dot";
+
+        [_cargo#(_i - 1), _movePos, getdir _vic] spawn {
+            params ["_unit", "_movePos", "_watchDir"];
+
+            _unit disableAI "AUTOTARGET";
+            _unit disableAI "TARGET";
+            _unit disableAI "AUTOCOMBAT";
+            _unit setCombatBehaviour "AWARE";
+            _unit setHit ["legs", 0];
+            unassignVehicle _unit;
+            doGetOut _unit;
+            [_unit] allowGetIn false;
+
+            waitUntil {sleep 0.1; (vehicle _unit) == _unit or ((group _unit) getVariable ["pl_stop_event", false])};
+            
+            if !(((group _unit) getVariable ["pl_stop_event", false])) then {
+
+                _unit doMove _movePos;
+                // _unit setDestination [_movePos, "LEADER DIRECT", true];
+
+                sleep 0.5;
+
+                waitUntil {sleep 0.1; unitReady _unit or ((group _unit) getVariable ["pl_stop_event", false])};
+
+                if !(((group _unit) getVariable ["pl_stop_event", false])) then {
+                    doStop _unit;
+                    _unit setUnitPos "DOWN";
+                    _unit enableAI "AUTOTARGET";
+                    _unit enableAI "TARGET";
+                    _unit doWatch (_movePos getPos [100, _watchDir]);
+                    _unit setVariable ["pl_in_position", true];
+                };
+            };
+        };
+    };
+};
+
+pl_opfor_rush_to_unload = {
+    params ["_grp", "_vic", ["_panic", true]];
+
+    private _flankchance = 0.7;
+
+    private _road = [getPosATL _vic, 50] call BIS_fnc_nearestRoad;
+    if (!(isNull _road) and _panic) then {_flankchance = 0.1};
+
+    if ((random 1) > _flankchance) then {
+        [_grp, [80, 150] call BIS_fnc_randomInt] call pl_opfor_flanking_move;
+    } else {
+        [_grp] call pl_opfor_attack_closest_enemy;
+    };
+
+    if (_panic) then {
+        _vic forceSpeed -1;
+        _vic limitSpeed 1000;
+    };
+};
+
+pl_opfor_retreat_road = objNull;
+
+pl_opfor_vic_retreat = {
+    params ["_grp", "_vic"];
+
+
+    if (isNull pl_opfor_retreat_road) then {
+
+        private _opforSide = side _grp;
+        private _enyCentroid = [allGroups select {(side _x) isEqualTo playerSide}] call pl_find_centroid_of_groups;
+        private _retreatDistance = worldSize * 0.1;
+        if (_retreatDistance < 1000) then {_retreatDistance = 1000};
+
+        pl_opfor_retreat_road = [(getPos _vic) getPos [worldSize * 0.1, _enyCentroid getDir _vic], 1500] call BIS_fnc_nearestRoad;
+    };
+
+    private _retreatPos = getPos pl_opfor_retreat_road;
+
+    // _m = createMarker [str (random 1), _retreatPos];
+    // _m setMarkerType "mil_marker";
+    // _m setMarkerSize [1.5, 1.5];
+
+    [_grp] call pl_opfor_reset;
+
+    // _vic doMove _retreatPos;
+    _vic limitSpeed 70;
     _vic forceSpeed -1;
-    [_vic, _grp, _cargoGroups#0] spawn pl_opfor_support_inf;
-	// (driver _vic) enableAI "PATH";
+
+    
+    // _grp addWaypoint [_retreatPos , 100];
+    [_grp, getPos _vic, _retreatPos, (_vic distance2D _retreatPos) / 3] call pl_opfor_add_wp_path;
+
+    {
+        _x disableAI "AUTOCOMBAT";
+        _x disableAI "FIREWEAPON";
+    } forEach (units _grp);
+    _grp setBehaviour "CARELESS";
+
+    sleep ([160, 300] call BIS_fnc_randomInt);
+
+    if (isNil "_grp") exitWith {};
+
+    {
+        _x enableAI "AUTOCOMBAT";
+        _x enableAI "FIREWEAPON";
+    } forEach (units _grp);
+
+    _grp setBehaviour "AWARE";
+};
+
+pl_opfor_tactical_retreat_road = objNull;
+
+pl_opfor_tactical_retreat = {
+    params ["_grp", "_timeout"];
+
+    _grp setvariable ["pl_opfor_retreat", false];
+
+    private _enyCentroid = [allGroups select {(side _x) isEqualTo playerSide}] call pl_find_centroid_of_groups;
+    private _retreatDistance = worldSize * 0.045;
+    if (_retreatDistance < 500) then {_retreatDistance = 500};
+
+    if (isNull pl_opfor_tactical_retreat_road) then {
+        pl_opfor_tactical_retreat_road = [(getPos (leader _grp)) getPos [_retreatDistance, _enyCentroid getDir (leader _grp)], _retreatDistance / 2] call BIS_fnc_nearestRoad;
+    };
+
+    private _retreatPos = getPos pl_opfor_tactical_retreat_road;
+
+    if (isNull pl_opfor_tactical_retreat_road) then {_retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, _enyCentroid getDir (leader _grp)]};
+
+    if (_retreatPos isEqualTo [0,0,0]) exitWith {};
+
+    _retreatPos = [[[_retreatPos, 250]], ["water"]] call BIS_fnc_randomPos;
+
+    _m = createMarker [str (random 1), _retreatPos];
+    _m setMarkerType "mil_marker";
+    _m setMarkerSize [1.5, 1.5];
+
+    [_grp] call pl_opfor_reset;
+
+    {
+        _x disableAI "AUTOCOMBAT";
+        _x disableAI "FIREWEAPON";
+    } forEach (units _grp);
+
+
+    if (vehicle (leader _grp) != leader _grp) then {
+        _vic = vehicle (leader _grp);
+        _vic limitSpeed 70;
+        _vic forceSpeed -1;
+        _grp setBehaviour "CARELESS";
+    } else {
+        _grp setBehaviour "AWARE";
+    };
+
+    [_grp, getPos (leader _grp), _retreatPos, ((leader _grp) distance2D _retreatPos) / 3] call pl_opfor_add_wp_path;
+
+    // sleep ([240, 500] call BIS_fnc_randomInt);
+    sleep _timeout;
+
+    if (isNil "_grp") exitWith {};
+
+    [_grp] call pl_opfor_reset;
+
+    {
+        _x enableAI "AUTOCOMBAT";
+        _x enableAI "FIREWEAPON";
+    } forEach (units _grp);
+
+    _grp setBehaviour "AWARE";
+    _grp setvariable ["pl_opfor_retreat", false];
+
 };
 
 pl_opfor_support_inf = {
 	params ["_vic", "_grp", "_allyGrp"];
 
+     waitUntil {sleep 0.5; (({vehicle _x != _x} count (units _allyGrp)) <= 0) or !(alive _vic)};
+
     [_grp] spawn pl_opfor_reset;
 
     sleep 0.5;
 
-	_vic limitSpeed 15;
+    [_grp] spawn pl_opfor_reset;
+
+    sleep 0.5;
+
+	_vic limitSpeed 25;
+
+    private _notMovedCounter = 0;
 
 	while {alive _vic and ({alive _x} count (units _allyGrp)) > 0} do {
 
 		if (_vic distance2D (leader _allyGrp) > 40) then {
             _vic forceSpeed -1;
 			_vic doMove (getpos (leader _allyGrp));
-			_vic setDestination [getpos (leader _allyGrp),"VEHICLE PLANNED" , true];
+			_vic setDestination [getpos (leader _allyGrp), "VEHICLE PLANNED", true];
+            _notMovedCounter = 0;
 		} else {
             doStop _vic;
             _vic forceSpeed 0;
 			[_grp] call pl_opfor_vic_suppress;
+            _notMovedCounter = _notMovedCounter + 1;
 		};
-		sleep 20;
+
+        if (_notMovedCounter > 5) then {
+            _vic forceSpeed -1;
+            _movePos = (getpos (leader _allyGrp)) getPos [[40, 80] call BIS_fnc_randomInt, (_vic getDir (leader _allyGrp)) + ([-90, 90] call BIS_fnc_randomInt)];
+            _vic doMove _movePos;
+            _vic setDestination [_movePos, "VEHICLE PLANNED", true];
+            _notMovedCounter = 0;
+        };
+		sleep 10;
 	};
 
-	_vic limitSpeed 15;
+	[_grp] spawn pl_opfor_reset;
 };
 
 pl_opfor_vic_suppress = {
 	params ["_grp"];
+    private ["_targetsPos", "_targetDistance"];
 
-    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank"], 600]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
+    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank"], 1500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
     if !(_targets isEqualto []) then {
     	private _target = _targets#0;
+        _targetDistance = (leader _grp) distance2D _target;
 	    {
 	        if !((currentCommand _x) isEqualTo "Suppress") then {
 	            _targetPos = [[[getPos _target, 30]], []] call BIS_fnc_randomPos;
 	            _targetPos = ATLToASL _targetPos;
-	            _vis = lineIntersectsSurfaces [eyePos _x, _targetPos, _x, vehicle _x, true, 1];
+                _targetDistance = (leader _grp) distance2D _targetPos;
+	            _vis = lineIntersectsSurfaces [eyePos _x, _targetPos, _x, vehicle _x, true, 1, "FIRE"];
 	            if !(_vis isEqualTo []) then {
 	                _targetPos = (_vis select 0) select 0;
 	            };
-	            if ((leader _grp) distance2D _targetPos > 20) then {
+	            if ((leader _grp) distance2D _targetPos > 30 and ([(leader _grp), _targetPos] call pl_friendly_check) and ((leader _grp) distance2D _targetPos) > _targetDistance * 0.3) then {
 	            	_x doSuppressiveFire _targetPos;
 	            };
 	        };
@@ -1117,7 +1596,7 @@ pl_opfor_vic_suppress_cont = {
 	while {alive _vic and (speed _vic) <= 5} do {
         waitUntil {sleep 1, (behaviour (leader _grp)) == "COMBAT"};
 		[_grp] call pl_opfor_vic_suppress;
-		sleep 60;
+		sleep 30;
 	};
 };
 
