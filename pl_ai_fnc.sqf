@@ -1663,6 +1663,9 @@ pl_switch_effective_vic_cmd_action = {
 pl_start_set_up = {
     sleep 8;
 
+
+    
+
     _hcc = allMissionObjects "HighCommand";
     pl_hc_active = false;
     if (_hcc isEqualto []) then {
@@ -1692,6 +1695,7 @@ pl_start_set_up = {
 
     if (pl_hc_active) then {
 
+        if (pl_opfor_enhanced_ai) then {[] execFSM "Plmod\fsm\pl_opfor_cmd_commander.fsm"};
         [group player] call pl_set_up_ai;
 
         // player addAction

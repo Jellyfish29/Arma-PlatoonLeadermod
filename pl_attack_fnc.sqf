@@ -278,7 +278,7 @@ pl_suppressive_fire_position = {
                     private _distance = ((eyePos _unit) vectorDistance _targetPos) - 2;
                     _targetpos = (eyePos _unit) vectorAdd (((eyePos _unit) vectorFromTo _targetpos) vectorMultiply _distance);
                     // if ((_targetPos distance2D _unit) > pl_suppression_min_distance and (_targetpos distance2D _pos) <= 50 and !([_unit, _targetPos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1)) then {
-                    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_unit, _targetPos] call pl_friendly_check) and (_unit distance2D _targetPos) > _targetDistance * 0.3) then {
+                    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_unit, _targetPos] call pl_friendly_check)) then {
 
                         _unit doWatch _targetPos;
                         _unit doSuppressiveFire _targetPos;
@@ -296,7 +296,7 @@ pl_suppressive_fire_position = {
                 } else {
                     private _distance = ((eyePos _unit) vectorDistance _pos) - 2;
                     _pos = (eyePos _unit) vectorAdd (((eyePos _unit) vectorFromTo _pos) vectorMultiply _distance);
-                    if ((_pos distance2D _unit) > pl_suppression_min_distance and !([_unit, _pos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1) and (_unit distance2D _targetPos) > _targetDistance * 0.5) then {
+                    if ((_pos distance2D _unit) > pl_suppression_min_distance and !([_unit, _pos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1)) then {
                         _unit doWatch _pos;
                         _unit doSuppressiveFire _pos;
                     };

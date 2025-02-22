@@ -100,6 +100,17 @@
     true
 ] call CBA_fnc_addSetting;
 
+[
+    "pl_opfor_aggressivness",
+    "SLIDER", 
+    ["OPFOR Side Ai Aggressivness", "How Aggressivness the enemy enhanced AI behaves (0 - 1) with 1 beeing most Aggressivn"],
+    ["Platoon Leader","AI"], 
+    [0, 1, 0.6, 2],
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
 
 [
     "pl_suppression_min_distance", 

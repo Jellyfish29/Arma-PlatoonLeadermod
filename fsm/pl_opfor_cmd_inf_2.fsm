@@ -2,72 +2,74 @@
 /*%FSM<HEAD>*/
 /*
 item0[] = {"Start",0,250,-587.257019,-70.863098,-497.257446,-20.863098,0.000000,"Start"};
-item1[] = {"has_wp",4,218,-351.708710,-118.217056,-261.708679,-68.217064,2.000000,"has wp"};
-item2[] = {"In_Defence_Posit",2,250,-589.915405,209.748474,-457.316010,289.004181,0.000000,"In Defence Position"};
-item3[] = {"Combat_Loop",2,250,331.558350,-173.889221,445.581360,-106.333977,0.000000,"Combat Loop"};
-item4[] = {"Condition_Check",2,250,801.687683,-154.669601,891.688171,-104.669601,0.000000,"Condition" \n "Check"};
-item5[] = {"delay",4,218,573.783752,-163.322418,663.783752,-113.322418,0.000000,"delay"};
-item6[] = {"Return",8,218,568.527100,-236.883972,658.527100,-186.883972,0.000000,"Return"};
-item7[] = {"Cover",4,218,852.088928,22.131470,942.088928,72.131470,1.000000,"Cover"};
-item8[] = {"Fighting",2,250,803.512634,114.337830,893.512634,164.337891,0.000000,"Fighting"};
-item9[] = {"Timeout",4,218,799.235901,225.219604,889.235901,275.219666,0.000000,"Timeout"};
-item10[] = {"Attack",4,250,741.727173,18.908325,831.727417,68.908325,2.000000,"Attack"};
-item11[] = {"below__breackingpoint",4,218,231.661835,1160.764893,321.661835,1210.764893,10.000000,"below " \n "breackingpoint?"};
-item12[] = {"END",1,250,236.011932,1272.350708,326.011963,1322.350586,0.000000,"END"};
-item13[] = {"Retreat",4,218,170.893250,171.738220,293.115601,253.960907,3.000000,"Retreat"};
-item14[] = {"not_in_Combat",2,250,-139.046631,-108.258476,-49.046616,-58.258484,0.000000,"not in Combat"};
-item15[] = {"Combat",4,218,99.320679,-124.024483,189.320679,-74.024475,0.000000,"Combat"};
-item16[] = {"is_Cargo",4,218,-358.280792,-200.348175,-268.280792,-150.348190,3.000000,"is Cargo"};
-item17[] = {"is_dismounted",4,218,100.086906,-214.938751,190.086914,-164.938751,0.000000,"is dismounted"};
-item18[] = {"in_Vehicle",2,250,-143.362152,-207.677917,-53.362137,-157.677917,0.000000,"in Vehicle"};
-item19[] = {"no_wp",4,218,-347.823639,-41.461182,-257.823639,8.538879,0.000000,"no wp"};
-item20[] = {"Stationary",4,218,100.702271,-36.478821,190.702240,13.521179,1.000000,"Stationary"};
-item21[] = {"Retreating",2,250,186.151184,320.755798,284.115112,374.168823,0.000000,"Retreating"};
-item22[] = {"Timeout",4,218,26.002808,117.661133,116.002808,167.661133,0.000000,"Timeout"};
+item1[] = {"has_wp",4,218,-435.746613,-72.812576,-345.746552,-22.812584,2.000000,"has wp"};
+item2[] = {"enemy_close",4,218,526.252258,-146.977966,616.252258,-96.977966,1.000000,"enemy" \n "close"};
+item3[] = {"In_Defence_Posit",2,250,-607.923401,198.943726,-475.324005,278.199432,0.000000,"In Defence Position"};
+item4[] = {"Combat_Staging",2,250,345.761292,-149.652863,459.784302,-82.097626,0.000000,"Combat Staging"};
+item5[] = {"Advancing",2,250,957.564636,-156.062057,1047.565063,-106.062057,0.000000,"Advancing"};
+item6[] = {"Cover_casaulties",4,218,898.894653,-57.730347,988.894531,-7.730347,2.000000,"Cover" \n "casaulties"};
+item7[] = {"Fighting",2,250,919.415344,97.041138,1009.415283,147.041199,0.000000,"Fighting"};
+item8[] = {"Timeout",4,218,656.066956,99.138672,746.066956,149.138733,0.000000,"Timeout"};
+item9[] = {"Attack",4,4346,1014.221191,-60.027039,1104.221436,-10.027039,1.000000,"Attack"};
+item10[] = {"below__breackingpoint",4,218,231.661835,1160.764893,321.661835,1210.764893,10.000000,"below " \n "breackingpoint?"};
+item11[] = {"END",1,250,236.011932,1272.350708,326.011963,1322.350586,0.000000,"END"};
+item12[] = {"Retreat",4,218,170.893250,171.738220,293.115601,253.960907,5.000000,"Retreat"};
+item13[] = {"not_in_Combat",2,250,-86.130676,-105.797791,3.869339,-55.797791,0.000000,"not in Combat"};
+item14[] = {"Combat",4,218,120.094208,-121.985626,210.094208,-71.985626,0.000000,"Combat"};
+item15[] = {"is_Cargo",4,218,-585.412598,-193.984497,-495.412506,-143.984512,3.000000,"is Cargo"};
+item16[] = {"is_dismounted",4,218,132.630890,-201.012177,222.630890,-151.012177,0.000000,"is dismounted"};
+item17[] = {"in_Vehicle",2,250,-190.512421,-198.613403,-100.512413,-148.613403,0.000000,"in Vehicle"};
+item18[] = {"no_wp",4,218,-586.684204,43.823608,-496.684204,93.823669,0.000000,"no wp"};
+item19[] = {"Retreating",2,250,182.393738,307.402649,280.357666,360.815674,0.000000,"Retreating"};
+item20[] = {"Timeout",4,218,-56.940918,116.504730,33.059082,166.504730,0.000000,"Timeout"};
+item21[] = {"no_wp_Cover",4,218,706.099854,23.718475,796.099854,73.718536,0.000000,"no wp" \n "Cover"};
+item22[] = {"Combat_Aggressiv",2,250,667.853455,-152.277740,757.853455,-102.277740,0.000000,"Combat" \n "Aggressivness"};
+item23[] = {"attack_close",4,218,821.458008,-148.689514,911.458008,-98.689514,1.000000,"attack" \n "close"};
+item24[] = {"cover_close",4,218,794.829224,-26.001740,884.829224,23.998260,0.000000,"cover" \n "close"};
 link0[] = {0,1};
-link1[] = {0,16};
-link2[] = {0,19};
-link3[] = {1,14};
-link4[] = {2,1};
-link5[] = {2,11};
-link6[] = {2,13};
-link7[] = {2,15};
-link8[] = {3,5};
-link9[] = {3,11};
-link10[] = {3,13};
-link11[] = {3,20};
-link12[] = {4,6};
-link13[] = {4,7};
-link14[] = {4,10};
-link15[] = {4,11};
-link16[] = {4,13};
-link17[] = {4,19};
-link18[] = {5,4};
-link19[] = {6,3};
-link20[] = {7,8};
-link21[] = {8,9};
-link22[] = {8,11};
-link23[] = {8,13};
-link24[] = {9,3};
-link25[] = {10,8};
-link26[] = {11,12};
-link27[] = {13,21};
-link28[] = {14,11};
-link29[] = {14,13};
-link30[] = {14,15};
-link31[] = {14,19};
-link32[] = {15,3};
-link33[] = {16,18};
-link34[] = {17,3};
-link35[] = {18,11};
-link36[] = {18,17};
-link37[] = {19,2};
-link38[] = {20,2};
-link39[] = {21,11};
-link40[] = {21,22};
-link41[] = {22,14};
-globals[] = {0.000000,0,0,0,0,640,480,1,54,6316128,1,-879.205994,1021.195374,1064.768799,-713.351074,1321,1236,1};
-window[] = {2,-1,-1,-1,-1,1503,166,2085,474,3,1339};
+link1[] = {0,15};
+link2[] = {0,18};
+link3[] = {1,13};
+link4[] = {2,22};
+link5[] = {3,1};
+link6[] = {3,10};
+link7[] = {3,12};
+link8[] = {4,2};
+link9[] = {4,6};
+link10[] = {4,10};
+link11[] = {4,12};
+link12[] = {4,21};
+link13[] = {5,6};
+link14[] = {5,9};
+link15[] = {5,10};
+link16[] = {5,12};
+link17[] = {6,7};
+link18[] = {7,8};
+link19[] = {7,10};
+link20[] = {7,12};
+link21[] = {8,4};
+link22[] = {9,7};
+link23[] = {10,11};
+link24[] = {12,19};
+link25[] = {13,10};
+link26[] = {13,12};
+link27[] = {13,14};
+link28[] = {14,4};
+link29[] = {15,17};
+link30[] = {16,4};
+link31[] = {17,10};
+link32[] = {17,16};
+link33[] = {18,3};
+link34[] = {19,10};
+link35[] = {19,20};
+link36[] = {20,13};
+link37[] = {21,7};
+link38[] = {22,23};
+link39[] = {22,24};
+link40[] = {23,5};
+link41[] = {24,7};
+globals[] = {0.000000,0,0,0,0,640,480,1,65,6316128,1,76.956383,1366.491943,615.773682,-590.786499,1321,1236,1};
+window[] = {2,-1,-1,-1,-1,1211,182,2101,182,3,1339};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -83,28 +85,36 @@ class FSM
                          "" \n
                          "private _grp = _this;" \n
                          "private _side = side (leader _grp);" \n
+                         "private _chance = 0;" \n
+                         "private _aggressivness = pl_opfor_aggressivness;" \n
+                         "" \n
                          "_grp setVariable [""pl_opf_side"", _side];" \n
                          "_grp setCombatMode ""YELLOW"";" \n
                          "_grp enableAttack false;" \n
                          "private _oldAliveUnits = count (units _grp);" \n
-                         "private _breakingPoint = round ((count (units _grp)) * 0.25) + 1;" \n
+                         "// private _breakingPoint = round ((count (units _grp)) * 0.25) + 1;" \n
+                         "private _breakingPoint = round ((count (units _grp)) * (1 - _aggressivness)) - 1;" \n
                          "" \n
                          "if (pl_debug) then {" \n
                          "    systemchat format [""%1: start Opfor"", groupId _grp];" \n
                          "	[_grp] spawn pl_opfor_ai_helper_debug;" \n
-                         "};"/*%FSM</STATEINIT""">*/;
+                         "	" \n
+                         "};" \n
+                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""None""];"/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {
                                 /*%FSM<LINK "is_Cargo">*/
                                 class is_Cargo
                                 {
-                                        itemno = 16;
+                                        itemno = 15;
                                         priority = 3.000000;
                                         to="in_Vehicle";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"vehicle (leader _grp) != (leader _grp) and !((leader _grp) == commander (vehicle (leader _grp)) or (leader _grp) == driver (vehicle (leader _grp)) or (leader _grp) == gunner (vehicle (leader _grp)));"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", """"];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "has_wp">*/
@@ -119,6 +129,11 @@ class FSM
                                         action=/*%FSM<ACTION""">*/"{_x enableAI ""PATH""} forEach (units _grp);" \n
                                          "[_grp] spawn pl_opfor_auto_formation;" \n
                                          "(leader _grp) limitspeed 14;" \n
+                                         "_grp setVariable [""pl_opfor_is_stationary"", false];" \n
+                                         "" \n
+                                         "" \n
+                                         "	_grp setVariable [""pl_opfor_debug_marker_text"", ""mobile""];" \n
+                                         "" \n
                                          "" \n
                                          "" \n
                                          ""/*%FSM</ACTION""">*/;
@@ -127,7 +142,7 @@ class FSM
                                 /*%FSM<LINK "no_wp">*/
                                 class no_wp
                                 {
-                                        itemno = 19;
+                                        itemno = 18;
                                         priority = 0.000000;
                                         to="In_Defence_Posit";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
@@ -142,19 +157,17 @@ class FSM
                 class In_Defence_Posit
                 {
                         name = "In_Defence_Posit";
-                        itemno = 2;
+                        itemno = 3;
                         init = /*%FSM<STATEINIT""">*/"_grp setVariable [""pl_opf_task"", ""cover""];" \n
-                         "if ((leader _grp) checkaifeature ""PATH"") then {" \n
-                         "	_grp setVariable [""pl_opfor_is_stationary"", true];" \n
+                         "//if ((leader _grp) checkaifeature ""PATH"") then {" \n
                          "	[_grp] spawn pl_opfor_defend_position;" \n
-                         "};" \n
+                         "//} else {" \n
+                         "	_grp setVariable [""pl_opfor_is_stationary"", true];" \n
+                         "//};" \n
                          "" \n
-                         "if (pl_debug) then {" \n
-                         "			_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                         "			_m setMarkerType ""mil_dot"";" \n
-                         "			_m setMarkerSize [0.5, 0.5];" \n
-                         "			_m setMarkerText ""no wp sationary""" \n
-                         "			};" \n
+                         "" \n
+                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""No WP Stationary""];" \n
+                         "" \n
                          "" \n
                          ""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
@@ -163,37 +176,32 @@ class FSM
                                 /*%FSM<LINK "below__breackingpoint">*/
                                 class below__breackingpoint
                                 {
-                                        itemno = 11;
+                                        itemno = 10;
                                         priority = 10.000000;
                                         to="END";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= _breakingPoint;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""surrender""" \n
-                                         "};"/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Joined/Surrenderred""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "Retreat">*/
                                 class Retreat
                                 {
-                                        itemno = 13;
-                                        priority = 3.000000;
+                                        itemno = 12;
+                                        priority = 5.000000;
                                         to="Retreating";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"_grp getVariable [""pl_opfor_retreat"", false];"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"// _time = time + 4 + (random 1);" \n
+                                        action=/*%FSM<ACTION""">*/"//_time = time + 20 + (random 1);" \n
                                          "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
                                          "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
+                                         "_grp setVariable [""pl_opfor_is_stationary"", false];" \n
                                          "" \n
-                                         "    if (pl_debug) then {" \n
-                                         "    _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "    _m setMarkerType ""mil_dot"";" \n
-                                         "    _m setMarkerSize [0.5, 0.5];" \n
-                                         "    _m setMarkerText ""retreating""" \n
-                                         "    };"/*%FSM</ACTION""">*/;
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Retreating""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "has_wp">*/
@@ -208,137 +216,28 @@ class FSM
                                         action=/*%FSM<ACTION""">*/"{_x enableAI ""PATH""} forEach (units _grp);" \n
                                          "[_grp] spawn pl_opfor_auto_formation;" \n
                                          "(leader _grp) limitspeed 14;" \n
+                                         "_grp setVariable [""pl_opfor_is_stationary"", false];" \n
+                                         "" \n
+                                         "" \n
+                                         "	_grp setVariable [""pl_opfor_debug_marker_text"", ""mobile""];" \n
+                                         "" \n
                                          "" \n
                                          "" \n
                                          ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
-                                /*%FSM<LINK "Combat">*/
-                                class Combat
-                                {
-                                        itemno = 15;
-                                        priority = 0.000000;
-                                        to="Combat_Loop";
-                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"(behaviour (leader _grp)) == ""COMBAT"";"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if !(_grp getVariable [""pl_opfor_is_stationary"", false]) then {" \n
-                                         "    if (count (((getPos (leader _grp)) nearEntities [[""Man""], 800]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0) then {" \n
-                                         "" \n
-                                         "        if ((random 1) > 0.25) then {" \n
-                                         "            [_grp] spawn pl_opfor_attack_closest_enemy;" \n
-                                         "" \n
-                                         "                if (pl_debug) then {" \n
-                                         "                _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "                _m setMarkerType ""mil_dot"";" \n
-                                         "                _m setMarkerSize [0.5, 0.5];" \n
-                                         "                _m setMarkerText ""attacking closest""" \n
-                                         "                };" \n
-                                         "" \n
-                                         "" \n
-                                         "        } else {" \n
-                                         "            [_grp] spawn pl_opfor_flanking_move;" \n
-                                         "" \n
-                                         "                if (pl_debug) then {" \n
-                                         "                _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "                _m setMarkerType ""mil_dot"";" \n
-                                         "                _m setMarkerSize [0.5, 0.5];" \n
-                                         "                _m setMarkerText ""flanking""" \n
-                                         "                };" \n
-                                         "        };" \n
-                                         "" \n
-                                         "    } else {" \n
-                                         "        [_grp] spawn pl_opfor_defend_position;" \n
-                                         "    };" \n
-                                         "    _time = time + 2 + (random 1);" \n
-                                         "} else {" \n
-                                         "    _time = time + 100;" \n
-                                         "};"/*%FSM</ACTION""">*/;
-                                };
-                                /*%FSM</LINK>*/
                         };
                 };
                 /*%FSM</STATE>*/
-                /*%FSM<STATE "Combat_Loop">*/
-                class Combat_Loop
+                /*%FSM<STATE "Combat_Staging">*/
+                class Combat_Staging
                 {
-                        name = "Combat_Loop";
-                        itemno = 3;
-                        init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
-                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
-                        class Links
-                        {
-                                /*%FSM<LINK "below__breackingpoint">*/
-                                class below__breackingpoint
-                                {
-                                        itemno = 11;
-                                        priority = 10.000000;
-                                        to="END";
-                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= _breakingPoint;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""surrender""" \n
-                                         "};"/*%FSM</ACTION""">*/;
-                                };
-                                /*%FSM</LINK>*/
-                                /*%FSM<LINK "Retreat">*/
-                                class Retreat
-                                {
-                                        itemno = 13;
-                                        priority = 3.000000;
-                                        to="Retreating";
-                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"_grp getVariable [""pl_opfor_retreat"", false];"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"// _time = time + 4 + (random 1);" \n
-                                         "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
-                                         "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
-                                         "" \n
-                                         "    if (pl_debug) then {" \n
-                                         "    _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "    _m setMarkerType ""mil_dot"";" \n
-                                         "    _m setMarkerSize [0.5, 0.5];" \n
-                                         "    _m setMarkerText ""retreating""" \n
-                                         "    };"/*%FSM</ACTION""">*/;
-                                };
-                                /*%FSM</LINK>*/
-                                /*%FSM<LINK "Stationary">*/
-                                class Stationary
-                                {
-                                        itemno = 20;
-                                        priority = 1.000000;
-                                        to="In_Defence_Posit";
-                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"_grp getVariable [""pl_opfor_is_stationary"", false];"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "			_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "			_m setMarkerType ""mil_dot"";" \n
-                                         "			_m setMarkerSize [0.5, 0.5];" \n
-                                         "			_m setMarkerText ""sationary""" \n
-                                         "			};"/*%FSM</ACTION""">*/;
-                                };
-                                /*%FSM</LINK>*/
-                                /*%FSM<LINK "delay">*/
-                                class delay
-                                {
-                                        itemno = 5;
-                                        priority = 0.000000;
-                                        to="Condition_Check";
-                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"time >= _time;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
-                                };
-                                /*%FSM</LINK>*/
-                        };
-                };
-                /*%FSM</STATE>*/
-                /*%FSM<STATE "Condition_Check">*/
-                class Condition_Check
-                {
-                        name = "Condition_Check";
+                        name = "Combat_Staging";
                         itemno = 4;
-                        init = /*%FSM<STATEINIT""">*/"_atkDistance = [60, 120] call BIS_fnc_randomInt;" \n
+                        init = /*%FSM<STATEINIT""">*/"_time = time;" \n
+                         "" \n
+                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""In Combat Mobile""];" \n
+                         "" \n
                          ""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
@@ -346,71 +245,42 @@ class FSM
                                 /*%FSM<LINK "below__breackingpoint">*/
                                 class below__breackingpoint
                                 {
-                                        itemno = 11;
+                                        itemno = 10;
                                         priority = 10.000000;
                                         to="END";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= _breakingPoint;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""surrender""" \n
-                                         "};"/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Joined/Surrenderred""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "Retreat">*/
                                 class Retreat
                                 {
-                                        itemno = 13;
-                                        priority = 3.000000;
+                                        itemno = 12;
+                                        priority = 5.000000;
                                         to="Retreating";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"_grp getVariable [""pl_opfor_retreat"", false];"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"// _time = time + 4 + (random 1);" \n
+                                        action=/*%FSM<ACTION""">*/"//_time = time + 20 + (random 1);" \n
                                          "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
                                          "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
+                                         "_grp setVariable [""pl_opfor_is_stationary"", false];" \n
                                          "" \n
-                                         "    if (pl_debug) then {" \n
-                                         "    _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "    _m setMarkerType ""mil_dot"";" \n
-                                         "    _m setMarkerSize [0.5, 0.5];" \n
-                                         "    _m setMarkerText ""retreating""" \n
-                                         "    };"/*%FSM</ACTION""">*/;
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Retreating""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
-                                /*%FSM<LINK "Attack">*/
-                                class Attack
+                                /*%FSM<LINK "Cover_casaulties">*/
+                                class Cover_casaulties
                                 {
-                                        itemno = 10;
+                                        itemno = 6;
                                         priority = 2.000000;
                                         to="Fighting";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"count (((getPos (leader _grp)) nearEntities [[""Man""], _atkDistance]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0;" \n
-                                         "" \n
-                                         ""/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"//[_grp] spawn pl_opfor_assault;" \n
-                                         "_grp setBehaviour ""COMBAT"";" \n
-                                         "_grp setVariable [""pl_opf_task"", ""assault""];" \n
-                                         "" \n
-                                         "_time = time + ([20, 40] call BIS_fnc_randomInt);" \n
-                                         "" \n
-                                         "if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""attacking""" \n
-                                         "};"/*%FSM</ACTION""">*/;
-                                };
-                                /*%FSM</LINK>*/
-                                /*%FSM<LINK "Cover">*/
-                                class Cover
-                                {
-                                        itemno = 7;
-                                        priority = 1.000000;
-                                        to="Fighting";
-                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"(_oldAliveUnits > count ((units _grp) select {alive _x})) or (count ((units _grp) select {getSuppression _x > 0.4}) > 1);" \n
+                                        condition=/*%FSM<CONDITION""">*/"time >= _time and ((_oldAliveUnits > count ((units _grp) select {alive _x})) or (count ((units _grp) select {getSuppression _x > 0.4}) > 1));" \n
                                          "" \n
                                          ""/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_oldAliveUnits = count ((units _grp) select {alive _x});" \n
@@ -420,57 +290,134 @@ class FSM
                                          "_time = time + ([30, 80] call BIS_fnc_randomInt);" \n
                                          "if ([getpos (leader _grp)] call pl_is_city) then {_time = _time + 200};" \n
                                          "" \n
-                                         "if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""taking cover""" \n
-                                         "};" \n
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Taking Cover Casaulties/Suppressed""];" \n
+                                         "" \n
                                          "" \n
                                          ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
-                                /*%FSM<LINK "no_wp">*/
-                                class no_wp
+                                /*%FSM<LINK "enemy_close">*/
+                                class enemy_close
                                 {
-                                        itemno = 19;
-                                        priority = 0.000000;
-                                        to="In_Defence_Posit";
+                                        itemno = 2;
+                                        priority = 1.000000;
+                                        to="Combat_Aggressiv";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"(currentWaypoint _grp) >= count (waypoints _grp);"/*%FSM</CONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"count (((getPos (leader _grp)) nearEntities [[""Man""], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0.1;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
-                                /*%FSM<LINK "Return">*/
-                                class Return
+                                /*%FSM<LINK "no_wp_Cover">*/
+                                class no_wp_Cover
+                                {
+                                        itemno = 21;
+                                        priority = 0.000000;
+                                        to="Fighting";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"((currentWaypoint _grp) >= count (waypoints _grp)) and !(_grp getvariable [""pl_opf_in_pos"", false]);" \n
+                                         "" \n
+                                         "// or currentCommand (leader _grp) isNotEqualTo ""MOVE"";" \n
+                                         "// "/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_oldAliveUnits = count ((units _grp) select {alive _x});" \n
+                                         "[_grp] spawn pl_opfor_defend_position;" \n
+                                         "_grp setVariable [""pl_opf_task"", ""cover""];" \n
+                                         "" \n
+                                         "_time = time + ([30, 80] call BIS_fnc_randomInt);" \n
+                                         "if ([getpos (leader _grp)] call pl_is_city) then {_time = _time + 200};" \n
+                                         "" \n
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Taking Cover Idle Combat""];" \n
+                                         "" \n
+                                         ""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "Advancing">*/
+                class Advancing
+                {
+                        name = "Advancing";
+                        itemno = 5;
+                        init = /*%FSM<STATEINIT""">*/"_atkDistance = [60, 120] call BIS_fnc_randomInt;" \n
+                         "_time = time + 3 + (random 2);" \n
+                         ""/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "below__breackingpoint">*/
+                                class below__breackingpoint
+                                {
+                                        itemno = 10;
+                                        priority = 10.000000;
+                                        to="END";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= _breakingPoint;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Joined/Surrenderred""];" \n
+                                         ""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Retreat">*/
+                                class Retreat
+                                {
+                                        itemno = 12;
+                                        priority = 5.000000;
+                                        to="Retreating";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"_grp getVariable [""pl_opfor_retreat"", false];"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"//_time = time + 20 + (random 1);" \n
+                                         "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
+                                         "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
+                                         "_grp setVariable [""pl_opfor_is_stationary"", false];" \n
+                                         "" \n
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Retreating""];" \n
+                                         ""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Cover_casaulties">*/
+                                class Cover_casaulties
                                 {
                                         itemno = 6;
-                                        priority = 0.000000;
-                                        to="Combat_Loop";
+                                        priority = 2.000000;
+                                        to="Fighting";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/""/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""advancing""" \n
-                                         "};" \n
+                                        condition=/*%FSM<CONDITION""">*/"time >= _time and ((_oldAliveUnits > count ((units _grp) select {alive _x})) or (count ((units _grp) select {getSuppression _x > 0.4}) > 1));" \n
                                          "" \n
-                                         "_time = time + 4 + (random 1);" \n
+                                         ""/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_oldAliveUnits = count ((units _grp) select {alive _x});" \n
+                                         "[_grp] spawn pl_opfor_defend_position;" \n
+                                         "_grp setVariable [""pl_opf_task"", ""cover""];" \n
                                          "" \n
-                                         "if ((currentWaypoint _grp) >= count (waypoints _grp) or speed (leader _grp) <= 3) then {" \n
-                                         "    [_grp] spawn pl_opfor_attack_closest_enemy;" \n
-                                         "" \n
-                                         "	_time = time + 10 + (random 10);" \n
+                                         "_time = time + ([30, 80] call BIS_fnc_randomInt);" \n
+                                         "if ([getpos (leader _grp)] call pl_is_city) then {_time = _time + 200};" \n
                                          "" \n
                                          "" \n
-                                         "    if (pl_debug) then {" \n
-                                         "    _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "    _m setMarkerType ""mil_dot"";" \n
-                                         "    _m setMarkerSize [0.5, 0.5];" \n
-                                         "    _m setMarkerText ""attacking closest""" \n
-                                         "    };" \n
-                                         "};"/*%FSM</ACTION""">*/;
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Taking Cover Casaulties/Suppressed""];" \n
+                                         "" \n
+                                         "" \n
+                                         ""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "Attack">*/
+                                class Attack
+                                {
+                                        itemno = 9;
+                                        priority = 1.000000;
+                                        to="Fighting";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"time >= _time and (count (((getPos (leader _grp)) nearEntities [[""Man""], _atkDistance]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0);"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"//[_grp] spawn pl_opfor_assault;" \n
+                                         "_grp setBehaviour ""COMBAT"";" \n
+                                         "_grp setVariable [""pl_opf_task"", ""assault""];" \n
+                                         "" \n
+                                         "_time = time + ([20, 40] call BIS_fnc_randomInt);" \n
+                                         "" \n
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Attacking""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                         };
@@ -480,7 +427,7 @@ class FSM
                 class Fighting
                 {
                         name = "Fighting";
-                        itemno = 8;
+                        itemno = 7;
                         init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
@@ -488,80 +435,43 @@ class FSM
                                 /*%FSM<LINK "below__breackingpoint">*/
                                 class below__breackingpoint
                                 {
-                                        itemno = 11;
+                                        itemno = 10;
                                         priority = 10.000000;
                                         to="END";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= _breakingPoint;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""surrender""" \n
-                                         "};"/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Joined/Surrenderred""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "Retreat">*/
                                 class Retreat
                                 {
-                                        itemno = 13;
-                                        priority = 3.000000;
+                                        itemno = 12;
+                                        priority = 5.000000;
                                         to="Retreating";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"_grp getVariable [""pl_opfor_retreat"", false];"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"// _time = time + 4 + (random 1);" \n
+                                        action=/*%FSM<ACTION""">*/"//_time = time + 20 + (random 1);" \n
                                          "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
                                          "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
+                                         "_grp setVariable [""pl_opfor_is_stationary"", false];" \n
                                          "" \n
-                                         "    if (pl_debug) then {" \n
-                                         "    _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "    _m setMarkerType ""mil_dot"";" \n
-                                         "    _m setMarkerSize [0.5, 0.5];" \n
-                                         "    _m setMarkerText ""retreating""" \n
-                                         "    };"/*%FSM</ACTION""">*/;
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Retreating""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "Timeout">*/
                                 class Timeout
                                 {
-                                        itemno = 9;
+                                        itemno = 8;
                                         priority = 0.000000;
-                                        to="Combat_Loop";
+                                        to="Combat_Staging";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"time >= _time;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (count (((getPos (leader _grp)) nearEntities [[""Man""], 1000]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0) then {" \n
-                                         "	if ((_oldAliveUnits <= count ((units _grp) select {alive _x})) or (random 1) > 0.7) then {" \n
-                                         "	" \n
-                                         "   	 if ((random 1) > 0.75) then {" \n
-                                         "       	 [_grp] spawn pl_opfor_attack_closest_enemy;" \n
-                                         "       	 _time = time + 10 + (random 10);" \n
-                                         "" \n
-                                         "			if (pl_debug) then {" \n
-                                         "			_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "			_m setMarkerType ""mil_dot"";" \n
-                                         "			_m setMarkerSize [0.5, 0.5];" \n
-                                         "			_m setMarkerText ""attacking closest""" \n
-                                         "			};" \n
-                                         "" \n
-                                         "    	} else {" \n
-                                         "        	[_grp] spawn pl_opfor_flanking_move;" \n
-                                         "       	 _time = time + 25 + (random 10);" \n
-                                         "" \n
-                                         "			if (pl_debug) then {" \n
-                                         "			_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "			_m setMarkerType ""mil_dot"";" \n
-                                         "			_m setMarkerSize [0.5, 0.5];" \n
-                                         "			_m setMarkerText ""flanking""" \n
-                                         "			};" \n
-                                         "" \n
-                                         "    	};" \n
-                                         "	} else {" \n
-                                         "		_oldAliveUnits = count ((units _grp) select {alive _x});" \n
-                                         "		[_grp] spawn pl_opfor_defend_position;" \n
-                                         "		_time = time + 45 + (random 10);" \n
-                                         "	};" \n
-                                         "};" \n
-                                         ""/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                         };
@@ -571,7 +481,7 @@ class FSM
                 class END
                 {
                         name = "END";
-                        itemno = 12;
+                        itemno = 11;
                         init = /*%FSM<STATEINIT""">*/"" \n
                          "_joined = [_grp, _side] call pl_opfor_join_grp;" \n
                          "if !(_joined) then {" \n
@@ -590,7 +500,7 @@ class FSM
                 class not_in_Combat
                 {
                         name = "not_in_Combat";
-                        itemno = 14;
+                        itemno = 13;
                         init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
@@ -598,90 +508,43 @@ class FSM
                                 /*%FSM<LINK "below__breackingpoint">*/
                                 class below__breackingpoint
                                 {
-                                        itemno = 11;
+                                        itemno = 10;
                                         priority = 10.000000;
                                         to="END";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= _breakingPoint;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""surrender""" \n
-                                         "};"/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Joined/Surrenderred""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "Retreat">*/
                                 class Retreat
                                 {
-                                        itemno = 13;
-                                        priority = 3.000000;
+                                        itemno = 12;
+                                        priority = 5.000000;
                                         to="Retreating";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"_grp getVariable [""pl_opfor_retreat"", false];"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"// _time = time + 4 + (random 1);" \n
+                                        action=/*%FSM<ACTION""">*/"//_time = time + 20 + (random 1);" \n
                                          "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
                                          "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
+                                         "_grp setVariable [""pl_opfor_is_stationary"", false];" \n
                                          "" \n
-                                         "    if (pl_debug) then {" \n
-                                         "    _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "    _m setMarkerType ""mil_dot"";" \n
-                                         "    _m setMarkerSize [0.5, 0.5];" \n
-                                         "    _m setMarkerText ""retreating""" \n
-                                         "    };"/*%FSM</ACTION""">*/;
-                                };
-                                /*%FSM</LINK>*/
-                                /*%FSM<LINK "no_wp">*/
-                                class no_wp
-                                {
-                                        itemno = 19;
-                                        priority = 0.000000;
-                                        to="In_Defence_Posit";
-                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"(currentWaypoint _grp) >= count (waypoints _grp);"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Retreating""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "Combat">*/
                                 class Combat
                                 {
-                                        itemno = 15;
+                                        itemno = 14;
                                         priority = 0.000000;
-                                        to="Combat_Loop";
+                                        to="Combat_Staging";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"(behaviour (leader _grp)) == ""COMBAT"";"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if !(_grp getVariable [""pl_opfor_is_stationary"", false]) then {" \n
-                                         "    if (count (((getPos (leader _grp)) nearEntities [[""Man""], 800]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0) then {" \n
-                                         "" \n
-                                         "        if ((random 1) > 0.25) then {" \n
-                                         "            [_grp] spawn pl_opfor_attack_closest_enemy;" \n
-                                         "" \n
-                                         "                if (pl_debug) then {" \n
-                                         "                _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "                _m setMarkerType ""mil_dot"";" \n
-                                         "                _m setMarkerSize [0.5, 0.5];" \n
-                                         "                _m setMarkerText ""attacking closest""" \n
-                                         "                };" \n
-                                         "" \n
-                                         "" \n
-                                         "        } else {" \n
-                                         "            [_grp] spawn pl_opfor_flanking_move;" \n
-                                         "" \n
-                                         "                if (pl_debug) then {" \n
-                                         "                _m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "                _m setMarkerType ""mil_dot"";" \n
-                                         "                _m setMarkerSize [0.5, 0.5];" \n
-                                         "                _m setMarkerText ""flanking""" \n
-                                         "                };" \n
-                                         "        };" \n
-                                         "" \n
-                                         "    } else {" \n
-                                         "        [_grp] spawn pl_opfor_defend_position;" \n
-                                         "    };" \n
-                                         "    _time = time + 2 + (random 1);" \n
-                                         "} else {" \n
-                                         "    _time = time + 100;" \n
-                                         "};"/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                         };
@@ -691,7 +554,7 @@ class FSM
                 class in_Vehicle
                 {
                         name = "in_Vehicle";
-                        itemno = 18;
+                        itemno = 17;
                         init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
@@ -699,63 +562,25 @@ class FSM
                                 /*%FSM<LINK "below__breackingpoint">*/
                                 class below__breackingpoint
                                 {
-                                        itemno = 11;
+                                        itemno = 10;
                                         priority = 10.000000;
                                         to="END";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= _breakingPoint;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""surrender""" \n
-                                         "};"/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Joined/Surrenderred""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "is_dismounted">*/
                                 class is_dismounted
                                 {
-                                        itemno = 17;
+                                        itemno = 16;
                                         priority = 0.000000;
-                                        to="Combat_Loop";
+                                        to="Combat_Staging";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"({vehicle _x != _x} count (units _grp)) == 0;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (count (((getPos (leader _grp)) nearEntities [[""Man""], 1000]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0) then {" \n
-                                         "    if ((random 1) > 0.75) then {" \n
-                                         "        [_grp] spawn pl_opfor_attack_closest_enemy;" \n
-                                         "" \n
-                                         "			if (pl_debug) then {" \n
-                                         "			_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "			_m setMarkerType ""mil_dot"";" \n
-                                         "			_m setMarkerSize [0.5, 0.5];" \n
-                                         "			_m setMarkerText ""attacking closest""" \n
-                                         "			};" \n
-                                         "" \n
-                                         "    } else {" \n
-                                         "        [_grp] spawn pl_opfor_flanking_move;" \n
-                                         "" \n
-                                         "			if (pl_debug) then {" \n
-                                         "			_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "			_m setMarkerType ""mil_dot"";" \n
-                                         "			_m setMarkerSize [0.5, 0.5];" \n
-                                         "			_m setMarkerText ""flanking""" \n
-                                         "			};" \n
-                                         "    };" \n
-                                         "" \n
-                                         "} else {" \n
-                                         "	_oldAliveUnits = count ((units _grp) select {alive _x});" \n
-                                         "	[_grp] spawn pl_opfor_defend_position;" \n
-                                         "	_grp setVariable [""pl_opf_task"", ""cover""];" \n
-                                         "" \n
-                                         "			if (pl_debug) then {" \n
-                                         "			_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "			_m setMarkerType ""mil_dot"";" \n
-                                         "			_m setMarkerSize [0.5, 0.5];" \n
-                                         "			_m setMarkerText ""taking cover""" \n
-                                         "			};" \n
-                                         "};" \n
-                                         "" \n
-                                         "_time = time + 10 + (random 1);"/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                         };
@@ -765,7 +590,7 @@ class FSM
                 class Retreating
                 {
                         name = "Retreating";
-                        itemno = 21;
+                        itemno = 19;
                         init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
@@ -773,28 +598,87 @@ class FSM
                                 /*%FSM<LINK "below__breackingpoint">*/
                                 class below__breackingpoint
                                 {
-                                        itemno = 11;
+                                        itemno = 10;
                                         priority = 10.000000;
                                         to="END";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"count ((units _grp) select {alive _x}) <= _breakingPoint;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"if (pl_debug) then {" \n
-                                         "_m = createMarker [str (random 5), getPos (leader _grp)];" \n
-                                         "_m setMarkerType ""mil_dot"";" \n
-                                         "_m setMarkerSize [0.5, 0.5];" \n
-                                         "_m setMarkerText ""surrender""" \n
-                                         "};"/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Joined/Surrenderred""];" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "Timeout">*/
                                 class Timeout
                                 {
-                                        itemno = 22;
+                                        itemno = 20;
                                         priority = 0.000000;
                                         to="not_in_Combat";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"time >= _time;"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_grp setVariable [""pl_opfor_debug_marker_text"", ""Retreat Finished""];"/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                        };
+                };
+                /*%FSM</STATE>*/
+                /*%FSM<STATE "Combat_Aggressiv">*/
+                class Combat_Aggressiv
+                {
+                        name = "Combat_Aggressiv";
+                        itemno = 22;
+                        init = /*%FSM<STATEINIT""">*/"_chance = random 1;"/*%FSM</STATEINIT""">*/;
+                        precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
+                        class Links
+                        {
+                                /*%FSM<LINK "attack_close">*/
+                                class attack_close
+                                {
+                                        itemno = 23;
+                                        priority = 1.000000;
+                                        to="Advancing";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"_chance <= _aggressivness;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"if ((random 1) > 0.5) then {" \n
+                                         "    [_grp] spawn pl_opfor_attack_closest_enemy;" \n
+                                         "" \n
+                                         "    " \n
+                                         "        _grp setVariable [""pl_opfor_debug_marker_text"", ""Attacking Closest""];" \n
+                                         "    " \n
+                                         "" \n
+                                         "" \n
+                                         "} else {" \n
+                                         "    [_grp] spawn pl_opfor_flanking_move;" \n
+                                         "" \n
+                                         "    " \n
+                                         "         _grp setVariable [""pl_opfor_debug_marker_text"", ""Flanking Closest""];" \n
+                                         "    " \n
+                                         "};" \n
+                                         ""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
+                                /*%FSM<LINK "cover_close">*/
+                                class cover_close
+                                {
+                                        itemno = 24;
+                                        priority = 0.000000;
+                                        to="Fighting";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"_chance > _aggressivness;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"if !(_grp getvariable [""pl_opf_in_pos"", false]) then {" \n
+                                         "	[_grp] spawn pl_opfor_defend_position;" \n
+                                         "	_grp setVariable [""pl_opf_task"", ""cover""];" \n
+                                         "};" \n
+                                         "" \n
+                                         "_oldAliveUnits = count ((units _grp) select {alive _x});" \n
+                                         "" \n
+                                         "_time = time + ([30, 80] call BIS_fnc_randomInt);" \n
+                                         "if ([getpos (leader _grp)] call pl_is_city) then {_time = _time + 60};" \n
+                                         "" \n
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Taking Cover ENY Close""];" \n
+                                         "" \n
+                                         ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                         };

@@ -375,7 +375,7 @@ pl_remote_camera_in = {
 
             sleep 0.5;
 
-            cutRsc ["RscNoise", "PLAIN"];
+            // cutRsc ["RscNoise", "PLAIN"];
 
             private _grp = group _leader;
 

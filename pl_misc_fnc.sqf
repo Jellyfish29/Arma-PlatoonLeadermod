@@ -330,7 +330,11 @@ pl_hold_fire = {
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
 
-    _group setCombatMode "GREEN";
+    if (_group getVariable ['inContact', false]) then {
+        _group setCombatMode "BLUE";
+    } else {
+        _group setCombatMode "GREEN";
+    };
     _group setVariable ["pl_hold_fire", true];
     _group setVariable ["pl_combat_mode", true];
 

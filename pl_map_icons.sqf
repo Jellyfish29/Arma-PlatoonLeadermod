@@ -224,12 +224,12 @@ pl_draw_group_info = {
                 _contactColor = [0.4,1,0.2,1];
                 _x setVariable ['inContact', false];
                 _contactTime = (_x getVariable 'PlContactTime') - 30;
-                if (_x getVariable ['pl_hold_fire', false]) then {
-                    _contactColor = [0.1,0.1,0.6,1];
-                };
                 if (_contactTime > time) then {
                     _contactColor = [0.7,0,0,1];
                     _x setVariable ['inContact', true];
+                };
+                if (_x getVariable ['pl_hold_fire', false]) then {
+                    _contactColor = [0.1,0.1,0.6,1];
                 };
                 _display drawIcon [
                     _contactIcon,
@@ -1545,7 +1545,31 @@ pl_draw_icon = {
             ];
         } forEach pl_draw_icon_array;
     "]; // 
-};  
+};
+
+pl_mark_cover_objects = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (pl_show_covers) then {
+            {
+                _cover = _x;
+                if !(isObjectHidden _cover) then {
+                    _icon = '\A3\ui_f\data\map\mapControl\bunker_ca.paa';
+                    _size = 15;
+                    _display drawIcon [
+                        _icon,
+                        pl_side_color_rgb,
+                        getPosVisual _cover,
+                        _size,
+                        _size,
+                        0
+                    ]
+                };
+            } forEach (nearestTerrainObjects [pl_show_covers_pos, ['WALL', 'RUIN', 'FENCE', 'ROCK', 'ROCKs', 'STACK', 'HIDE'], pl_garrison_area_size, false, false]);
+        };
+    "]; // "
+};
 
 // [findDisplay 12 displayCtrl 51] call pl_draw_icon;
 
@@ -1594,6 +1618,7 @@ pl_init_map_icons = {
     [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_pos;
     [findDisplay 12 displayCtrl 51] call pl_draw_icon;
     [findDisplay 12 displayCtrl 51] call pl_mark_obstacles_group;
+    [findDisplay 12 displayCtrl 51] call pl_mark_cover_objects;
 };
 
 [] call pl_init_map_icons;
@@ -1639,6 +1664,7 @@ addMissionEventHandler ["Loaded", {
     [findDisplay 12 displayCtrl 51] call pl_draw_arrow_pos_to_pos;
     [findDisplay 12 displayCtrl 51] call pl_draw_icon;
     [findDisplay 12 displayCtrl 51] call pl_mark_obstacles_group;
+    [findDisplay 12 displayCtrl 51] call pl_mark_cover_objects;
 }];
 
 
@@ -1727,6 +1753,7 @@ pl_show_tac_map_icons = {
     [findDisplay 2000 displayCtrl 2000] call pl_draw_arrow_pos_to_pos;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_icon;
     [findDisplay 2000 displayCtrl 2000] call pl_mark_obstacles_group;
+    [findDisplay 2000 displayCtrl 2000] call pl_mark_cover_objects;
 };
 
 pl_last_tac_zoom = 0.1;
