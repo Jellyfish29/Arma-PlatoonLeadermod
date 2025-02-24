@@ -146,6 +146,100 @@ pl_quick_suppress = {
     true
 };
 
+pl_quick_suppress_unit = {
+    params ["_unit"];
+
+    private _target = selectRandom (((getPos _unit) nearEntities [["Man", "Car"], 500]) select {(side _x) != playerSide and (side _x) != civilian and (_unit knowsAbout _x) > 0.1});
+
+    if (isNil "_target") exitWith {};
+
+    private _targetPos = getPosASL _target;
+    _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
+
+    // _m = createMarker [str (random 1), _targetPos];
+    // _m setMarkerType "mil_dot";
+    // _m setMarkerSize [0.5, 0.5];
+
+    // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+    // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+    // _helper1 setposASL _targetpos;
+
+    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and ([_unit, _targetPos] call pl_friendly_check)) then {
+
+        _unit doWatch _targetPos;
+        _unit doSuppressiveFire _targetPos;
+    };
+};
+
+
+pl_get_suppress_target_pos = {
+    params ["_initialTargetPos", "_unit"];
+
+    private _vis = lineIntersectsSurfaces [eyePos _unit, _initialTargetPos, _unit, vehicle _unit, true, 1, "FIRE"];
+    private _supDistance = _unit distance2D _initialTargetPos;
+    // if no surface intersection return initial pos
+    private _targetPos = _initialTargetPos;
+    private _allHelpers = [];
+
+    // surface intersection
+    if !(_vis isEqualTo []) then {
+        _targetPos = (_vis select 0) select 0;
+
+        _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+        _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+        _helper1 setposASL _targetpos;
+        _allHelpers pushback _helper1;
+
+        // intersection with terrain
+        if (isNull (_vis#0#2)) then {
+
+            // increase targetpos hight by 0.2 40 times and check again;
+            for "_i" from 0 to (_supDistance * 0.2) step (_supDistance * 0.01) do {
+                _vis = lineIntersectsSurfaces [eyePos _unit, [_initialTargetPos#0, _initialTargetPos#1, (_initialTargetPos#2) + _i], _unit, vehicle _unit, true, 1, "VIEW"];
+                if (_vis isEqualTo []) then {
+                    _targetPos = [_initialTargetPos#0, _initialTargetPos#1, (_initialTargetPos#2) + _i];
+                    break;
+                } else {
+                    if !(isNull (_vis#0#2)) then {
+                        _targetPos = _vis#0#0;
+                        break;
+                    };
+                    _helper3 = createVehicle ["Sign_Sphere25cm_F", (_vis#0#0), [], 0, "none"];
+                    _helper3 setObjectTexture [0,'#(argb,8,8,3)color(0,0,1,1)'];
+                    _helper3 setposASL (_vis#0#0);
+                    _allHelpers pushback _helper3;
+                };
+
+                _helper4 = createVehicle ["Sign_Sphere25cm_F", [_initialTargetPos#0, _initialTargetPos#1, (_initialTargetPos#2) + _i], [], 0, "none"];
+                _helper4 setObjectTexture [0,'#(argb,8,8,3)color(0,0,1,1)'];
+                _helper4 setposASL (_vis#0#0);
+                _allHelpers pushback _helper4;
+            };
+
+            _helper2 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+            _helper2 setObjectTexture [0,'#(argb,8,8,3)color(0,1,0,1)'];
+            _helper2 setposASL _targetpos;
+            _allHelpers pushback _helper2;
+
+        } else {
+            // if surface is not terrain return surface pos
+            _targetPos = _vis#0#0;
+        };
+    };
+
+    [_allHelpers] spawn {
+        sleep 30;
+
+        {
+            deleteVehicle _x;
+        } forEach (_this#0);
+
+    };
+
+    _targetPos
+};
+
+
 pl_get_fire_position = {
     params ["_unit", "_target", "_maxDistance"];
     private ["_movePos"];

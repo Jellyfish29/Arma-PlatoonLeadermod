@@ -32,6 +32,7 @@ pl_reset = {
         _unit enableAI "AIMINGERROR";
         _unit enableAI "WEAPONAIM";
         _unit enableAI "anim";
+        _unit enableAI "FIREWEAPON";
         _unit setUnitPos "AUTO";
         _unit setUnitTrait ["camouflageCoef", 1, true];
         _unit setVariable ["pl_engaging", false];
@@ -167,8 +168,11 @@ pl_reset = {
             deleteWaypoint [_group, _i];
         };
     };
+
     _group setVariable ["pl_on_march", nil];
+    _group setVariable ["pl_is_task_selected", nil];
 };
+
 
 // AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 pl_spawn_reset = {

@@ -212,6 +212,8 @@ pl_repair = {
 
     if (_repairCargo <= 0) exitWith {hint "No more Supplies left!"};
 
+    _group setVariable ["pl_is_task_selected", true];
+
     if (visibleMap or !(isNull findDisplay 2000)) then {
         pl_show_dead_vehicles = true;
         pl_show_dead_vehicles_pos = getPos _engVic;
@@ -318,7 +320,7 @@ pl_repair = {
             _group setVariable ["pl_execute_plan", nil];
         };
 
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false;};
+        if (pl_cancel_strike) exitWith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
 
         // if (pl_enable_beep_sound) then {playSound "beep"};
@@ -485,6 +487,8 @@ pl_repair_bridge = {
 
     if (isNull _engineer) exitWith {hint format ["%1 has no Engineer!", groupId _group]};
 
+    _group setVariable ["pl_is_task_selected", true];
+
     if (visibleMap or !(isNull findDisplay 2000)) then {
 
         _markerName = createMarker ["pl_charge_range_marker2", [0,0,0]];
@@ -557,7 +561,7 @@ pl_repair_bridge = {
         deleteVehicle _cursorPosIndicator;
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     _roads = _cords nearRoads 30;
     _bridges = [];

@@ -912,6 +912,37 @@ pl_draw_suppression = {
     "]; // "
 };
 
+pl_draw_auto_suppression = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+            {
+                    _targetPos = _x#0;
+                    _grpPos = getPos (leader (_x#1));
+                    _color = [0.92,0.24,0.07,1];
+                    _text = '';
+                    _display drawIcon [
+                        '\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa',
+                        _color,
+                        _targetPos,
+                        15,
+                        15,
+                        0,
+                        _text,
+                        2,
+                        0.05
+                    ];
+
+                    _display drawLine [
+                        _grpPos,
+                        _targetPos,
+                        _color
+                    ];
+
+            } forEach pl_suppression_poses;
+    "]; // "
+};
+
 // [] call pl_draw_suppression;
 
 pl_draw_resupply_line = {
@@ -1350,6 +1381,7 @@ pl_draw_at_attack = {
     "]; // "
 };
 
+
 // [] call pl_draw_at_attack;
 
 pl_opfor_wp_dic = createHashMap;
@@ -1592,6 +1624,7 @@ pl_init_map_icons = {
     [findDisplay 12 displayCtrl 51] call pl_draw_planed_task;
     [findDisplay 12 displayCtrl 51] call pl_draw_planed_task_wp;
     [findDisplay 12 displayCtrl 51] call pl_draw_suppression;
+    [findDisplay 12 displayCtrl 51] call pl_draw_auto_suppression;
     [findDisplay 12 displayCtrl 51] call pl_draw_resupply_line;
     [findDisplay 12 displayCtrl 51] call pl_draw_formation_move_mouse;
     [findDisplay 12 displayCtrl 51] call pl_draw_sync_wps;
@@ -1638,6 +1671,7 @@ addMissionEventHandler ["Loaded", {
     [findDisplay 12 displayCtrl 51] call pl_draw_planed_task;
     [findDisplay 12 displayCtrl 51] call pl_draw_planed_task_wp;
     [findDisplay 12 displayCtrl 51] call pl_draw_suppression;
+    [findDisplay 12 displayCtrl 51] call pl_draw_auto_suppression;
     [findDisplay 12 displayCtrl 51] call pl_draw_resupply_line;
     [findDisplay 12 displayCtrl 51] call pl_draw_formation_move_mouse;
     [findDisplay 12 displayCtrl 51] call pl_draw_sync_wps;
@@ -1727,6 +1761,7 @@ pl_show_tac_map_icons = {
     [findDisplay 2000 displayCtrl 2000] call pl_draw_planed_task;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_planed_task_wp;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_suppression;
+    [findDisplay 2000 displayCtrl 2000] call pl_draw_auto_suppression;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_resupply_line;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_formation_move_mouse;
     [findDisplay 2000 displayCtrl 2000] call pl_draw_sync_wps;

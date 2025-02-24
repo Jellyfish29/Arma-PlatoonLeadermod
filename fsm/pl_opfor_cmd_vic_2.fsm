@@ -15,25 +15,25 @@ item10[] = {"Cargo_Loop",2,250,773.921753,-71.998932,863.921387,-21.998932,0.000
 item11[] = {"unload__close",4,218,1161.687744,196.195435,1251.687744,246.195435,3.000000,"unload " \n "close"};
 item12[] = {"Check_1",2,250,1384.822021,635.683716,1474.822021,685.683777,0.000000,"Check"};
 item13[] = {"Combat_Loop",2,250,991.157288,621.342102,1081.157349,671.342041,0.000000,"Combat Loop"};
-item14[] = {"Timeout",4,218,1210.700806,1124.704346,1300.700806,1174.704224,0.000000,"Timeout"};
-item15[] = {"no__change",8,218,1213.375366,1008.225830,1303.375488,1058.226074,0.000000,"no " \n "change"};
+item14[] = {"Timeout",4,218,1204.015015,1068.544189,1294.015015,1118.544067,0.000000,"Timeout"};
+item15[] = {"no__change",8,218,1206.689697,972.122925,1296.689819,1022.123230,0.000000,"no " \n "change"};
 item16[] = {"__80m_no_Inf",4,218,1206.768555,617.109985,1296.768555,667.110046,6.000000,"<80m" \n "no Inf"};
 item17[] = {"no_Wp___close",4,218,1206.202515,676.552185,1296.202759,726.552368,5.000000,"no Wp" \n "+" \n "close"};
 item18[] = {"__alive",4,218,523.946472,664.238403,613.946472,714.238403,10.000000,"!alive"};
 item19[] = {"End",1,250,524.807312,767.176453,614.807312,817.176453,0.000000,"End"};
 item20[] = {"damaged",4,218,1208.020020,745.083435,1298.020020,795.083313,4.000000,"damaged"};
-item21[] = {"Panic",4,218,1170.512451,-69.303726,1260.512817,-19.303726,2.000000,"Panic"};
+item21[] = {"Panic",4,4314,1170.512451,-69.303726,1260.512817,-19.303726,2.000000,"Panic"};
 item22[] = {"Near_Inf",4,218,1206.719971,887.015991,1296.719971,937.015991,2.000000,"Near Inf"};
 item23[] = {"alive__cargoGroup",4,218,1204.211304,552.496582,1294.211304,602.496582,7.000000,"alive " \n "cargoGroup" \n ""};
 item24[] = {"Unload_planed",4,218,1274.971558,200.665405,1364.971558,250.665405,1.000000,"Unload" \n "planed"};
 item25[] = {"cant_move",4,218,1203.373901,485.515015,1293.373901,535.515015,8.000000,"cant move"};
 item26[] = {"panic_decision",2,250,1039.748291,-66.007904,1129.747925,-16.007904,0.000000,"panic" \n "decision"};
 item27[] = {"rush__panic",4,218,901.404053,-72.692719,991.403931,-22.692719,0.000000,"rush " \n "panic"};
-item28[] = {"unload__panic",4,218,1041.316650,194.021942,1131.315918,244.021942,0.000000,"unload" \n " panic"};
+item28[] = {"unload__panic",4,218,1029.413208,199.432587,1119.412476,249.432587,0.000000,"unload" \n " panic"};
 item29[] = {"Combat_Retreat",4,218,1198.492432,416.040100,1288.492432,466.040100,9.000000,"Combat" \n "Retreat"};
 item30[] = {"Retreating",2,250,731.913147,483.649139,837.759399,553.457031,0.000000,"Retreating"};
-item31[] = {"Timeout",4,4314,537.724365,325.285431,627.724365,375.285431,0.000000,"Timeout"};
-item32[] = {"Retreat",4,218,709.232666,342.271088,836.207214,431.886688,4.000000,"Retreat"};
+item31[] = {"Timeout",4,218,537.724365,325.285431,627.724365,375.285431,0.000000,"Timeout"};
+item32[] = {"Retreat",4,218,722.520874,340.056427,849.495422,429.672028,4.000000,"Retreat"};
 item33[] = {"timeout",4,218,1022.563416,-306.962769,1112.563354,-256.962769,0.000000,"timeout"};
 item34[] = {"return",8,218,1031.725830,-223.323090,1121.725952,-173.322968,0.000000,"return"};
 item35[] = {"no_Wp___far",4,218,1206.085693,813.279358,1296.085938,863.279541,3.000000,"no Wp" \n "+" \n "far"};
@@ -72,33 +72,34 @@ link30[] = {12,29};
 link31[] = {12,35};
 link32[] = {13,14};
 link33[] = {13,18};
-link34[] = {13,36};
-link35[] = {14,12};
-link36[] = {15,13};
-link37[] = {16,13};
-link38[] = {17,13};
-link39[] = {18,19};
-link40[] = {20,13};
-link41[] = {21,26};
-link42[] = {22,13};
-link43[] = {23,13};
-link44[] = {24,13};
-link45[] = {25,3};
-link46[] = {26,27};
-link47[] = {26,28};
-link48[] = {26,32};
-link49[] = {27,10};
-link50[] = {28,13};
-link51[] = {29,30};
-link52[] = {30,31};
-link53[] = {31,4};
-link54[] = {32,30};
-link55[] = {33,9};
-link56[] = {34,10};
-link57[] = {35,13};
-link58[] = {36,4};
-globals[] = {0.000000,0,0,0,0,640,480,1,51,6316128,1,-52.315926,1563.312256,1207.734009,-160.954544,1459,1236,1};
-window[] = {2,-1,-1,-32000,-32000,1315,286,2205,286,3,1477};
+link34[] = {13,32};
+link35[] = {13,36};
+link36[] = {14,12};
+link37[] = {15,13};
+link38[] = {16,13};
+link39[] = {17,13};
+link40[] = {18,19};
+link41[] = {20,13};
+link42[] = {21,26};
+link43[] = {22,13};
+link44[] = {23,13};
+link45[] = {24,13};
+link46[] = {25,3};
+link47[] = {26,27};
+link48[] = {26,28};
+link49[] = {26,32};
+link50[] = {27,10};
+link51[] = {28,13};
+link52[] = {29,30};
+link53[] = {30,31};
+link54[] = {31,4};
+link55[] = {32,30};
+link56[] = {33,9};
+link57[] = {34,10};
+link58[] = {35,13};
+link59[] = {36,4};
+globals[] = {0.000000,0,0,0,0,640,480,1,51,6316128,1,-218.777954,1640.323853,1246.760254,-386.394684,1707,1236,1};
+window[] = {2,-1,-1,-1,-1,1263,234,2153,234,3,1725};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -116,12 +117,15 @@ class FSM
                          "private _vic = vehicle (leader _grp);" \n
                          "private _damage = damage _vic;" \n
                          "private _unitText = getText (configFile >> ""CfgVehicles"" >> typeOf _vic >> ""textSingular"");" \n
+                         "_grp setVariable [""pl_opfor_vic_unitText"", _unitText];" \n
                          "private _rushCounter = 0;" \n
                          "private _alreadyDeadVics = [];" \n
                          "private _starPos = getPosATL _vic;" \n
-                         "private _aggressivness = pl_opfor_aggressivness;" \n
                          "private _targetMinDistance = 100;" \n
                          "private _targetdistance = 1000;" \n
+                         "private _aggressivness = pl_opfor_aggressivness + (random [-0.15, 0, 0.15]);" \n
+                         "if (_aggressivness < 0) then {_aggressivness = 0};" \n
+                         "if (_aggressivness > 1) then {_aggressivness = 1};" \n
                          "" \n
                          "_vic setVariable [""pl_has_cmd_fsm"", true];" \n
                          "" \n
@@ -182,7 +186,7 @@ class FSM
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"((currentWaypoint _grp) < count (waypoints _grp) or (speed _vic) >= 5) and (leader _grp) checkAIFeature ""PATH"";"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_time = time + 3 + (random 2);" \n
-                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""mobile""];" \n
                                          "" \n
                                          "" \n
                                          ""/*%FSM</ACTION""">*/;
@@ -197,7 +201,8 @@ class FSM
                         name = "In_Position";
                         itemno = 3;
                         init = /*%FSM<STATEINIT""">*/"[_grp] spawn pl_opfor_vic_suppress_cont;" \n
-                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""No WP Stationary""];"/*%FSM</STATEINIT""">*/;
+                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""No WP Stationary""];" \n
+                         "pl_opfor_all_objectives pushbackUnique (getPos (leader _grp));"/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {
@@ -224,7 +229,7 @@ class FSM
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"((damage _vic) >= 0.9 or (_grp getVariable [""pl_opfor_retreat"", false])) and canmove _vic;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_grp setBehaviour ""CARELESS"";" \n
-                                         "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
+                                         "_time = time + ([240, 300] call BIS_fnc_randomInt);" \n
                                          "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
                                          "" \n
                                          "" \n
@@ -244,7 +249,7 @@ class FSM
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"((currentWaypoint _grp) < count (waypoints _grp) or (speed _vic) >= 5) and (leader _grp) checkAIFeature ""PATH"";"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_time = time + 3 + (random 2);" \n
-                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""mobile""];" \n
                                          "" \n
                                          "" \n
                                          ""/*%FSM</ACTION""">*/;
@@ -269,7 +274,7 @@ class FSM
                          "	_cargoGroups = _cargoGroups arrayIntersect _cargoGroups;" \n
                          "};" \n
                          "" \n
-                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""mobile""];" \n
+                         "" \n
                          "" \n
                          ""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
@@ -298,7 +303,7 @@ class FSM
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"((damage _vic) >= 0.9 or (_grp getVariable [""pl_opfor_retreat"", false])) and canmove _vic;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_grp setBehaviour ""CARELESS"";" \n
-                                         "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
+                                         "_time = time + ([240, 300] call BIS_fnc_randomInt);" \n
                                          "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
                                          "" \n
                                          "" \n
@@ -357,6 +362,7 @@ class FSM
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"!(_cargoGroups isEqualto []);"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_time = time + 3 + (random 1);" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""in Combat with cargo""];" \n
                                          "" \n
                                          ""/*%FSM</ACTION""">*/;
                                 };
@@ -395,7 +401,7 @@ class FSM
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"((damage _vic) >= 0.9 or (_grp getVariable [""pl_opfor_retreat"", false])) and canmove _vic;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_grp setBehaviour ""CARELESS"";" \n
-                                         "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
+                                         "_time = time + ([240, 300] call BIS_fnc_randomInt);" \n
                                          "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
                                          "" \n
                                          "" \n
@@ -432,7 +438,7 @@ class FSM
                                         priority = 2.000000;
                                         to="panic_decision";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"!(_alliedDeadVics isEqualto []) or (damage _vic) > (_damage + 0.15);"/*%FSM</CONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"(!(_alliedDeadVics isEqualto []) or (damage _vic) > (_damage + 0.15)) and _targetdistance < 800;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
@@ -474,7 +480,7 @@ class FSM
                 {
                         name = "Cargo_Loop";
                         itemno = 10;
-                        init = /*%FSM<STATEINIT""">*/"_grp setVariable [""pl_opfor_debug_marker_text"", ""in Combat with cargo""];"/*%FSM</STATEINIT""">*/;
+                        init = /*%FSM<STATEINIT""">*/""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {
@@ -544,11 +550,14 @@ class FSM
                                         action=/*%FSM<ACTION""">*/"_grp setBehaviour ""CARELESS"";" \n
                                          "if !(_grp getVariable [""pl_opfor_retreat"", false]) then {" \n
                                          "	[_grp, _vic] spawn pl_opfor_vic_retreat;" \n
-                                         "	_time = time + 15;" \n
+                                         "	if (_unitText != ""truck"") then {" \n
+                                         "		[_grp] call pl_opfor_create_retreat_zone;" \n
+                                         "	};" \n
                                          "} else {" \n
-                                         "	_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
                                          "	[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
                                          "};" \n
+                                         "" \n
+                                         "_time = time + ([240, 300] call BIS_fnc_randomInt);" \n
                                          "" \n
                                          "" \n
                                          "" \n
@@ -696,7 +705,7 @@ class FSM
                                          "{_x enableAI ""PATH""} forEach (units _grp);" \n
                                          "" \n
                                          "" \n
-                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""in Combat mobile""];" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""in Combat Mobile""];" \n
                                          ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
@@ -726,6 +735,26 @@ class FSM
                                          ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
+                                /*%FSM<LINK "Retreat">*/
+                                class Retreat
+                                {
+                                        itemno = 32;
+                                        priority = 4.000000;
+                                        to="Retreating";
+                                        precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"((damage _vic) >= 0.9 or (_grp getVariable [""pl_opfor_retreat"", false])) and canmove _vic;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_grp setBehaviour ""CARELESS"";" \n
+                                         "_time = time + ([240, 300] call BIS_fnc_randomInt);" \n
+                                         "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
+                                         "" \n
+                                         "" \n
+                                         "" \n
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Retreating""];" \n
+                                         "" \n
+                                         ""/*%FSM</ACTION""">*/;
+                                };
+                                /*%FSM</LINK>*/
                                 /*%FSM<LINK "no_Combat">*/
                                 class no_Combat
                                 {
@@ -734,9 +763,7 @@ class FSM
                                         to="mobile";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"_targetdistance >= 1000 and !(behaviour (leader _grp) == ""COMBAT"");"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"_vic limitSpeed 10;" \n
-                                         "" \n
-                                         "_time = time + 20;" \n
+                                        action=/*%FSM<ACTION""">*/"_time = time + 20;" \n
                                          "" \n
                                          "" \n
                                          "_grp setVariable [""pl_opfor_debug_marker_text"", ""Near Inf""];" \n
@@ -804,7 +831,7 @@ class FSM
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"((damage _vic) >= 0.9 or (_grp getVariable [""pl_opfor_retreat"", false])) and canmove _vic;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_grp setBehaviour ""CARELESS"";" \n
-                                         "_time = time + ([240, 320] call BIS_fnc_randomInt);" \n
+                                         "_time = time + ([240, 300] call BIS_fnc_randomInt);" \n
                                          "[_grp, _time] spawn pl_opfor_tactical_retreat;" \n
                                          "" \n
                                          "" \n
@@ -873,6 +900,8 @@ class FSM
                                         condition=/*%FSM<CONDITION""">*/"time >= _time;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"if (_unitText != ""truck"") then {" \n
                                          "	_grp setVariable [""pl_opfor_debug_marker_text"", ""Retreat Finished""];" \n
+                                         "	_grp setvariable [""pl_opfor_retreat"", false];" \n
+                                         "	[_grp] spawn pl_opfor_reset;	" \n
                                          "};"/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/

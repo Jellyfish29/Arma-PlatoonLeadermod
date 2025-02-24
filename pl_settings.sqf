@@ -112,22 +112,33 @@
 ] call CBA_fnc_addSetting;
 
 
+// [
+//     "pl_suppression_min_distance", 
+//     "SLIDER", 
+//     ["Minimum Suppression Distance", 
+//     "..."],
+//     ["Platoon Leader","AI"], 
+//     [0, 100, 25, 0], 
+//     nil,
+//     {},
+//     true
+// ] call CBA_fnc_addSetting;
+
 [
-    "pl_suppression_min_distance", 
-    "SLIDER", 
-    ["Minimum Suppression Distance", 
-    "..."],
-    ["Platoon Leader","AI"], 
-    [0, 100, 25, 0], 
+    "pl_auto_crouch_enabled",
+    "CHECKBOX",
+    ["Enable friendly AI Auto Crouch","Friendly Ai Units Will Crouch When Idle"],
+    ["Platoon Leader","AI"],
+    true,
     nil,
     {},
     true
 ] call CBA_fnc_addSetting;
 
 [
-    "pl_auto_crouch_enabled",
+    "pl_auto_360_enabled",
     "CHECKBOX",
-    ["Enable friendly AI Auto Crouch","Friendly Ai will crouch when aware and not moving"],
+    ["Enable Friendly AI Auto Cover","Friendly Ai Groups Will Take Defensive Position When Idle"],
     ["Platoon Leader","AI"],
     true,
     nil,

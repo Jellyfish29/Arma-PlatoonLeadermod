@@ -127,7 +127,7 @@ pl_heal_group = {
                             _enemySides = [side player] call BIS_fnc_enemySides;
                             _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
                             if (_enemies isEqualTo []) then {
-                                if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and !(_group getVariable ["onTask", true])) then {
+                                if (_x getVariable ["pl_wia", false] and !(_x getVariable ["pl_beeing_treatet", false]) and !(_group getVariable ["onTask", true])) then {
                                     _medic setVariable ["pl_is_ccp_medic", true];
                                     _h1 = [_group, _medic, objNull, _x, [] , 20, "pl_healing_active"] spawn pl_ccp_revive_action;
                                     waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
@@ -153,7 +153,7 @@ pl_heal_group = {
                     };
                 };
                 _time = time + 10;
-                waitUntil {sleep 0.5; time > _time or !(_group getVariable "pl_healing_active") or !alive _medic or (_medic getVariable ["pl_wia", false])};
+                waitUntil {sleep 0.5; time > _time or !(_group getVariable ["pl_healing_active", false]) or !alive _medic or (_medic getVariable ["pl_wia", false])};
             };
 
             sleep 1;
@@ -342,6 +342,14 @@ pl_ccp_revive_action = {
     _medic setUnitPos "AUTO";
     if (_group getVariable _waitVar and (alive _medic) and !(_medic getVariable "pl_wia") and ((_medic distance2D _healTarget) < 2) and time > _reviveTime and !(lifeState _medic isEqualTo "INCAPACITATED")) then {
         _healTarget setUnconscious false;
+        [_healTarget] spawn {
+            params ["_healTarget"];
+            // setUnconscius bug escape;
+            sleep 6;
+            if ((animationstate _healtarget) isEqualTo "unconsciousrevivedefault") then {
+                _healTarget switchmove "";
+            };
+        };
         _healTarget setDamage 0;
         _healTarget setUnitPos "AUTO";
         _healTarget enableAI "PATH";
@@ -493,6 +501,7 @@ pl_ccp = {
     // _group = hcSelected player select 0;
     // if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
     // if (pl_ccp_set and !(_isMedevac)) exitWith {hint "Only one CCP allowed!"};
+    _group setVariable ["pl_is_task_selected", true];
 
     if (_group != (group player) and !(_isMedevac) and !(_group getVariable ["pl_set_as_medical", false])) exitWith {
         hint "Only the Player Group or a Medical Group can set up the CCP";
@@ -571,7 +580,7 @@ pl_ccp = {
         _ccpPos = getPos (leader _group);
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; deleteMarker _markerNameOuter; deleteMarker _markerNameInner; pl_ccp_set = false;};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; deleteMarker _markerNameOuter; deleteMarker _markerNameInner; pl_ccp_set = false; _group setVariable ["pl_is_task_selected", nil];};
 
     private _icon = "\Plmod\gfx\pl_ccp_marker.paa";
 
@@ -608,7 +617,7 @@ pl_ccp = {
         _group setVariable ["pl_execute_plan", nil];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; deleteMarker _markerNameOuter; deleteMarker _markerNameInner; pl_ccp_set = false;};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerNameCCP; deleteMarker _markerNameOuter; deleteMarker _markerNameInner; pl_ccp_set = false; _group setVariable ["pl_is_task_selected", nil];};
 
 
     // if (pl_enable_beep_sound) then {playSound "beep"};

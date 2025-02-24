@@ -399,6 +399,9 @@ pl_enemy_destroyed_report = {
 
 pl_auto_crouch = {
     params ["_unit"];
+
+    if !(pl_auto_crouch_enabled) exitwith {};
+
     while {alive _unit} do {
         if ((behaviour _unit) isEqualTo "AWARE") then {
             if (_unit checkAIFeature "PATH" and !((group _unit) getVariable ["onTask", false])) then {
@@ -416,36 +419,30 @@ pl_auto_crouch = {
 };
 
 pl_auto_360 = {
+    params ["_group"];
+    private ["_leader"];
 
-    sleep 20;
+    if (_group == (group player)) exitWith {};
 
-    if !(pl_auto_crouch_enabled) exitwith {};
+    sleep 10;
 
-    while {true} do {
+    if !(pl_auto_360_enabled) exitwith {};
 
-        {
-            _group = _x;
-            _leader = leader _group;
+    while {!(isNull _group)} do {
 
-            if ((behaviour _leader) == "AWARE" and _group != (group player)) then {
+        _leader = leader _group;
 
-                if (speed _leader == 0 and (vehicle _leader) == _leader) then {
-                    sleep 3;
-                    if (speed _leader == 0) then {
-                        if (!(_group getVariable ["onTask", false]) and !(_group getVariable ["pl_on_march", false])) then {
-                            _leader playActionNow "GestureCover";
-                            [units _group, [units _group] call pl_find_centroid_of_units, 0, 18, true, [], false, 1] call pl_get_to_cover_positions;
-                            _group setVariable ["onTask", true];
-                            _group setVariable ["pl_task_pos", getPosATLVisual (leader _group)];
-                            _group setVariable ["specialIcon", "\A3\ui_f\data\map\markers\military\circle_CA.paa"];
-                        };
-                    };
+        if (!(_group getVariable ["onTask", false]) and !(_group getVariable ["pl_on_march", false]) and !(_group getVariable ["pl_is_task_selected", false])) then {
+
+            if (speed _leader == 0 and (vehicle _leader) == _leader) then {
+                sleep 3;
+                if (speed _leader == 0 and !(_group getVariable ["onTask", false]) and !(_group getVariable ["pl_on_march", false]) and !(_group in (hcSelected player)) and !(_group getVariable ["pl_is_task_selected", false])) then {
+                    [_group, [], getPos _leader, 0, false, false,  20, true] spawn pl_defend_position;
                 };
             };
-        } forEach (allGroups select {(hcLeader _x) == player});
+        };
 
-
-        sleep 5;
+        sleep 3;
     }; 
 
 };
@@ -722,6 +719,10 @@ pl_set_up_ai = {
 
     if (pl_enable_map_radio) then {
         [_group] spawn pl_reset_group_radio_setup;
+    };
+
+    if (pl_auto_360_enabled) then {
+        [_group] spawn pl_auto_360;
     };
 
     if !(_group getVariable ["pl_is_reset", false]) then {

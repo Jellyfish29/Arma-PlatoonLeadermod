@@ -234,7 +234,7 @@ pl_supply_point = {
         _group setVariable ["pl_execute_plan", nil];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     // setup Variables
     _suppliedGroups = [_group];

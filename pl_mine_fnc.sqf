@@ -16,6 +16,8 @@ pl_mine_clearing_inf = {
 
     // _group = (hcSelected player) select 0;
 
+    _group setVariable ["pl_is_task_selected", true];
+
     _engineer = {
         if ("MineDetector" in (items _x) and "ToolKit" in (items _x)) exitWith {_x};
         // if ("MineDetector" in (items _x)) exitWith {_x};
@@ -184,7 +186,7 @@ pl_mine_clearing_inf = {
         _group setVariable ["pl_unload_task_planed", false];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerNameLaunchPos};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerNameLaunchPos; _group setVariable ["pl_is_task_selected", nil];};
 
     private _markerPointsLeft = [];
     private _markerPointsRight = [];
@@ -384,6 +386,8 @@ pl_mine_clearing_vic = {
         };
     };
 
+    _group setVariable ["pl_is_task_selected", true];
+
     pl_mine_sweep_area_size = 35;
     pl_mine_sweep_area_lane_width = 10;
 
@@ -518,7 +522,7 @@ pl_mine_clearing_vic = {
         _group setVariable ["pl_unload_task_planed", false];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerNameLaunchPos};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerNameLaunchPos; _group setVariable ["pl_is_task_selected", nil];};
 
     private _lanePath = [];
     private _markerFlags = [];
@@ -681,6 +685,8 @@ pl_mc_lc = {
         };
     };
 
+    _group setVariable ["pl_is_task_selected", true];
+
     private _markerName = format ["%1mineSweepe%2", _group, random 3];
     createMarker [_markerName, [0,0,0]];
     _markerName setMarkerShape "RECTANGLE";
@@ -762,7 +768,7 @@ pl_mc_lc = {
     _markerName setMarkerAlpha 0.3;
     deleteMarker _markerBorderName;
 
-    if (pl_cancel_strike) exitwith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerNameLaunchPos};
+    if (pl_cancel_strike) exitwith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerNameLaunchPos; _group setVariable ["pl_is_task_selected", nil];};
 
     private _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
 
@@ -786,7 +792,7 @@ pl_mc_lc = {
         _group setVariable ["pl_execute_plan", nil];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerNameLaunchPos};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerNameLaunchPos; _group setVariable ["pl_is_task_selected", nil];};
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -923,11 +929,6 @@ pl_lay_mine_field = {
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry Only Task!"};
 
-    if !(visibleMap) then {
-        if (isNull findDisplay 2000) then {
-            [leader _group] call pl_open_tac_forced;
-        };
-    };;
 
     _exSpecialist = {
         if (_x getUnitTrait "explosiveSpecialist") exitWith {_x};
@@ -943,6 +944,15 @@ pl_lay_mine_field = {
     } forEach (units _group);
 
     if (_availableMines <= 0) exitWith {hint "No Mines Left!"};
+
+    _group setVariable ["pl_is_task_selected", true];
+
+    if !(visibleMap) then {
+        if (isNull findDisplay 2000) then {
+            [leader _group] call pl_open_tac_forced;
+        };
+    };;
+
 
     if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: %2 Mines Available",groupId _group, _availableMines]};
     if (pl_enable_map_radio) then {[_group, format ["...%1 Mines Available",_availableMines], 15] call pl_map_radio_callout};
@@ -1019,6 +1029,7 @@ pl_lay_mine_field = {
         deleteMarker _areaMarker;
         deleteMarker _markerBorderName;
         pl_cancel_strike = false;
+        _group setVariable ["pl_is_task_selected", nil];
     };
     _message = "Select Heading <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />
                 <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>APERS Mines</t> <br />
@@ -1070,6 +1081,7 @@ pl_lay_mine_field = {
     if (pl_cancel_strike) exitWith { 
         deleteMarker _areaMarker; 
         pl_cancel_strike = false;
+        _group setVariable ["pl_is_task_selected", nil];
     };
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa";
@@ -1110,6 +1122,7 @@ pl_lay_mine_field = {
     if (pl_cancel_strike) exitWith { 
         deleteMarker _areaMarker; 
         pl_cancel_strike = false;
+        _group setVariable ["pl_is_task_selected", nil];
     };
 
 
@@ -1246,6 +1259,8 @@ pl_lay_mine_field_vic = {
 
     if (_availableMines <= 0) exitWith {hint "No Mines Left!"};
 
+    _group setVariable ["pl_is_task_selected", true];
+
     if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: %2 Mines Available",groupId _group, _availableMines]};
     if (pl_enable_map_radio) then {[_group, format ["...%1 Mines Available",_availableMines], 15] call pl_map_radio_callout};
 
@@ -1321,6 +1336,7 @@ pl_lay_mine_field_vic = {
         deleteMarker _areaMarker;
         deleteMarker _markerBorderName;
         pl_cancel_strike = false;
+        _group setVariable ["pl_is_task_selected", nil];
     };
     _message = "Select Heading <br /><br /><t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t> <br />
                 <t size='0.8' align='left'> -> ALT + LMB</t><t size='0.8' align='right'>APERS Mines</t> <br />
@@ -1372,6 +1388,7 @@ pl_lay_mine_field_vic = {
     if (pl_cancel_strike) exitWith { 
         deleteMarker _areaMarker; 
         pl_cancel_strike = false;
+        _group setVariable ["pl_is_task_selected", nil];
     };
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa";
@@ -1525,6 +1542,8 @@ pl_place_charge = {
 
     _availableMines = _exSpecialist getVariable ["pl_virtual_mines", 0];
 
+    _group setVariable ["pl_is_task_selected", true];
+
     _markerName = "";
 
     if (visibleMap or !(isNull findDisplay 2000)) then {
@@ -1612,7 +1631,7 @@ pl_place_charge = {
 
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerBorderName};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _markerBorderName; _group setVariable ["pl_is_task_selected", nil];};
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa";
 
     _group setVariable ["pl_task_pos", _cords];
@@ -1648,7 +1667,7 @@ pl_place_charge = {
         _group setVariable ["pl_execute_plan", nil];
     };
 
-    if (pl_cancel_strike) exitWith {deleteMarker _markerName; pl_cancel_strike = false};
+    if (pl_cancel_strike) exitWith {deleteMarker _markerName; pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -1783,6 +1802,8 @@ pl_destroy_bridge = {
 
     if (isNull _exSpecialist) exitWith {hint format ["%1 has no Engineer!", groupId _group]};
 
+    _group setVariable ["pl_is_task_selected", true];
+
     if !(visibleMap) then {
         if (isNull findDisplay 2000) then {
             [leader _group] call pl_open_tac_forced;
@@ -1832,7 +1853,7 @@ pl_destroy_bridge = {
     deleteMarker _markerName;
     deleteMarker _markerBorderName;
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     _roads = _cords nearRoads 30;
     _bridges = [];

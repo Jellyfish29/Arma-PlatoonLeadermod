@@ -101,8 +101,8 @@ class RscHCGroupRootMenu
             {
                 expression="['buddy'] spawn pl_bounding_switch";
             };
-            show="HCIsLeader * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
-            enable="HCNotEmpty";
+            show="0" //"HCIsLeader * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
+            enable="0" //"HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=1;
@@ -182,20 +182,20 @@ class RscHCGroupRootMenu
             {
                 expression="['team'] spawn pl_bounding_switch";
             };
-            show="HCIsLeader * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
-            enable="HCNotEmpty";
+            show="0" //"HCIsLeader * (1 - IsWatchCommanded) * (1 - HCCursorOnIconSelectable) * (1 - IsSelectedToAdd)";
+            enable="0" //"HCNotEmpty";
             speechId=0;
             cursorTexture="\A3\ui_f\data\igui\cfg\cursors\tactical_ca.paa";
             priority=2;
         };
         class Empty5
         {
-            title="<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\full_ca.paa'/><t> Disenage</t>";
+            title="<img color='#e5e500' image='\Plmod\gfx\team_bounding.paa'/><t>Add Waypoint Bounding OW</t>";
             shortcuts[]={0};
             command=-5;
             class Params
             {
-                expression="{[_x] spawn pl_disengage}forEach (hcSelected player)";
+                expression="[(hcSelected player)#0, true] spawn pl_march";
             };
             show= "HCIsLeader * (1 - HCCursorOnIconSelectable) * IsSelectedToAdd * IsWatchCommanded";
             enable="HCNotEmpty";
@@ -205,12 +205,12 @@ class RscHCGroupRootMenu
         };
         class Empty6
         {
-            title="<img color='#e5e500' image='\A3\3den\data\Attributes\Formation\column_ca.paa'/><t> Move on Path</t>";
+            title="<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\full_ca.paa'/><t> Disenage</t>";
             shortcuts[]={};
             command=-5;
             class Params
             {
-                expression="[] spawn pl_move_as_column";
+                expression="[] spawn pl_disengage";
             };
             show="HCIsLeader * IsWatchCommanded * (1 - IsSelectedToAdd)";
             enable="HCNotEmpty";

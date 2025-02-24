@@ -1050,8 +1050,7 @@ pl_interdiction_cas = {
             case 2 : {};
             case 3 : {};
             case 4 : {
-
-                (driver _plane) enableAI "PATH";
+            
                 player removeEventHandler ["FiredMan", _ehPad];
 
                 if !(isNil "_ccpGroup") then {
@@ -1073,6 +1072,7 @@ pl_interdiction_cas = {
                     _time = time + 40;
                     waitUntil {sleep 0.5; ({_x in _plane} count (units _casGroup)) == (count (units _casGroup)) or time >= _time};
                     sleep 1;
+                    (driver _plane) enableAI "PATH";
                 };
             };
             case 5 : {

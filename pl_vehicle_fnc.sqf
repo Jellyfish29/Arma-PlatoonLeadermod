@@ -29,6 +29,8 @@ pl_getIn_vehicle = {
         _vic = vehicle (leader _group);
     };
 
+    _group setVariable ["pl_is_task_selected", true];
+
     _groupLen = count (units _group);
 
     if (isNull _vic) then {
@@ -162,7 +164,7 @@ pl_getIn_vehicle = {
             _group setVariable ["pl_execute_plan", nil];
         };
 
-        if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+        if (pl_cancel_strike) exitWith {};
 
         _targetVic lockCargo false;
 
@@ -197,6 +199,7 @@ pl_getIn_vehicle = {
             deleteVehicle _landigPad;
         };
 
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -417,6 +420,8 @@ pl_unload_at_position_planed = {
 
     if (vehicle (leader _group) == leader _group) exitWith {hint "Vehicle Only Task!"};
 
+    _group setVariable ["pl_is_task_selected", true];
+
     _vic = vehicle (leader _group);
     _driver = driver _vic;
     _vicGroup = group _driver;
@@ -465,7 +470,7 @@ pl_unload_at_position_planed = {
 
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     doStop _vic;
 
@@ -1350,6 +1355,8 @@ pl_crew_vehicle = {
     params [["_group", hcSelected player select 0], ["_taskPlanWp", []]];
     private ["_targetVic", "_groupLen"];
 
+    _group setVariable ["pl_is_task_selected", true];
+
     if (visibleMap or !(isNull findDisplay 2000)) then {
         pl_show_vehicles_pos = getPos (leader _group);
         if !(_taskPlanWp isEqualTo []) then {pl_show_vehicles_pos = waypointPosition _taskPlanWp};
@@ -1434,7 +1441,7 @@ pl_crew_vehicle = {
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
@@ -1613,6 +1620,7 @@ pl_attach_inf = {
 
     if (_group getVariable ["pl_vic_attached", false]) exitWith {_group setVariable ["pl_vic_attached", false]; _group setVariable ["pl_attached_infGrp", nil];};
 
+    _group setVariable ["pl_is_task_selected", true];
 
     if (isNull _vic) then {
 
@@ -1812,6 +1820,8 @@ pl_attach_vic = {
 
     if (vehicle (leader _group) == (leader _group)) exitWith {hint "Vehicle Only Task!"};
 
+    _group setVariable ["pl_is_task_selected", true];
+
     if (isNull _infGroup) then {
         if (visibleMap or !(isNull findDisplay 2000)) then {
             pl_follow_array_other_setup = pl_follow_array_other_setup + [_group];
@@ -1874,7 +1884,7 @@ pl_attach_vic = {
         _infGroup = group (pl_vics#0);
     };
 
-    if (pl_cancel_strike) exitwith {pl_cancel_strike = false};
+    if (pl_cancel_strike) exitwith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     if (_infGroup getVariable ["pl_inf_attached", false]) exitWith {Hint "Group already has a Vehicle attached"};
 

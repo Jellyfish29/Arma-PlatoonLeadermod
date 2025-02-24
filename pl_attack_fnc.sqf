@@ -11,6 +11,7 @@ pl_sweep_area_size = 35;
 pl_attack_mode = "normal";
 pl_suppression_poses = [];
 pl_assault_poses = [];
+pl_suppression_min_distance = 5;
 
 
 pl_suppressive_fire_position = {
@@ -18,6 +19,7 @@ pl_suppressive_fire_position = {
     private ["_markerName", "_targets", "_pos", "_units", "_leader", "_area", "_mPos", "_markerPosName", "_leaderPos"];
 
     // _group = (hcSelected player) select 0;
+    _group setVariable ["pl_is_task_selected", true];
 
     // if (({(currentCommand _x) isEqualTo "Suppress"} count (units _group)) > 0 and (_group getVariable ["pl_is_suppressing", false])) exitWith {_group setVariable ["pl_is_suppressing", false]};
 
@@ -139,7 +141,7 @@ pl_suppressive_fire_position = {
         _area = pl_suppress_area_size;
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; _group setVariable ["pl_is_task_selected", nil];};
 
     if !(_sfpPos isEqualTo []) then {
 
@@ -159,7 +161,7 @@ pl_suppressive_fire_position = {
         pl_at_targets_indicator = pl_at_targets_indicator - [[_sfpPos, _cords]];
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; _group setVariable ["pl_is_task_selected", nil];};
 
     if (_group getVariable ["pl_in_position", false]) then {
         _markerPosName = format ["defenceAreaDir%1", _group];
@@ -270,36 +272,13 @@ pl_suppressive_fire_position = {
 
 
                 _pos = [_cords, _area] call _getTargets;
-                private _targetDistance = _unit distance2D _pos;
-                _vis = lineIntersectsSurfaces [eyePos _unit, _pos, _unit, vehicle _unit, true, 1, "FIRE"];
+                _targetPos = [_pos , _unit] call pl_get_suppress_target_pos;
 
-                if !(_vis isEqualTo []) then {
-                    _targetPos = (_vis select 0) select 0;
-                    private _distance = ((eyePos _unit) vectorDistance _targetPos) - 2;
-                    _targetpos = (eyePos _unit) vectorAdd (((eyePos _unit) vectorFromTo _targetpos) vectorMultiply _distance);
-                    // if ((_targetPos distance2D _unit) > pl_suppression_min_distance and (_targetpos distance2D _pos) <= 50 and !([_unit, _targetPos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1)) then {
-                    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_unit, _targetPos] call pl_friendly_check)) then {
+                if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_unit, _targetPos] call pl_friendly_check)) then {
 
-                        _unit doWatch _targetPos;
-                        _unit doSuppressiveFire _targetPos;
+                    _unit doWatch _targetPos;
+                    _unit doSuppressiveFire _targetPos;
 
-                        // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
-                        // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
-                        // _helper1 setposASL _targetpos;
-                        // _allHelpers pushback _helper1;
-
-
-                        // _unit doWatch _helper1;
-                        // _unit doSuppressiveFire _helper1;
-
-                    };
-                } else {
-                    private _distance = ((eyePos _unit) vectorDistance _pos) - 2;
-                    _pos = (eyePos _unit) vectorAdd (((eyePos _unit) vectorFromTo _pos) vectorMultiply _distance);
-                    if ((_pos distance2D _unit) > pl_suppression_min_distance and !([_unit, _pos] call pl_friendly_check) and !(getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1)) then {
-                        _unit doWatch _pos;
-                        _unit doSuppressiveFire _pos;
-                    };
                 };
             };
         } forEach _units ;
@@ -719,6 +698,8 @@ pl_assault_position = {
     pl_phase_line_dir = 0;
     pl_phase_line_size = pl_sweep_area_size / 2;
 
+    _group setVariable ["pl_is_task_selected", true];
+
     if ((vehicle (leader _group) != leader _group and !(_group getVariable ["pl_has_cargo", false] or _group getVariable ["pl_vic_attached", false])) and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry ONLY Task!"};
 
 
@@ -981,6 +962,7 @@ pl_assault_position = {
         deleteMarker _markerName;
         deleteMarker _markerPhaselineName;
         deleteMarker _arrowMarkerName;
+        _group setVariable ["pl_is_task_selected", nil];
      };
 
     _rightPos = _cords getPos [pl_sweep_area_size, 90];
@@ -1030,6 +1012,7 @@ pl_assault_position = {
         deleteMarker _arrowMarkerName;
         pl_draw_text_array = pl_draw_text_array - [["ENY", _leftPos, 0.02, pl_side_color_rgb]];
         pl_draw_text_array = pl_draw_text_array - [["ENY", _rightPos, 0.02, pl_side_color_rgb]];
+        _group setVariable ["pl_is_task_selected", nil];
      };
 
     _arrowDir = (leader _group) getDir _cords;
@@ -1345,14 +1328,18 @@ pl_assault_position = {
         _flank = false;
         if (_lineArea >= 25) then {
 
-            _flank = true;
-            if !(_coverTeam isEqualto []) then {
-                [_coverTeam, _coverPos, _approachPos getDir _cords, 18, true, [], false] call pl_get_to_cover_positions; //,_cords getPos [_area, _approachPos getDir _cords]
-            };
-            [_manuverTeam, _manuverPos, _approachPos getDir _cords, 10, false, [], false] call pl_get_to_cover_positions;
+            if !([_approachPos] call pl_is_city) then {
+                _flank = true;
+                if !(_coverTeam isEqualto []) then {
+                    [_coverTeam, _coverPos, _approachPos getDir _cords, 18, true, [], false] call pl_get_to_cover_positions; //,_cords getPos [_area, _approachPos getDir _cords]
+                };
+                [_manuverTeam, _manuverPos, _approachPos getDir _cords, 10, false, [], false] call pl_get_to_cover_positions;
 
-            _time = time + 30;
-            waitUntil {sleep 0.5; !(_group getVariable ["onTask", false]) or ({_x getVariable ["pl_in_position", false]} count (units _group)) == count ((units _group) select {alive _x and !((lifeState _x) isEqualto "INCAPACITATED")}) or time >= _time};
+                _time = time + 30;
+                waitUntil {sleep 0.5; !(_group getVariable ["onTask", false]) or ({_x getVariable ["pl_in_position", false]} count (units _group)) == count ((units _group) select {alive _x and !((lifeState _x) isEqualto "INCAPACITATED")}) or time >= _time};
+            } else {
+               [_coverTeam, _approachPos, _approachPos getDir _cords, 18, true, [], false] call pl_get_to_cover_positions; 
+            };
 
         } else {
             _manuverTeam = _manuverTeam + _coverTeam;
@@ -1427,7 +1414,7 @@ pl_assault_position = {
         {
 
             if (_x == _medic) then {
-                [_group, _x, _x getVariable ["pl_def_pos", _startPos]] spawn pl_defence_ccp;
+                [_group, _x, _x getVariable ["pl_def_pos", _startPos], 100] spawn pl_defence_ccp;
                 _breakingPoint = _breakingPoint - 1;
             } else {
 

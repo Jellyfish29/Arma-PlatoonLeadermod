@@ -56,7 +56,7 @@ pl_set_waypoint = {
 // driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select (currentWaypoint (group player))));
 
 pl_march = {
-    params [["_group", (hcSelected player)#0]];
+    params [["_group", (hcSelected player)#0], ["_doBounding", false]];
     private ["_cords", "_f"], "_mwp";
 
     if (visibleMap or !(isNull findDisplay 2000)) then {
@@ -104,18 +104,9 @@ pl_march = {
 
         _mwp setWaypointStatements ["true", "if ((vehicle player) != player) then {if (effectiveCommander (vehicle player) == player) then {driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select ((currentWaypoint (group player) + 1))));};};"];
 
-
-
-        // if (pl_enable_beep_sound) then {playSound "beep"};
-        // [_group, "confirm", 1] call pl_voice_radio_answer;
-
-
-        // if (vehicle (leader _group) != (leader _group)) then {
-        //     vehicle (leader _group) doMove _cords;
-        //     // vehicle (leader _group) setDestination [_cords,"VEHICLE PLANNED" , true];
-        // };
-
-        // sleep 0.2;
+        if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
+            _mwp setWaypointCompletionRadius 25;
+        };
 
         _group setVariable ["pl_on_march", true];
         {
@@ -125,6 +116,10 @@ pl_march = {
         (leader _group) limitSpeed 14;
         // _group setFormation "FILE";
         _group setBehaviour "AWARE";
+
+        if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
+            [_group] spawn pl_bounding_move_simple;
+        };
 
         sleep 1;
         waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
@@ -140,6 +135,11 @@ pl_march = {
     {
 
         _mwp = _group addWaypoint [_cords, 0];
+
+        if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
+            _mwp setWaypointCompletionRadius 25;
+        };
+
         _mwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]; if ((vehicle player) != player) then {if (effectiveCommander (vehicle player) == player) then {driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select ((currentWaypoint (group player) + 1))));};};"];
         if (_group getVariable ["onTask", false]) then {
             [_group, false] spawn pl_reset;
@@ -151,6 +151,137 @@ pl_march = {
         };
         _group setVariable ["pl_mwp", _mwp];
     };
+};
+
+pl_bounding_move_simple = {
+    params ["_group"];    
+
+    private _units = (units _group);
+    private _team1 = [];
+    private _team2 = [];
+
+    _ii = 0;
+    {
+        if (_ii % 2 == 0) then {
+            _team1 pushBack _x;
+        }
+        else
+        {
+            _team2 pushBack _x;
+        };
+        _ii = _ii + 1;
+    } forEach (_units select {alive _x});
+
+    {
+        _x disableAI "AUTOCOMBAT";
+        _x setVariable ["pl_damage_reduction", true];
+    } forEach _units;
+    _group setBehaviour "AWARE";
+
+    private _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
+    private _timeout = time;
+
+    private _fncTakeCoverAction = {
+        params ["_unit"];
+
+        // doStop _unit;
+        _unit enableAI "AUTOTARGET";
+        _unit enableAI "TARGET";
+        _unit forceSpeed -1;
+        _unit disableAI "PATH";
+        // _unit setUnitPos (selectRandom ["Middle", "Down"]);
+        [_unit, getDir _unit, _unit getPos [500, getdir _unit]] call pl_setUnitPos;
+        // [_unit, 8, getDir _unit, true, [], "pl_on_march"] call pl_find_cover;
+        sleep 0.2;
+        [_unit] call pl_quick_suppress_unit;
+    };
+
+    private _fncAdvanceAction = {
+        params ["_unit", "_wpPos", "_idx"];
+
+        _unit enableAI "PATH";
+        _unit setUnitPos "AUTO";
+        _unit disableAI "AUTOTARGET";
+        _unit disableAI "TARGET";
+        _unit forceSpeed 20;
+        _unit setHit ["legs", 0];
+        doStop _unit;
+        sleep 0.1;
+        if (_unit != (leader _unit)) then {
+            private _movePos = _wpPos getPos [8 * _idx, (_unit getDir _wpPos) + 90];
+            _unit domove _movePos;
+
+            // _m = createMarker [str (random 1), _movePos];
+            // _m setMarkerType "mil_dot";
+            // _m setMarkerSize [0.5, 0.5];
+
+        } else {
+            _unit doMove _wpPos;
+        };
+    };
+
+    private _idx = 0;
+    while {(_group getVariable ["pl_on_march", false])} do {
+
+        _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
+
+        _idx = 0;
+        {
+            [_x, _wpPos, _idx] spawn _fncAdvanceAction;
+            _idx = _idx + 1;
+        } forEach (_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"});
+
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
+
+        {
+            [_x] spawn _fncTakeCoverAction;
+        } forEach _team2;
+
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
+
+        _timeout = time + 10;
+
+        waitUntil {sleep 0.5; time >= _timeOut or (_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])};
+
+        if ((_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])) exitWith {};
+
+
+        _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
+        // _movePos = [[[_wpPos, 10]], ["water"]] call BIS_fnc_randomPos;
+
+        _idx = 0;
+        {
+            [_x, _wpPos, _idx] spawn _fncAdvanceAction;
+            _idx = _idx + 1;
+        } forEach (_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"});
+
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
+
+        {
+            [_x] spawn _fncTakeCoverAction;
+        } forEach _team1;
+
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
+
+        _timeout = time + 10;
+
+        waitUntil {sleep 0.5; time >= _timeOut or (_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])};
+
+        if ((_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])) exitWith {};
+    };
+
+    {
+        _x enableAI "AUTOCOMBAT";
+        _x enableAI "PATH";
+        _x enableAI "AUTOTARGET";
+        _x enableAI "TARGET";
+        _x setUnitPos "AUTO";
+        _x forceSpeed -1;
+        _x doFollow (leader _group);
+        _x setVariable ["pl_damage_reduction", false];
+    } forEach _units;
+
+    systemChat "end";
 };
 
 pl_move_team_to_array = {
@@ -1313,6 +1444,7 @@ pl_cross_bridge = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []]];
     private ["_cords", "_engineer", "_bridges", "_bridgeMarkers", "_mPos"];
 
+    _group setVariable ["pl_is_task_selected", true];
 
     if (visibleMap or !(isNull findDisplay 2000)) then {
 
@@ -1388,7 +1520,7 @@ pl_cross_bridge = {
         deleteVehicle _cursorPosIndicator;
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false};
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     _roads = _cords nearRoads 30;
     _bridges = [];
