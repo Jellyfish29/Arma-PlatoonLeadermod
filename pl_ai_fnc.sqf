@@ -432,17 +432,17 @@ pl_auto_360 = {
 
         _leader = leader _group;
 
-        if (!(_group getVariable ["onTask", false]) and !(_group getVariable ["pl_on_march", false]) and !(_group getVariable ["pl_is_task_selected", false])) then {
+        if (!(_group getVariable ["onTask", false]) and !(_group getVariable ["pl_on_march", false]) and !(_group getVariable ["pl_is_task_selected", false]) and (vehicle _leader) == _leader) then {
 
             if (speed _leader == 0 and (vehicle _leader) == _leader) then {
-                sleep 3;
-                if (speed _leader == 0 and !(_group getVariable ["onTask", false]) and !(_group getVariable ["pl_on_march", false]) and !(_group in (hcSelected player)) and !(_group getVariable ["pl_is_task_selected", false])) then {
+                sleep 8;
+                if (speed _leader == 0 and !(_group getVariable ["onTask", false]) and !(_group getVariable ["pl_on_march", false]) and !(_group in (hcSelected player)) and !(_group getVariable ["pl_is_task_selected", false]) and (vehicle _leader) == _leader) then {
                     [_group, [], getPos _leader, 0, false, false,  20, true] spawn pl_defend_position;
                 };
             };
         };
 
-        sleep 3;
+        sleep 5;
     }; 
 
 };
@@ -1146,8 +1146,8 @@ pl_ai_setUp_loop = {
                     if (!(_x getVariable ["pl_opfor_ai_enabled", false]) and !(_x in pl_active_opfor_vic_grps)) then {
                         _x setVariable ["pl_opfor_ai_enabled", true];
                         _x execFSM "Plmod\fsm\pl_opfor_cmd_inf_2.fsm";
+                        [_x] spawn pl_opfor_auto_unstuck;
                     };
-                    [_x] spawn pl_opfor_auto_unstuck;
                 };
             };
 

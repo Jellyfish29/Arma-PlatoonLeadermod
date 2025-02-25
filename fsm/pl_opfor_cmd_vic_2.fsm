@@ -22,7 +22,7 @@ item17[] = {"no_Wp___close",4,218,1206.202515,676.552185,1296.202759,726.552368,
 item18[] = {"__alive",4,218,523.946472,664.238403,613.946472,714.238403,10.000000,"!alive"};
 item19[] = {"End",1,250,524.807312,767.176453,614.807312,817.176453,0.000000,"End"};
 item20[] = {"damaged",4,218,1208.020020,745.083435,1298.020020,795.083313,4.000000,"damaged"};
-item21[] = {"Panic",4,4314,1170.512451,-69.303726,1260.512817,-19.303726,2.000000,"Panic"};
+item21[] = {"Panic",4,218,1170.512451,-69.303726,1260.512817,-19.303726,2.000000,"Panic"};
 item22[] = {"Near_Inf",4,218,1206.719971,887.015991,1296.719971,937.015991,2.000000,"Near Inf"};
 item23[] = {"alive__cargoGroup",4,218,1204.211304,552.496582,1294.211304,602.496582,7.000000,"alive " \n "cargoGroup" \n ""};
 item24[] = {"Unload_planed",4,218,1274.971558,200.665405,1364.971558,250.665405,1.000000,"Unload" \n "planed"};
@@ -37,7 +37,7 @@ item32[] = {"Retreat",4,218,722.520874,340.056427,849.495422,429.672028,4.000000
 item33[] = {"timeout",4,218,1022.563416,-306.962769,1112.563354,-256.962769,0.000000,"timeout"};
 item34[] = {"return",8,218,1031.725830,-223.323090,1121.725952,-173.322968,0.000000,"return"};
 item35[] = {"no_Wp___far",4,218,1206.085693,813.279358,1296.085938,863.279541,3.000000,"no Wp" \n "+" \n "far"};
-item36[] = {"no_Combat",4,218,731.775757,602.280029,821.775757,652.280029,1.000000,"no Combat"};
+item36[] = {"no_Combat",4,4314,695.835266,590.299927,785.835266,640.299927,1.000000,"no Combat"};
 link0[] = {0,1};
 link1[] = {0,2};
 link2[] = {1,3};
@@ -98,8 +98,8 @@ link56[] = {33,9};
 link57[] = {34,10};
 link58[] = {35,13};
 link59[] = {36,4};
-globals[] = {0.000000,0,0,0,0,640,480,1,51,6316128,1,-218.777954,1640.323853,1246.760254,-386.394684,1707,1236,1};
-window[] = {2,-1,-1,-1,-1,1263,234,2153,234,3,1725};
+globals[] = {0.000000,0,0,0,0,640,480,1,51,6316128,1,-207.881042,1651.220947,1360.035156,-273.119690,1707,1236,1};
+window[] = {2,-1,-1,-1,-1,1315,286,2205,286,3,1725};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -653,7 +653,7 @@ class FSM
                                         action=/*%FSM<ACTION""">*/"[_grp] spawn pl_opfor_attack_closest_enemy;" \n
                                          "_vic forceSpeed 0;" \n
                                          "{_x disableAI ""PATH""} forEach (units _grp);" \n
-                                         "_time = time + 30;" \n
+                                         "_time = time + 30 + (random 10);" \n
                                          "_damage = damage _vic;" \n
                                          "if ((random 1) > 0.75) then {[_vic, ""SmokeLauncher""] call BIS_fnc_fire};" \n
                                          "if ((random 1) > 0.5) then {[_grp] call pl_opfor_vic_suppress};" \n
@@ -682,8 +682,8 @@ class FSM
                                         priority = 2.000000;
                                         to="Combat_Loop";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"!(_alliedInf isEqualto [])"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/"_vic limitSpeed 10;" \n
+                                        condition=/*%FSM<CONDITION""">*/"!(_alliedInf isEqualto []) and _targetdistance <= 700;"/*%FSM</CONDITION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_vic limitSpeed 20;" \n
                                          "" \n
                                          "_time = time + 20;" \n
                                          "" \n
@@ -766,7 +766,12 @@ class FSM
                                         action=/*%FSM<ACTION""">*/"_time = time + 20;" \n
                                          "" \n
                                          "" \n
-                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""Near Inf""];" \n
+                                         "{" \n
+                                         "    _x enableAI ""AUTOCOMBAT"";" \n
+                                         "} forEach (units _grp);" \n
+                                         "" \n
+                                         "" \n
+                                         "_grp setVariable [""pl_opfor_debug_marker_text"", ""mobile""];" \n
                                          ""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/

@@ -80,7 +80,7 @@ pl_march = {
 
             [_group] call pl_reset;
             sleep 0.25;
-            [_group] spawn pl_reset;
+            [_group] call pl_reset;
             sleep 0.25;
             player hcSelectGroup [_group];
             
@@ -122,7 +122,7 @@ pl_march = {
         };
 
         sleep 1;
-        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 11) or (isNil {_group getVariable ["pl_on_march", nil]})};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 50) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setVariable ["pl_on_march", nil];
         // _group setVariable ["setSpecial", false];
         {
@@ -232,12 +232,14 @@ pl_bounding_move_simple = {
         } forEach (_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"});
 
         ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "SentConfirmMove";
 
         {
             [_x] spawn _fncTakeCoverAction;
         } forEach _team2;
 
         ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";;
 
         _timeout = time + 10;
 
@@ -256,12 +258,14 @@ pl_bounding_move_simple = {
         } forEach (_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"});
 
         ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "SentConfirmMove";
 
         {
             [_x] spawn _fncTakeCoverAction;
         } forEach _team1;
 
         ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";;
 
         _timeout = time + 10;
 

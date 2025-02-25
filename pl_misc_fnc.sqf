@@ -329,22 +329,23 @@ pl_spawn_watch_dir = {
 
 
 pl_hold_fire = {
-    params ["_group"];
+    params ["_group", "_mode"];
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
 
-    if (_group getVariable ['inContact', false]) then {
-        _group setCombatMode "BLUE";
-    } else {
-        _group setCombatMode "GREEN";
-    };
+    // if (_group getVariable ['inContact', false]) then {
+    //     _group setCombatMode "BLUE";
+    // } else {
+    //     _group setCombatMode "GREEN";
+    // };
+    _group setCombatMode _mode;
     _group setVariable ["pl_hold_fire", true];
     _group setVariable ["pl_combat_mode", true];
 
     if ((vehicle (leader _group)) != (leader _group)) then {
         {
-            (group (_x#0)) setCombatMode "GREEN";
+            (group (_x#0)) setCombatMode _mode;
             (group (_x#0)) setVariable ["pl_hold_fire", true];
             (group (_x#0)) setVariable ["pl_combat_mode", true];
         } forEach (fullCrew [vehicle (leader _group), "cargo", false]);

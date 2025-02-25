@@ -980,25 +980,38 @@ class RscHCGroupRootMenu
                 speechId=0;
             };
 
-            class OpenFire
+            class FireAtWill
             {
                 shortcuts[] = {6};
                 class Params
                 {
                     expression = "{[_x] call pl_open_fire} forEach (hcSelected player)";
                 };
-                title = "<img color='#b20000' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Open Fire</t";
+                title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Fire At Will</t";
                 shortcutsAction = "CommandingMenu6";
+                command = -5;
+                show = "1";
+                enable = "HCNotEmpty";
+            };
+            class ReturnFire
+            {
+                shortcuts[] = {7};
+                class Params
+                {
+                    expression = "{[_x, 'GREEN'] call pl_hold_fire} forEach (hcSelected player)";
+                };
+                title = "<img color='#EC3E14' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Return Fire</t";
+                shortcutsAction = "CommandingMenu7";
                 command = -5;
                 show = "1";
                 enable = "HCNotEmpty";
             };
             class HoldFire
             {
-                shortcuts[] = {7};
+                shortcuts[] = {8};
                 class Params
                 {
-                    expression = "{[_x] call pl_hold_fire} forEach (hcSelected player)";
+                    expression = "{[_x, 'BLUE'] call pl_hold_fire} forEach (hcSelected player)";
                 };
                 title = "<img color='#191999' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa'/><t> Hold Fire</t";
                 shortcutsAction = "CommandingMenu7";
@@ -1022,7 +1035,7 @@ class RscHCGroupRootMenu
             };
             class pl_sops
             {
-                shortcuts[] = {8};
+                shortcuts[] = {9};
                 class Params
                 {
                     expression = "[] call pl_show_sop_menu";

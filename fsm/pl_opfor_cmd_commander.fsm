@@ -1,7 +1,7 @@
 /*%FSM<COMPILE "C:\Program Files (x86)\Steam\steamapps\common\Arma 3 Tools\FSMEditor\scriptedFSM.cfg, pl_opfor_cmd">*/
 /*%FSM<HEAD>*/
 /*
-item0[] = {"Start",0,250,-91.554260,-227.266464,-1.554260,-177.266464,0.000000,"Start"};
+item0[] = {"Start",0,250,-85.786804,-226.305191,4.213196,-176.305191,0.000000,"Start"};
 item1[] = {"return",8,218,121.279480,65.840576,211.279480,115.840584,0.000000,"return"};
 item2[] = {"CMD_Decision_",2,250,-83.292450,69.223236,6.707565,119.223244,0.000000,"CMD" \n "Decision" \n ""};
 item3[] = {"idleThreshold",4,218,-266.933990,70.124481,-176.933990,120.124481,1.000000,"idleThreshold"};
@@ -21,7 +21,7 @@ link7[] = {6,5};
 link8[] = {7,8};
 link9[] = {8,6};
 globals[] = {0.000000,0,0,0,0,640,480,1,12,6316128,1,-1035.911255,480.951294,561.386780,-626.725769,1578,1236,1};
-window[] = {2,-1,-1,-1,-1,699,312,2232,312,3,1596};
+window[] = {2,-1,-1,-1,-1,439,52,1972,52,3,1596};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -36,7 +36,7 @@ class FSM
                         init = /*%FSM<STATEINIT""">*/"private _time = time + 1;" \n
                          "private _idleGrps = [];" \n
                          "private _obj = [];" \n
-                         "private _idleThreshold = 2;" \n
+                         "private _idleThreshold = 1;" \n
                          "private _cmdDebugMarkers = [];"/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
@@ -126,8 +126,8 @@ class FSM
                 {
                         name = "move_to_obj";
                         itemno = 6;
-                        init = /*%FSM<STATEINIT""">*/"_obj = [] call pl_opfor_get_objective;" \n
-                         "_idleGrps = [] call pl_opfor_get_idle_groups;" \n
+                        init = /*%FSM<STATEINIT""">*/"_idleGrps = [] call pl_opfor_get_idle_groups;" \n
+                         "_obj = [_idleGrps#0] call pl_opfor_get_objective;" \n
                          "[_idleGrps, _obj] spawn pl_opfor_cmd_move_to_objective;" \n
                          "_time = time + 120 + (random 30);" \n
                          "" \n
@@ -162,7 +162,7 @@ class FSM
                 {
                         name = "Buffer_Groups";
                         itemno = 7;
-                        init = /*%FSM<STATEINIT""">*/"_time = time + 20 + (random 10);"/*%FSM</STATEINIT""">*/;
+                        init = /*%FSM<STATEINIT""">*/"_time = time + 20 + (random 20);"/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
                         {

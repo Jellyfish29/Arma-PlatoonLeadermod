@@ -3,13 +3,13 @@
 /*
 item0[] = {"Start",0,250,-586.430054,-74.919495,-496.430481,-24.919495,0.000000,"Start"};
 item1[] = {"has_wp",4,218,-435.746613,-72.812576,-345.746552,-22.812584,2.000000,"has wp"};
-item2[] = {"enemy_close",4,218,526.252258,-146.977966,616.252258,-96.977966,1.000000,"enemy" \n "close"};
+item2[] = {"enemy_close",4,4314,526.252258,-146.977966,616.252258,-96.977966,1.000000,"enemy" \n "close"};
 item3[] = {"In_Defence_Posit",2,250,-607.923401,198.943726,-475.324005,278.199432,0.000000,"In Defence Position"};
 item4[] = {"Combat_Staging",2,250,338.966766,-153.050110,452.989777,-85.494873,0.000000,"Combat Staging"};
 item5[] = {"Advancing",2,250,981.660461,-158.356918,1071.660889,-108.356918,0.000000,"Advancing"};
 item6[] = {"Cover_casaulties",4,218,942.551697,-30.021729,1032.552124,19.978271,2.000000,"Cover" \n "casaulties"};
 item7[] = {"Fighting",2,250,946.251160,90.600464,1036.251099,140.600525,0.000000,"Fighting"};
-item8[] = {"Timeout",4,218,721.722412,124.322510,811.722412,174.322571,0.000000,"Timeout"};
+item8[] = {"Timeout",4,218,717.269043,154.382629,807.269043,204.382690,0.000000,"Timeout"};
 item9[] = {"Attack",4,250,1182.146118,-26.998260,1272.146362,23.001740,1.000000,"Attack"};
 item10[] = {"below__breackingpoint",4,218,231.661835,1160.764893,321.661835,1210.764893,10.000000,"below " \n "breackingpoint?"};
 item11[] = {"END",1,250,236.011932,1272.350708,326.011963,1322.350586,0.000000,"END"};
@@ -21,11 +21,11 @@ item16[] = {"is_dismounted",4,218,131.446442,-214.064240,221.446442,-164.064240,
 item17[] = {"in_Vehicle",2,250,-190.512421,-198.613403,-100.512413,-148.613403,0.000000,"in Vehicle"};
 item18[] = {"no_wp",4,218,-586.684204,43.823608,-496.684204,93.823669,0.000000,"no wp"};
 item19[] = {"Retreating",2,250,174.003723,332.572693,271.967651,385.985718,0.000000,"Retreating"};
-item20[] = {"Timeout",4,4314,117.265808,204.754242,207.265808,254.754242,0.000000,"Timeout"};
-item21[] = {"no_wp_Cover",4,218,788.396240,-7.618805,878.396240,42.381256,0.000000,"no wp" \n "Cover"};
+item20[] = {"Timeout",4,218,117.265808,204.754242,207.265808,254.754242,0.000000,"Timeout"};
+item21[] = {"no_wp_Cover",4,218,782.829468,-16.525482,872.829468,33.474579,0.000000,"no wp" \n "Cover"};
 item22[] = {"Combat_Aggressiv",2,250,667.853455,-152.277740,757.853455,-102.277740,0.000000,"Combat" \n "Aggressivness"};
 item23[] = {"attack_close",4,218,802.461060,-156.511780,892.461060,-106.511780,1.000000,"attack" \n "close"};
-item24[] = {"cover_close",4,218,704.414185,44.145844,794.414185,94.145844,0.000000,"cover" \n "close"};
+item24[] = {"cover_close",4,218,706.640869,60.845917,796.640869,110.845917,0.000000,"cover" \n "close"};
 item25[] = {"move_CMD",4,218,665.870117,-294.063751,755.870056,-244.063751,2.000000,"move" \n "CMD"};
 item26[] = {"no_wp_Cover",4,218,1063.989136,-32.973938,1153.989014,17.026123,0.000000,"no wp" \n "Cover"};
 link0[] = {0,1};
@@ -74,8 +74,8 @@ link42[] = {23,5};
 link43[] = {24,7};
 link44[] = {25,5};
 link45[] = {26,7};
-globals[] = {0.000000,0,0,0,0,640,480,1,69,6316128,1,-663.319153,1009.614685,778.318542,-639.890076,1458,1236,1};
-window[] = {2,-1,-1,-32000,-32000,1211,182,2101,182,3,1476};
+globals[] = {0.000000,0,0,0,0,640,480,1,69,6316128,1,-141.859131,1481.386719,614.487610,-761.597168,1458,1236,1};
+window[] = {2,-1,-1,-1,-1,1055,26,1945,26,3,1476};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -249,7 +249,7 @@ class FSM
                 {
                         name = "Combat_Staging";
                         itemno = 4;
-                        init = /*%FSM<STATEINIT""">*/"_time = time;" \n
+                        init = /*%FSM<STATEINIT""">*/"_time = time + 4;" \n
                          "" \n
                          "_grp setVariable [""pl_opfor_debug_marker_text"", ""In Combat Mobile""];" \n
                          "" \n
@@ -318,7 +318,7 @@ class FSM
                                         to="Advancing";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
                                         condition=/*%FSM<CONDITION""">*/"(_grp getVariable [""pl_opfor_debug_marker_text"", """"]) isEqualto ""Combat: Move commanded"";"/*%FSM</CONDITION""">*/;
-                                        action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
+                                        action=/*%FSM<ACTION""">*/"_grp setVariable [""pl_opfor_debug_marker_text"", ""Combat: Move command execute""];"/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
                                 /*%FSM<LINK "enemy_close">*/
@@ -328,7 +328,8 @@ class FSM
                                         priority = 1.000000;
                                         to="Combat_Aggressiv";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"count (((getPos (leader _grp)) nearEntities [[""Man""], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0.1;"/*%FSM</CONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"count (((getPos (leader _grp)) nearEntities [[""Man"", ""Car"", ""Tank""], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0.1;" \n
+                                         ""/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
@@ -366,7 +367,7 @@ class FSM
                         name = "Advancing";
                         itemno = 5;
                         init = /*%FSM<STATEINIT""">*/"_atkDistance = [60, 120] call BIS_fnc_randomInt;" \n
-                         "_time = time + 3 + (random 2);" \n
+                         "_time = time + 5 + (random 2);" \n
                          ""/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links
@@ -450,7 +451,7 @@ class FSM
                                         priority = 0.000000;
                                         to="Fighting";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"time >= _time and (currentWaypoint _grp) >= count (waypoints _grp) or currentCommand (leader _grp) isNotEqualTo ""MOVE"";" \n
+                                        condition=/*%FSM<CONDITION""">*/"time >= _time and (currentWaypoint _grp) >= count (waypoints _grp);" \n
                                          "// or currentCommand (leader _grp) isNotEqualTo ""MOVE"";" \n
                                          "// "/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_oldAliveUnits = count ((units _grp) select {alive _x});" \n

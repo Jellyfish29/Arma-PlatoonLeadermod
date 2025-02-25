@@ -229,7 +229,11 @@ pl_draw_group_info = {
                     _x setVariable ['inContact', true];
                 };
                 if (_x getVariable ['pl_hold_fire', false]) then {
-                    _contactColor = [0.1,0.1,0.6,1];
+                    if ((combatMode _x) isEqualto 'GREEN') then {
+                        _contactColor = [0.92,0.24,0.07,1];
+                    } else {
+                        _contactColor = [0.1,0.1,0.6,1];
+                    };
                 };
                 _display drawIcon [
                     _contactIcon,

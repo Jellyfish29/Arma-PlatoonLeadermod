@@ -51,7 +51,7 @@ pl_find_cover = {
             _unit setDestination [_coverPos, "LEADER DIRECT", true];
             sleep 0.5;
 
-            waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable [_waitVar, true]) or (_unit distance2D _coverPos) <= 2};
+            waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable [_waitVar, true]) or (_unit distance2D _coverPos) <= 1};
 
             if ((group _unit) getVariable [_waitVar, true]) then {
                 [_unit, _watchDir, _watchPos] call pl_setUnitPos;
@@ -615,6 +615,7 @@ pl_defend_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []] , ["_cords", []], ["_watchDir", 0], ["_sfp", false], ["_retreat", false], ["_area", 35], ["_auto360", false]];
     private ["_mPos", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord", "_dirMarkerType", "_unitPos"];
 
+    if (_group getVariable ["pl_is_task_selected", false]) exitWith {};
     _group setVariable ["pl_is_task_selected", true];
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa";
     _buildings = [];
@@ -1199,8 +1200,8 @@ pl_defend_position = {
         {
             if !(isObjectHidden _x) then {
 
-                _leftPos = (getPos _x) getPos [1, getDir _x];
-                _rightPos = (getPos _x) getPos [1, (getDir _x) - 180];
+                _leftPos = (getPos _x) getPos [1.5, getDir _x];
+                _rightPos = (getPos _x) getPos [1.5, (getDir _x) - 180];
 
                 _visLeftPos = ATLtoASL [_leftPos#0, _leftPos#1, (_leftPos#2) + 1.6];
                 _visrightPos = ATLtoASL [_rightPos#0, _rightPos#1, (_rightPos#2) + 1.6];
@@ -1269,7 +1270,7 @@ pl_defend_position = {
     // Find save position for the medic to stage
     if (_ccpPos isEqualTo []) then {
 
-        private _rearPos = _cords getPos [_defenceAreaSize * 0.5, _watchDir - 180];
+        private _rearPos = _cords getPos [_defenceAreaSize * 0.8, _watchDir - 180];
         private _lineStartPos = _rearPos getPos [_defenceAreaSize / 2, _watchDir - 90];
         private _posCandidates = [];
         private _ccpPosOffset = 0;
@@ -1300,12 +1301,14 @@ pl_defend_position = {
 
     for "_j" from 0 to _accuracy do {
         if (_j % 2 == 0) then {
-            _losPos = (_losStartLine getPos [-0.5, _watchDir]) getPos [3 - _losOffset, _watchDir + 90];
+            // _losPos = (_losStartLine getPos [-1, _watchDir]) getPos [3 - _losOffset, _watchDir + 90];
+            _losPos = _losStartLine getPos [3 - _losOffset, _watchDir + 90];
             // _losPos = _losStartLine getPos [_losOffset, _watchDir + 90];
         }
         else
         {
-            _losPos = (_losStartLine getPos [-0.5, _watchDir]) getPos [3 - _losOffset, _watchDir - 90];
+            // _losPos = (_losStartLine getPos [-1, _watchDir]) getPos [3 - _losOffset, _watchDir - 90];
+            _losPos = _losStartLine getPos [3 - _losOffset, _watchDir - 90];
             // _losPos = _losStartLine getPos [_losOffset, _watchDir - 90];
         };
         _losOffset = _losOffset + (_defenceAreaSize / _accuracy);
@@ -1538,18 +1541,37 @@ pl_defend_position = {
             private _counter = 0;
             private _posNotReached = false;
 
-            while {alive _unit and ((group _unit) getVariable ["onTask", false]) and (_unit distance _defPos) > 0.25 and !(unitReady _unit)} do {
-                _time = time + 2;
-                waitUntil {sleep 0.25; time > _time or !((group _unit) getVariable ["onTask", false]) or (_unit distance _defPos) < 2};
-                _check = [_unit, _defPos, _counter] call pl_position_reached_check;
-                if (_check#0) exitWith {_posNotReached = _check#3};
-                _counter = _check#1;
+            // while {alive _unit and ((group _unit) getVariable ["onTask", false]) and (_unit distance _defPos) > 0.25 and !(unitReady _unit)} do {
+            //     _time = time + 2;
+            //     waitUntil {sleep 0.25; time > _time or !((group _unit) getVariable ["onTask", false]) or (_unit distance _defPos) < 2};
+            //     _check = [_unit, _defPos, _counter] call pl_position_reached_check;
+            //     if (_check#0) exitWith {_posNotReached = _check#3};
+            //     _counter = _check#1;
+            // };
+
+            // if (_posNotReached) then {
+            //     _unit domove _defPos;
+            // };
+
+            waitUntil {!alive _unit or !((group _unit) getVariable ["onTask", false]) or unitReady _unit};
+
+            if (_unit distance2D _defPos > 2) then {
+                _unit doMove _defPos;
+                while {alive _unit and ((group _unit) getVariable ["onTask", false]) and (_unit distance _defPos) > 0.25 and !(unitReady _unit)} do {
+                    _time = time + 2;
+                    waitUntil {sleep 0.25; time > _time or !((group _unit) getVariable ["onTask", false]) or (_unit distance _defPos) < 2};
+                    _check = [_unit, _defPos, _counter] call pl_position_reached_check;
+                    if (_check#0) exitWith {_posNotReached = _check#3};
+                    _counter = _check#1;
+                };
+
+                if (_posNotReached) then {
+                    _unit domove _defPos;
+                };
+
             };
 
-            if (_posNotReached) then {
-                _unit domove _defPos;
-            };
-            sleep 0.5;
+            // sleep 0.25;
             _unit enableAI "AUTOCOMBAT";
             _unit enableAI "AUTOTARGET";
             _unit enableAI "TARGET";
@@ -1560,6 +1582,7 @@ pl_defend_position = {
             if ((secondaryWeapon _unit) != "" and !((secondaryWeaponMagazine _unit) isEqualTo [])) then {
                 if ((group _unit) getVariable ["pl_sop_def_ATEngagement", false]) then {
                     [_unit, group _unit, _cords, _defenceAreaSize, _defenceDir, _defPos, _atEscord] spawn pl_at_defence;
+                    [_unit, _defPos, [], _ccpPos] spawn pl_at_defence_change_firing_pos;
                 };
                 sleep 0.1;
             };
@@ -1635,10 +1658,92 @@ pl_defend_position = {
     } forEach _weapons;
 };
 
-
-
 // (!((group cursorTarget) getVariable ["onTask", false]) and !((group cursorTarget) getVariable ["pl_on_march", false]))
+pl_at_defence_change_firing_pos= {
+    params ["_unit", "_defPos", "_validLosPos", "_ccpPos"];
 
+    _unit setVariable ["pl_at_chg_pos", _ccpPos];
+    _unit setVariable ["pl_defPos", _defPos];
+
+    private _changeEw = _unit addEventHandler ["Fired", {
+        params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_gunner"];
+
+        if (([_weapon] call BIS_fnc_itemtype) select 1 in ["MissileLauncher", "RocketLauncher"] and ((getPosATL _unit)#2) < 2) then{
+
+
+            [_unit, _weapon, _projectile, _magazine, _muzzle] spawn {
+                params ["_unit", "_weapon", "_projectile", "_magazine", "_muzzle"];
+
+
+                if ((([secondaryWeapon _unit] call BIS_fnc_itemtype) select 1) == "MissileLauncher") then {
+                    waitUntil {sleep 0.1; (speed _projectile) <= 0 or isNull _projectile};
+                } else {
+                    sleep 0.1;
+                };
+
+                [group _unit, getPos _unit] call pl_group_throw_smoke;
+                _unit setUnitCombatMode "BLUE";
+                _unit enableAI "PATH";
+                _unit disableAI "TARGET";
+                _unit disableAI "AUTOTARGET";
+                _unit disableAI "WEAPONAIM";
+                _unit disableAI "FIREWEAPON";
+                _unit setUnitPos "AUTO";
+                _unit disableAI "AUTOCOMBAT";
+                _unit setBehaviourStrong "AWARE";
+                _unit forceSpeed 100;
+                _unit setVariable ['pl_is_at', true];
+                private _chgPos = _unit getVariable ["pl_at_chg_pos", getPos _unit];
+                _unit doMove _chgPos;
+                _unit setDestination [_chgPos, "LEADER DIRECT", true];
+                _unit setUnitTrait ["camouflageCoef", 0.1, false];
+                sleep 0.5;
+
+                _loadedAmmo = _unit ammo _muzzle;
+                // systemChat (str _loadedAmmo);
+
+                _unit removeWeapon _weapon;
+                sleep 0.05;
+                _unit addWeapon _weapon;
+                sleep 1;
+
+                if (_loadedAmmo > 0) then {
+                    // systemChat "oof";
+                    _unit addMagazines [_magazine, 1];
+                };
+
+                // private _newMissileCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> secondaryWeapon _unit >> "magazines") apply {toUpper _x})} count magazines _unit);
+
+                waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable ["onTask", true]) or (_unit distance2D _chgPos) <= 1};
+
+
+                _unit setUnitCombatMode "YELLOW";
+                _unit enableAI "TARGET";
+                _unit enableAI "AUTOTARGET";
+                _unit enableAI "WEAPONAIM";
+                _unit enableAI "FIREWEAPON";
+                _unit setUnitTrait ["camouflageCoef", 0.5, false];
+                _unit forceSpeed -1;
+                // deleteVehicle _weaponFake;
+                sleep 0.1;
+                private _defPos = _unit getVariable ["pl_defPos", getPos _unit];
+                _unit doMove _defPos;
+
+                waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable ["onTask", true]) or (_unit distance2D _defPos) <= 1};
+
+                _unit setVariable ['pl_is_at', false];
+                [_unit, 2, getDir _unit, true] spawn pl_find_cover;
+            };
+
+        };
+
+    }];
+
+    waitUntil {sleep 1; !((group _unit) getVariable ["onTask", true])};
+
+    _unit removeEventHandler ["Fired", _changeEw];
+
+};
 
 pl_at_defence = {
     params ["_atSoldier", "_group", "_defencePos", "_defenceAreaSize", "_defenceDir", "_startPos", "_atEscord"];
@@ -1846,9 +1951,9 @@ pl_defence_suppression = {
                     _x setUnitTrait ["camouflageCoef", 0.5, false];
                     _x setVariable ["pl_damage_reduction", true];
                 } else {
-                    if ((random 1) > 0.6) then {_firers pushBackUnique _x;}
+                    if ((random 1) > 0.5) then {_firers pushBackUnique _x;}
                 };
-            } forEach ((units _group) select {!(_x checkAIFeature "PATH") and _x != _medic});
+            } forEach ((units _group) select {!(_x checkAIFeature "PATH") and _x != _medic and !(([secondaryWeapon _x] call BIS_fnc_itemtype) select 1 in ["MissileLauncher", "RocketLauncher"])});
             {
                 _unit = _x;
                 _target = selectRandom _enemyTargets;
@@ -1885,7 +1990,7 @@ pl_defence_suppression = {
                 pl_suppression_poses pushback [_allPos, _group];
             };
 
-            _time = time + 15;
+            _time = time + 25;
             waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", true])};
 
             

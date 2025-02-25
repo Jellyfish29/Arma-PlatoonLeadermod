@@ -1467,6 +1467,8 @@ pl_crew_vehicle = {
         if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1: Crewing %2", groupId _group, getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")]};
         if (pl_enable_map_radio) then {[_group, format ["Crewing %1", getText (configFile >> "CfgVehicles" >> typeOf _targetVic >> "displayName")], 25] call pl_map_radio_callout};
 
+        _targetVic setUnloadInCombat [false, false];
+
         [_group] spawn {
             params ["_group"];
 
@@ -1490,6 +1492,8 @@ pl_crew_vehicle_now = {
         [_x] allowGetIn true;
         [_x] orderGetIn true;
     } forEach (units _group);
+
+    _targetVic setUnloadInCombat [false, false];
 
     [_group] spawn {
         params ["_group"];

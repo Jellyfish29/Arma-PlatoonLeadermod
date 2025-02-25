@@ -177,18 +177,19 @@ pl_get_suppress_target_pos = {
 
     private _vis = lineIntersectsSurfaces [eyePos _unit, _initialTargetPos, _unit, vehicle _unit, true, 1, "FIRE"];
     private _supDistance = _unit distance2D _initialTargetPos;
+    
     // if no surface intersection return initial pos
     private _targetPos = _initialTargetPos;
-    private _allHelpers = [];
+    // private _allHelpers = [];
 
     // surface intersection
     if !(_vis isEqualTo []) then {
         _targetPos = (_vis select 0) select 0;
 
-        _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
-        _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
-        _helper1 setposASL _targetpos;
-        _allHelpers pushback _helper1;
+        // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+        // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+        // _helper1 setposASL _targetpos;
+        // _allHelpers pushback _helper1;
 
         // intersection with terrain
         if (isNull (_vis#0#2)) then {
@@ -204,22 +205,22 @@ pl_get_suppress_target_pos = {
                         _targetPos = _vis#0#0;
                         break;
                     };
-                    _helper3 = createVehicle ["Sign_Sphere25cm_F", (_vis#0#0), [], 0, "none"];
-                    _helper3 setObjectTexture [0,'#(argb,8,8,3)color(0,0,1,1)'];
-                    _helper3 setposASL (_vis#0#0);
-                    _allHelpers pushback _helper3;
+                    // _helper3 = createVehicle ["Sign_Sphere25cm_F", (_vis#0#0), [], 0, "none"];
+                    // _helper3 setObjectTexture [0,'#(argb,8,8,3)color(0,0,1,1)'];
+                    // _helper3 setposASL (_vis#0#0);
+                    // _allHelpers pushback _helper3;
                 };
 
-                _helper4 = createVehicle ["Sign_Sphere25cm_F", [_initialTargetPos#0, _initialTargetPos#1, (_initialTargetPos#2) + _i], [], 0, "none"];
-                _helper4 setObjectTexture [0,'#(argb,8,8,3)color(0,0,1,1)'];
-                _helper4 setposASL (_vis#0#0);
-                _allHelpers pushback _helper4;
+                // _helper4 = createVehicle ["Sign_Sphere25cm_F", [_initialTargetPos#0, _initialTargetPos#1, (_initialTargetPos#2) + _i], [], 0, "none"];
+                // _helper4 setObjectTexture [0,'#(argb,8,8,3)color(0,0,1,1)'];
+                // _helper4 setposASL (_vis#0#0);
+                // _allHelpers pushback _helper4;
             };
 
-            _helper2 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
-            _helper2 setObjectTexture [0,'#(argb,8,8,3)color(0,1,0,1)'];
-            _helper2 setposASL _targetpos;
-            _allHelpers pushback _helper2;
+            // _helper2 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+            // _helper2 setObjectTexture [0,'#(argb,8,8,3)color(0,1,0,1)'];
+            // _helper2 setposASL _targetpos;
+            // _allHelpers pushback _helper2;
 
         } else {
             // if surface is not terrain return surface pos
@@ -227,14 +228,14 @@ pl_get_suppress_target_pos = {
         };
     };
 
-    [_allHelpers] spawn {
-        sleep 30;
+    // [_allHelpers] spawn {
+    //     sleep 30;
 
-        {
-            deleteVehicle _x;
-        } forEach (_this#0);
+        // {
+        //     deleteVehicle _x;
+        // } forEach (_this#0);
 
-    };
+    // };
 
     _targetPos
 };
