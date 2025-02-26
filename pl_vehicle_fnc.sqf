@@ -2120,7 +2120,7 @@ pl_air_insertion = {
 
         _vic = vehicle (leader _group);
         [_vic, 0] call pl_door_animation;
-        _landigPadBase = "Land_HelipadEmpty_F" createVehicle (getPos _vic);
+        private  _landigPadBase = "Land_HelipadEmpty_F" createVehicle (getPos _vic);
         _vic flyInHeight 40;
         _landigPadBase setDir (getDir _vic);
         _rtbPos = getPos _landigPadBase;
@@ -2131,25 +2131,30 @@ pl_air_insertion = {
         if (_i % 2 == 0) then {_posOffset = _posOffset + _posOffsetStep};
         [_lzPos, 40] call pl_clear_obstacles;
         sleep 0.2;
-        _lzPos = _lzPos findEmptyPosition [0, 60, typeOf _vic];
-        _landigPadLz = "Land_HelipadEmpty_F" createVehicle _lzPos;
+        _lzPos = _lzPos findEmptyPosition [0, 100, typeOf _vic];
+        // private _landigPadLz = "Land_HelipadEmpty_F" createVehicle _lzPos;
+
+        private _landigPadLz = createVehicle ["Land_HelipadEmpty_F", _lzPos, [], 10, "NONE"];
         _landigPadLz setDir _approachDir;
 
-        _m = createMarker [str (random 1), _lzPos];
-        _m setMarkerType "mil_dot";
-        _m setMarkerSize [0.7, 0.7];
+        private _lzMarker = createMarker [str (random 1), getPos _landigPadLz];
+        _lzMarker setMarkerType "mil_circle";
+        _lzMarker setMarkerSize [0.7, 0.7];
+        _ppMarkers pushback _lzMarker;
 
         {
             _group addWaypoint [_x, 0];
         } forEach _pps;
         _lzWp = _group addWaypoint [_lzPos, 0];
-        _lzWp setWaypointType "TR UNLOAD";
+        _lzWp setWaypointType "MOVE";
 
-        [_vic, _group, _rtbPos, _landigPadLz, _lzPos, _pps] spawn {
-            params ["_vic", "_group", "_rtbPos", "_landigPadLz", "_lzPos", "_pps"];
+        [_vic, _group, _rtbPos, _landigPadLz, _lzPos, _pps, _lzWp, _landigPadBase] spawn {
+            params ["_vic", "_group", "_rtbPos", "_landigPadLz", "_lzPos", "_pps", "_lzWp", "_landigPadBase"];
 
-            waitUntil{sleep 0.5; !alive _vic or (_vic distance2d _lzPos) < 200};
+            waitUntil{sleep 0.5; !alive _vic or (_vic distance2d _landigPadLz) < 200};
 
+            private _success = _vic landAt [_landigPadLz, "Get Out", 30];
+            if !(_success) then {_lzWp setWaypointType "TR UNLOAD"};
             _cargo = fullCrew [_vic, "cargo", false];
             private _cargoGroups = [];
             {
@@ -2159,6 +2164,8 @@ pl_air_insertion = {
 
             waitUntil {sleep 0.5; (isTouchingGround _vic) or !alive _vic};
 
+            (driver _vic) disableAI "PATH";
+            _vic flyInHeight 0;
             [_vic, 1] call pl_door_animation;
             {
                 _x leaveVehicle _vic;
@@ -2168,6 +2175,8 @@ pl_air_insertion = {
 
             waitUntil {((count (fullCrew [_vic, "cargo", false])) == 0) or (!alive _vic)};
 
+            (driver _vic) enableAI "PATH";
+            _vic flyInHeight 40;
             deleteVehicle _landigPadLz;
             [_vic, 0] call pl_door_animation;
 
@@ -2182,7 +2191,9 @@ pl_air_insertion = {
             _group addWaypoint [_rtbPos, 0];
 
             waitUntil {sleep 0.5; ((unitReady _vic) and _vic distance2d _rtbPos < 200) or (!alive _vic)};
-            _vic land "LAND";
+
+            _success = _vic landAt [_landigPadBase, "Land"];
+            if !(_success) then {_vic land "LAND";};
             _group setVariable ["onTask", false];
             _group setVariable ["setSpecial", false];
         };

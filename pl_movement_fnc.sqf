@@ -104,9 +104,9 @@ pl_march = {
 
         _mwp setWaypointStatements ["true", "if ((vehicle player) != player) then {if (effectiveCommander (vehicle player) == player) then {driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select ((currentWaypoint (group player) + 1))));};};"];
 
-        if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
-            _mwp setWaypointCompletionRadius 25;
-        };
+        // if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
+        //     _mwp setWaypointCompletionRadius 25;
+        // };
 
         _group setVariable ["pl_on_march", true];
         {

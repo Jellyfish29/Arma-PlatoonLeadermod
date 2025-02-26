@@ -636,7 +636,7 @@ pl_interdiction_cas = {
             _groupId = "Reaper 1";
             _evacHeight = 2000;
             _cd = 300;
-            _onStationTime = 240;
+            _onStationTime = 45;
             _sadAreaSize = 1000;
             _wpType = "SAD";
         }; 
@@ -666,7 +666,7 @@ pl_interdiction_cas = {
         };
         case 4 : {
             _height = 100;
-            _flyHeight = 80;
+            _flyHeight = 25;
             _spawnDistance = 3000;
             _planeType = pl_medevac_Heli_1;
             _sortiesCost = 4;
@@ -675,12 +675,12 @@ pl_interdiction_cas = {
             _onStationTime = 240;
             _sadAreaSize = 300;
             // _wpType = "TR UNLOAD";
-            _wpType = "TR UNLOAD";
+            _wpType = "MOVE";
         };
 
         case 5 : {
             _height = 100;
-            _flyHeight = 80;
+            _flyHeight = 25;
             _spawnDistance = 3000;
             _planeType = pl_supply_Heli_1;
             _sortiesCost = 4;
@@ -688,7 +688,8 @@ pl_interdiction_cas = {
             _evacHeight = 150;
             _onStationTime = 500;
             _sadAreaSize = 50;
-            _wpType = "TR UNLOAD";
+            // _wpType = "TR UNLOAD";
+            _wpType = "MOVE";
         };
         default {}; 
     };
@@ -811,6 +812,7 @@ pl_interdiction_cas = {
     _plane forceSpeed 140;
     _plane flyInHeight _flyHeight;
     sleep 0.1;
+    _plane setUnloadInCombat [false, false];
 
     {
         _x setSkill 1;
@@ -923,17 +925,20 @@ pl_interdiction_cas = {
                 };
             }];
 
-            // waitUntil {sleep 1; !alive _plane or (_plane distance2D _cords) <= 500};
+            waitUntil {sleep 1; !alive _plane or (_plane distance2D _cords) <= 500};
 
-            // _plane land "GET OUT";
+            _successLanding = _plane landAt [_pad, "Get Out", _onStationTime];
 
             sleep 1;
             waitUntil {sleep 1; (isTouchingGround _plane) or !(alive _plane) or !(canmove _plane) or ((fullCrew _plane) isEqualTo []) or pl_rtb};
 
-            if ((alive _plane) and (canmove _plane) and ((fullCrew _plane) isNotEqualTo []) and !pl_rtb) then {
+            _plane flyInHeight 0;
+
+            if ((alive _plane) and (canmove _plane) and ((fullCrew _plane) isNotEqualTo []) and !pl_rtb and _successLanding) then {
 
                 (driver _plane) disableAI "PATH";
 
+                
                 private _gunner = gunner _plane;
                 private _medic = _casGroup createUnit [typeOf _gunner, [0,0,0], [], 0, "CAN_COLLIDE"];
                 _medic setUnitTrait ["Medic",true];
@@ -986,7 +991,14 @@ pl_interdiction_cas = {
                 };
             }];
 
-            waitUntil {(isTouchingGround _plane) or !alive _plane or pl_rtb};
+            waitUntil {sleep 1; !alive _plane or (_plane distance2D _cords) <= 500};
+
+            _successLanding = _plane landAt [_pad, "Land"];
+
+            sleep 1;
+            waitUntil {sleep 1; (isTouchingGround _plane) or !(alive _plane) or !(canmove _plane) or ((fullCrew _plane) isEqualTo []) or pl_rtb};
+
+            // waitUntil {(isTouchingGround _plane) or !alive _plane or pl_rtb};
             if (alive _plane and !pl_rtb) then {
                 _plane setVariable ["pl_is_supply_vehicle", true];
                 _plane setVariable ["pl_supplies", pl_max_supplies_per_vic];
@@ -1073,6 +1085,8 @@ pl_interdiction_cas = {
                     waitUntil {sleep 0.5; ({_x in _plane} count (units _casGroup)) == (count (units _casGroup)) or time >= _time};
                     sleep 1;
                     (driver _plane) enableAI "PATH";
+                    _casGroup setBehaviour "CARELESS";
+                    _plane flyInHeight _flyHeight;
                 };
             };
             case 5 : {

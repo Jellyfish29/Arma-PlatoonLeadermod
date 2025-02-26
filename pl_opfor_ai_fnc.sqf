@@ -101,13 +101,15 @@ pl_opfor_reset_execute = {
         _vic sendSimpleCommand "STOP";
     };
 
-    [_grp, (currentWaypoint _grp)] setWaypointType "MOVE";
-    [_grp, (currentWaypoint _grp)] setWaypointCompletionRadius 50;
-    [_grp, (currentWaypoint _grp)] setWaypointPosition [getPosASL (leader _grp), -1];
-    sleep 0.1;
-    deleteWaypoint [_grp, (currentWaypoint _grp)];
-    for "_i" from count waypoints _grp - 1 to 0 step -1 do {
-        deleteWaypoint [_grp, _i];
+    if ((currentWaypoint _grp) < count (waypoints _grp)) then {
+        [_grp, (currentWaypoint _grp)] setWaypointType "MOVE";
+        [_grp, (currentWaypoint _grp)] setWaypointCompletionRadius 50;
+        [_grp, (currentWaypoint _grp)] setWaypointPosition [getPosASL (leader _grp), -1];
+        sleep 0.1;
+        deleteWaypoint [_grp, (currentWaypoint _grp)];
+        for "_i" from count waypoints _grp - 1 to 0 step -1 do {
+            deleteWaypoint [_grp, _i];
+        };
     };
 };
 
@@ -302,7 +304,8 @@ pl_opfor_defend_position = {
     params ["_grp", ["_defendMode", 0]];
     private ["_cords", "_watchDir", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord", "_dirMarkerType", "_unitPos"];
 
-    if ((count ((units _grp) select {alive _x})) <= 0) exitwith {};
+    if (vehicle (leader _grp) != (leader _grp)) exitWith {};
+    if ((count ((units _grp) select {alive _x})) <= 1) exitwith {};
 
     [_grp] spawn pl_opfor_reset;
 
@@ -1845,25 +1848,58 @@ pl_opfor_support_inf = {
 
 pl_opfor_vic_suppress = {
 	params ["_grp"];
-    private ["_targetsPos", "_targetDistance"];
+    private ["_targetsPos", "_targetDistance", "_unit"];
 
-    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank"], 1500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
+    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank"], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
+
+    private _getTargets = {
+        params ["_cords", "_area"];
+        private _targetsPos = [];
+        private _allTargets = _cords nearEntities [["Man", "Car", "Truck", "Tank"], _area];
+        {
+            _targetsPos pushBack (getPosATL _x);
+        } forEach (_allTargets select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
+
+        // if no enemy target buildings;
+        private _buildings = nearestObjects [_cords, ["house"], _area];
+        if !((count _buildings) == 0) then {
+            {
+                _bPos = [0,0,2] vectorAdd (getPosATL _x);
+                _targetsPos pushBack _bPos;
+            } forEach _buildings;
+        };
+
+        // add Random Possitions
+        if (_targetsPos isEqualTo []) then {
+            for "_i" from 0 to 5 do {
+                _rPos = [[[_cords, _area]], nil] call BIS_fnc_randomPos;
+                _targetsPos pushBack _rPos;
+            };
+        };
+        private _return = ATLToASL (selectRandom _targetsPos);
+        _return
+    };
+
+    if (([vehicle (leader _grp)] call pl_has_cannon )) then {
+        [vehicle (leader _grp)] call pl_load_he;
+    };
+
     if !(_targets isEqualto []) then {
-    	private _target = _targets#0;
-        _targetDistance = (leader _grp) distance2D _target;
 	    {
-	        if !((currentCommand _x) isEqualTo "Suppress") then {
-	            _targetPos = [[[getPos _target, 30]], []] call BIS_fnc_randomPos;
-	            _targetPos = ATLToASL _targetPos;
-                _targetDistance = (leader _grp) distance2D _targetPos;
-	            _vis = lineIntersectsSurfaces [eyePos _x, _targetPos, _x, vehicle _x, true, 1, "FIRE"];
-	            if !(_vis isEqualTo []) then {
-	                _targetPos = (_vis select 0) select 0;
-	            };
-	            if ((leader _grp) distance2D _targetPos > 30 and ([(leader _grp), _targetPos] call pl_friendly_check) and ((leader _grp) distance2D _targetPos) > _targetDistance * 0.3) then {
-	            	_x doSuppressiveFire _targetPos;
-	            };
-	        };
+
+            _unit = _x;
+
+            _targetPos = [[getpos (selectRandom _targets), 80] call _getTargets, _unit] call pl_get_suppress_target_pos;
+
+            // _m = createMarker [str (random 1), _targetPos];
+            // _m setMarkerType "mil_marker";
+            // _m setMarkerSize [0.5, 0.5];
+
+            if ((_targetPos distance2D _unit) > 20 and ([_unit, _targetPos] call pl_friendly_check)) then {
+
+                _unit doWatch _targetPos;
+                _unit doSuppressiveFire _targetPos;
+            };
 	    } forEach (units _grp);
 	};
 };

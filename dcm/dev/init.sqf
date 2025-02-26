@@ -31,6 +31,7 @@ dyn2_faction_standart_transport_plane =  createHashMapFromArray [["csat", "O_T_V
 dyn2_faction_standart_arty =  createHashMapFromArray [["csat", "O_MBT_02_arty_F"]];
 dyn2_faction_standart_light_arty =  createHashMapFromArray [["csat", "O_Mortar_01_F"]];
 dyn2_faction_standart_aa =  createHashMapFromArray [["csat", "O_APC_Tracked_02_AA_F"]];
+dyn2_faction_standart_jet =  createHashMapFromArray [["csat", "O_Plane_Fighter_02_F"]];
 
 dyn2_standart_squad = dyn2_faction_standart_squad get dyn2_opfor_fation;
 dyn2_standart_fire_team = dyn2_faction_standart_fire_team get dyn2_opfor_fation;
@@ -58,10 +59,11 @@ dyn2_standart_light_amored_vics = dyn2_faction_light_amored_vics get dyn2_opfor_
 dyn2_standart_arty = dyn2_faction_standart_arty get dyn2_opfor_fation;
 dyn2_standart_light_arty = dyn2_faction_standart_light_arty get dyn2_opfor_fation;
 dyn2_standart_aa = dyn2_faction_standart_aa get dyn2_opfor_fation;
+dyn2_standart_jet = dyn2_faction_standart_jet get dyn2_opfor_fation;
 dyn2_phase_names = ["OBJ VICTORY", "OBJ ABLE", "OBJ RHINO", "OBJ BISON", "OBJ HAMMER", "OBJ WIDOW", "OBJ FIONA", "OBJ IRINE", "OBJ DAVID", "OBJ DAWN", "OBJ DIAMOND", "OBJ GOLD", "OBJ REAPER", "OBJ MARY"];
 dyn2_NGO_civilians = ["C_IDAP_Man_AidWorker_01_F", "C_IDAP_Man_AidWorker_02_F", "C_IDAP_Man_AidWorker_03_F", "C_IDAP_Man_AidWorker_04_F", "C_IDAP_Man_AidWorker_05_F", "C_IDAP_Man_AidWorker_06_F", "C_IDAP_Man_AidWorker_07_F"];
 
-"Group" setDynamicSimulationDistance 1500;
+// "Group" setDynamicSimulationDistance 1500;
 dyn2_map_center = [worldSize / 2, worldsize / 2, 0];
 dyn2_civilian_cars = ["C_Van_02_vehicle_F", "C_Van_01_transport_F", "C_Hatchback_01_F", "C_SUV_01_F"];
 
@@ -153,11 +155,12 @@ dyn2_standart_nato_cp = [
     ["APC_Wheeled_01_command_base_lxWS",[-9.1416,6.61621,0.112127],310.616,1,0,[0,0],"","",true,false]
 ];
 
+sleep 2;
 
 sleep 10;
 
-pl_sorties = 12;
-pl_arty_ammo = 6;
+pl_sorties = 20;
+pl_arty_ammo = 12;
 
 
 

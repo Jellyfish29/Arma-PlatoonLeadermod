@@ -350,6 +350,16 @@ pl_hold_fire = {
             (group (_x#0)) setVariable ["pl_combat_mode", true];
         } forEach (fullCrew [vehicle (leader _group), "cargo", false]);
     };
+
+    if (_mode isEqualTo "BLUE") then {
+        {
+            _x disableAI "FIREWEAPON";
+        } forEach (units _group);
+    } else {
+        {
+            _x enableAI "FIREWEAPON";
+        } forEach (units _group);
+    };
 };
 
 pl_open_fire = {
@@ -368,6 +378,44 @@ pl_open_fire = {
             (group (_x#0)) setVariable ["pl_hold_fire", false];
             (group (_x#0)) setVariable ["pl_combat_mode", false];
         } forEach (fullCrew [vehicle (leader _group), "cargo", false]);
+    };
+
+    {
+        _x enableAI "FIREWEAPON";
+    } forEach (units _group);
+};
+
+pl_change_vic_lights = {
+    params ["_group"];
+
+    // turn off
+    if ((leader _group) checkAIFeature "LIGHTS") then {
+        {
+            _x disableAI "LIGHTS";
+        } forEach (units _group);
+    // turn on
+    } else {
+        {
+            _x enableAI "LIGHTS";
+        } forEach (units _group);
+    };
+};
+
+pl_change_weapon_lights = {
+    params ["_group"];
+
+    // turn off
+    if ((leader _group) isFlashlightOn (primaryWeapon (leader _group)) or (leader _group) isIRLaserOn (primaryWeapon (leader _group))) then {
+        {
+            _x enableGunLights "ForceOff";
+            _x enableIRLasers false;
+        } forEach (units _group);
+    // turn on
+    } else {
+        {
+            _x enableGunLights "ForceOn";
+            _x enableIRLasers true;
+        } forEach (units _group);
     };
 };
 

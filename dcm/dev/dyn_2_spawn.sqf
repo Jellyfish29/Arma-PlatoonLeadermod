@@ -1,5 +1,5 @@
 dyn2_spawn_squad = {	
-	params ["_spawnPos", ["_watchDir", 0], ["_infType", dyn2_standart_squad]];
+	params ["_spawnPos", ["_watchDir", 0], ["_infType", dyn2_standart_squad], ["_stationary", false]];
 
     if ([_spawnPos] call dyn2_is_water) exitWith {grpNull};
 
@@ -7,6 +7,7 @@ dyn2_spawn_squad = {
 	_grp setFormDir _watchDir;
     (leader _grp) setDir _watchDir;
     // _grp enableDynamicSimulation true;
+    _grp setVariable ["pl_opfor_is_stationary", _stationary];
 
 	_grp
 };
@@ -95,22 +96,24 @@ dyn2_spawn_road_block = {
     private _rPos = ASLToATL (_endings#0);
     private _roadDir = (_endings#1) getDir (_endings#0);
 
-    _grp = [getPos _road, _roadDir, _infType] call dyn2_spawn_squad;
+    // _b = "Land_Razorwire_F" createVehicle (_rPos getPos [5, _roadDir]);
+    // _b setDir _roadDir;
+    _comp = selectRandom ["Land_CncBlock_D", "Land_TyreBarrier_01_line_x4_F"];
+    _leftPos = (_rPos getPos [5, _roadDir]) getPos [_roadWidth * 0.25, _roadDir - 90];
+    _b = createVehicle [_comp, _leftPos , [], 0, "CAN_COLLIDE"];
+    _b setDir _roadDir - 180;
 
-    // RazorWire
-    if (random(1) > 0.5) then {
-        _b = "Land_Razorwire_F" createVehicle (_rPos getPos [5, _roadDir]);
-        _b setDir _roadDir;
-    } else {
-        _comp = selectRandom ["Land_CncBlock_D", "Land_TyreBarrier_01_line_x4_F"];
-        _leftPos = (_rPos getPos [5, _roadDir]) getPos [_roadWidth * 0.25, _roadDir - 90];
-        _b = createVehicle [_comp, _leftPos , [], 0, "CAN_COLLIDE"];
-        _b setDir _roadDir - 180;
+    _rightPos = (_rPos getPos [15, _roadDir]) getPos [_roadWidth * 0.25, _roadDir + 90];
+    _b = createVehicle [_comp, _rightPos , [], 0, "CAN_COLLIDE"];
+    _b setDir _roadDir - 180;
 
-        _rightPos = (_rPos getPos [15, _roadDir]) getPos [_roadWidth * 0.25, _roadDir + 90];
-        _b = createVehicle [_comp, _rightPos , [], 0, "CAN_COLLIDE"];
-        _b setDir _roadDir - 180;
-    };
+    _vic = [(selectRandom [_leftPos, _rightPos]) getPos [10, _roadDir + 90], _roadDir, selectRandom (dyn2_standart_trasnport_vehicles + dyn2_standart_light_armed_transport), false] call dyn2_spawn_vehicle;
+
+    _grp = [getPos (_vic#1), _roadDir, _infType] call dyn2_spawn_squad;
+    _grp enableDynamicSimulation true;
+
+    // _m = createMarker [str (random 1), getPos _road];
+    // _m setMarkerType "mil_marker";
 
     _grp
 
@@ -142,6 +145,15 @@ dyn2_spawn_mines = {
         };
         _mineSpacing = _mineSpacing * 0.66;
         _startPos = _startPos getPos [_rowSpacing, _dir - 180];
+    };
+
+    [_allMines] spawn {
+        params ["_allMines"];
+
+        sleep 10;
+        {
+            dyn2_opfor_side revealMine _x;
+        } forEach _allMines;
     };
     _allMines
 };

@@ -24,7 +24,7 @@ pl_draw_scenario = {
 
 		 	private _locs = nearestLocations [_checkPos1, ["NameCity", "NameVillage", "NameCityCapital"], _interval];
 		 	if !(_locs isEqualTo []) then {
-		 		if (!((_locs#0) in _alliedLocs) and ((getpos (_locs#0)) distance2D _locPos) > 1600) then {
+		 		if (!((_locs#0) in _alliedLocs) and ((getpos (_locs#0)) distance2D _locPos) > 3000) then {
 		 			_unitMarker = createMarker [str (random 5), getPos (_locs#0)];
 		 			_unitMarker setMarkerType (selectRandom ["b_p_inf_pl", "b_c_inf_pl", "b_p_mech_pl"]);
 		 			// _unitMarker setMarkerColor "colorBLUFOR";
@@ -92,11 +92,11 @@ pl_draw_scenario = {
 
 	// [_playerStart, _playerDir - 180, 500, "colorBLUFOR"] call dyn2_draw_mil_symbol_block;
 
-    _arrowMarkerBlufor = createMarker [str (random 5), _playerStart];
-    _arrowMarkerBlufor setMarkerType "marker_std_atk";
-    _arrowMarkerBlufor setMarkerSize [1, 1];
-    _arrowMarkerBlufor setMarkerColor "colorBLUFOR";
-    _arrowMarkerBlufor setMarkerDir _playerDir - 180;
+    // _arrowMarkerBlufor = createMarker [str (random 5), _playerStart];
+    // _arrowMarkerBlufor setMarkerType "marker_std_atk";
+    // _arrowMarkerBlufor setMarkerSize [1, 1];
+    // _arrowMarkerBlufor setMarkerColor "colorBLUFOR";
+    // _arrowMarkerBlufor setMarkerDir _playerDir - 180;
 
     _arrowMarkerOpfor = createMarker [str (random 5), _locPos getPos [800, _playerDir - 180]];
     _arrowMarkerOpfor setMarkerType "marker_std_atk";
@@ -106,18 +106,19 @@ pl_draw_scenario = {
     _arrowMarkerOpfor setMarkerText (format ["%1 Incursion", toUpper dyn2_opfor_fation]);
 
 
-    _natoMarker = createMarker [str (random 5), _locPos getPos [4000, _playerDir]];
-    _natoMarker setMarkerType "flag_NATO";
-    _natoMarker setMarkerSize [1.3, 1.3];
+    // _natoMarker = createMarker [str (random 5), _locPos getPos [4000, _playerDir]];
+    // _natoMarker setMarkerType "flag_NATO";
+    // _natoMarker setMarkerSize [1.3, 1.3];
 
     // _altisMarker = createMarker [str (random 5), (getMarkerPos _natoMarker) getPos [1000, 90]];
     // _altisMarker setMarkerType "flag_ALTIS";
     // _altisMarker setMarkerSize [1.3, 1.3];
     // _natoMarker setMarkerDir _playerDir;
 
-    _flagPos = _locPos getPos [3500, _playerDir - 180];
+    _flagPos = _locPos getPos [1000, _playerDir - 180];
     _csatMarker = createMarker [str (random 5), _flagPos];
-    _csatMarker setMarkerType "flag_CSAT";
+    // _csatMarker setMarkerType "flag_CSAT";
+    _csatMarker setMarkerType "o_c_inf_pl";
     _csatMarker setMarkerSize [1.3, 1.3];
 
     // if ([_flagPos] call dyn2_is_water) then {

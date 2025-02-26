@@ -1,14 +1,14 @@
 dyn2_opfor_mission_spawner = {
 	params ["_locPos", "_missionPos"];
 
-	private _aviableMissionTypes = ["catk", "catk", "recon", "recon", "armor"];
+	private _aviableMissionTypes = ["catk", "catk", "recon", "recon", "armor", "convoy"];
 
 	switch (dyn2_missionType) do { 
         case "town_assault" : {};
         case "small_town_assault" : {}; 
         case "field_assault" : {};
-        case "air_field_assault" : {_aviableMissionTypes = ["", "air_assault"]}; 
-        default {[] spawn dyn2_field_assault}; 
+        case "air_field_assault" : {_aviableMissionTypes = ["", "air_assault", "recon"]}; 
+        default {}; 
     };
 
 	private _missionType = selectRandom _aviableMissionTypes;
@@ -21,6 +21,7 @@ dyn2_opfor_mission_spawner = {
 		case "recon" : {_success = [_locPos, _missionPos] call dyn2_OPF_recon_patrol}; 
 		case "armor" : {_success = [_locPos, _missionPos] call dyn2_OPF_armor_attack};
 		case "air_assault" : {_success = [_locPos getpos [1000, (getPos player) getDir _locPos], _locPos] call dyn2_OPF_armor_attack};
+		case "convoy" : {_succes = [[_locPos getpos [800, _locPos getDir _missionPos], 600] call BIS_fnc_nearestRoad, [_missionPos, 600] call BIS_fnc_nearestRoad, dyn2_standart_trasnport_vehicles, objNull, dyn2_strength + ([1,2] call BIS_fnc_randomInt)] call dyn2_OPF_supply_convoy;};
 		case "" : {};
 		default {}; 
 	};
@@ -28,17 +29,44 @@ dyn2_opfor_mission_spawner = {
 	_artySuccess = [[6, 12] call BIS_fnc_randomInt, _missionPos] spawn dyn2_OPF_fire_mission;
 };
 
+dyn2_OPF_continous_opfor_mission_spawner = {
+	params ["_locPos"];
+
+	sleep 60;
+
+	while {true} do {
+
+		sleep ([360, 820] call BIS_fnc_randomInt);
+
+		[_locPos, [] call pl_opfor_get_objective] call dyn2_opfor_mission_spawner;
+
+	};
+
+};
+
 dyn2_OPF_catk = {
-	params ["_locPos", "_atkPos"];
+	params ["_locPos", "_atkPos", ["_mech", false], ["_exactPos", []]];
 
 	private _atkDir = _locPos getDir _atkPos;
 	private _rearPos = _atkPos getPos [[1800, 2600] call BIS_fnc_randomInt, _atkDir - 180];
+	private _usedRoads = [];
+
+	if (_exactPos isNotEqualTo []) then {_rearPos = _exactPos};
 
 	for "_i" from 1 to dyn2_strength + 1 do {
-		_spawnPos = [[[_rearPos, 100]], [[[allGroups select {(side _x) == playerSide}] call dyn2_find_centroid_of_groups, 1000], "water"]] call BIS_fnc_randomPos;
+		_spawnPos = [[[_rearPos, 200]], [[[allGroups select {(side _x) == playerSide}] call dyn2_find_centroid_of_groups, 1000], "water"]] call BIS_fnc_randomPos;
+		// _spawnPos = [[[_rearPos, 200]], ["water"]] call BIS_fnc_randomPos;
+
+		_m = createMarker [str (random 5), _spawnPos];
+		_m setMarkerType "mil_objective";
+
+
 		_grp = [_spawnPos, _atkDir] call dyn2_spawn_squad;
-		if ((random 1) > 0.5) then {
-			private _road = [_spawnPos, 800] call dyn2_nearestRoad;
+		_grp setBehaviour "SAFE";
+
+		if (((random 1) > 0.5) or _mech) then {
+			private _road = [_spawnPos, 800, _usedRoads] call dyn2_nearestRoad;
+			_usedRoads pushBack _road;
 			private _info = getRoadInfo _road;    
 		    private _endings = [_info#6, _info#7];
 			_endings = [_endings, [], {_x distance2D _atkPos}, "ASCEND"] call BIS_fnc_sortBy;
@@ -52,12 +80,13 @@ dyn2_OPF_catk = {
                 _x moveInCargo _vic;
             } forEach (units _grp);
             _grp addVehicle _vic;
-            _vicGrp addWaypoint [_atkPos, 40];
+            _vic limitSpeed 45;
+            _vicGrp addWaypoint [_atkPos, 250];
             _grp enableDynamicSimulation false;
             _vicGrp enableDynamicSimulation false;
-            // _vicGrp setBehaviour "SAFE";
+            _vicGrp setBehaviour "SAFE";
 		} else {
-			_grp addWaypoint [_atkPos, 40];
+			_grp addWaypoint [_atkPos, 250];
 			_grp enableDynamicSimulation false;
 		};
 	};
@@ -65,16 +94,19 @@ dyn2_OPF_catk = {
 	true
 };
 
+
+
 dyn2_OPF_recon_patrol = {
 
-	params ["_locPos", "_atkPos"];
+	params ["_locPos", "_atkPos", ["_exactPos", []]];
 
 
 	private _atkDir = _locPos getDir _atkPos;
-	private _rearPos = _atkPos getPos [[1300, 1800] call BIS_fnc_randomInt, _atkDir - 180];
+	private _rearPos = _atkPos getPos [[1800, 2600] call BIS_fnc_randomInt, _atkDir - 180];
+	if (_exactPos isNotEqualTo []) then {_rearPos = _exactPos};
 
 	for "_i" from 1 to dyn2_strength + 1 + ([0, 1] call BIS_fnc_randomInt) do {
-		_spawnPos = [[[_rearPos, 100]], [[[allGroups select {(side _x) == playerSide}] call dyn2_find_centroid_of_groups, 800], "water"]] call BIS_fnc_randomPos;
+		_spawnPos = [[[_rearPos, 200]], [[[allGroups select {(side _x) == playerSide}] call dyn2_find_centroid_of_groups, 1000], "water"]] call BIS_fnc_randomPos;
 		_grp = [_spawnPos, _atkDir, dyn2_standart_recon_team] call dyn2_spawn_squad;
 
 		private _road = [_spawnPos, 800] call dyn2_nearestRoad;
@@ -110,12 +142,13 @@ dyn2_OPF_recon_patrol = {
 };
 
 dyn2_OPF_armor_attack = {
-	params ["_locPos", "_atkPos"];
+	params ["_locPos", "_atkPos", ["_exactPos", []]];
 
 	private _atkDir = _locPos getDir _atkPos;
-	private _rearPos = _atkPos getPos [[1000, 1500] call BIS_fnc_randomInt, _atkDir - 180];
+	private _rearPos = _atkPos getPos [[2000, 2500] call BIS_fnc_randomInt, _atkDir - 180];
+	if (_exactPos isNotEqualTo []) then {_rearPos = _exactPos};
 
-	_spawnPos = [[[_rearPos, 100]], [[[allGroups select {(side _x) == playerSide}] call dyn2_find_centroid_of_groups, 800], "water"]] call BIS_fnc_randomPos;
+	_spawnPos = [[[_rearPos, 200]], [[[allGroups select {(side _x) == playerSide}] call dyn2_find_centroid_of_groups, 1000], "water"]] call BIS_fnc_randomPos;
 
 	private _road = [_spawnPos, 800] call dyn2_nearestRoad;
 	private _info = getRoadInfo _road;    
@@ -285,12 +318,78 @@ dyn2_OPF_fire_mission = {
 };
 
 dyn2_OPF_supply_convoy = {
-	
+	params ["_rearRoad", "_targetRoad", ["_vicTypes", dyn2_standart_trasnport_vehicles], ["_trg", objNull], ["_size", 3]];
+	private ["_dir", "_vic", "_grp"];
+
+    private _targetPos = getPos _targetRoad;
+
+    private _supplyGrps = [];
+    private _infGrps = [];
+    private _road = _rearRoad;
+    private _allVics = [];
+    private _roadPos = [];
+    private _roadBlackList = [];
+    private _connected = [];
+    for "_i" from 1 to _size do {
+
+        _connected = (roadsConnectedTo [_road, true]);
+        {
+            if (_x in _roadBlackList) then {_connected deleteAt (_connected find _x)};
+        } forEach _connected;
+
+        if ((count _connected) > 0) then {
+            _road = ([_connected, [], {(getpos _x) distance2D _targetPos}, "DESCEND"] call BIS_fnc_sortBy)#0;
+            _roadBlackList pushBack _road;
+        } else {
+            _road = _rearRoad;
+        };
+
+        _roadPos = getPos _road;
+
+        _info = getRoadInfo _road;    
+        _endings = [_info#6, _info#7];
+        _endings = [_endings, [], {_x distance2D _targetPos}, "ASCEND"] call BIS_fnc_sortBy;
+
+        _dir = (_endings#1) getDir (_endings#0);
+        _vic = createVehicle [selectRandom _vicTypes, _roadPos, [], 0, "CAN_COLLIDE"];
+        _grp = createVehicleCrew _vic;
+        _vic setDir _dir;
+        _allVics pushBack _vic;
+        _supplyGrps pushBack _grp;
+        _transportCap = getNumber (configFile >> "cfgVehicles" >> typeOf _vic >> "transportSoldier");
+        if (_transportCap >= 4) then {
+            _infGrp = [[0,0,0], east, dyn2_standart_fire_team] call BIS_fnc_spawnGroup;
+            _infGrp addVehicle _vic,
+            _infGrps pushBack _infGrp;
+            {
+                _x moveInCargo _vic;
+            } forEach (units _infGrp);
+            sleep 0.1;
+            {
+                if (vehicle _x == _x) then {
+                    deleteVehicle _x;
+                };
+            } forEach (units _infGrp);
+        };
+    };
+
+    [_trg, _supplyGrps, _targetRoad] spawn {
+    	params ["_trg", "_supplyGrps", "_targetRoad"];
+
+	    if !(isNull _trg) then {
+	    	waitUntil {sleep 1, triggerActivated _trg};
+	    };
+
+	    sleep 5;
+
+	    [_supplyGrps, _targetRoad] spawn dyn2_convoy;
+	};
+
+	_allVics
 };
 
-dyn2_OPF_retreat = {
-	
-};
+
+
 
 // [10, getpos player] spawn dyn2_OPF_fire_mission;
 

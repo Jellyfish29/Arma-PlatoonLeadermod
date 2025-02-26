@@ -36,6 +36,8 @@ dyn_random_weather = {
                 500 setLightnings 0;
             };
             sleep 0.1;
+            if ((wind#0) < 1 and (wind#0) > -1) then {setWind [1, wind#1, true]};
+            if ((wind#1) < 1 and (wind#1) > -1) then {setWind [wind#0, 1, true]};
             simulWeatherSync;
             sleep 1800;
         };
@@ -44,12 +46,14 @@ dyn_random_weather = {
 
 dyn2_random_day_time = {
   
-    setDate [date#0, date#1, date#2, [6, 17] call BIS_fnc_randomInt, [0, 60] call BIS_fnc_randomInt];  
+    setDate [date#0, date#1, date#2, [5, 17] call BIS_fnc_randomInt, [0, 60] call BIS_fnc_randomInt];  
 
 };
 
 dyn2_cvivilian_presence = {
     params ["_loc", ["_civAmount", 30], ["_maxParkedCars", 10], ["_maxMovingCars", 6], ["_area", 400]];
+
+    // if (true) exitwith {};
 
     private _locPos = getPos _loc;
     private _allBuildings = nearestObjects [getPos _loc, ["house"], _area];
@@ -57,7 +61,7 @@ dyn2_cvivilian_presence = {
 
     _moduleGrp = createGroup civilian;
 
-    _main = _moduleGrp createUnit ["ModuleCivilianPresence_F", _locPos, [], 0, "NONE"];
+    _main = _moduleGrp createUnit ["ModuleCivilianPresence_F", [_locPos#0, _locPos#1, 0], [], 0, "NONE"];
     _main setVariable ["#useagents", true];
     _main setVariable ["#unitcount", _civAmount];
     _main setVariable ["#usepanicmode", true];
@@ -65,7 +69,8 @@ dyn2_cvivilian_presence = {
     _main setVariable ["objectarea", [_area + 100, _area + 100, 20,false,0]];
 
     private _limit = 0;
-    for "_i" from 0 to (count _allBuildings) step 4 do {
+    // for "_i" from 0 to (count _allBuildings) step 6 do {
+        for "_i" from 0 to 10 step 1 do {
 
         _building = selectRandom _allBuildings;
         _allBuildings deleteAt (_allBuildings find _building);
@@ -82,7 +87,8 @@ dyn2_cvivilian_presence = {
     };
 
     _limit = 0;
-    for "_i" from 0 to (count _allRoads) step 4 do {
+    // for "_i" from 0 to (count _allRoads) step 10 do {
+    for "_i" from 0 to 10 step 1 do {
         _road = selectRandom _allRoads;
         _allRoads deleteAt (_allRoads find _road);
 
@@ -105,7 +111,7 @@ dyn2_cvivilian_presence = {
     // _furModule setVariable ["objectarea", [500, 500, 20,false,0]];
 
     _allRoads = _locPos nearRoads _area;
-    for "_i" from 1 to _maxParkedCars do {
+    for "_i" from 1 to (round (count _allBuildings) / 20) do {
         _road = selectRandom _allRoads;
         _allRoads deleteAt (_allRoads find _road);
         _info = getRoadInfo _road;    
@@ -119,47 +125,47 @@ dyn2_cvivilian_presence = {
         _car enableDynamicSimulation true;
     };
 
-    // _allRoads = _locPos nearRoads _area * 2;
-    // for "_i" from 1 to _maxMovingCars do {
-    //     _road = selectRandom _allRoads;
-    //     _info = getRoadInfo _road;    
-    //     _roadWidth = _info#1;
-    //     _endings = [_info#6, _info#7];
-    //     _roadDir = (_endings#1) getDir (_endings#0);
-    //     _allRoads deleteAt (_allRoads find _road);
-    //     _car = createVehicle [selectRandom dyn2_civilian_cars, getPos _road, [], 0, "NONE"];
-    //     _car setDir _roadDir;
-    //     _car limitSpeed 20;
-    //     _car forceSpeed 20;
-    //     _car enableDynamicSimulation true;
-    //     // _car forceFollowRoad true;
-    //     _carGrp = createVehicleCrew _car;
-    //     _carGrp setBehaviour "SAFE";
-    //     _carGrp enableDynamicSimulation true;
+    _allRoads = _locPos nearRoads _area * 2;
+    for "_i" from 1 to _maxMovingCars do {
+        _road = selectRandom _allRoads;
+        _info = getRoadInfo _road;    
+        _roadWidth = _info#1;
+        _endings = [_info#6, _info#7];
+        _roadDir = (_endings#1) getDir (_endings#0);
+        _allRoads deleteAt (_allRoads find _road);
+        _car = createVehicle [selectRandom dyn2_civilian_cars, getPos _road, [], 0, "NONE"];
+        _car setDir _roadDir;
+        _car limitSpeed 20;
+        _car forceSpeed 20;
+        _car enableDynamicSimulation true;
+        // _car forceFollowRoad true;
+        _carGrp = createVehicleCrew _car;
+        _carGrp setBehaviour "SAFE";
+        _carGrp enableDynamicSimulation true;
 
-    //     _allRoads = _allRoads call BIS_fnc_arrayShuffle;
-    //     _targetRoad = {
-    //         if ((getPos _x) distance2d (getPos _road) > 300) exitWith {_x};
-    //         objNull
-    //     } forEach _allRoads;
-    //     _allRoads deleteAt (_allRoads find _targetRoad);
-    //     _allRoads = _allRoads call BIS_fnc_arrayShuffle;
-    //     _targetRoad2 = {
-    //         if ((getPos _x) distance2d (getPos _targetRoad) > 300) exitWith {_x};
-    //         objNull
-    //     } forEach _allRoads;
-    //     _allRoads deleteAt (_allRoads find _targetRoad2);
+        _allRoads = _allRoads call BIS_fnc_arrayShuffle;
+        _targetRoad = {
+            if ((getPos _x) distance2d (getPos _road) > 150) exitWith {_x};
+            objNull
+        } forEach _allRoads;
+        _allRoads deleteAt (_allRoads find _targetRoad);
+        _allRoads = _allRoads call BIS_fnc_arrayShuffle;
+        _targetRoad2 = {
+            if ((getPos _x) distance2d (getPos _targetRoad) > 150) exitWith {_x};
+            objNull
+        } forEach _allRoads;
+        _allRoads deleteAt (_allRoads find _targetRoad2);
 
-    //     _wp = _carGrp addWaypoint [getPos _targetRoad, -1];
-    //     // _wp = _carGrp addWaypoint [_targetRoad2, -1];
-    //     _wp = _carGrp addWaypoint [getPos _road, -1];
-    //     _wp = _carGrp addWaypoint [getPos _road, -1];
-    //     _wp setWaypointType "CYCLE";
-    // };
+        _wp = _carGrp addWaypoint [getPos _targetRoad, -1];
+        // _wp = _carGrp addWaypoint [_targetRoad2, -1];
+        _wp = _carGrp addWaypoint [getPos _road, -1];
+        _wp = _carGrp addWaypoint [getPos _road, -1];
+        _wp setWaypointType "CYCLE";
+    };
 
     //furniture
 
-    _furModule = _moduleGrp createUnit ["gm_moduleFurniture", _locPos, [],0 , ""];
+    _furModule = _moduleGrp createUnit ["gm_moduleFurniture", [_locPos#0, _locPos#1, 0], [],0 , ""];
     _furModule setVariable ["objectarea", [500, 500, 20,false,0]];
     _furModule setVariable ["gm_furniturefilllevel", 0.45];
     
@@ -173,17 +179,20 @@ dyn2_refugees = {
 
 
 dyn2_destroyed_mil_vic = {
-    params ["_centerPos", "_amount", ["_vicTypes", dyn2_standart_combat_vehicles + dyn2_standart_trasnport_vehicles], ["_menTypes", [dyn2_standart_soldier]], ["_excactPos", false]];
+    params ["_centerPos", "_amount", ["_vicTypes", dyn2_standart_combat_vehicles + dyn2_standart_trasnport_vehicles], ["_menTypes", [dyn2_standart_soldier]], ["_excactPos", false], ["_radius", 800]];
     private ["_road", "_roadDir"];
 
     private _allCivs = [];
-    private _spawnPos = _centerPos;
+    private _spawnPos = [[[_centerPos, _radius]], [[_centerPos, 50], "water"]] call BIS_fnc_randomPos;
 
     for "_l" from 0 to _amount do {
-        _vic = createVehicle [selectRandom (_vicTypes + [(typeof (selectRandom (vehicles select {side _x == playerSide})))]), _spawnPos, [], 800, "NONE"];
+        _spawnPos = [[[_centerPos, _radius]], [[_centerPos, 50], "water"]] call BIS_fnc_randomPos;
+        _vic = createVehicle [selectRandom _vicTypes, _spawnPos, [], 10, "NONE"];
         _vic setDir ([0, 359] call BIS_fnc_randomInt);
         _vic setDamage [1, false];
         _vic setVariable ["dyn_dont_delete", true];
+
+
 
         [_vic] spawn {
             params ["_vic"];
@@ -196,7 +205,7 @@ dyn2_destroyed_mil_vic = {
         };
 
         for "_j" from 0 to ([1, 2] call BIS_fnc_randomInt) do {
-            _civ = createAgent [selectRandom (_menTypes + [(typeof (selectRandom (allUnits select {side _x == playerSide})))]) , getPos _vic, [], 8, "NONE"];
+            _civ = createAgent [selectRandom _menTypes , getPos _vic, [], 8, "NONE"];
             _allCivs pushBack _civ;
             _civ setVariable ["dyn_dont_delete", true];
             _civ setDamage 1;
@@ -292,7 +301,7 @@ dyn2_destroyed_buildings = {
         private _smoke = objNull;
         private _fire = objNull;
 
-        if ((random 1) > 0.6) then {
+        if ((random 1) > 0.8) then {
             _smokeFire = [getPosATLVisual _house, [4, 6] call BIS_fnc_randomInt] call dyn2_spawn_smoke;
             _smoke = _smokeFire#0;
             _fire = _smokeFire#1;
@@ -394,7 +403,9 @@ dyn2_spawn_smoke = {
 
     // _sizeFactor = 1;
 
-    if (dyn2_global_smoke_limit > 7) exitWith {[objNull, objNull]};
+    if (dyn2_global_smoke_limit >= 4) exitWith {[objNull, objNull]};
+
+    dyn2_global_smoke_limit = dyn2_global_smoke_limit + 1;
 
     private _smokeGroup = createGroup [civilian, true];
 
@@ -463,29 +474,68 @@ dyn2_spawn_smoke = {
 
 };
 
+dyn2_side_town_destruction = {
+    params ["_centerPos"];
+
+    _civilTowns = nearestLocations [_centerPos, ["NameCity", "NameVillage", "NameCityCapital"], 2000];
+    _artyGroup = createGroup [civilian, false];
+    {
+
+        for "_j" from 0 to ([1, 2] call BIS_fnc_randomInt) do {
+            private _impactPos = [[[getPos _x, 180]],[]] call BIS_fnc_randomPos;
+            _support = _artyGroup createUnit ["ModuleOrdnance_F", _impactPos, [],0 , ""];
+            _support setVariable ["type", "ModuleOrdnanceHowitzer_F_Ammo"];
+
+            // _m = createMarker [str (random 1), _impactPos];
+            // _m setMarkerType "mil_dot";
+            // _m setMarkerColor "colorRED";
+
+            sleep (random 5);
+        };
+
+        sleep (5 + (random 5));
+
+    } forEach _civilTowns;
+};
+
 
 dyn2_AO_destruction = {
     params ["_centerPos", "_playerStart"];
 
-    [_centerPos getpos [600, _locPos getDir _playerStart], dyn2_strength + ([3, 6 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_destroyed_mil_vic;
+    [_centerPos getpos [600, _centerPos getDir _playerStart], dyn2_strength + ([2, 6 + dyn2_strength] call BIS_fnc_randomInt), [typeof (selectRandom (vehicles select {side _x == playerSide}))], [typeof (selectRandom (allUnits select {side _x == playerSide}))]] spawn dyn2_destroyed_mil_vic;
 
-    [_centerPos getpos [600, _locPos getDir _playerStart], dyn2_strength + ([3, 6 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_destroyed_cars;
+    [_centerPos getpos [600, _centerPos getDir _playerStart], dyn2_strength + ([2, 6 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_destroyed_cars;
 
-    [_centerPos getpos [300, _locPos getDir _playerStart], dyn2_strength + ([3, 6 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_destroyed_buildings;
+    [_centerPos getpos [300, _centerPos getDir _playerStart], dyn2_strength + ([2, 6 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_destroyed_buildings;
 
-    [_centerPos getpos [400, _locPos getDir _playerStart], dyn2_strength + ([6, 12 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_random_dead;
+    [_centerPos getpos [400, _centerPos getDir _playerStart], dyn2_strength + ([2, 6 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_random_dead;
 
-    [_centerPos getpos [400, _locPos getDir _playerStart], dyn2_strength + ([4, 8 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_random_craters;
+    [_centerPos getpos [400, _centerPos getDir _playerStart], dyn2_strength + ([2, 6 + dyn2_strength] call BIS_fnc_randomInt)] spawn dyn2_random_craters;
+
+    [_centerPos getpos [500, _centerPos getDir _playerStart]] spawn dyn2_side_town_destruction;
+
+        
+        
+
+    [] spawn {
+        sleep 20;
+
+        {
+            deleteVehicle _x;
+        } forEach (allMissionObjects "WeaponHolder");
+    };
 };
 
 
 dyn2_random_continous_neutral_arty = {
-    _artyGroup = createGroup [civilian, true];
+    private ["_impactPos, _support"];
+
+    _artyGroup = createGroup [civilian, false];
     while {alive player} do {
 
         // sleep 5;
 
-        sleep ([80, 180] call BIS_fnc_randomInt);
+        sleep ([120, 200] call BIS_fnc_randomInt);
 
         _cords = [[[getPos player, 1000]],[]] call BIS_fnc_randomPos;
 
@@ -502,29 +552,35 @@ dyn2_random_continous_neutral_arty = {
 
 dyn2_random_continous_allied_arty = {
     params ["_centerPos", "_playerStart"];
+    private ["_cords", "_support"];
 
     private _cDir = _playerStart getDir _centerPos;
-    private _artyGroup = createGroup [civilian, true];
+    private _artyGroup = createGroup [civilian, false];
 
     while {alive player} do {
 
-        sleep ([50, 100] call BIS_fnc_randomInt);
+        sleep 20;
 
-        private _impactPos = _centerPos getpos [[800, 1200] call BIS_fnc_randomInt, _cDir + ([-120, 120] call BIS_fnc_randomInt)];
+        private _impactPos = _centerPos getpos [[1000, 1800] call BIS_fnc_randomInt, _cDir + ([-110, 110] call BIS_fnc_randomInt)];
+
+        // _m = createMarker [str (random 1), _impactPos];
+        // _m setMarkerType "mil_dot";
+        // _m setMarkerColor "colorRED";
 
         for "_i" from 0 to (dyn2_strength + ([1, 2] call BIS_fnc_randomInt)) do {
             for "_j" from 1 to 2 do {
-                _cords = [[[_impactPos, [10, 100] call BIS_fnc_randomInt]],[]] call BIS_fnc_randomPos;
-                _support = _artyGroup createUnit ["ModuleOrdnance_F", _cords, [],0 , ""];
+                _support = _artyGroup createUnit ["ModuleOrdnance_F", [[[_impactPos, [10, 100] call BIS_fnc_randomInt]],[]] call BIS_fnc_randomPos, [],0 , ""];
                 _support setVariable ["type", "ModuleOrdnanceHowitzer_F_Ammo"];
                 sleep ([1, 3] call BIS_fnc_randomInt);
             };
             sleep ([2, 6] call BIS_fnc_randomInt);
         };
 
-        if ((random 1) > 0.5) then {
+        if ((random 1) > 0.5 or dyn2_global_smoke_limit <= 2) then {
             _smokeFire = [_impactPos, [2, 6] call BIS_fnc_randomInt] call dyn2_spawn_smoke;
         };
+
+        sleep ([80, 180] call BIS_fnc_randomInt);
 
     };
 };
@@ -533,17 +589,28 @@ dyn2_random_aa_fire = {
     params ["_centerPos", "_playerStart"];
 
     private _cDir = _playerStart getDir _centerPos;
-    private _tracerGroup = createGroup [civilian, true]; 
+    private _tracerGroup = createGroup [civilian, false]; 
 
     while {alive player} do {
 
         for "_j" from 0 to (dyn2_strength + ([0, 2] call BIS_fnc_randomInt)) do {
 
-            _tracerPos = _centerPos getpos [[800, 1600] call BIS_fnc_randomInt, _cDir + ([-90, 90] call BIS_fnc_randomInt)];
+            _tracerPos = _centerPos getpos [[1300, 1900] call BIS_fnc_randomInt, _cDir + ([-90, 90] call BIS_fnc_randomInt)];
 
             _support = _tracerGroup createUnit ["ModuleTracers_F", _tracerPos, [],0 , ""];
+            _min = [0, 5] call BIS_fnc_randomInt;
+            _max = _min + 1 + ([0, 5] call BIS_fnc_randomInt);
+            _support setVariable ["min", _min];
+            _support setVariable ["min", _max];
+            _support setVariable ["side", selectRandom [1, 2]];
 
             // sleep ([5, 10] call BIS_fnc_randomInt);
+
+            // if (((date#3) >= 17) or ((date#3) <= 6)) then {
+            //     // if ((random 1) > 0.4) then {
+            //         "ModuleFlare_F" createUnit [_tracerPos, _tracerGroup, "this setVariable ['BIS_fnc_initModules_disableAutoActivation', false, true];"];
+            //     // };
+            // };
         };
 
 
@@ -584,16 +651,16 @@ dyn2_allied_plane_flyby = {
         private _planeType = selectRandom [pl_cas_plane_1, pl_cas_plane_3];  
         private _targetPos = _centerPos getpos [[1200, 2000] call BIS_fnc_randomInt, _cDir + ([-120, 120] call BIS_fnc_randomInt)];
 
-        // for "_i" from 0 to 1 do {
+        for "_i" from 0 to 1 do {
 
             [_targetPos, _fireAtTarget, _planeType, _cDir] spawn {
                 params ["_targetPos", "_fireAtTarget", "_planeType", "_cDir"];
-                _rearPos = _targetPos getpos [5000, _cDir - 180];
+                _rearPos = _targetPos getpos [8000, _cDir - 180];
 
                 _spawnHeight = 800;
                 _fligthHeight = 60; 
 
-                _casGroup = createGroup civilian;
+                _casGroup = createGroup [civilian, true];
                 _p = [_rearPos, _cDir, _planeType, _casGroup] call BIS_fnc_spawnVehicle;
                 _plane = _p#0;
                 [_plane, _spawnHeight, _rearPos, "ATL"] call BIS_fnc_setHeight;
@@ -649,12 +716,12 @@ dyn2_allied_plane_flyby = {
                 _time = time + 300;
                 // waitUntil {(_plane distance2D (waypointPosition _wp)) <= 800 or time >= _time};
 
-                if ((random 1) > 0.3) then {
+                if ((random 1) > 0.3 or dyn2_global_smoke_limit <= 3) then {
                     _smokeFire = [_targetPos, [2, 6] call BIS_fnc_randomInt] call dyn2_spawn_smoke;
                 };
 
 
-                waitUntil {sleep 0.25; (_plane distance2D (waypointPosition _wp)) <= 200 or time >= _time};
+                waitUntil {sleep 0.25; (_plane distance2D (waypointPosition _wp)) <= 600 or time >= _time};
 
                 {
                     deleteVehicle _x;
@@ -662,13 +729,71 @@ dyn2_allied_plane_flyby = {
                 deleteVehicle _plane;
             };
 
-            // sleep 1000;
-            sleep ([300 - (60 * dyn2_strength), 600 - (60 * dyn2_strength)] call BIS_fnc_randomInt);
-        // };
+            sleep 1.5;
+        };
 
+        // sleep 30;
+        sleep ([300 - (60 * dyn2_strength), 600 - (60 * dyn2_strength)] call BIS_fnc_randomInt);
     };
 };
 
+dyn2_enemy_plane_flyby = {
+    params ["_centerPos", "_playerStart"];
+
+    sleep ([10, 30] call BIS_fnc_randomInt);
+    private _cDir = _playerStart getDir _centerPos;
+
+    private _first = 0;
+    while {alive player} do {
+
+        sleep 1;
+
+        private _dirOffset = selectRandom [90, 0, -90];
+
+        if (_first == 0) then {
+            _dirOffset = 0;
+        };
+        _first = 1;
+
+        for "_i" from 0 to 1 do {
+
+            [_centerPos, _cDir, _dirOffset] spawn {
+                params ["_centerPos", "_cDir", "_dirOffset"];
+
+                _rearPos = _centerPos getpos [5000, _cDir + _dirOffset];
+
+                _targetPos = getPos player getpos [5000, _rearPos getdir _centerPos];
+
+                _spawnHeight = 800;
+                _fligthHeight = 25; 
+
+                _casGroup = createGroup [civilian, true];
+                _p = [_rearPos, _rearPos getdir _centerPos, dyn2_standart_jet, _casGroup] call BIS_fnc_spawnVehicle;
+                _plane = _p#0;
+                [_plane, _spawnHeight, _rearPos, "ATL"] call BIS_fnc_setHeight;
+                _plane forceSpeed 500;
+                _plane flyInHeight _fligthHeight;
+                _wp = _casGroup addWaypoint [_targetPos, 0];
+
+                _time = time + 300;
+                _casGroup setBehaviourStrong "CARELESS";
+
+                waitUntil {sleep 0.25; (_plane distance2D (waypointPosition _wp)) <= 1000 or time >= _time};
+
+                {
+                    deleteVehicle _x;
+                } forEach (units _casGroup);
+
+                deleteVehicle _plane;
+            };
+
+            sleep 1.5;
+        };
+
+        // sleep 20;
+        sleep ([400 - (60 * dyn2_strength), 700 - (60 * dyn2_strength)] call BIS_fnc_randomInt);
+    };
+};
 
 
 dyn2_random_fires = {
@@ -681,11 +806,173 @@ dyn2_random_fires = {
     [_centerPos, _playerStart] spawn dyn2_random_continous_allied_arty;
 
     [_centerPos, _playerStart] spawn dyn2_allied_plane_flyby;
+
+    // [_centerPos, _playerStart] spawn dyn2_enemy_plane_flyby;
     
 };
 
-dyn2_allied_positions = {
+dyn2_spawn_allied_positions = {
+    params ["_centerPos", "_playerStart"];
     
+    private _atkDir = _playerStart getDir _centerPos;
+    _hillPos = [_playerStart getpos [500, _atkDir - 180], 1000, _atkDir] call dyn2_find_highest_point;
+
+    sleep 2;
+
+
+    // Recon OP/LP
+    private _reconGrp = createGroup [playerSide, true];
+
+    for "_i" from 0 to 3 do {
+         0 = _reconGrp createUnit [typeof (selectRandom (allUnits select {side _x == playerSide})), _hillPos, [], 10, "NONE"];
+    };
+
+
+    // Company CP
+    private _playerStartGrp = createGroup [playerSide, true];
+    [getPos player, 30] call dyn2_hide_fences;
+
+    _road = [(getPos player) getPos [(player distance2D _playerStart) / 2, player getdir _playerStart], 300] call BIS_fnc_nearestRoad;
+    private _startRoad = _road;
+    private _lastRoad = _road;
+    private _sortBy = "DESCEND";
+    _usedRoads = [];
+
+    private _roadPos = [];
+
+    _forwardPos = (getPos _road) getPos [50, _atkDir];
+    private _leftRight = -90;
+
+    _roadsPos = [];
+    _roadBlackList = [];
+    private _lastRoadPos = [0,0,0];
+    _cpPos = [];
+    private _dir = 0;
+    for "_i" from 0 to ([2, 3] call BIS_fnc_randomInt) do {
+
+        for "_j" from 0 to 1 do {
+            private _connected = (roadsConnectedTo [_road, true]);
+            {
+                if (_x in _roadBlackList) then {_connected deleteAt (_connected find _x)};
+            } forEach _connected;
+            _road = ([_connected, [], {(getpos _x) distance2D _centerPos}, _sortBy] call BIS_fnc_sortBy)#0;
+            _roadBlackList pushBack _road;
+
+            _roadPos = getPos _road;
+        };
+
+        _info = getRoadInfo _road;    
+        _endings = [_info#6, _info#7];
+        _endings = [_endings, [], {_x distance2D _centerPos}, "ASCEND"] call BIS_fnc_sortBy;
+        _dir = (_endings#1) getDir (_endings#0);
+
+        for "_f" from 0 to 1 do {
+            _unit = _playerStartGrp createUnit [typeof (selectRandom (allUnits select {side _x == playerSide})), _roadPos getpos [7, _dir + 90] , [], 3, "NONE"];
+            _unit disableAI "PATH";
+            _unit setDir (_unit getdir player);
+
+            
+            [_unit] spawn {
+                params ["_unit"];
+
+                sleep (random 3);
+
+                [_unit, selectRandom ["WATCH", "WATCH2", "STAND1", "STAND2"], "FULL"] call BIS_fnc_ambientAnim;
+
+                waitUntil {sleep 1; (behaviour _unit) isEqualTo "COMBAT"};
+                _unit call BIS_fnc_ambientAnim__terminate;
+            };
+        };
+
+        _tent = createVehicle ["Land_TentDome_F", _roadPos getpos [13, _dir + 90], [], 2, "NONE"];
+        _tent setDir (_dir + 90);
+    };
+
+
+
+    _road = [getPos player, 100] call BIS_fnc_nearestRoad;
+    _cpVic = createVehicle [typeof (selectRandom (vehicles select {side _x == playerSide})), (getPos _road) getpos [20, _dir + 90], [], 2, "NONE"];
+    _cpVic setDir _dir;
+    _cpVic allowDamage false;
+    _net = createVehicle ["CamoNet_BLUFOR_big_F", getPosATLVisual _cpVic, [], 0, "CAN_COLLIDE"];
+    // _net setPosATL (getPosATLVisual _cpVic);
+    _net setDir ((_net getdir player) - 180);
+    _net allowDamage false;
+
+    player setDir (player getdir _cpVic);
+
+    {
+        _unit = _playerStartGrp createUnit [typeof (selectRandom (allUnits select {side _x == playerSide})), getPos _cpVic , [], 5, "NONE"];
+        _unit disableAI "PATH";
+        _unit setDir (_unit getdir player);
+        
+        [_unit, _x] spawn {
+            params ["_unit", "_anim"];
+
+            sleep (random 3);
+
+            [_unit, _anim, "FULL"] call BIS_fnc_ambientAnim;
+
+            waitUntil {sleep 1; (behaviour _unit) isEqualTo "COMBAT"};
+            _unit call BIS_fnc_ambientAnim__terminate;
+        };
+    } forEach ["WATCH2", "STAND_U1", "BRIEFING"];
+
+
+    // Mortar
+    private _mortarGroup = createGroup [playerSide, true];
+    private _mortar = createVehicle ["EF_B_Mortar_01_MJTF_Wdl", (getPosATLVisual _cpVic) getPos [15, _dir + 90], [], 0, "NONE"];
+    
+    _mortar setDir _atkDir;
+
+    _mortarGroup createVehicleCrew _mortar;
+    _mortarSupport = _mortarGroup createUnit [typeof (selectRandom (allUnits select {side _x == playerSide})), getPos _mortar , [], 5, "NONE"];
+    _mortarSupport setUnitPos "Middle";
+    _mortarSupport disableAI "PATH";
+
+    for "_i" from 0 to 1 do {
+        _box = createVehicle ["Box_NATO_Ammo_F", (getPosATLVisual _mortar) getPos [3, _atkDir - 180], [], 4, "NONE"];
+        _box setDir (random 360);
+    };
+
+
+
+    sleep 3;
+
+    // Recon
+    player hcRemoveGroup _reconGrp;
+    _reconGrp setVariable ["pl_not_addalbe", true];
+    _reconGrp setGroupId ["Dagger"];
+    _reconGrp setCombatMode "GREEN";
+    [_reconGrp, true] spawn pl_recon;
+    [_reconGrp, [], _hillPos, _atkDir] spawn pl_defend_position;
+
+    _opMarker = createMarker [str (random 5), _hillPos];
+    _opMarker setMarkerType "loc_bunker";
+    _opMarker setMarkerSize [1, 1];
+    _opMarker setMarkerColor "colorBLUFOR";
+    _opMarker setMarkerText "Dagger OP/LP";
+
+
+    // Mortar
+    player hcRemoveGroup _mortarGroup;
+    _mortarGroup setVariable ["pl_not_addalbe", true];
+    _mortarGroup setGroupId ["80 mm Mortar"];
+
+
+    // Company CP
+    player hcRemoveGroup _playerStartGrp;
+    _playerStartGrp setVariable ["pl_not_addalbe", true];
+    _playerStartGrp setGroupId ["Coy CP"];
+    _playerStartGrp setBehaviour "SAFE";
+    _playerStartGrp setCombatMode "GREEN";
+
+    sleep 10; 
+
+    // [_playerStartGrp] call pl_hide_group_icon;
+
+
+
 };
 
 

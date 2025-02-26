@@ -1019,6 +1019,46 @@ class RscHCGroupRootMenu
                 show = "1";
                 enable = "HCNotEmpty";
             };
+            class PlSeperator70333513
+            {
+                title="Vehicle Speed:";
+                shortcuts[]={};
+                submenu="";
+                command=-1;
+                class params
+                {
+                    expression="";
+                };
+                show="1";
+                enable="1";
+                speechId=0;
+            };
+            class VehicleLights
+            {
+                shortcuts[] = {9};
+                class Params
+                {
+                    expression = "{[_x] call pl_change_vic_lights} forEach (hcSelected player)";
+                };
+                title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\interact_ca.paa'/><t> Toggle Vehicle Lights</t";
+                shortcutsAction = "CommandingMenu7";
+                command = -5;
+                show = "1";
+                enable = "HCNotEmpty";
+            };
+            class UnitLights
+            {
+                shortcuts[] = {10};
+                class Params
+                {
+                    expression = "{[_x] call pl_change_weapon_lights} forEach (hcSelected player)";
+                };
+                title = "<img color='#66ff33' image='\A3\ui_f\data\igui\cfg\simpleTasks\types\interact_ca.paa'/><t> Toggle Weapon Lights/Lasers</t";
+                shortcutsAction = "CommandingMenu7";
+                command = -5;
+                show = "1";
+                enable = "HCNotEmpty";
+            };
             class PlSeperator70252513
             {
                 title="Vehicle Speed:";
@@ -1035,7 +1075,7 @@ class RscHCGroupRootMenu
             };
             class pl_sops
             {
-                shortcuts[] = {9};
+                shortcuts[] = {11};
                 class Params
                 {
                     expression = "[] call pl_show_sop_menu";
