@@ -127,18 +127,21 @@ class FSM
                         name = "move_to_obj";
                         itemno = 6;
                         init = /*%FSM<STATEINIT""">*/"_idleGrps = [] call pl_opfor_get_idle_groups;" \n
-                         "_obj = [_idleGrps#0] call pl_opfor_get_objective;" \n
-                         "[_idleGrps, _obj] spawn pl_opfor_cmd_move_to_objective;" \n
-                         "_time = time + 120 + (random 30);" \n
                          "" \n
-                         "if (pl_debug) then {" \n
-                         "	systemchat (format [""CMD: Moving %1x Idle groups"", count _idleGrps]);" \n
-                         "_debugMarker = createMarker [str (random 5), _obj];" \n
-                         "            _debugMarker setMarkerType ""mil_Marker"";" \n
-                         "            _debugMarker setMarkerSize [1, 1];" \n
-                         "            _debugMarker setMarkerText (format [""CMD: %1 groups"", count _idleGrps]);" \n
-                         "            _cmdDebugMarkers pushback _debugMarker;" \n
+                         "if !(_idleGrps isEqualTo []) then {" \n
+                         "	_obj = [_idleGrps select 0] call pl_opfor_get_objective;" \n
+                         "	[_idleGrps, _obj] spawn pl_opfor_cmd_move_to_objective;" \n
+                         "	_time = time + 120 + (random 30);" \n
+                         "" \n
+                         "	if (pl_debug) then {" \n
+                         "		systemchat (format [""CMD: Moving %1x Idle groups"", count _idleGrps]);" \n
+                         "		_debugMarker = createMarker [str (random 5), _obj];" \n
+                         "      _debugMarker setMarkerType ""mil_Marker"";" \n
+                         "      _debugMarker setMarkerSize [1, 1];" \n
+                         "      _debugMarker setMarkerText (format [""CMD: %1 groups"", count _idleGrps]);" \n
+                         "      _cmdDebugMarkers pushback _debugMarker;" \n
                          "	" \n
+                         "	};" \n
                          "};"/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
                         class Links

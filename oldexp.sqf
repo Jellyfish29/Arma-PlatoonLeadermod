@@ -1,3 +1,78 @@
+pl_injured_carry = {
+    params ["_carrier", "_injured"];
+
+    _carrier enableAI "PATH";
+    _movePos = [0.5 - (random 1), 0.5 - (random 1)] vectorAdd (getPos _injured);
+    _carrier doMove _movePos;
+    // _carrier setDestination [_movePos,"LEADER DIRECT", true];
+    _carrier disableAI "AUTOCOMBAT";
+    _carrier setCombatBehaviour "AWARE";
+
+    sleep 0.5;
+
+    waitUntil {sleep 0.5; (unitReady _carrier) or ((_carrier distance2D _injured) < 0.25) or ((group _carrier) getVariable ["pl_stop_event", false]) or (!alive _injured) or (!alive _carrier) or (_carrier getVariable ["pl_wia", false])};
+
+    doStop _carrier;
+    _carrier attachTo [_injured, [0.5,0,0]];
+    sleep 0.1;
+    // _carrier setDir ((getDir _carrier) - 180);
+    _carrier disableAI "ANIM";
+    _injured disableAI "ANIM";
+    _carrier switchmove "AcinPknlMstpSnonWnonDnon_AcinPercMrunSnonWnonDnon"; // pick up
+    _injured switchMove "AinjPfalMstpSnonWnonDnon_carried_Up"; // beeing picked up
+
+    // sleep 15;
+
+    waitUntil {sleep 0.1; animationState _carrier != "AcinPknlMstpSnonWnonDnon_AcinPercMrunSnonWnonDnon"};
+
+    sleep 0.1;
+
+    detach _carrier;
+    _injured attachTo [_carrier, [0,0,0]];
+    _carrier switchMove "AcinPercMrunSnonWnonDf"; // carry move
+    _injured switchMove "AinjPfalMstpSnonWnonDf_carried"; //beeing carried
+
+    _carrier setVariable ["pl_carried_injured", _injured];
+
+    _carrier enableAI "ANIM";
+    _injured enableAI "ANIM";
+
+
+
+
+    //"acinpknlmstpsnonwnondnon_acinpercmrunsnonwnondnon"
+
+
+    // "acinpercmrunsnonwnondf" // carried still
+
+
+    // _carrier switchmove "AcinPercMrunSnonWnonDf_AmovPercMstpSnonWnonDnon"; // letting down
+    // _injured switchMove "AinjPfalMstpSnonWnonDnon_carried_Down"; //beeing let down
+};
+
+pl_stop_carrie_injured = {
+    params ["_carrier"];
+
+    private _injured = _carrier getVariable ["pl_carried_injured", objNull];
+
+    if (isNull _injured) exitWith {};
+
+    doStop _carrier;
+
+    _carrier switchmove "AcinPercMrunSnonWnonDf_AmovPercMstpSnonWnonDnon"; // letting down
+    _injured switchMove "AinjPfalMstpSnonWnonDnon_carried_Down"; //beeing let down
+
+
+    sleep 10;
+
+    waitUntil {sleep 0.1; animationState _carrier == "acinpercmrunsnonwnondf_amovpercmstpsnonwnondnon" or !alive _carrier or (lifeState _carrier) isEqualTo "INCAPACITATED"};
+
+    _carrier switchmove "";
+    detach _injured;
+
+
+};
+
 pl_defend_position_vehicle = {
     params ["_group", "_watchPos", "_cords", "_markerName", "_watchDir"];
 

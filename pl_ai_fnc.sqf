@@ -122,6 +122,22 @@ pl_forget_targets = {
     _group setVariable ["pl_radio_range_custom", nil];
 };
 
+pl_forget_group = {
+    params ["_group"];
+    {
+        _grp = _x;
+        {
+            _grp forgetTarget _x;
+        } forEach (units _group);
+    } forEach (allGroups select {side _x != playerSide});
+};
+
+pl_forget_unit = {
+    params ["_unit"];
+    {
+        _x forgetTarget _unit;
+    } forEach (allGroups select {side _x != playerSide});
+};
 
 
 pl_contact_info_share = {
@@ -428,7 +444,7 @@ pl_auto_360 = {
 
     if !(pl_auto_360_enabled) exitwith {};
 
-    while {!(isNull _group)} do {
+    while {!(isNull _group) and pl_auto_360_enabled} do {
 
         _leader = leader _group;
 
@@ -530,6 +546,7 @@ pl_medical_setup = {
     _unit setVariable ["pl_bleedout_time", pl_bleedout_time];
     _unit setVariable ["pl_bleedout_set", false];
     _unit setVariable ["pl_damage_reduction", false];
+
     _unit addEventHandler ['HandleDamage', {
         params['_unit', '_selName', '_damage', '_source'];
 
@@ -568,6 +585,7 @@ pl_medical_setup = {
                     if !(_unit getVariable "pl_bleedout_set") then {
                         [_unit] spawn pl_bleedout;
                     };
+
                 // };
             }
             else
@@ -707,6 +725,7 @@ pl_set_up_ai = {
     _group setVariable ["pl_sop_atk_ATEngagement", true];
     _groupComposition = [];
 
+    private _engineer = objNull;
     _engineer = {
         if (_x getUnitTrait "engineer") exitWith {_x};
         objNull
@@ -745,7 +764,8 @@ pl_set_up_ai = {
             [_group] spawn {
                 params ["_g"];
                 sleep 2;
-                [_g] spawn pl_heal_group;
+                // [_g] spawn pl_heal_group;
+                _g setVariable ["pl_healing_active", true];
             };
         };
     } forEach (units _group);
@@ -1756,6 +1776,7 @@ pl_start_set_up = {
             };
 
         } forEach (allGroups select {side _x isEqualTo playerSide and hcLeader _x == player});
+
 
 
 

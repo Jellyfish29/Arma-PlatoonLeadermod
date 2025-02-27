@@ -927,12 +927,12 @@ pl_interdiction_cas = {
 
             waitUntil {sleep 1; !alive _plane or (_plane distance2D _cords) <= 500};
 
-            _successLanding = _plane landAt [_pad, "Get Out", _onStationTime];
+            _successLanding = _plane landAt [_pad, "Land", _onStationTime];
 
             sleep 1;
             waitUntil {sleep 1; (isTouchingGround _plane) or !(alive _plane) or !(canmove _plane) or ((fullCrew _plane) isEqualTo []) or pl_rtb};
 
-            _plane flyInHeight 0;
+            // _plane flyInHeight 0;
 
             if ((alive _plane) and (canmove _plane) and ((fullCrew _plane) isNotEqualTo []) and !pl_rtb and _successLanding) then {
 

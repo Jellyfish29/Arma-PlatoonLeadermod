@@ -106,71 +106,74 @@ pl_heal_group = {
     } forEach (units _group);
     // _escort = nil;
     if !(isNil "_medic") then {
-        if !(_medic getVariable "pl_wia") then {
-
-            // if (pl_enable_beep_sound) then {playSound "beep"};
-
-            _group setVariable ["pl_healing_active", true];
-            // _medic setVariable ["pl_is_ccp_medic", true];
-            // _medic disableAI "FSM";
-            // _medic disableAI "AUTOCOMBAT";
-            sleep 2;
-            while {(_group getVariable "pl_healing_active") and alive _medic and !(_medic getVariable ["pl_wia", false])} do {
-                // if (_group isEqualTo grpNull) exitWith {};
-                // _reviveTargets = (getPos leader _group) nearObjects ["Man", 50];
-
-                // double check !!!
-                if !(_group getVariable ["onTask", false]) then {
-                    sleep 1;
-                    if !(_group getVariable ["onTask", false]) then {
-                        {
-                            _enemySides = [side player] call BIS_fnc_enemySides;
-                            _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
-                            if (_enemies isEqualTo []) then {
-                                if (_x getVariable ["pl_wia", false] and !(_x getVariable ["pl_beeing_treatet", false]) and !(_group getVariable ["onTask", true])) then {
-                                    _medic setVariable ["pl_is_ccp_medic", true];
-                                    _h1 = [_group, _medic, objNull, _x, [] , 20, "pl_healing_active"] spawn pl_ccp_revive_action;
-                                    waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
-                                    _medic setVariable ["pl_is_ccp_medic", false];
-                                };
-                            };
-                        } forEach ((units _group) select {_x getVariable ["pl_wia", false]});;
-                        // _medic sideChat "Tick";
-                        {
-                            _enemySides = [side player] call BIS_fnc_enemySides;
-                            _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
-                            if ((count _enemies) <= 0 and !(_group getVariable ["onTask", true])) then {
-                                if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
-                                    _medic setVariable ["pl_is_ccp_medic", true];
-                                    _h1 = [_medic, _x, nil, "pl_healing_active"] spawn pl_medic_heal;
-                                    waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
-                                    _medic setVariable ["pl_is_ccp_medic", false];
-                                };
-                            };
-                        } forEach (units _group);
-                        _medic setVariable ["pl_is_ccp_medic", true];
-                        _medic setVariable ["pl_is_ccp_medic", false];
-                    };
-                };
-                _time = time + 10;
-                waitUntil {sleep 0.5; time > _time or !(_group getVariable ["pl_healing_active", false]) or !alive _medic or (_medic getVariable ["pl_wia", false])};
-            };
-
-            sleep 1;
-
-            // _medic setVariable ["pl_is_ccp_medic", false];
-        }
-        else
-        {
-            // if (pl_enable_beep_sound) then {playSound "beep"};
-            hint "Medic is wounded!";
-        };
-    }
-    else
-    {
-        // if (pl_enable_beep_sound) then {playSound "beep"};
-        hint "Medic is Kia!";
+        _group setVariable ["pl_healing_active", true];
     };
+    // if !(isNil "_medic") then {
+    //     if !(_medic getVariable "pl_wia") then {
+
+    //         // if (pl_enable_beep_sound) then {playSound "beep"};
+
+    //         _group setVariable ["pl_healing_active", true];
+    //         // _medic setVariable ["pl_is_ccp_medic", true];
+    //         // _medic disableAI "FSM";
+    //         // _medic disableAI "AUTOCOMBAT";
+    //         sleep 2;
+    //         while {(_group getVariable "pl_healing_active") and alive _medic and !(_medic getVariable ["pl_wia", false])} do {
+    //             // if (_group isEqualTo grpNull) exitWith {};
+    //             // _reviveTargets = (getPos leader _group) nearObjects ["Man", 50];
+
+    //             // double check !!!
+    //             if !(_group getVariable ["onTask", false]) then {
+    //                 sleep 1;
+    //                 if !(_group getVariable ["onTask", false]) then {
+    //                     {
+    //                         _enemySides = [side player] call BIS_fnc_enemySides;
+    //                         _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
+    //                         if (_enemies isEqualTo []) then {
+    //                             if (_x getVariable ["pl_wia", false] and !(_x getVariable ["pl_beeing_treatet", false]) and !(_group getVariable ["onTask", true])) then {
+    //                                 _medic setVariable ["pl_is_ccp_medic", true];
+    //                                 _h1 = [_group, _medic, objNull, _x, [] , 20, "pl_healing_active"] spawn pl_ccp_revive_action;
+    //                                 waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
+    //                                 _medic setVariable ["pl_is_ccp_medic", false];
+    //                             };
+    //                         };
+    //                     } forEach ((units _group) select {_x getVariable ["pl_wia", false]});;
+    //                     // _medic sideChat "Tick";
+    //                     {
+    //                         _enemySides = [side player] call BIS_fnc_enemySides;
+    //                         _enemies = ((getPos _x) nearEntities [["Man", "Tank", "Car"], 25]) select {(side _x) in _enemySides and alive _x};
+    //                         if ((count _enemies) <= 0 and !(_group getVariable ["onTask", true])) then {
+    //                             if ((_x getVariable "pl_injured") and (getDammage _x) > 0 and (alive _x) and !(_x getVariable "pl_wia") and !(lifeState _x isEqualTo "INCAPACITATED")) then {
+    //                                 _medic setVariable ["pl_is_ccp_medic", true];
+    //                                 _h1 = [_medic, _x, nil, "pl_healing_active"] spawn pl_medic_heal;
+    //                                 waitUntil {sleep 0.5; scriptDone _h1 or !(_group getVariable ["pl_healing_active", true])};
+    //                                 _medic setVariable ["pl_is_ccp_medic", false];
+    //                             };
+    //                         };
+    //                     } forEach (units _group);
+    //                     _medic setVariable ["pl_is_ccp_medic", true];
+    //                     _medic setVariable ["pl_is_ccp_medic", false];
+    //                 };
+    //             };
+    //             _time = time + 10;
+    //             waitUntil {sleep 0.5; time > _time or !(_group getVariable ["pl_healing_active", false]) or !alive _medic or (_medic getVariable ["pl_wia", false])};
+    //         };
+
+    //         sleep 1;
+
+    //         // _medic setVariable ["pl_is_ccp_medic", false];
+    //     }
+    //     else
+    //     {
+    //         // if (pl_enable_beep_sound) then {playSound "beep"};
+    //         hint "Medic is wounded!";
+    //     };
+    // }
+    // else
+    // {
+    //     // if (pl_enable_beep_sound) then {playSound "beep"};
+    //     hint "Medic is Kia!";
+    // };
 };
 
 pl_spawn_heal_group = {
@@ -181,11 +184,11 @@ pl_spawn_heal_group = {
 
 pl_wia_callout = {
     params ["_unit"];
-    sleep 3;
+    sleep 1;
     _unit setVariable ["pl_wia_calledout", true];
-    sleep 3;
+    sleep 1;
     _unit setVariable ["pl_wia", true];
-    if (alive _unit and (_unit getVariable "pl_wia_calledout")) then {
+    if (alive _unit and (_unit getVariable ["pl_wia_calledout",false])) then {
         _unit setVariable ["pl_wia_calledout", false];
         _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _unit >> "displayName");
         // leader (group _unit) sideChat format ["%1 is W.I.A, requesting Medic, over", _unitMos];
@@ -193,6 +196,10 @@ pl_wia_callout = {
         if (pl_enable_chat_radio) then {leader (group _unit) sideChat format ["%1: %2 WOUNDED", groupId (group _unit), _unitMos]};
         if (pl_enable_map_radio) then {[group _unit, format ["...%1 is hit!", _unitMos], 20] call pl_map_radio_callout};
         [group _unit, "wia", 1] call pl_voice_radio_answer;
+
+        if ((group _unit) getVariable ["pl_in_position", false]) then {
+            [group _unit, _unit] call pl_on_kill_disengage;
+        };
 
         {
             _hcGroup = _x;

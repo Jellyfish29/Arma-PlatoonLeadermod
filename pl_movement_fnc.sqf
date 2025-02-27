@@ -79,9 +79,8 @@ pl_march = {
         if (_group getVariable ["onTask", false]) then {
 
             [_group] call pl_reset;
-            sleep 0.25;
-            [_group] call pl_reset;
-            sleep 0.25;
+            // [_group] call pl_reset;
+            sleep 1;
             player hcSelectGroup [_group];
             
         } else {
@@ -93,6 +92,8 @@ pl_march = {
                 } forEach (units _group);
             };
         };
+
+        
         _mwp = _group addWaypoint [_cords, 0];
         _group setVariable ["pl_mwp", _mwp];
 
@@ -102,12 +103,13 @@ pl_march = {
             };
         };
 
-        _mwp setWaypointStatements ["true", "if ((vehicle player) != player) then {if (effectiveCommander (vehicle player) == player) then {driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select ((currentWaypoint (group player) + 1))));};};"];
+        // _mwp setWaypointStatements ["true", "if ((vehicle player) != player) then {if (effectiveCommander (vehicle player) == player) then {driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select ((currentWaypoint (group player) + 1))));};};"];
 
         // if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
         //     _mwp setWaypointCompletionRadius 25;
         // };
 
+        waitUntil {sleep 0.1; (leader _group) checkAIFeature "AUTOCOMBAT"};
         _group setVariable ["pl_on_march", true];
         {
             _x disableAI "AUTOCOMBAT";
@@ -115,20 +117,20 @@ pl_march = {
         } forEach (units _group);
         (leader _group) limitSpeed 14;
         // _group setFormation "FILE";
-        _group setBehaviour "AWARE";
+        _group setBehaviourStrong "AWARE";
 
         if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
             [_group] spawn pl_bounding_move_simple;
         };
 
         sleep 1;
-        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) < 50) or (isNil {_group getVariable ["pl_on_march", nil]})};
+        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) <= 10) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setVariable ["pl_on_march", nil];
         // _group setVariable ["setSpecial", false];
-        {
-            _x enableAI "AUTOCOMBAT";
-        } forEach (units _group);
-        (leader _group) limitSpeed 5000;
+        // {
+        //     _x enableAI "AUTOCOMBAT";
+        // } forEach (units _group);
+        // (leader _group) limitSpeed 5000;
         
     }
     else
@@ -136,19 +138,19 @@ pl_march = {
 
         _mwp = _group addWaypoint [_cords, 0];
 
-        if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
-            _mwp setWaypointCompletionRadius 25;
-        };
+        // if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
+        //     _mwp setWaypointCompletionRadius 20;
+        // };
 
-        _mwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]; if ((vehicle player) != player) then {if (effectiveCommander (vehicle player) == player) then {driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select ((currentWaypoint (group player) + 1))));};};"];
-        if (_group getVariable ["onTask", false]) then {
-            [_group, false] spawn pl_reset;
-            player hcSelectGroup [_group];
-            sleep 0.1;
-            [_group, false] spawn pl_reset;
-            player hcSelectGroup [_group];
-            sleep 0.1; 
-        };
+        // _mwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]; if ((vehicle player) != player) then {if (effectiveCommander (vehicle player) == player) then {driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select ((currentWaypoint (group player) + 1))));};};"];
+        // if (_group getVariable ["onTask", false]) then {
+        //     [_group, false] spawn pl_reset;
+        //     player hcSelectGroup [_group];
+        //     sleep 0.1;
+        //     [_group, false] spawn pl_reset;
+        //     player hcSelectGroup [_group];
+        //     sleep 0.1; 
+        // };
         _group setVariable ["pl_mwp", _mwp];
     };
 };
@@ -175,8 +177,9 @@ pl_bounding_move_simple = {
     {
         _x disableAI "AUTOCOMBAT";
         _x setVariable ["pl_damage_reduction", true];
+        _x limitSpeed 1000;
     } forEach _units;
-    _group setBehaviour "AWARE";
+    _group setBehaviourStrong "AWARE";
 
     private _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
     private _timeout = time;
@@ -241,7 +244,7 @@ pl_bounding_move_simple = {
         ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
         ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";;
 
-        _timeout = time + 10;
+        _timeout = time + 8;
 
         waitUntil {sleep 0.5; time >= _timeOut or (_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])};
 
@@ -249,7 +252,7 @@ pl_bounding_move_simple = {
 
 
         _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
-        // _movePos = [[[_wpPos, 10]], ["water"]] call BIS_fnc_randomPos;
+        // _movePos = [[[_wpPos, 8]], ["water"]] call BIS_fnc_randomPos;
 
         _idx = 0;
         {
@@ -267,7 +270,7 @@ pl_bounding_move_simple = {
         ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
         ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";;
 
-        _timeout = time + 10;
+        _timeout = time + 8;
 
         waitUntil {sleep 0.5; time >= _timeOut or (_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])};
 

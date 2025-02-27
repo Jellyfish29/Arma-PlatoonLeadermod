@@ -14,6 +14,7 @@ pl_reset = {
         _group setVariable ["pl_stop_event", true];
         sleep 2;
         _group setVariable ["pl_stop_event", nil];
+        _group setVariable ["pl_is_task_selected", nil];
     };
     {
         _unit = _x;
@@ -170,7 +171,6 @@ pl_reset = {
     };
 
     _group setVariable ["pl_on_march", nil];
-    _group setVariable ["pl_is_task_selected", nil];
 };
 
 
@@ -389,15 +389,20 @@ pl_change_vic_lights = {
     params ["_group"];
 
     // turn off
-    if ((leader _group) checkAIFeature "LIGHTS") then {
-        {
-            _x disableAI "LIGHTS";
-        } forEach (units _group);
+    _vic = vehicle (leader _group);
+    if (_vic == (leader _group)) exitWith {};
+
+    {
+        _x disableAI "LIGHTS";
+    } forEach (units _group);
+
+    if (isLightOn _vic) then {
+        _vic setPilotLight false;
+        _vic setCollisionLight false;
     // turn on
     } else {
-        {
-            _x enableAI "LIGHTS";
-        } forEach (units _group);
+        _vic setPilotLight true;
+        _vic setCollisionLight true;
     };
 };
 
@@ -405,18 +410,16 @@ pl_change_weapon_lights = {
     params ["_group"];
 
     // turn off
-    if ((leader _group) isFlashlightOn (primaryWeapon (leader _group)) or (leader _group) isIRLaserOn (primaryWeapon (leader _group))) then {
         {
-            _x enableGunLights "ForceOff";
-            _x enableIRLasers false;
+             if (_x isFlashlightOn (primaryWeapon _x) or _x isIRLaserOn (primaryWeapon _x)) then {
+                _x enableGunLights "ForceOff";
+                _x enableIRLasers false;
+            } else {
+                _x enableGunLights "ForceOn";
+                _x enableIRLasers true;
+            };
         } forEach (units _group);
     // turn on
-    } else {
-        {
-            _x enableGunLights "ForceOn";
-            _x enableIRLasers true;
-        } forEach (units _group);
-    };
 };
 
 

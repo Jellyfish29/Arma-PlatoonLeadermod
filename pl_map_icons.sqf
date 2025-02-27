@@ -206,6 +206,9 @@ pl_draw_group_info = {
                 _strength = count (units _x);
                 _healthColor = [_x] call pl_get_group_health;
                 _strengthText = format ['%1  ', _strength];
+                if (_healthColor isEqualto [0.7,0,0,1]) then {
+                    _strengthText = format ['%1 ', count ((units _x) select {(lifeState _x) isNotEqualTo 'INCAPACITATED'})];
+                };
                 _display drawIcon [
                     '#(rgb,4,1,1)color(1,1,1,0)',
                     _healthColor,
@@ -1607,6 +1610,96 @@ pl_mark_cover_objects = {
     "]; // "
 };
 
+pl_show_vic_defense1_51 = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        {         
+            _display drawIcon [
+                getText (configfile >> 'CfgVehicles' >> typeof _x >> 'icon'),
+                pl_side_color_rgb,
+                (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition,
+                35,
+                35,
+                (getpos _x) getDir ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)
+            ]
+        } forEach pl_show_vic_defense1_array;
+    "]; // "
+};
+
+
+pl_show_vic_defense2_51 = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        {         
+            _display drawIcon [
+                getText (configfile >> 'CfgVehicles' >> typeof (_x#0) >> 'icon'),
+                pl_side_color_rgb,
+                (_x#1),
+                35,
+                35,
+                (_x#1) getDir ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)
+            ]
+        } forEach pl_show_vic_defense2_array;
+    "]; // "
+};
+
+pl_show_vic_defense1_2000 = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        {         
+            _display drawIcon [
+                getText (configfile >> 'CfgVehicles' >> typeof _x >> 'icon'),
+                pl_side_color_rgb,
+                (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition,
+                35,
+                35,
+                (getpos _x) getDir ((findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition)
+            ]
+        } forEach pl_show_vic_defense1_array;
+    "]; // "
+};
+
+
+pl_show_vic_defense2_2000 = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        {         
+            _display drawIcon [
+                getText (configfile >> 'CfgVehicles' >> typeof (_x#0) >> 'icon'),
+                pl_side_color_rgb,
+                (_x#1),
+                35,
+                35,
+                (_x#1) getDir ((findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition)
+            ]
+        } forEach pl_show_vic_defense2_array;
+    "]; // "
+};
+
+pl_draw_vision_tool = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        if (pl_vision_tool_enabled) then {
+            _path = [] call pl_get_vistool_pos;
+            for '_i' from -1 to 358 step 1 do {
+                _display drawLine [
+                    _path#_i,
+                    _path#(_i+1),
+                    [0.92,0.24,0.07,1],
+                    6
+                ];
+            };
+        };
+    "]; // "
+};
+
+
+
 // [findDisplay 12 displayCtrl 51] call pl_draw_icon;
 
 // pl_draw_icon_array = [['\Plmod\gfx\pl_position.paa', getPos player, 20, pl_side_color_rgb]];
@@ -1656,6 +1749,9 @@ pl_init_map_icons = {
     [findDisplay 12 displayCtrl 51] call pl_draw_icon;
     [findDisplay 12 displayCtrl 51] call pl_mark_obstacles_group;
     [findDisplay 12 displayCtrl 51] call pl_mark_cover_objects;
+    [findDisplay 12 displayCtrl 51] call pl_show_vic_defense1_51;
+    [findDisplay 12 displayCtrl 51] call pl_show_vic_defense2_51;
+    [findDisplay 12 displayCtrl 51] call pl_draw_vision_tool;
 };
 
 [] call pl_init_map_icons;
@@ -1703,6 +1799,9 @@ addMissionEventHandler ["Loaded", {
     [findDisplay 12 displayCtrl 51] call pl_draw_icon;
     [findDisplay 12 displayCtrl 51] call pl_mark_obstacles_group;
     [findDisplay 12 displayCtrl 51] call pl_mark_cover_objects;
+    [findDisplay 12 displayCtrl 51] call pl_show_vic_defense1_51;
+    [findDisplay 12 displayCtrl 51] call pl_show_vic_defense2_51;
+    [findDisplay 12 displayCtrl 51] call pl_draw_vision_tool;
 }];
 
 
@@ -1793,6 +1892,8 @@ pl_show_tac_map_icons = {
     [findDisplay 2000 displayCtrl 2000] call pl_draw_icon;
     [findDisplay 2000 displayCtrl 2000] call pl_mark_obstacles_group;
     [findDisplay 2000 displayCtrl 2000] call pl_mark_cover_objects;
+    [findDisplay 2000 displayCtrl 2000] call pl_show_vic_defense1_2000;
+    [findDisplay 2000 displayCtrl 2000] call pl_show_vic_defense2_2000;
 };
 
 pl_last_tac_zoom = 0.1;
@@ -1800,49 +1901,53 @@ pl_last_tac_pos = getPos player;
 
 pl_open_tac_map = {
 
-    if (visibleMap) exitwith {};
+    if (visibleMap) then {
+        [] spawn pl_vision_tool;
 
-    // setGroupIconsVisible [true,false]; 
-    if !(isNull findDisplay 2000) exitWith {
-        pl_last_tac_zoom = ctrlMapScale (findDisplay 2000 displayCtrl 2000);
-        pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.5, 1.117];
-        // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.5, 0.5];
-        // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
-        (findDisplay 2000) closeDisplay 1;
-        playSound "HintCollapse";
-        // player playAction "Default";
-        pl_tac_map_active = false;
-        // ctrlDelete (uiNamespace getVariable "pl_pouch_gfx");
-    };
+    } else {
 
-    playSound "HintExpand";
-    // player playAction "Gear";
-    pl_tac_map_active = true;
-    _map = findDisplay 46 createDisplay "pl_RscMap";
-    _map displayAddEventHandler ["KeyDown", {call cba_events_fnc_keyHandlerDown}];
-    _map displayAddEventHandler ["KeyUp", {call cba_events_fnc_keyHandlerUp}];
-
-    with uiNamespace do {
-        pl_pouch_gfx = findDisplay 2000 ctrlCreate ["RscPicture", -1];
-
-        if ((date#0) < 2016) then {
-            pl_pouch_gfx ctrlSetPosition [0.1 * safezoneW + safezoneX, 0.5 * safezoneH + safezoneY,2,2];
-            pl_pouch_gfx ctrlSetText "plmod\gfx\pl_mapbag_1.paa";
-        } else {
-            pl_pouch_gfx ctrlSetPosition [0.28 * safezoneW + safezoneX, 0.47 * safezoneH + safezoneY,1.07,1.35];
-            pl_pouch_gfx ctrlSetText "plmod\gfx\pl_tactical_phone_case1.paa";
+        // setGroupIconsVisible [true,false]; 
+        if !(isNull findDisplay 2000) exitWith {
+            pl_last_tac_zoom = ctrlMapScale (findDisplay 2000 displayCtrl 2000);
+            pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.5, 1.117];
+            // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld [0.5, 0.5];
+            // pl_last_tac_pos = (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
+            (findDisplay 2000) closeDisplay 1;
+            playSound "HintCollapse";
+            // player playAction "Default";
+            pl_tac_map_active = false;
+            // ctrlDelete (uiNamespace getVariable "pl_pouch_gfx");
         };
-        pl_pouch_gfx ctrlCommit 0;
+
+        playSound "HintExpand";
+        // player playAction "Gear";
+        pl_tac_map_active = true;
+        _map = findDisplay 46 createDisplay "pl_RscMap";
+        _map displayAddEventHandler ["KeyDown", {call cba_events_fnc_keyHandlerDown}];
+        _map displayAddEventHandler ["KeyUp", {call cba_events_fnc_keyHandlerUp}];
+
+        with uiNamespace do {
+            pl_pouch_gfx = findDisplay 2000 ctrlCreate ["RscPicture", -1];
+
+            if ((date#0) < 2016) then {
+                pl_pouch_gfx ctrlSetPosition [0.1 * safezoneW + safezoneX, 0.5 * safezoneH + safezoneY,2,2];
+                pl_pouch_gfx ctrlSetText "plmod\gfx\pl_mapbag_1.paa";
+            } else {
+                pl_pouch_gfx ctrlSetPosition [0.28 * safezoneW + safezoneX, 0.47 * safezoneH + safezoneY,1.07,1.35];
+                pl_pouch_gfx ctrlSetText "plmod\gfx\pl_tactical_phone_case1.paa";
+            };
+            pl_pouch_gfx ctrlCommit 0;
+        };
+
+        (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, pl_last_tac_zoom, pl_last_tac_pos];
+        // (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
+        ctrlMapAnimCommit (findDisplay 2000 displayCtrl 2000);
+        sleep 0.1;
+
+        [findDisplay 2000 displayCtrl 2000] call pl_map_ehs;
+
+        [] call pl_show_tac_map_icons;
     };
-
-    (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, pl_last_tac_zoom, pl_last_tac_pos];
-    // (findDisplay 2000 displayCtrl 2000) ctrlMapAnimAdd [0, 0.05, getPos player];
-    ctrlMapAnimCommit (findDisplay 2000 displayCtrl 2000);
-    sleep 0.1;
-
-    [findDisplay 2000 displayCtrl 2000] call pl_map_ehs;
-
-    [] call pl_show_tac_map_icons;
 };
 
 

@@ -192,6 +192,7 @@ pl_opfor_find_cover = {
         [_unit, _watchDir, _watchPos] call pl_opfor_setUnitPos;
     };
 
+    _fofScan = false;
     if (_fofScan) then {
 
         private _c = 0;
@@ -315,7 +316,7 @@ pl_opfor_defend_position = {
 
     (leader _grp) playActionNow "GestureCover";
 
-    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank", "Truck"], 1500]) select {(side _x) == playerSide and ((leader _grp) knowsAbout _x) > 0});
+    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank", "Truck"], 1500]) select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and ((leader _grp) knowsAbout _x) > 0});
     if (count _targets > 0) then {
         private _target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
         _units = units _grp;
@@ -856,6 +857,7 @@ pl_opfor_defend_position = {
                 _unit setDir _unitWatchDir;
                 doStop _unit;
                 _unit disableAI "PATH";
+                _unit setUnitPos selectRandom ["UP", "MIDDLE"];
             } else {
 
                 if (getSuppression _unit > 0.1) then {
@@ -904,7 +906,7 @@ pl_opfor_defence_suppression = {
 
     while {_grp getVariable ["pl_opf_in_pos", false]} do {
         // _allTargets = nearestObjects [_watchPos, ["Man", "Car"], 350, true];
-        _enemyTargets = (_watchPos nearEntities [["Man", "Car"], 400]) select {(side _x) == playerSide and ((leader _grp) knowsAbout _x) > 0};
+        _enemyTargets = (_watchPos nearEntities [["Man", "Car"], 400]) select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and ((leader _grp) knowsAbout _x) > 0};
         if (count _enemyTargets > 0) then {
             _firers = [];
             {
@@ -913,7 +915,7 @@ pl_opfor_defence_suppression = {
                     // _x setUnitTrait ["camouflageCoef", 0.5, false];
                     // _x setVariable ["pl_damage_reduction", true];
                 } else {
-                    if ((random 1) > 0.65) then {_firers pushBackUnique _x;}
+                    if ((random 1) > 0.7) then {_firers pushBackUnique _x;}
                 };
             } forEach ((units _grp) select {!(_x checkAIFeature "PATH") and _x != _medic});
             {
@@ -921,7 +923,10 @@ pl_opfor_defence_suppression = {
                 _target = selectRandom _enemyTargets;
                 _targetDistance = _unit distance2d _target;
                 _targetPos = getPosASL _target;
-                _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
+
+                if ((primaryweapon _x call BIS_fnc_itemtype) select 1 == "MachineGun") then {
+                    _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
+                };
                 // if (_unit distance2D _targetPos > 20 and ([_unit, _targetPos] call pl_friendly_check) and (_unit distance2D _targetPos) > _targetDistance * 0.3) then {
                 if ((_targetPos distance2D _unit) > 5 and ([_unit, _targetPos] call pl_friendly_check)) then {
 
@@ -981,9 +986,9 @@ pl_get_close_enemy = {
     private _knownUnits = [];
 
     if (_forced) then {
-        _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 2500]) select {(side _x == playerSide and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED")};
+        _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 2500]) select {(([side _grp, side _x] call BIS_fnc_sideIsEnemy) and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED")};
     } else {
-        _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 2500]) select {(side _x == playerSide and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0.2};
+        _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 2500]) select {(([side _grp, side _x] call BIS_fnc_sideIsEnemy) and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0.2};
     };
 
     if ((count _knownUnits) <= 0) exitWith {objNull};
@@ -991,7 +996,7 @@ pl_get_close_enemy = {
     _knownUnits = [_knownUnits, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
     private _targetPos = getPos (leader (group (_knownUnits#0)));
 
-    private _closeToKnow = selectRandom (allUnits select {(side _x) == playerSide and ((getPos _x) distance2D _targetPos) <= 350});
+    private _closeToKnow = selectRandom (allUnits select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and ((getPos _x) distance2D _targetPos) <= 350});
 
     _closeToKnow
 };
@@ -1000,7 +1005,7 @@ pl_opfor_flanking_move = {
     params ["_grp", ["_flankDistanceOverride", -1], ["_force", false]];
     private ["_fankPos", "_targetPos"];
 
-    // private _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 800]) select {(side _x == playerSide and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0};
+    // private _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 800]) select {(([side _grp, side _x] call BIS_fnc_sideIsEnemy) and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0};
 
     // if ((count _knownUnits) <= 0) exitWith {};
 
@@ -1041,8 +1046,14 @@ pl_opfor_flanking_move = {
 
     sleep 1;
 
-    if (((vehicle (leader _grp)) == (leader _grp)) and (((leader _grp) distance2D _targetPos) <= 800)) then {
-        [_grp] spawn pl_opfor_bounding_move_simple;
+    if (vehicle (leader _grp) == (leader _grp)) then {
+
+        if (((leader _grp) distance2D _targetPos) <= 800) then {
+            [_grp] spawn pl_opfor_bounding_move_simple;
+        };
+
+    } else {
+        _grp setBehaviourStrong "COMBAT";
     };
 };
 
@@ -1071,8 +1082,14 @@ pl_opfor_attack_closest_enemy = {
 
     sleep 1;
 
-    if (((vehicle (leader _grp)) == (leader _grp)) and (((leader _grp) distance2D _targetPos) <= 800) and _doBounding) then {
-        [_grp] spawn pl_opfor_bounding_move_simple;
+    if ((vehicle (leader _grp) == (leader _grp)) and _doBounding) then {
+
+        if (((leader _grp) distance2D _targetPos) <= 800) then {
+            [_grp] spawn pl_opfor_bounding_move_simple;
+        };
+
+    } else {
+        _grp setBehaviourStrong "COMBAT";
     };
 };
 
@@ -1101,7 +1118,7 @@ pl_opfor_bounding_move_simple = {
     private _timeout = time + 10 + (random 5);
 
     // if (([getPos (leader _grp)] call pl_get_closest_enemy_unit_distance) > 500) then {
-    //  waitUntil {sleep 10; ([getPos (leader _grp)] call pl_get_closest_enemy_unit_distance) <= 500 or (_grp getVariable ["pl_stop_event", false])};
+    //  waitUntil {sleep 10; ([getPos (leader _grp), _grp] call pl_get_closest_enemy_unit_distance) <= 500 or (_grp getVariable ["pl_stop_event", false])};
     // };
 
     // if ((_grp getVariable ["pl_stop_event", false]) or (currentWaypoint _grp) >= count (waypoints _grp)) exitWith {};
@@ -1142,7 +1159,7 @@ pl_opfor_bounding_move_simple = {
 
         (_team2#0) playActionNow "GestureCover";
 
-        _timeout = time + 10 + (random 5);
+        _timeout = time + 8;
 
         waitUntil {sleep 1; time >= _timeOut or (_grp getVariable ["pl_stop_event", false]) or (currentWaypoint _grp) >= count (waypoints _grp)};
 
@@ -1184,7 +1201,7 @@ pl_opfor_bounding_move_simple = {
 
         (_team1#0) playActionNow "GestureCover";
 
-        _timeout = time + 10 + (random 5);
+        _timeout = time + 8;
 
         waitUntil {sleep 1; time >= _timeOut or (_grp getVariable ["pl_stop_event", false]) or (currentWaypoint _grp) >= count (waypoints _grp)};
 
@@ -1199,7 +1216,7 @@ pl_opfor_assault = {
 
 	sleep 0.5;
 
-	_targets = (((getPos (leader _grp)) nearEntities [["Man"], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
+	_targets = (((getPos (leader _grp)) nearEntities [["Man"], 500]) select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and ((leader _grp) knowsAbout _x) > 0});
 	_target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
 	_targetGroupUnits = units (group _target);
 	_targetPos = getPos _target;
@@ -1260,7 +1277,7 @@ pl_opfor_auto_formation = {
 pl_opfor_find_overwatch = {
 	params ["_grp"];
 
-	_units = allUnits select {side _x == playerSide and alive _x};
+	_units = allUnits select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and alive _x};
 	_units = [_units, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy;
 	_knownUnits = _units select {((leader _grp) knowsAbout _x) > 0.5};
 	if !(_knownUnits isEqualto []) exitWith {
@@ -1309,6 +1326,7 @@ pl_opfor_find_overwatch = {
 
 
 [] spawn {
+    private _retreatMarker = "";
  
     while {pl_opfor_allow_ai_retreat} do {
 
@@ -1340,10 +1358,30 @@ pl_opfor_find_overwatch = {
 
             if ((_joinValues#0) >= (_joinValues#1)) then {
 
+                private _allGroups = allGroups select {([side _x, playerside] call BIS_fnc_sideIsEnemy) and ((leader _x) distance2D _fightingPos) <= pl_opfor_retreat_zone_size};
                 {
                     _x setvariable ["pl_opfor_retreat", true];
                     // sleep (random 1);
-                } forEach (allGroups select {side _x != playerSide and side _x != civilian and ((leader _x) distance2D _fightingPos) <= pl_opfor_retreat_zone_size});
+                } forEach _allGroups;
+
+                private _enyCentroid = [allGroups select {(side _x) == playerside and _fightingPos distance2d (leader _x) <= 1000}] call pl_find_centroid_of_groups;
+
+                private _retreatPos = _fightingPos getPos [250, _enyCentroid getDir _fightingPos];
+
+                _retreatMarker = createMarker [str (random 5), _retreatPos];
+                _retreatMarker setMarkerType "marker_withdraw";
+                _retreatMarker setMarkerSize [1.3, 1.3];
+                _retreatMarker setMarkerColor "colorOpfor";
+                _retreatMarker setMarkerDir (_enyCentroid getDir _fightingPos);
+
+                [_retreatMarker] spawn {
+                    params ["_retreatMarker"];
+
+                    sleep 60;
+
+                    deleteMarker _retreatMarker;
+
+                };
 
                 pl_opfor_retreat_zones deleteAt _x;
             };
@@ -1505,7 +1543,7 @@ pl_opfor_surrender = {
     sleep 2;
 
     private _opforSide = side _grp;
-    private _enyCentroid = [allGroups select {(side _x) isEqualTo playerSide}] call pl_find_centroid_of_groups;
+    private _enyCentroid = [allGroups select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and (leader _x) distance2D (leader _grp) <= 1000}] call pl_find_centroid_of_groups;
     private _retreatDistance = worldSize * 0.045;
     if (_retreatDistance < 500) then {_retreatDistance = 500};
     private _retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, _enyCentroid getDir (leader _grp)];
@@ -1526,7 +1564,7 @@ pl_opfor_surrender = {
     [_grp] spawn {
         params ["_grp"];
 
-    	waitUntil {sleep 5; !((((getPos (leader _grp)) nearEntities [["Man", "Tank", "Car"], 75]) select {side _x == playerSide}) isEqualto [])};
+    	waitUntil {sleep 5; !((((getPos (leader _grp)) nearEntities [["Man", "Tank", "Car"], 75]) select {([side _grp, side _x] call BIS_fnc_sideIsEnemy)}) isEqualto [])};
 
         [_grp] call pl_opfor_reset;
 
@@ -1540,7 +1578,7 @@ pl_opfor_surrender = {
             };
         } forEach (units _grp) ;
 
-        waitUntil {sleep 5; !((((getPos (leader _grp)) nearEntities [["Man", "Tank", "Car"], 25]) select {side _x == playerSide}) isEqualto [])};
+        waitUntil {sleep 5; !((((getPos (leader _grp)) nearEntities [["Man", "Tank", "Car"], 25]) select {([side _grp, side _x] call BIS_fnc_sideIsEnemy)}) isEqualto [])};
 
         [_grp] call pl_opfor_reset;
 
@@ -1561,11 +1599,12 @@ pl_opfor_surrender = {
         // _timeOut = time + 2;
         waitUntil {sleep 5; time >= _timeOut or ((leader _grp) distance2D _retreatPos < 300)};
 
-        while {sleep 1; (count ((units _grp) select {alive _x})) > 0} do {
-            if ([_grp, _opforSide, 400] call pl_opfor_join_grp) exitWith {};
+        // while {sleep 1; (count ((units _grp) select {alive _x})) > 0} do {
+            // if ([_grp, _opforSide, 400] call pl_opfor_join_grp) exitWith {};
 
-            sleep 10;
-        };
+            // sleep 10;
+        // };
+        0 = [_grp, _opforSide, 800] call pl_opfor_join_grp;
     };
 };
 
@@ -1710,7 +1749,7 @@ pl_opfor_vic_retreat = {
     if (isNull pl_opfor_retreat_road) then {
 
         private _opforSide = side _grp;
-        private _enyCentroid = [allGroups select {(side _x) isEqualTo playerSide}] call pl_find_centroid_of_groups;
+        private _enyCentroid = [allGroups select {([side _grp, side _x] call BIS_fnc_sideIsEnemy)}] call pl_find_centroid_of_groups;
         private _retreatDistance = worldSize * 0.1;
         if (_retreatDistance < 1000) then {_retreatDistance = 1000};
 
@@ -1758,7 +1797,7 @@ pl_opfor_tactical_retreat = {
 
     _grp setvariable ["pl_opfor_retreat", false];
 
-    private _enyCentroid = [allGroups select {(side _x) isEqualTo playerSide}] call pl_find_centroid_of_groups;
+    private _enyCentroid = [allGroups select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and (leader _x) distance2D (leader _grp) <= 1000}] call pl_find_centroid_of_groups;
     private _retreatDistance = worldSize * 0.045;
     if (_retreatDistance < 500) then {_retreatDistance = 500};
 
@@ -1850,7 +1889,7 @@ pl_opfor_vic_suppress = {
 	params ["_grp"];
     private ["_targetsPos", "_targetDistance", "_unit"];
 
-    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank"], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0});
+    private _targets = (((getPos (leader _grp)) nearEntities [["Man", "Car", "Tank"], 500]) select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and ((leader _grp) knowsAbout _x) > 0});
 
     private _getTargets = {
         params ["_cords", "_area"];
@@ -1858,7 +1897,7 @@ pl_opfor_vic_suppress = {
         private _allTargets = _cords nearEntities [["Man", "Car", "Truck", "Tank"], _area];
         {
             _targetsPos pushBack (getPosATL _x);
-        } forEach (_allTargets select {[(side _x), playerside] call BIS_fnc_sideIsEnemy});
+        } forEach (_allTargets select {[side _grp, side _x] call BIS_fnc_sideIsEnemy});
 
         // if no enemy target buildings;
         private _buildings = nearestObjects [_cords, ["house"], _area];
@@ -1920,12 +1959,12 @@ pl_opfor_vic_suppress_cont = {
 pl_opfor_quick_suppress_unit = {
     params ["_unit"];
 
-    private _target = selectRandom (((getPos _unit) nearEntities [["Man", "Car"], 500]) select {(side _x) == playerSide and (_unit knowsAbout _x) > 0.1});
+    private _target = selectRandom (((getPos _unit) nearEntities [["Man", "Car"], 500]) select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and (_unit knowsAbout _x) > 0.1});
 
     if (isNil "_target") exitWith {};
 
     private _targetPos = getPosASL _target;
-    _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
+    // _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
 
     // _m = createMarker [str (random 1), _targetPos];
     // _m setMarkerType "mil_dot";
@@ -2024,8 +2063,14 @@ pl_opfor_get_objective = {
 };
 
 
+// pl_get_closest_enemy_unit_distance = {
+//     params ["_pos", "_grp"];
+//     private _unit = ([allUnits select {[side _grp, side _x] call BIS_fnc_sideIsEnemy}, [], {_x distance2D _pos}, "ASCEND"] call BIS_fnc_sortBy)#0;
+//     _unit distance2d _pos
+// };
+
 pl_get_closest_enemy_unit_distance = {
-    params ["_pos"];
+    params ["_pos", "_grp"];
     private _unit = ([allUnits select {side _x == playerSide}, [], {_x distance2D _pos}, "ASCEND"] call BIS_fnc_sortBy)#0;
     _unit distance2d _pos
 };
