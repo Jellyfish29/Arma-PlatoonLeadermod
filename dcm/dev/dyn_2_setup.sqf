@@ -55,13 +55,13 @@ dyn2_main = {
     } forEach _allOtherLocations;
 
     private _allObjectiveTypes = ["field_assault"];
-    if !(_allAirFields isEqualTo []) then {_allObjectiveTypes pushBack "air_field_assault"; _allObjectiveTypes pushBackUnique "defence"; _allObjectiveTypes pushBack "air_assault_attack"; _allObjectiveTypes pushBackUnique "air_assault_defend";};
+    if !(_allAirFields isEqualTo []) then {_allObjectiveTypes pushBack "air_field_assault"; _allObjectiveTypes pushBackUnique "defence";};// _allObjectiveTypes pushBack "air_assault_attack"; _allObjectiveTypes pushBackUnique "air_assault_defend";};
     if !(_largeTownLocations isEqualTo []) then {_allObjectiveTypes pushBack "town_assault"; _allObjectiveTypes pushBackUnique "defence";};
     if !(_smallTownLocations isEqualTo []) then {_allObjectiveTypes pushBack "small_town_assault"; _allObjectiveTypes pushBackUnique "defence";};
-    if !(_strategicLocations isEqualTo []) then {_allObjectiveTypes pushBack "air_assault_attack"; _allObjectiveTypes pushBackUnique "air_assault_defend"};
+    // if !(_strategicLocations isEqualTo []) then {_allObjectiveTypes pushBack "air_assault_attack";};// _allObjectiveTypes pushBackUnique "air_assault_defend"};
     dyn2_missionType = selectRandom _allObjectiveTypes;
 
-    // dyn2_missionType = "air_assault_attack";
+    // dyn2_missionType = "defence";
 
     switch (dyn2_missionType) do { 
         case "town_assault" : {[selectRandom _largeTownLocations] spawn dyn2_town_assault};

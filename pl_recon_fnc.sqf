@@ -2,11 +2,13 @@ pl_recon_active = false;
 pl_recon_group = grpNull;
 pl_recon_area_size_default = 1000;
 pl_active_recon_groups = [];
+pl_recon_los_polys = [];
 pl_enable_vanilla_marta = false;
 
 pl_recon_count = 0;
 
 // designate group as Recon
+
 pl_recon = {
     params [["_group", (hcSelected player) select 0],["_preSet", false]];
     private ["_group", "_markerName", "_intelInterval", "_intelMarkers", "_wp", "_leader", "_distance", "_pos", "_dir", "_markerNameArrow", "_markerNameGroup", "_posOccupied"];
@@ -31,7 +33,7 @@ pl_recon = {
     }; 
     _group setVariable ["pl_recon_area_size", pl_recon_area_size_default];
 
-    _intelInterval = 45;
+    _intelInterval = 30;
 
     sleep 0.5;
 
@@ -97,14 +99,20 @@ pl_recon = {
     // short delay
     sleep 5;
 
+    private _lineMarker = "";
+
     // recon logic
     while {sleep 0.5; _group getVariable ["pl_is_recon", false]} do {
         
+        _reconLOSPolygon = [ASLToATL ([_group] call pl_find_centroid_of_group), _group getVariable ["pl_recon_area_size", 1400], 4, 4, leader _group] call pl_get_vistool_pos;
+
+        pl_recon_los_polys pushBack _reconLOSPolygon;
+
         {
             _opfGrp = _x;
             _leader = leader _opfGrp;
 
-            if (_leader distance2D _reconGrpLeader < (_group getVariable ["pl_recon_area_size", 1400])) then {
+            if ([getPosASL (leader _opfGrp), _reconLOSPolygon] call pl_isPointInPolygon) then {
                 private _reveal = false;
                 if ((_reconGrpLeader knowsAbout _leader) > 0.105) then {_reveal = true};
                 [_opfGrp, _reveal, false, _group] call Pl_marta;
@@ -113,6 +121,8 @@ pl_recon = {
 
         _time = time + _intelInterval;
         waitUntil {sleep 1; time >= _time or !(_group getVariable ["pl_is_recon", false])};
+
+        pl_recon_los_polys = pl_recon_los_polys - [_reconLOSPolygon];
 
         if !(alive (leader _group)) exitWith {_group setVariable ["pl_is_recon", false]; pl_recon_count = pl_recon_count - 1};
 
@@ -123,7 +133,6 @@ pl_recon = {
     pl_active_recon_groups = pl_active_recon_groups - [_group];
     _group setVariable ["MARTA_customIcon", nil];
 };
-
 
 pl_mark_targets_on_map = {
     params ["_targets", ["_group", grpNull]];
@@ -175,9 +184,9 @@ Pl_marta = {
     if (_sideColor == "exit") exitWith {};
 
     _centoid = [_opfGrp] call pl_find_centroid_of_group;
-    private _chance = 0.05;
+    private _chance = 0.15;
     if ([_centoid] call pl_is_city) then {_chance = 0};
-    if ([_centoid] call pl_is_forest) then {_chance = 0.01};
+    if ([_centoid] call pl_is_forest) then {_chance = 0.1};
 
     if (((random 1) < (_chance + (_chance * 0.5)) and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < _chance and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
 

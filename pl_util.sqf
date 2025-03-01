@@ -752,6 +752,8 @@ pl_find_centroid_of_group = {
 pl_find_centroid_of_groups = {
     params ["_groups"];
 
+    if (_groups isEqualTo []) exitWith {[]};
+
     private _sumX = 0;
     private _sumY = 0;
     private _len = count _groups;
@@ -907,67 +909,91 @@ pl_get_grenade_muzzle = {
 // _m setMarkerType "mil_marker";
 
 pl_get_vistool_poly = {
-    private ["_end"];
+    params [["_start", []], ["_range", 2000], ["_accuracy", 2], ["_heightOver", 2], ["_ignoreObj", objNull]];
+    private ["_end", "_lastVis"];
 
-    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-    private _start = [_mPos#0, _mPos#1, 2];
-    private _intersects = [];
+    if (_start isEqualTo []) then {
+        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        _start = [_mPos#0, _mPos#1, _heightOver];
+    } else {
+        _start = [_start#0,_start#1,_heightOver];
+    };
+
     _start = ATLToASL _start;
-
     private _linePath = [];
+    private _j = 0;
 
     // for "_i" from 0 to 719 step 0.5 do {
-    for "_i" from 0 to 359 step 1 do {
-        _end = _start vectorAdd [(sin _i) * 2000, (cos _i) * 2000, 0];
-        _vis = (lineIntersectsSurfaces [_start, _end, objNull, objNull, true, 1, "GEOM", "VIEW"]);
+    for "_i" from 0 to 359 step _accuracy do {
+        _end = _start vectorAdd [(sin _i) * _range, (cos _i) * _range, 0];
+        // _end = _start getPos [2000, _i] vectorAdd [0,0,5];
+        _vis = (lineIntersectsSurfaces [_start, _end, _ignoreObj, _ignoreObj, true, 1, "GEOM", "FIRE"]);
+
         if !(_vis isEqualTo []) then {
-            _linePath pushBack (_vis#0#0#0);
-            _linePath pushBack (_vis#0#0#1);
+            _lastVis = _vis;
+            _j = 0;
+            while {_j < 30} do {
+                _end = _end vectorAdd [100, 100, 5];
+                _vis = (lineIntersectsSurfaces [_start, _end, _ignoreObj, _ignoreObj, true, 1, "GEOM", "FIRE"]);
+                if (_vis isEqualTo []) exitWith {
+                    _linePath pushBack (_lastVis#0#0#0);
+                    _linePath pushBack (_lastVis#0#0#1);
+                };
+                _j = _j + 1;
+                _lastVis = _vis;
+            };
+
+            if (_j >= 30) then {
+                _linePath pushBack (_vis#0#0#0);
+                _linePath pushBack (_vis#0#0#1);
+            };
         } else {
             _linePath pushBack _end#0;
             _linePath pushBack _end#1;
         };
     };
+    // sleep 0.2;
     _linePath
 };
 
+
 pl_get_vistool_pos = {
-    private ["_end", "_vis", "_lastVis"];
+    params [["_start", []], ["_range", 2000], ["_accuracy", 2], ["_heightOver", 2], ["_ignoreObj", objNull]];
+    private ["_end", "_lastVis"];
 
-    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-    private _start = [_mPos#0, _mPos#1, 3];
-    private _intersects = [];
+    if (_start isEqualTo []) then {
+        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+        _start = [_mPos#0, _mPos#1, _heightOver];
+    } else {
+        _start = [_start#0,_start#1,_heightOver];
+    };
+
     _start = ATLToASL _start;
-
     private _linePath = [];
-
     private _j = 0;
-    private _gradiant = 0;
+
     // for "_i" from 0 to 719 step 0.5 do {
-    for "_i" from 0 to 359 step 1 do {
-        _end = _start vectorAdd [(sin _i) * 1500, (cos _i) * 2000, 0];
-        _vis = (lineIntersectsSurfaces [_start, _end, objNull, objNull, true, 1, "GEOM", "VIEW"]);
-        _j = 0;
+    for "_i" from 0 to 359 step _accuracy do {
+        _end = _start vectorAdd [(sin _i) * _range, (cos _i) * _range, 0];
+        // _end = _start getPos [2000, _i] vectorAdd [0,0,5];
+        _vis = (lineIntersectsSurfaces [_start, _end, _ignoreObj, _ignoreObj, true, 1, "GEOM", "FIRE"]);
 
         if !(_vis isEqualTo []) then {
-            _linePath pushBack (_vis#0#0);
-            // _lastVis = +_vis;
-            // _startHigh = _start;
-            // while {_j < 20} do {
-            //     // _gradiant = 1 / (_start distance2D (_vis#0#0));
-            //     // _end = _start vectorAdd [(sin _i) * 2000, (cos _i) * 2000, 2000 * _gradiant];
-            //     _end = _end vectorAdd [0,0,5];
-            //     _startHigh = _startHigh vectorAdd [0,0,5];
-            //     _vis = (lineIntersectsSurfaces [_startHigh, _end, objNull, objNull, true, 1, "GEOM", "VIEW"]);
-            //     if (_vis isEqualTo []) exitWith {
-            //         _linePath pushBack (_lastVis#0#0);
-            //     };
-            //     _lastVis = +_vis;
-            //     _j = _j + 1;
-            // };
-            // if !(_vis isEqualTo []) then {
-            //     _linePath pushBack _end;
-            // };
+            _lastVis = _vis;
+            _j = 0;
+            while {_j < 30} do {
+                _end = _end vectorAdd [100, 100, 5];
+                _vis = (lineIntersectsSurfaces [_start, _end, _ignoreObj, _ignoreObj, true, 1, "GEOM", "FIRE"]);
+                if (_vis isEqualTo []) exitWith {
+                    _linePath pushBack (_lastVis#0#0);
+                };
+                _j = _j + 1;
+                _lastVis = _vis;
+            };
+
+            if (_j >= 30) then {
+                _linePath pushBack (_vis#0#0);
+            };
         } else {
             _linePath pushBack _end;
         };
@@ -975,6 +1001,36 @@ pl_get_vistool_pos = {
     // sleep 0.2;
     _linePath
 };
+
+// #ChatGpt
+pl_isPointInPolygon = {
+    params ["_point", "_polygon"];
+    
+    private _x = _point select 0;
+    private _y = _point select 1;
+    private _inside = false;
+    
+    private _n = count _polygon;
+    private _j = _n - 1;
+    
+    for "_i" from 0 to (_n - 1) do {
+        private _xi = (_polygon select _i) select 0;
+        private _yi = (_polygon select _i) select 1;
+        private _xj = (_polygon select _j) select 0;
+        private _yj = (_polygon select _j) select 1;
+        
+        if ((_yi < _y && _yj >= _y) || (_yj < _y && _yi >= _y)) then {
+            private _x_intersect = _xi + (_y - _yi) / (_yj - _yi) * (_xj - _xi);
+            if (_x_intersect < _x) then {
+                _inside = !_inside;
+            };
+        };
+        _j = _i;
+    };
+
+    _inside
+};
+
 
 pl_vision_tool_enabled = false;
 

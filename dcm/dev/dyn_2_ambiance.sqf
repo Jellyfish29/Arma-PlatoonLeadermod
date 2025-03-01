@@ -901,6 +901,8 @@ dyn2_spawn_allied_positions = {
 
     player setDir (player getdir _cpVic);
 
+    playMusic "RadioAmbient1";
+
     {
         _unit = _playerStartGrp createUnit [typeof (selectRandom (allUnits select {side _x == playerSide})), getPos _cpVic , [], 5, "NONE"];
         _unit disableAI "PATH";

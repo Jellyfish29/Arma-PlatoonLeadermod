@@ -1686,7 +1686,7 @@ pl_draw_vision_tool = {
         _display = _this#0;
         if (pl_vision_tool_enabled) then {
             _path = [] call pl_get_vistool_pos;
-            for '_i' from -1 to 358 step 1 do {
+            for '_i' from -1 to (count _path) - 2 step 1 do {
                 _display drawLine [
                     _path#_i,
                     _path#(_i+1),
@@ -1695,6 +1695,23 @@ pl_draw_vision_tool = {
                 ];
             };
         };
+    "]; // "
+};
+
+pl_draw_recon_LOS = {
+    params ["_display"];
+    _display ctrlAddEventHandler ["Draw","
+        _display = _this#0;
+        {
+            for '_i' from -1 to (count _x) - 2 step 1 do {
+                _display drawLine [
+                    _x#_i,
+                    _x#(_i+1),
+                    pl_side_color_rgb,
+                    2
+                ];
+            };
+        } forEach pl_recon_los_polys;
     "]; // "
 };
 
@@ -1752,6 +1769,7 @@ pl_init_map_icons = {
     [findDisplay 12 displayCtrl 51] call pl_show_vic_defense1_51;
     [findDisplay 12 displayCtrl 51] call pl_show_vic_defense2_51;
     [findDisplay 12 displayCtrl 51] call pl_draw_vision_tool;
+    // [findDisplay 12 displayCtrl 51] call pl_draw_recon_LOS;
 };
 
 [] call pl_init_map_icons;
@@ -1802,6 +1820,7 @@ addMissionEventHandler ["Loaded", {
     [findDisplay 12 displayCtrl 51] call pl_show_vic_defense1_51;
     [findDisplay 12 displayCtrl 51] call pl_show_vic_defense2_51;
     [findDisplay 12 displayCtrl 51] call pl_draw_vision_tool;
+    // [findDisplay 12 displayCtrl 51] call pl_draw_recon_LOS;
 }];
 
 

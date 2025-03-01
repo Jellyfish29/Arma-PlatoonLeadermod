@@ -438,9 +438,11 @@ pl_auto_360 = {
     params ["_group"];
     private ["_leader"];
 
+    if (true) exitwith {};
+
     if (_group == (group player)) exitWith {};
 
-    sleep 10;
+    sleep 25;
 
     if !(pl_auto_360_enabled) exitwith {};
 

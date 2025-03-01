@@ -64,7 +64,19 @@ dyn2_town_assault = {
     // _m setMarkerColor "colorOPFOR";
 
 	private _locPos = getPos _loc;
-    _playerStart = [[[_locPos, 3500]], [[_locPos, 2500], "water"]] call BIS_fnc_randomPos;
+    // _playerStart = [[[_locPos, 3500]], [[_locPos, 2500], "water"]] call BIS_fnc_randomPos;
+
+    private _playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+
+	while {surfaceIsWater _playerStart} do {
+		_playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+	};
+
+	private _playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+
+	while {surfaceIsWater _playerStart} do {
+		_playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+	};
 	_startRoad = [_playerStart, 800] call BIS_fnc_nearestRoad;
 	private _defDir = _locPos getDir _playerStart;
 	private _allBuildings = nearestObjects [getPos _loc, ["house"], 400];
@@ -209,7 +221,14 @@ dyn2_small_town_assault = {
 	params ["_loc"];
 
 	private _locPos = getPos _loc;
-	private _playerStart = [[[_locPos, 2500]], [[_locPos, 2000], "water"]] call BIS_fnc_randomPos;
+	// private _playerStart = [[[_locPos, 2500]], [[_locPos, 2000], "water"]] call BIS_fnc_randomPos;
+
+	private _playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+
+	while {surfaceIsWater _playerStart} do {
+		_playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+	};
+
 	private _startRoad = [_playerStart, 1500] call BIS_fnc_nearestRoad;
 	private _defDir = _locPos getDir _playerStart;
 
@@ -335,7 +354,14 @@ dyn2_field_assault = {
 
 	};
 
-	private _playerStart = [[[_locPos, 2500]], [[_locPos, 2000], "water"]] call BIS_fnc_randomPos;
+	// private _playerStart = [[[_locPos, 2500]], [[_locPos, 2000], "water"]] call BIS_fnc_randomPos;
+
+	private _playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+
+	while {surfaceIsWater _playerStart} do {
+		_playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+	};
+
 	private _startRoad = [_playerStart, 800] call BIS_fnc_nearestRoad;
 	private _defDir = _locPos getDir _playerStart;
 	private _allRoads = _locPos nearRoads 1000;
@@ -426,9 +452,23 @@ dyn2_air_field_assault = {
 	params ["_locPos"];
 
 	// private _locPos = getPos _loc;
-	private _playerStart = [[[_locPos, 2500]], [[_locPos, 2000], "water"]] call BIS_fnc_randomPos;
+	// private _playerStart = [[[_locPos, 3000]], [[_locPos, 2000], "water"]] call BIS_fnc_randomPos;
+	private _playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+
+	while {surfaceIsWater _playerStart} do {
+		_playerStart = _locPos getPos [[2000, 3000] call BIS_fnc_randomInt, random 360];
+	};
+
 	private _startRoad = [_playerStart, 1500] call BIS_fnc_nearestRoad;
 	private _defDir = _locPos getDir _playerStart;
+
+	// _m = createMarker [str (random 5), _playerStart];
+	// _m setMarkerType "mil_marker";
+	// _m setMarkerColor "colorBlue";
+
+	// _m = createMarker [str (random 5), getpos _startRoad];
+	// _m setMarkerType "mil_marker";
+	// _m setMarkerColor "colorGreen";
 
 	private _allBuildings = nearestObjects [_locPos, ["house"], 800];
 	private _allRoads = _locPos nearRoads 800;
@@ -705,28 +745,34 @@ dyn2_defence = {
 	_convoyMSRPath2 = _msr2 apply {getPos _x};
 	pl_draw_convoy_path_array = pl_draw_convoy_path_array + [_convoyMSRPath2];
 
-	sleep _timeOut * 0.5;
+	// _timeOut = 60;
+
+	sleep (_timeOut * 0.5);
 
 	0 = [_opforStart, _locPos, _opforStart] call dyn2_OPF_recon_patrol;
 
-	sleep _timeOut * 0.5;
+	sleep (_timeOut * 0.5);
 
 	[side player, "HQ"] sideChat "Enemy assault force detected";
 
 	for "_i" from 0 to _waves do {
 
-        for "_j" from 0 to dyn2_strength + ([0, _i] call BIS_fnc_randomInt) do {
+        for "_j" from 0 to dyn2_strength + ([0, 1] call BIS_fnc_randomInt) do {
             0 = [_opforStart, _locPos, true, _opforStart] call dyn2_OPF_catk;
         	sleep 2;
         };
 
+        // 0 = [_opforStart, _locPos, false, _opforStart] call dyn2_OPF_catk;
+
         if ((random 1) > 0.8) then {
        		0 = [_opforStart, _locPos, _opforStart] call dyn2_OPF_armor_attack;
-       	};
+       	} else {
+       		0 = [_opforStart, _locPos, _opforStart, "O_APC_Tracked_02_cannon_F"] call dyn2_OPF_armor_attack;
+       };
         _artySuccess = [[3, 6] call BIS_fnc_randomInt, _locPos] spawn dyn2_OPF_fire_mission;
 
         // 10 - 15 min
-        sleep ([700, 1000] call BIS_fnc_randomInt);
+        sleep ([600, 900] call BIS_fnc_randomInt);
 
         [side player, "HQ"] sideChat "New enemy assault detected";
 
@@ -873,7 +919,119 @@ dyn2_air_assault_attack = {
 
 };
 
+
 dyn2_air_assault_defend = {
 	params ["_loc"];
 
+	private _locPos = getPos _loc;
+	private _opforStart = [[[_locPos, 4000]], [[_locPos, 1800], "water"]] call BIS_fnc_randomPos;
+	private _opforstartRoad = [_opforStart, 1000] call BIS_fnc_nearestRoad;
+	private _LzPos = [_locPos getpos [600, _opforStart getDir _locPos], 0, 1000, 20, 0, 0.1, 0, [_locPos getpos [600, _opforStart getDir _locPos], [0,0,0]]] call BIS_fnc_findSafePos;
+	private _playerStart = _lzPos getpos [8000, _opforStart getDir _locPos];
+	private _defDir = _locPos getDir _playerStart;
+
+	private _allBuildings = nearestObjects [getPos _loc, ["house"], 400];
+	private _allRoads = _locPos nearRoads 1500;
+	private _allGrps = [];
+
+	_m = createMarker [str (random 1), _lzPos];
+	_m setMarkerType "mil_marker";
+
+	[_playerStart, _lzPos] spawn dyn2_place_player_air_assault;
+
+	_endTrg = createTrigger ["EmptyDetector", _locPos, true];
+    _endTrg setTriggerActivation ["EAST SEIZED", "PRESENT", false];
+    _endTrg setTriggerStatements ["this", " ", " "];
+    _endTrg setTriggerArea [600, 600, _defDir, false, 30];
+    _endTrg setTriggerTimeout [120, 150, 200, false];
+
+    // _m = createMarker [str (random 5), _opforStart];
+    // _m setMarkerType "mil_marker";
+
+    _locationName = text _loc;
+    private _waves = dyn2_strength + ([1,2] call BIS_fnc_randomInt);
+
+	private _midPoint = _locPos getPos [(_opforStart distance2d _locPos) * 0.4, _defDir]; 
+
+	// Side Missions
+	// [_opforStart] spawn dyn2_OPF_continous_opfor_mission_spawner;
+
+	// [_midPoint, _locPos, 2, ["road", "destroy_chache", "hill", "position", "_defend", "ambush", "mortar", "destroy_vic"]] call dyn2_SIDE_mission_spawner;
+
+	0 = [_opforStart, _locPos, true] spawn dyn2_SIDE_destroy_mortar;
+
+	// Draw Scenario
+	[_midPoint, _locPos, []] spawn pl_draw_scenario;
+
+	[_locPos, 800, "OBJ", "colorBLUFOR"] call dyn2_draw_mil_symbol_objectiv_free;
+
+	// Ambiance
+	_civilTowns = nearestLocations [_locPos getpos [500, _defDir], ["NameCity", "NameVillage", "NameCityCapital"], 2000];
+
+	{
+	  	[_x, 10 - dyn2_strength, [10, 15] call BIS_fnc_randomInt, [1, 2] call BIS_fnc_randomInt, 350] spawn dyn2_cvivilian_presence;
+	} forEach _civilTowns;
+
+	[_midPoint, _locPos] spawn dyn2_AO_destruction;
+
+	[_midPoint, _locPos] spawn dyn2_random_fires;
+
+	// [_opforStart, _playerStart] spawn dyn2_spawn_allied_positions;
+
+
+	// sleep 10;
+
+	_timeOut = ([1200, 1500] call BIS_fnc_randomInt);
+	// _timeOut = 2;
+	_minAdd = (_timeOut + (random [-60, 0, 60])) / 60 * 1.6 / 100;
+	_arrivalTime = [daytime + _minAdd, "HH:MM"] call BIS_fnc_timeToString;
+
+	[side player, "HQ"] sideChat (format ["Enemy Main Attack expected at %1", _arrivalTime]);
+	sleep 1;
+	[side player, "HQ"] sideChat (format ["Clear %1 and prepare the defense", _locationName]);
+
+	[west, format ["task_%1", _loc], [format ["Attack expected at %1", _arrivalTime], format ["Defend At %1", _locationName], ""], getPos _loc, "CREATED", 1, true, "defend", false] call BIS_fnc_taskCreate;
+
+    // [_endTrg, _loc] spawn {
+    // 	params ["_endTrg", "_loc"]; 
+    // 	waitUntil {sleep 2; triggerActivated _endTrg};
+    // 	[format ["task_%1", _loc], "FAILED", true] call BIS_fnc_taskSetState;
+    // 	hint "Defeat : (";
+	// };
+
+	sleep 5;
+
+	sleep (_timeOut * 0.5);
+
+	0 = [_opforStart, _locPos, _opforStart] call dyn2_OPF_recon_patrol;
+
+	sleep (_timeOut * 0.5);
+
+	[side player, "HQ"] sideChat "Enemy assault force detected";
+
+	for "_i" from 0 to _waves do {
+
+        for "_j" from 0 to dyn2_strength + ([0, 1] call BIS_fnc_randomInt) do {
+            0 = [_opforStart, _locPos, selectRandom [true, false], _opforStart] call dyn2_OPF_catk;
+        	sleep 2;
+        };
+
+        // if ((random 1) > 0.8) then {
+       	// 	0 = [_opforStart, _locPos, _opforStart] call dyn2_OPF_armor_attack;
+       	// };
+        _artySuccess = [[3, 6] call BIS_fnc_randomInt, _locPos] spawn dyn2_OPF_fire_mission;
+
+        // 10 - 15 min
+        sleep ([700, 1000] call BIS_fnc_randomInt);
+
+        [side player, "HQ"] sideChat "New enemy assault detected";
+
+	};
+
+	sleep ([600, 900] call BIS_fnc_randomInt);
+
+	if !(triggerActivated _endTrg) then {
+		[format ["task_%1", _loc], "SUCCEEDED", true] call BIS_fnc_taskSetState;
+		hint "Victory : )";
+	};
 };

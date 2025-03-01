@@ -1076,14 +1076,14 @@ pl_defend_position = {
                 };
             } forEach _bPos;
 
-            if (_vPosCounter == 0) then {
-                if (_winPos isNotEqualTo []) then {
-                    _validPos pushBack (([_winPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy)#0);
-                } else {
-                    _validPos pushBack (([_bPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy)#0);
-                };
-                _winPos = [_winPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
-            };
+            // if (_vPosCounter == 0) then {
+            //     if (_winPos isNotEqualTo []) then {
+            //         _validPos pushBack (([_winPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy)#0);
+            //     } else {
+            //         _validPos pushBack (([_bPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy)#0);
+            //     };
+            //     _winPos = [_winPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
+            // };
 
         } forEach _validBuildings;
     };
@@ -1344,13 +1344,19 @@ pl_defend_position = {
         
 
         private _losCount = 0;
-        for "_l" from 10 to 600 step 20 do {
+        for "_l" from 10 to 600 step 50 do {
 
             _checkPos = _losPos getPos [_l, _watchDir];
             _checkPos = [_checkPos, 1.75] call pl_convert_to_heigth_ASL;
-            _vis = lineIntersectsSurfaces [_losPos, _checkPos, objNull, objNull, true, 1, "VIEW"];
+            _vis = lineIntersectsSurfaces [_losPos, _checkPos, objNull, objNull, true, 1, "FIRE"];
 
             if !(_vis isEqualTo []) exitWith {};
+
+            // _m = createMarker [str (random 1), _checkPos];
+            // _m setMarkerType "mil_dot";
+            // _m setMarkerColor "colorOrange";
+            // _m setMarkerSize [0.5, 0.5];
+            // _debugMarkers pushback _m;
 
             _losCount = _losCount + 1;
         };
@@ -1359,10 +1365,7 @@ pl_defend_position = {
 
             // systemChat (str _losPos);
 
-            // _m = createMarker [str (random 1), _losPos];
-            // _m setMarkerType "mil_dot";
-            // _m setMarkerSize [0.5, 0.5];
-            // _debugMarkers pushback _m;
+
 
             _validLosPos pushback [_losPos, _losCount];
         };
@@ -1373,7 +1376,7 @@ pl_defend_position = {
     _winPos = [_winPos, [], {_x#2}, "DESCEND"] call BIS_fnc_sortBy;
 
     {
-        if (((_x#2) > 2) and !([_x] call pl_is_indoor)) then {
+        if (((_x#2) > 6) and !([_x] call pl_is_indoor)) then {
             _validLosPos = [[_x, 10]] + _validLosPos;
         };
     } forEach _winPos;
@@ -1570,7 +1573,7 @@ pl_defend_position = {
             _unit disableAI "TARGET";
             _unit setUnitTrait ["camouflageCoef", 0.7, true];
             _unit setVariable ["pl_damage_reduction", true];
-            _unit forceSpeed 20;
+            // _unit forceSpeed 20;
             _unit doMove _defPos;
             sleep 1;
             private _counter = 0;
@@ -1987,11 +1990,11 @@ pl_at_defence = {
                     _atSoldier doWatch _target;
                     _atSoldier doMove _movePos;
 
-                    _m = createMarker [str (random 1), _movePos];
-                    _m setMarkerType "mil_dot";
-                    _m setMarkerColor "colorGreen";
-                    _m setMarkerSize [0.7, 0.7];
-                    _debugMarkers pushBack _m;
+                    // _m = createMarker [str (random 1), _movePos];
+                    // _m setMarkerType "mil_dot";
+                    // _m setMarkerColor "colorGreen";
+                    // _m setMarkerSize [0.7, 0.7];
+                    // _debugMarkers pushBack _m;
 
 
                     _time = time + (((_atSoldier distance _movePos) / 1.6) + 10);

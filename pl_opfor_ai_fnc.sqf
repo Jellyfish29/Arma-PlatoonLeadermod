@@ -19,7 +19,7 @@ pl_opfor_ai_helper_debug = {
     _debugMarker setMarkerType "mil_dot";
     _debugMarker setMarkerSize [0.5, 0.5];
 
-	while {True} do {
+	while {pl_debug} do {
         _debugMarker setMarkerPos (getPos (leader _grp));
         _debugMarker setMarkerText (_grp getVariable ["pl_opfor_debug_marker_text", "None"]);
         sleep 0.5;
@@ -293,7 +293,7 @@ pl_opfor_advance = {
 				_x doFollow (leader _grp);
 			};
 		} forEach (units _grp);
-		_grp setBehaviour "AWARE";
+		_grp setBehaviourStrong "AWARE";
 		// _grp setFormation "LINE";
 		_grp setSpeedMode "NORMAL";
 		_grp allowFleeing 0;
@@ -1048,7 +1048,7 @@ pl_opfor_flanking_move = {
 
     if (vehicle (leader _grp) == (leader _grp)) then {
 
-        if (((leader _grp) distance2D _targetPos) <= 800) then {
+        if (((leader _grp) distance2D _targetPos) <= 600) then {
             [_grp] spawn pl_opfor_bounding_move_simple;
         };
 
@@ -1082,9 +1082,9 @@ pl_opfor_attack_closest_enemy = {
 
     sleep 1;
 
-    if ((vehicle (leader _grp) == (leader _grp)) and _doBounding) then {
+    if (vehicle (leader _grp) == (leader _grp)) then {
 
-        if (((leader _grp) distance2D _targetPos) <= 800) then {
+        if (((leader _grp) distance2D _targetPos) <= 600 and _doBounding) then {
             [_grp] spawn pl_opfor_bounding_move_simple;
         };
 
@@ -1095,6 +1095,8 @@ pl_opfor_attack_closest_enemy = {
 
 pl_opfor_bounding_move_simple = {
     params ["_grp"];    
+
+    if (isNull _grp) exitWith {};
 
     private _units = (units _grp);
     private _team1 = [];
@@ -1124,6 +1126,8 @@ pl_opfor_bounding_move_simple = {
     // if ((_grp getVariable ["pl_stop_event", false]) or (currentWaypoint _grp) >= count (waypoints _grp)) exitWith {};
 
     while {(currentWaypoint _grp) < count (waypoints _grp) and !(_grp getVariable ["pl_stop_event", false])} do {
+
+        if (isNull _grp) exitWith {};
 
         _movePos = [[[_movePos, 25]], ["water"]] call BIS_fnc_randomPos;
 
@@ -1800,6 +1804,8 @@ pl_opfor_tactical_retreat = {
     private _enyCentroid = [allGroups select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and (leader _x) distance2D (leader _grp) <= 1000}] call pl_find_centroid_of_groups;
     private _retreatDistance = worldSize * 0.045;
     if (_retreatDistance < 500) then {_retreatDistance = 500};
+
+    if (_enyCentroid isEqualto []) then {_enyCentroid = getPos (leader _grp)};
 
     private _retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, _enyCentroid getDir (leader _grp)];
 

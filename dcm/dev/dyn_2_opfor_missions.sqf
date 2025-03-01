@@ -1,7 +1,7 @@
 dyn2_opfor_mission_spawner = {
 	params ["_locPos", "_missionPos"];
 
-	private _aviableMissionTypes = ["catk", "catk", "recon", "recon", "armor", "convoy"];
+	private _aviableMissionTypes = ["catk", "catk", "catk", "recon", "armor", "convoy"];
 
 	switch (dyn2_missionType) do { 
         case "town_assault" : {};
@@ -14,8 +14,6 @@ dyn2_opfor_mission_spawner = {
 	private _missionType = selectRandom _aviableMissionTypes;
 	private _success = false; 
 
-	systemChat _missionType;
-
 	switch (_missionType) do { 
 		case "catk" : {_success = [_locPos, _missionPos] call dyn2_OPF_catk};
 		case "recon" : {_success = [_locPos, _missionPos] call dyn2_OPF_recon_patrol}; 
@@ -26,7 +24,7 @@ dyn2_opfor_mission_spawner = {
 		default {}; 
 	};
 
-	_artySuccess = [[6, 12] call BIS_fnc_randomInt, _missionPos] spawn dyn2_OPF_fire_mission;
+	_artySuccess = [[3, 6] call BIS_fnc_randomInt, _missionPos] spawn dyn2_OPF_fire_mission;
 };
 
 dyn2_OPF_continous_opfor_mission_spawner = {
@@ -36,7 +34,7 @@ dyn2_OPF_continous_opfor_mission_spawner = {
 
 	while {true} do {
 
-		sleep ([360, 820] call BIS_fnc_randomInt);
+		sleep ([420, 820] call BIS_fnc_randomInt);
 
 		[_locPos, [] call pl_opfor_get_objective] call dyn2_opfor_mission_spawner;
 
@@ -142,7 +140,7 @@ dyn2_OPF_recon_patrol = {
 };
 
 dyn2_OPF_armor_attack = {
-	params ["_locPos", "_atkPos", ["_exactPos", []]];
+	params ["_locPos", "_atkPos", ["_exactPos", []], ["_vicType", dyn2_standart_MBT]];
 
 	private _atkDir = _locPos getDir _atkPos;
 	private _rearPos = _atkPos getPos [[2000, 2500] call BIS_fnc_randomInt, _atkDir - 180];
@@ -157,7 +155,7 @@ dyn2_OPF_armor_attack = {
     private _roadDir = (_endings#1) getDir (_endings#0);
     private _rPos = ASLToATL (_endings#0);
 
-	_vicR = [_rPos, _roadDir, dyn2_standart_MBT] call dyn2_spawn_vehicle;
+	_vicR = [_rPos, _roadDir, _vicType] call dyn2_spawn_vehicle; 
 
 	_vicGrp = _vicR#0;
     _vic = _vicR#1;
