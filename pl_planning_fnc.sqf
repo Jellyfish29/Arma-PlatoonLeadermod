@@ -10,7 +10,7 @@ pl_task_planer = {
     // get _wp and _group
     _logic = player getvariable "BIS_HC_scope";
     _wp = _logic getvariable "WPover";
-    if ((count _wp) == 1) exitWith {hint "Keep Mouse over Waypoint to plan Task!"};
+    if ((count _wp) == 1) exitWith {hint "Keep Cursor Over Waypoint To Plan Task!"};
     _group = _wp select 0;
     
     // if Task already planed exit

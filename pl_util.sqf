@@ -969,7 +969,8 @@ pl_get_vistool_pos = {
     };
 
     _start = ATLToASL _start;
-    private _linePath = [];
+    private _polyPath = [];
+    private _polyLinePath = [];
     private _j = 0;
 
     // for "_i" from 0 to 719 step 0.5 do {
@@ -985,21 +986,27 @@ pl_get_vistool_pos = {
                 _end = _end vectorAdd [100, 100, 5];
                 _vis = (lineIntersectsSurfaces [_start, _end, _ignoreObj, _ignoreObj, true, 1, "GEOM", "FIRE"]);
                 if (_vis isEqualTo []) exitWith {
-                    _linePath pushBack (_lastVis#0#0);
+                    _polyPath pushBack (_lastVis#0#0);
+                    _polyLinePath pushBack (_lastVis#0#0#0);
+                    _polyLinePath pushBack (_lastVis#0#0#1);
                 };
                 _j = _j + 1;
                 _lastVis = _vis;
             };
 
             if (_j >= 30) then {
-                _linePath pushBack (_vis#0#0);
+                _polyPath pushBack (_vis#0#0);
+                _polyLinePath pushBack (_vis#0#0#0);
+                _polyLinePath pushBack (_vis#0#0#1);
             };
         } else {
-            _linePath pushBack _end;
+            _polyPath pushBack _end;
+            _polyLinePath pushBack _end#0;
+            _polyLinePath pushBack _end#1;
         };
     };
     // sleep 0.2;
-    _linePath
+    [_polyPath, _polyLinePath]
 };
 
 // #ChatGpt

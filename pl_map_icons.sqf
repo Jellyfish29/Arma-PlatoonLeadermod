@@ -1685,7 +1685,7 @@ pl_draw_vision_tool = {
     _display ctrlAddEventHandler ["Draw","
         _display = _this#0;
         if (pl_vision_tool_enabled) then {
-            _path = [] call pl_get_vistool_pos;
+            _path = ([] call pl_get_vistool_pos)#0;
             for '_i' from -1 to (count _path) - 2 step 1 do {
                 _display drawLine [
                     _path#_i,

@@ -625,7 +625,7 @@ pl_disengage = {
 
 pl_defend_position = {
     params [["_group", (hcSelected player) select 0], ["_taskPlanWp", []] , ["_cords", []], ["_watchDir", 0], ["_sfp", false], ["_retreat", false], ["_area", 35], ["_auto360", false]];
-    private ["_mPos", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord", "_dirMarkerType", "_unitPos"];
+    private ["_mPos", "_buildingWallPosArray", "_buildingMarkers", "_watchPos", "_defenceWatchPos", "_markerAreaName", "_markerDirName", "_covers", "_buildings", "_allPos", "_validPos", "_units", "_unit", "_defendMode", "_icon", "_unitWatchDir", "_vPosCounter", "_defenceAreaSize", "_mgPosArray", "_losPos", "_mgOffset", "_atEscord", "_dirMarkerType", "_unitPos"];
 
     if (_group getVariable ["pl_is_task_selected", false]) exitWith {};
     _group setVariable ["pl_is_task_selected", true];
@@ -891,6 +891,7 @@ pl_defend_position = {
 
 
         _defenceAreaSize = pl_garrison_area_size;
+        _defendMode = pl_defend_mode;
 
         if (_sfp) then {
             [_group, _cords] spawn pl_suppressive_fire_position;
@@ -898,6 +899,7 @@ pl_defend_position = {
 
         _group setVariable ["pl_task_pos", _cords];
         _group setVariable ["specialIcon", _icon];
+        
 
         // systemChat str (_group getVariable "pl_task_pos");
 
@@ -954,11 +956,13 @@ pl_defend_position = {
 
         _group setVariable ["pl_task_pos", _cords];
         _group setVariable ["specialIcon", _icon];
+
+        _defendMode = pl_defend_mode;
     };
 
-    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; _group setVariable ["pl_is_task_selected", nil]};
+    
 
-    private _defendMode = pl_defend_mode;
+    if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerDirName; _group setVariable ["pl_is_task_selected", nil]};
 
     if !(_auto360) then {
         [_group, "confirm", 1] call pl_voice_radio_answer;

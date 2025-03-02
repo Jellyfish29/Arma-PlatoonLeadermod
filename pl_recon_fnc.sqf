@@ -52,6 +52,8 @@ pl_recon = {
     // check if group is moving --> change area size + force stealth
     [_group, _markerName] spawn {
         params ["_group", "_markerName"];
+    // [_group] spawn {
+        // params ["_group"];
 
         private _airBonus = 0;
 
@@ -99,20 +101,26 @@ pl_recon = {
     // short delay
     sleep 5;
 
-    private _lineMarker = "";
+    private _polyLineMarker = "";
 
     // recon logic
     while {sleep 0.5; _group getVariable ["pl_is_recon", false]} do {
         
-        _reconLOSPolygon = [ASLToATL ([_group] call pl_find_centroid_of_group), _group getVariable ["pl_recon_area_size", 1400], 4, 4, leader _group] call pl_get_vistool_pos;
+        _reconLOSPolygon = [ASLToATL ([_group] call pl_find_centroid_of_group), _group getVariable ["pl_recon_area_size", 1400], 1, 8, leader _group] call pl_get_vistool_pos;
 
-        pl_recon_los_polys pushBack _reconLOSPolygon;
+        pl_recon_los_polys pushBack (_reconLOSPolygon#0);
+
+         // _lineMarker = createMarker [str (random 3), [0,0,0]];
+         // _lineMarker setMarkerShape "POLYLINE";
+         // _lineMarker setMarkerPolyline (_reconLOSPolygon#1);
+         // _lineMarker setMarkerColor pl_side_color;
+
 
         {
             _opfGrp = _x;
             _leader = leader _opfGrp;
 
-            if ([getPosASL (leader _opfGrp), _reconLOSPolygon] call pl_isPointInPolygon) then {
+            if ([getPosASL (leader _opfGrp), (_reconLOSPolygon#0)] call pl_isPointInPolygon) then {
                 private _reveal = false;
                 if ((_reconGrpLeader knowsAbout _leader) > 0.105) then {_reveal = true};
                 [_opfGrp, _reveal, false, _group] call Pl_marta;
@@ -122,7 +130,8 @@ pl_recon = {
         _time = time + _intelInterval;
         waitUntil {sleep 1; time >= _time or !(_group getVariable ["pl_is_recon", false])};
 
-        pl_recon_los_polys = pl_recon_los_polys - [_reconLOSPolygon];
+        // deleteMarker _lineMarker;
+        pl_recon_los_polys = pl_recon_los_polys - [(_reconLOSPolygon#0)];
 
         if !(alive (leader _group)) exitWith {_group setVariable ["pl_is_recon", false]; pl_recon_count = pl_recon_count - 1};
 
@@ -184,9 +193,9 @@ Pl_marta = {
     if (_sideColor == "exit") exitWith {};
 
     _centoid = [_opfGrp] call pl_find_centroid_of_group;
-    private _chance = 0.15;
-    if ([_centoid] call pl_is_city) then {_chance = 0};
-    if ([_centoid] call pl_is_forest) then {_chance = 0.1};
+    private _chance = 0.075;
+    if ([_centoid] call pl_is_city) then {_chance = 0.01};
+    if ([_centoid] call pl_is_forest) then {_chance = 0.03};
 
     if (((random 1) < (_chance + (_chance * 0.5)) and (currentWaypoint _opfGrp) < count (waypoints _opfGrp)) or ((random 1) < _chance and (currentWaypoint _opfGrp) >= count (waypoints _opfGrp)) or _reveal) then {
 
