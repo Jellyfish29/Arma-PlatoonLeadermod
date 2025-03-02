@@ -79,7 +79,7 @@ pl_march = {
         if (_group getVariable ["onTask", false]) then {
 
             [_group] call pl_reset;
-            sleep 0.25
+            sleep 0.25;
             [_group] call pl_reset;
             // [_group] call pl_reset;
             // sleep 1;

@@ -908,54 +908,6 @@ pl_get_grenade_muzzle = {
 // _m = createMarker [str (random 1), [g1] call pl_find_centroid_of_group];
 // _m setMarkerType "mil_marker";
 
-pl_get_vistool_poly = {
-    params [["_start", []], ["_range", 2000], ["_accuracy", 2], ["_heightOver", 2], ["_ignoreObj", objNull]];
-    private ["_end", "_lastVis"];
-
-    if (_start isEqualTo []) then {
-        _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-        _start = [_mPos#0, _mPos#1, _heightOver];
-    } else {
-        _start = [_start#0,_start#1,_heightOver];
-    };
-
-    _start = ATLToASL _start;
-    private _linePath = [];
-    private _j = 0;
-
-    // for "_i" from 0 to 719 step 0.5 do {
-    for "_i" from 0 to 359 step _accuracy do {
-        _end = _start vectorAdd [(sin _i) * _range, (cos _i) * _range, 0];
-        // _end = _start getPos [2000, _i] vectorAdd [0,0,5];
-        _vis = (lineIntersectsSurfaces [_start, _end, _ignoreObj, _ignoreObj, true, 1, "GEOM", "FIRE"]);
-
-        if !(_vis isEqualTo []) then {
-            _lastVis = _vis;
-            _j = 0;
-            while {_j < 30} do {
-                _end = _end vectorAdd [100, 100, 5];
-                _vis = (lineIntersectsSurfaces [_start, _end, _ignoreObj, _ignoreObj, true, 1, "GEOM", "FIRE"]);
-                if (_vis isEqualTo []) exitWith {
-                    _linePath pushBack (_lastVis#0#0#0);
-                    _linePath pushBack (_lastVis#0#0#1);
-                };
-                _j = _j + 1;
-                _lastVis = _vis;
-            };
-
-            if (_j >= 30) then {
-                _linePath pushBack (_vis#0#0#0);
-                _linePath pushBack (_vis#0#0#1);
-            };
-        } else {
-            _linePath pushBack _end#0;
-            _linePath pushBack _end#1;
-        };
-    };
-    // sleep 0.2;
-    _linePath
-};
-
 
 pl_get_vistool_pos = {
     params [["_start", []], ["_range", 2000], ["_accuracy", 2], ["_heightOver", 2], ["_ignoreObj", objNull]];

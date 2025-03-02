@@ -1369,6 +1369,8 @@ pl_reset_group = {
 
     _newGroup setGroupId [_groupId];
     player hcSetGroup [_newGroup];
+
+    sleep 5;
     [_newGroup] call pl_change_inf_icons;
 };
 

@@ -1370,7 +1370,13 @@ pl_opfor_find_overwatch = {
 
                 private _enyCentroid = [allGroups select {(side _x) == playerside and _fightingPos distance2d (leader _x) <= 1000}] call pl_find_centroid_of_groups;
 
-                private _retreatPos = _fightingPos getPos [250, _enyCentroid getDir _fightingPos];
+                private _retreatPos = _fightingPos;
+
+                if (_enyCentroid isNotEqualto []) then {
+                    _retreatPos = _fightingPos getPos [250, _enyCentroid getDir _fightingPos];
+                } else {
+                    _retreatPos = _fightingPos getPos [250, (([allUnits select {side _x == playerSide}, [], {_x distance2D _fightingPos}, "ASCEND"] call BIS_fnc_sortBy)#0) getDir _fightingPos];
+                };  
 
                 _retreatMarker = createMarker [str (random 5), _retreatPos];
                 _retreatMarker setMarkerType "marker_withdraw";
@@ -1407,7 +1413,7 @@ pl_opfor_join_grp = {
     if !(pl_opfor_allow_ai_surrender) exitwith {false};
     if (count ((units _grp) select {alive _x}) <= 0) exitWith {false};
 
-	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], _joinRange]) select {side _x == _side and ((group _x) getVariable ["pl_opf_task", "advance"]) != "flanking"});
+	private _targets = (((getPos (leader _grp)) nearEntities [["Man"], _joinRange]) select {side _x == _side and (vehicle (leader (group _x))) == (leader (group _x))});
 	_targets = _targets - (units _grp);
 	private _target = ([_targets, [], {(leader _grp) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy)#0;
     private _return = false;
@@ -1550,8 +1556,13 @@ pl_opfor_surrender = {
     private _enyCentroid = [allGroups select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and (leader _x) distance2D (leader _grp) <= 1000}] call pl_find_centroid_of_groups;
     private _retreatDistance = worldSize * 0.045;
     if (_retreatDistance < 500) then {_retreatDistance = 500};
-    private _retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, _enyCentroid getDir (leader _grp)];
-    if (_retreatPos isEqualTo []) exitWith {};
+    private _retreatPos = getPos (leader _grp);
+
+    if (_enyCentroid isNotEqualto []) then {
+        _retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, _enyCentroid getDir (leader _grp)];
+    } else {
+        _retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, (([allUnits select {side _x == playerSide}, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy)#0) getDir (leader _grp)];
+    };  
 
     _retreatPos = [[[_retreatPos, 250]], ["water"]] call BIS_fnc_randomPos;
 
@@ -1804,10 +1815,13 @@ pl_opfor_tactical_retreat = {
     private _enyCentroid = [allGroups select {([side _grp, side _x] call BIS_fnc_sideIsEnemy) and (leader _x) distance2D (leader _grp) <= 1000}] call pl_find_centroid_of_groups;
     private _retreatDistance = worldSize * 0.045;
     if (_retreatDistance < 500) then {_retreatDistance = 500};
+    private _retreatPos = getPos (leader _grp);
 
-    if (_enyCentroid isEqualto []) then {_enyCentroid = getPos (leader _grp)};
-
-    private _retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, _enyCentroid getDir (leader _grp)];
+    if (_enyCentroid isNotEqualto []) then {
+        _retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, _enyCentroid getDir (leader _grp)];
+    } else {
+        _retreatPos = (getPos (leader _grp)) getPos [_retreatDistance, (([allUnits select {side _x == playerSide}, [], {_x distance2D (leader _grp)}, "ASCEND"] call BIS_fnc_sortBy)#0) getDir (getPos (leader _grp))];
+    };  
 
     _retreatPos = [[[_retreatPos, 250]], ["water"]] call BIS_fnc_randomPos;
 
