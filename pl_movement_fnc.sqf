@@ -79,10 +79,9 @@ pl_march = {
         if (_group getVariable ["onTask", false]) then {
 
             [_group] call pl_reset;
-            sleep 0.25;
+            sleep 0.2;
             [_group] call pl_reset;
-            // [_group] call pl_reset;
-            // sleep 1;
+            sleep 0.2;
             player hcSelectGroup [_group];
             
         } else {
@@ -111,8 +110,9 @@ pl_march = {
         //     _mwp setWaypointCompletionRadius 25;
         // };
 
-        waitUntil {sleep 0.1; (leader _group) checkAIFeature "AUTOCOMBAT"};
+        // waitUntil {sleep 0.1; (leader _group) checkAIFeature "AUTOCOMBAT"};
         _group setVariable ["pl_on_march", true];
+        sleep 1;
         {
             _x disableAI "AUTOCOMBAT";
             _x setHit ["legs", 0];
@@ -126,7 +126,7 @@ pl_march = {
         };
 
         sleep 1;
-        waitUntil {sleep 0.5; (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) <= 10) or (isNil {_group getVariable ["pl_on_march", nil]})};
+        waitUntil {sleep 0.5; isNull _group or (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) <= 10) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setVariable ["pl_on_march", nil];
         // _group setVariable ["setSpecial", false];
         // {

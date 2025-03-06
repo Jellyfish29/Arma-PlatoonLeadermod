@@ -274,10 +274,34 @@ pl_mine_spacing_menu = [
     ['16m', [8], '', -5, [['expression', 'pl_mine_spacing = 16']], '1', '1']
 ];
 
+pl_str_at_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> AT Mine Field</t>';
+pl_str_ap_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> APERS Mine Field</t>';
+pl_str_mine_field_spacing = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa"/><t> Set Mine Field Spacing</t>';
+pl_str_at_dir_mine = '<img color="#e5e500" image="\Plmod\gfx\pl_at_dir_mine.paa"/><t> AT Directional Mine</t>';
+pl_str_ap_dir_mine = '<img color="#e5e500" image="\Plmod\gfx\pl_ap_dir_mine.paa"/><t> APERS Directional Mine</t>';
+pl_str_ap_dispenser_dir_mine = '<img color="#e5e500" image="\Plmod\gfx\pl_ap_dir_mine.paa"/><t> APERS Dispenser Mine</t>';
+
+
+pl_show_mine_type_menu = {
+    call compile format ["
+    pl_mine_type_menu = [
+        ['Combat Engineer Tasking',true],
+        [parseText '%2', [2], '', -5, [['expression', '[1] call pl_lay_mine_field_switch']], '%1', 'HCNotEmpty'],
+        [parseText '%3', [3], '', -5, [['expression', '[2] call pl_lay_mine_field_switch']], '%1', 'HCNotEmpty'],
+        [parseText '%4', [4], '#USER:pl_mine_spacing_menu', -5, [['expression', '']], '%1', '1'],
+        ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%5', [5], '', -5, [['expression', '[1] spawn pl_place_dir_mine']], '%1', 'HCNotEmpty'],
+        [parseText '%6', [6], '', -5, [['expression', '[2] spawn pl_place_dir_mine']], '%1', 'HCNotEmpty'],
+        ['', [], '', -1, [['expression', '']], '%2', '1'],
+        [parseText '%7', [7], '', -5, [['expression', '[3] spawn pl_place_dir_mine']], '%1', 'HCNotEmpty']
+    ];", pl_virtual_mines_enabled, pl_str_at_mine, pl_str_ap_mine, pl_str_mine_field_spacing, pl_str_at_dir_mine, pl_str_ap_dir_mine, pl_str_ap_dispenser_dir_mine];
+};
+
+[] call pl_show_mine_type_menu;
+
 pl_str_charge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>';
 pl_str_detonate = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Detonate Charges</t>';
-pl_str_lay_mine_field = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>';
-pl_str_mine_field_spacing = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa"/><t> Set Mine Field Spacing</t>';
+pl_str_lay_mine_field = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Place Mine</t>';
 pl_str_clear_mine = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mines</t>';
 pl_str_des_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Demolish Bridge</t>';
 pl_str_rpr_bridge = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Repair Bridge</t>';
@@ -292,16 +316,15 @@ pl_show_egineer_menu = {
         [parseText '%2', [2], '', -5, [['expression', '[] spawn pl_place_charge']], '%1', 'HCNotEmpty'],
         [parseText '%3', [3], '', -5, [['expression', '{[_x] spawn pl_detonate_charges} forEach (hcSelected player)']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%4', [4], '', -5, [['expression', '[] spawn pl_lay_mine_field_switch']], '%1', 'HCNotEmpty'],
-        [parseText '%5', [5], '#USER:pl_mine_spacing_menu', -5, [['expression', '']], '%1', '1'],
-        [parseText '%6', [6], '', -5, [['expression', '[] spawn pl_mine_clearing']], '1', 'HCNotEmpty'],
-        [parseText '%11', [7], '', -5, [['expression', '[] spawn pl_mc_lc']], '1', 'HCNotEmpty'],
+        [parseText '%4', [4], '#USER:pl_mine_type_menu', -5, [['expression', '']], '%1', 'HCNotEmpty'],
+        [parseText '%6', [5], '', -5, [['expression', '[] spawn pl_mine_clearing']], '1', 'HCNotEmpty'],
+        [parseText '%11', [6], '', -5, [['expression', '[] spawn pl_mc_lc']], '1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%7', [8], '', -5, [['expression', '[] spawn pl_destroy_bridge']], '%1', 'HCNotEmpty'],
-        [parseText '%8', [9], '', -5, [['expression', '[] spawn pl_repair_bridge']], '%1', 'HCNotEmpty'],
-        [parseText '%10', [10], '', -5, [['expression', '[] spawn pl_create_bridge']], '%1', 'HCNotEmpty'],
+        [parseText '%7', [7], '', -5, [['expression', '[] spawn pl_destroy_bridge']], '%1', 'HCNotEmpty'],
+        [parseText '%8', [8], '', -5, [['expression', '[] spawn pl_repair_bridge']], '%1', 'HCNotEmpty'],
+        [parseText '%10', [9], '', -5, [['expression', '[] spawn pl_create_bridge']], '%1', 'HCNotEmpty'],
         ['', [], '', -1, [['expression', '']], '%2', '1'],
-        [parseText '%9', [11], '', -5, [['expression', '{deleteMarker _x} forEach pl_engineering_markers; pl_engineering_markers = []']], '%1', '1']
+        [parseText '%9', [10], '', -5, [['expression', '{deleteMarker _x} forEach pl_engineering_markers; pl_engineering_markers = []']], '%1', '1']
 
     ];", pl_virtual_mines_enabled, pl_str_charge, pl_str_detonate, pl_str_lay_mine_field, pl_str_mine_field_spacing, pl_str_clear_mine, pl_str_des_bridge, pl_str_rpr_bridge, pl_str_clear_markers, pl_str_create_bridge, pl_str_mc_lc];
 };

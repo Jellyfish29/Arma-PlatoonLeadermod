@@ -2224,6 +2224,20 @@ class CfgMarkers
         texture="\Plmod\gfx\pl_withdraw_marker.paa";
     };
 
+    class marker_at_dir_mine: pl_marker
+    {
+        name="AT Directional Mine";
+        icon="\Plmod\gfx\pl_at_dir_mine.paa";
+        texture="\Plmod\gfx\pl_at_dir_mine.paa";
+    };
+
+    class marker_ap_dir_mine: pl_marker
+    {
+        name="APERS Directional Mine";
+        icon="\Plmod\gfx\pl_ap_dir_mine.paa";
+        texture="\Plmod\gfx\pl_ap_dir_mine.paa";
+    };
+
     class o_f_tank_pl
     {
         name="Heavy Tank Opfor";

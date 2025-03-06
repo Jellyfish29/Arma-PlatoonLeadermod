@@ -150,11 +150,22 @@ pl_crew_eject = {
     _unit setDir _dir;
     unassignVehicle _unit;
     doGetOut _unit;
-    // if !((group _unit) getVariable ["pl_show_info", false]) then {
-    //     group _unit setVariable ["pl_show_info", true];
-    //     [group _unit] call pl_show_group_icon;
+    if !((group _unit) getVariable ["pl_show_info", false]) then {
+        [_unit] spawn {
+            params ["_unit"];
+            sleep 2;
+            (group _unit) setVariable ["pl_show_info", true];
+            [group _unit] call pl_show_group_icon;
+            [group _unit] call pl_change_inf_icons;
+        };
         // [group (driver _vic), _vic] spawn pl_eject_cargo;
-    // };
+    } else {
+        [_unit] spawn {
+            params ["_unit"];
+            sleep 2;
+            [group _unit] call pl_change_inf_icons;
+        };
+    };
 };
 
 pl_set_vic_laodout = {

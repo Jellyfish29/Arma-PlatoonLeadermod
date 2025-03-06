@@ -25,9 +25,10 @@ pl_getIn_vehicle = {
 
     if (_group getVariable ["pl_inf_attached", false]) then {_group setVariable ["pl_inf_attached", nil]; _group setVariable ["pl_attached_vicGrp", nil];};
 
-    if (vehicle (leader _group) != leader _group) then {
-        _vic = vehicle (leader _group);
-    };
+    // if (vehicle (leader _group) != leader _group) then {
+    //     _vic = vehicle (leader _group);
+    // };
+    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task"};
 
     _group setVariable ["pl_is_task_selected", true];
 
@@ -443,7 +444,7 @@ pl_unload_at_position_planed = {
 
     _cargoGroups = _cargoGroups arrayIntersect _cargoGroups;
 
-    if (_cargoGroups isEqualTo []) exitWith {[_vicGroup] call pl_dismount_cargo};
+    if (_cargoGroups isEqualTo []) exitWith {hint "No Cargo"};
 
     if (count _taskPlanWp != 0) then {
 

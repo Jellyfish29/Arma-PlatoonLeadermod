@@ -195,7 +195,7 @@
     "EDITBOX",
     ["Max Mines Per Explosiv Specialist","Maximum amount of virtual mines an explosiv Specialist can carry"],
     ["Platoon Leader", "Logistics"],
-    ["20"],
+    ["5"],
     nil,
     {},
     true
