@@ -147,7 +147,7 @@ pl_world_size_y = round (worldSize * 0.02);
 
 pl_draw_group_info = {
     params ["_display"];
-    _display ctrlAddEventHandler ["Draw",
+    _display ctrlAddEventHandler ["Draw","
         _display = _this#0;
         {
             if (hcShownBar and (_x getVariable 'pl_show_info')) then {

@@ -25,7 +25,21 @@ pl_suppressive_fire_position = {
 
     // if (({(currentCommand _x) isEqualTo "Suppress"} count (units _group)) > 0) exitWith {};
 
-    if ((_group getVariable ["pl_is_suppressing", false])) exitWith {_group setVariable ["pl_is_suppressing", false]};
+    if ((_group getVariable ["pl_is_suppressing", false])) exitWith {
+        _group setVariable ["pl_is_suppressing", false];
+        _group setCombatMode "BLUE";
+        {
+            _x disableAi "FIREWEAPON";
+            doStop _x;
+        } forEach (units _group);
+
+        sleep 2;
+
+        _group setCombatMode "YELLOW";
+        {
+            _x enableAi "FIREWEAPON";
+        } forEach (units _group);
+    };
 
     pl_suppress_area_size = 25;
 

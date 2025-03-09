@@ -1039,7 +1039,7 @@ pl_defend_position = {
 
                 _buildingDir = getDir _building;
                 for "_d" from 0 to 361 step 4 do {
-                    _counterPos = _samplePosASL vectorAdd [3 * (sin (_buildingDir + _d)), 3 * (cos (_buildingDir + _d)), 0];
+                    _counterPos = _samplePosASL vectorAdd [6 * (sin (_buildingDir + _d)), 6 * (cos (_buildingDir + _d)), 0];
 
                     if !((lineIntersects [_counterPos, _counterPos vectorAdd [0, 0, 20]])) then {
                         _helper2 = objNull;
@@ -1056,7 +1056,7 @@ pl_defend_position = {
 
                         _interSectsWin = lineIntersectsWith [_samplePosASL, _counterPos, objNull, objNull, true];
                         _checkDir = _samplePosASL getDir _counterPos;
-                        if (!(lineIntersects [_samplePosASL, _counterPos, _helper2, objNull]) and (_checkDir > (_watchDir - 60) and _checkDir < (_watchDir + 60))) then {
+                        if (!(lineIntersects [_samplePosASL, _counterPos, _helper2, objNull]) and (_checkDir > (_watchDir - 45) and _checkDir < (_watchDir + 45))) then {
                             // _window = true
                             _bPos deleteAt (_bPos find _bP);
                             _validPos pushBackUnique _bP;
@@ -1088,14 +1088,15 @@ pl_defend_position = {
                 };
             } forEach _bPos;
 
-            // if (_vPosCounter == 0) then {
-            //     if (_winPos isNotEqualTo []) then {
-            //         _validPos pushBack (([_winPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy)#0);
-            //     } else {
-            //         _validPos pushBack (([_bPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy)#0);
-            //     };
-            //     _winPos = [_winPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
-            // };
+            if (_vPosCounter == 0) then {
+                _validBuildings deleteAt (_validBuildings find _building);
+                // if (_winPos isNotEqualTo []) then {
+                //     _validPos pushBack (([_winPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy)#0);
+                // } else {
+                //     _validPos pushBack (([_bPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy)#0);
+                // };
+                // _winPos = [_winPos, [], {_x distance2D _watchPos}, "ASCEND"] call BIS_fnc_sortBy;
+            };
 
         } forEach _validBuildings;
     };
@@ -1306,9 +1307,9 @@ pl_defend_position = {
         };
 
         _validPos = _validPos + _validPrefWallPos; 
-        // _validPos = _validPos + _validWallPos;
         _validPos = _validPos + _buildingWallPosArray;
         _validPos = _validPos + _sideRoadPos;
+        _validPos = _validPos + _validWallPos;
 
     // Find save position for the medic to stage
     if (_ccpPos isEqualTo []) then {
@@ -2277,7 +2278,7 @@ pl_defence_ccp = {
         _time = time + 5;
         waitUntil {sleep 0.5; time > _time or !(_group getVariable ["onTask", true])};
         {
-            if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and ((_x distance2D _medic) <= _area)) then {
+            if (_x getVariable ["pl_wia", false] and !(_x getVariable "pl_beeing_treatet") and ((_x distance2D _medic) <= (_area * 2))) then {
                 // _medic setUnitPosWeak "MIDDLE";
                 _medic enableAI "PATH";
                 _h1 = [_group, _medic, objNull, _x, _ccpPos, 20, "onTask", 0, true] spawn pl_ccp_revive_action;

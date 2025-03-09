@@ -1341,7 +1341,7 @@ pl_defense_jtac = {
         // waitUntil {sleep 1; pl_cas_active == 1 or !(_group getVariable ["onTask", false])};
 
         if (_supportCalledIn) then {
-            _minCd = time + 45;
+            _minCd = time + 60;
         } else {
             _minCd = time + 15;
         };
@@ -1403,6 +1403,8 @@ pl_defense_jtac = {
                         if (speed _target <= 3 and pl_arty_groups isNotEqualTo [] and time >= pl_jtac_arty_cd) then {
 
                             [_target, 3, _jtac, true] call pl_confirm_jtac_target_wait;
+
+                            sleep 0.1;
 
                             if (pl_confirm_cas) then {
                                 [getPos _target, [0, 3, 0, 1]] spawn pl_fire_on_map_arty;
@@ -1542,7 +1544,11 @@ pl_confirm_jtac_target_wait = {
         private _timeout = time + 20;
 
         waitUntil {sleep 0.5; pl_cas_req_ack or time >= _timeout};
+    } else {
+        pl_confirm_cas = true;
     };
+
+    sleep 0.5;
 
     deleteMarker _cM;
 
