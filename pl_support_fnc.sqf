@@ -32,6 +32,7 @@ pl_cas_active = 1;
 pl_cas_cd = 0;
 pl_current_med_evac_heli = objNull;
 pl_current_supply_heli = objNull;
+pl_jtac_arty_cd = 0;
 
 // if (isNil{pl_support_module_active}) then {
 //     pl_arty_ammo = 30;
@@ -360,13 +361,22 @@ pl_arty = {
 };
 
 
+
 pl_fire_on_map_arty = {
-    private ["_mpos", "_cords", "_ammoTypes", "_ammoType", "_eh", "_markerName", "_centerMarkerName", "_eta", "_battery", "_guns", "_volleys", "_isHc", "_ammoTypestr", "_ammoType"];
+    params [["_cords", []], ["_fireMissionInfo", []]];
+    private ["_mpos", "_ammoTypes", "_ammoType", "_eh", "_markerName", "_centerMarkerName", "_eta", "_battery", "_guns", "_volleys", "_isHc", "_ammoTypestr", "_ammoType"];
 
     // if (pl_arty_ammo < pl_arty_rounds) exitWith {
     //     // if (pl_enable_beep_sound) then {playSound "beep"};
     //     hint "Not enough ammunition left!";
     // };
+
+    if (_cords isnotEqualTo []) then {
+        pl_arty_dispersion = _fireMissionInfo#0;
+        pl_arty_rounds = _fireMissionInfo#1;
+        pl_arty_delay = _fireMissionInfo#2;
+        pl_arty_round_type = _fireMissionInfo#3;
+    };
 
     _markerName = createMarker [str (random 4), [0,0,0]];
     _markerName setMarkerColor pl_side_color;
@@ -391,41 +401,50 @@ pl_fire_on_map_arty = {
     _centerMarkerName setMarkerText format ["%1 %4 / %2 m / %3 s", pl_arty_rounds, pl_arty_dispersion, pl_arty_delay, _ammoTypestr];
     _centerMarkerName setMarkerColor pl_side_color;
 
-    if (visibleMap or !(isNull findDisplay 2000)) then {
+    if (_cords isEqualTo []) then {
 
-        _message = "Select STRIKE Location <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
-        hint parseText _message;
+        if (visibleMap or !(isNull findDisplay 2000)) then {
 
-        pl_cancel_strike = false;
-        onMapSingleClick {
-            pl_arty_cords = _pos;
-            pl_mapClicked = true;
-            if (_shift) then {pl_cancel_strike = true};
-            hint "";
-            onMapSingleClick "";
-        };
-        while {!pl_mapClicked} do {
-            if (visibleMap) then {
-                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            } else {
-                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+            _message = "Select STRIKE Location <br /><br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+            hint parseText _message;
+
+            pl_cancel_strike = false;
+            onMapSingleClick {
+                pl_arty_cords = _pos;
+                pl_mapClicked = true;
+                if (_shift) then {pl_cancel_strike = true};
+                hint "";
+                onMapSingleClick "";
             };
-            _markerName setMarkerPos _mPos;
-            _centerMarkerName setMarkerPos _mPos;
+            while {!pl_mapClicked} do {
+                if (visibleMap) then {
+                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
+                _markerName setMarkerPos _mPos;
+                _centerMarkerName setMarkerPos _mPos;
+            };
+            pl_mapClicked = false;
+        }
+        else
+        {
+            pl_arty_cords = screenToWorld [0.5,0.5];
+            _markerName setMarkerPos pl_arty_cords;
+            _centerMarkerName setMarkerPos pl_arty_cords;
         };
-        pl_mapClicked = false;
-    }
-    else
-    {
-        pl_arty_cords = screenToWorld [0.5,0.5];
-        _markerName setMarkerPos pl_arty_cords;
-        _centerMarkerName setMarkerPos pl_arty_cords;
+
+
+        _cords = pl_arty_cords;
+        _battery = pl_arty_groups#pl_active_arty_group_idx;
+    } else {
+
+        _markerName setmarkerPos _cords;
+        _centerMarkerName setmarkerPos _cords;
+        _battery = selectRandom pl_arty_groups;
+
     };
-
-
-    _cords = pl_arty_cords;
-    _battery = pl_arty_groups#pl_active_arty_group_idx;
 
     _isHc = false;
     if (hcLeader _battery == player) then {
@@ -566,7 +585,7 @@ pl_fire_on_map_arty = {
 
             for "_i" from 1 to _volleys do {
                 {
-                    _firePos = [[[_cords, _dispersion + 20]],[]] call BIS_fnc_randomPos;
+                    _firePos = [[[_cords, _dispersion]],[]] call BIS_fnc_randomPos;
                     _x setVariable ["pl_waiting_for_fired", true];
                     _x doArtilleryFire [_firePos, _ammoType, 1];
                     _eh = _x addEventHandler ["Fired", {
@@ -622,8 +641,8 @@ pl_fire_on_map_arty = {
 
 
 pl_interdiction_cas = {
-    params ["_casTypeSad"];
-    private ["_height", "_cd", "_mPos", "_cdType", "_dir", "_ehPad", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_cords", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
+    params ["_casTypeSad", ["_cords", []], ["_dir", 0]];
+    private ["_height", "_cd", "_mPos", "_cdType", "_ehPad", "_spawnDistance", "_markerName", "_areaMarkerName", "_evacHeight", "_spawnPos", "_groupId", "_sadWp", "_planeType", "_casGroup", "_plane", "_targets", "_sortiesCost", "_onStationTime", "_sadAreaSize", "_wpType", "_flyHeight", "_ccpGroup"];
 
     switch (_casTypeSad) do { 
         case 1 : {
@@ -632,11 +651,11 @@ pl_interdiction_cas = {
             _spawnDistance = 6000;
             _planeType = pl_cas_plane_1;
             // _planeType = "B_Plane_Fighter_01_F";
-            _sortiesCost = 3;
+            _sortiesCost = 2;
             _groupId = "Reaper 1";
-            _evacHeight = 2000;
+            _evacHeight = 45;
             _cd = 300;
-            _onStationTime = 45;
+            _onStationTime = 30;
             _sadAreaSize = 1000;
             _wpType = "SAD";
         }; 
@@ -645,10 +664,10 @@ pl_interdiction_cas = {
             _flyHeight = 100;
             _spawnDistance = 3000;
             _planeType = pl_cas_Heli_1;
-            _sortiesCost = 7;
+            _sortiesCost = 2;
             _groupId = "Black Jack 4";
-            _evacHeight = 200;
-            _onStationTime = 90;
+            _evacHeight = 30;
+            _onStationTime = 60;
             _sadAreaSize = 500;
             _wpType = "SAD";
         };
@@ -696,77 +715,96 @@ pl_interdiction_cas = {
 
     if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
 
-    if (visibleMap or !(isNull findDisplay 2000)) then {
+    if (_cords isEqualTo []) then {
 
-        if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
+        if (visibleMap or !(isNull findDisplay 2000)) then {
 
-        hintSilent "";
-        _message = "Select STRIKE Location <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
-        hint parseText _message;
+            if (pl_sorties < _sortiesCost) exitWith {hint "Not enough Sorties Left"};
+
+            hintSilent "";
+            _message = "Select STRIKE Location <br /><br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+            hint parseText _message;
+            _areaMarkerName = format ["%1casarea", _casTypeSad];
+            createMarker [_areaMarkerName, [0,0,0]];
+            _areaMarkerName setMarkerShape "ELLIPSE";
+            _areaMarkerName setMarkerBrush "Border";
+            _areaMarkerName setMarkerColor "ColorOrange";
+            // _areaMarkerName setMarkerAlpha 0.7;
+            _areaMarkerName setMarkerSize [_sadAreaSize, _sadAreaSize];
+
+            onMapSingleClick {
+                pl_cas_cords = _pos;
+                pl_mapClicked = true;
+                if (_shift) then {pl_cancel_strike = true};
+                hintSilent "";
+                onMapSingleClick "";
+            };
+
+            while {!pl_mapClicked} do {
+                if (visibleMap) then {
+                    _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
+                } else {
+                    _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
+                };
+                _areaMarkerName setMarkerPos _mPos;
+            };
+            pl_mapClicked = false;
+            _areaMarkerName setMarkerAlpha 0.28;
+            _message = "Select APPROACH Vector <br /><br />
+            <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
+            hint parseText _message;
+
+            sleep 0.1;
+            _cords = pl_cas_cords;
+            _markerName = format ["cassad%1", _casTypeSad];
+            createMarker [_markerName, _cords];
+            _markerName setMarkerType "mil_arrow2";
+            _markerName setMarkerColor "colorRED";
+
+            if (pl_cancel_strike) exitWith {};
+            onMapSingleClick {
+                pl_cas_cords = _pos;
+                pl_mapClicked = true;
+                if (_shift) then {pl_cancel_strike = true};
+                hintSilent "";
+                onMapSingleClick "";
+            };
+
+            while {!pl_mapClicked} do {
+                _dir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
+                _markerName setMarkerDir _dir;
+            };
+            pl_mapClicked = false;
+
+
+        }
+        else
+        {
+            _cords =  screenToWorld [0.5,0.5];
+            _dir = player getDir _cords;
+            _markerName = format ["cassad%1", _casTypeSad];
+            createMarker [_markerName, _cords];
+            _markerName setMarkerType "mil_arrow2";
+            _markerName setMarkerColor "colorRED";
+            _markerName setMarkerDir _dir;
+        };
+
+    } else {
+
+        _markerName = format ["cassad%1", _casTypeSad];
+        createMarker [_markerName, _cords];
+        _markerName setMarkerType "mil_destroy";
+        _markerName setMarkerColor "colorRED";
+        // _markerName setMarkerDir _dir;
+
         _areaMarkerName = format ["%1casarea", _casTypeSad];
-        createMarker [_areaMarkerName, [0,0,0]];
+        createMarker [_areaMarkerName, _cords];
         _areaMarkerName setMarkerShape "ELLIPSE";
         _areaMarkerName setMarkerBrush "Border";
         _areaMarkerName setMarkerColor "ColorOrange";
         // _areaMarkerName setMarkerAlpha 0.7;
         _areaMarkerName setMarkerSize [_sadAreaSize, _sadAreaSize];
-
-        onMapSingleClick {
-            pl_cas_cords = _pos;
-            pl_mapClicked = true;
-            if (_shift) then {pl_cancel_strike = true};
-            hintSilent "";
-            onMapSingleClick "";
-        };
-
-        while {!pl_mapClicked} do {
-            if (visibleMap) then {
-                _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            } else {
-                _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
-            };
-            _areaMarkerName setMarkerPos _mPos;
-        };
-        pl_mapClicked = false;
-        _areaMarkerName setMarkerAlpha 0.28;
-        _message = "Select APPROACH Vector <br /><br />
-        <t size='0.8' align='left'> -> SHIFT + LMB</t><t size='0.8' align='right'>CANCEL</t>";
-        hint parseText _message;
-
-        sleep 0.1;
-        _cords = pl_cas_cords;
-        _markerName = format ["cassad%1", _casTypeSad];
-        createMarker [_markerName, _cords];
-        _markerName setMarkerType "mil_arrow2";
-        _markerName setMarkerColor "colorRED";
-
-        if (pl_cancel_strike) exitWith {};
-        onMapSingleClick {
-            pl_cas_cords = _pos;
-            pl_mapClicked = true;
-            if (_shift) then {pl_cancel_strike = true};
-            hintSilent "";
-            onMapSingleClick "";
-        };
-
-        while {!pl_mapClicked} do {
-            _dir = [_cords, ((findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition)] call BIS_fnc_dirTo;
-            _markerName setMarkerDir _dir;
-        };
-        pl_mapClicked = false;
-
-
-    }
-    else
-    {
-        _cords =  screenToWorld [0.5,0.5];
-        _dir = player getDir _cords;
-        _markerName = format ["cassad%1", _casTypeSad];
-        createMarker [_markerName, _cords];
-        _markerName setMarkerType "mil_arrow2";
-        _markerName setMarkerColor "colorRED";
-        _markerName setMarkerDir _dir;
     };
 
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; deleteMarker _areaMarkerName};
@@ -870,15 +908,15 @@ pl_interdiction_cas = {
 
                         _plane flyInHeight _flyHeight;
 
-                        waitUntil {sleep 0.25; !alive _plane or (getposasl _plane) distance _target < 1000 or !(_casGroup getVariable ["onTask", false])};
+                        waitUntil {sleep 0.25; !alive _plane or (getposasl _plane) distance2D _target < 1500 or !(_casGroup getVariable ["onTask", false])};
 
                         if (!alive _plane or !(_casGroup getVariable ["onTask", false])) exitWith {};
 
                         sleep 2;
 
-                        {
-                            _plane fireattarget [_target,(_x select 0)];
-                        } foreach _weapons;
+                        // {
+                        //     _plane fireattarget [_target,(_x select 0)];
+                        // } foreach _weapons;
 
                         _plane doTarget objNull;
                         _plane doWatch objNull;
@@ -1012,9 +1050,10 @@ pl_interdiction_cas = {
 
     // sleep 40;
 
-    deleteMarker _markerName;
+    
     _time = time + _onStationTime;
     waitUntil {sleep 1; time > _time or pl_rtb};
+    deleteMarker _markerName;
     deleteMarker _areaMarkerName;
 
     switch (_casTypeSad) do { 
@@ -1097,20 +1136,28 @@ pl_interdiction_cas = {
             default {}; 
         };
 
+        _plane allowDamage false;
         _plane flyInHeight _evacHeight;
         _plane forceSpeed 300;
         _evacWp = _casGroup addWaypoint [_spawnPos, 0];
+        _plane doMove _spawnPos;
         _despawnTime = time + 90;
+        _casGroup setBehaviourStrong "CARELESS";
         while {(alive _plane) and ((_plane distance2D _spawnPos) > 100) and (time < _despawnTime)} do {
-            _targets = (driver _plane) targetsQuery [objNull, sideUnknown, "", [], 0];
-            {
-                _casGroup forgetTarget (_x#1);
-            } forEach _targets;
-            sleep 0.1;
+            // _targets = (driver _plane) targetsQuery [objNull, sideUnknown, "", [], 0];
+            // {
+            //     _casGroup forgetTarget (_x#1);
+            // } forEach _targets;
+            sleep 0.5;
         };
         {
             _plane deleteVehicleCrew _x;
         } forEach (crew _plane);
+
+        {
+            deleteVehicle _x;
+        } forEach (units _casGroup);
+
         deleteVehicle _plane;
         deleteGroup _casGroup;
     };
@@ -1254,5 +1301,304 @@ pl_deploy_small_uav = {
     deleteGroup _uavGroup;
     deleteVehicle _laptop;
     deleteVehicle _antenna;
+};
+
+pl_defense_jtac = {
+    params ["_group", "_cords", "_defDir"];
+    private ["_vic"];
+
+    sleep 8;
+
+    private _jtac = (leader _group);
+
+    private _jtacWatchPos = _cords getpos [600, _defDir];
+
+    private _jtacAreaMarker = createMarker [str (random 5), _jtacWatchPos];
+    _jtacAreaMarker setMarkerShape "RECTANGLE";
+    _jtacAreaMarker setMarkerBrush "Border";
+    _jtacAreaMarker setMarkerColor pl_side_color;
+    _jtacAreaMarker setMarkerSize [1500, 1000];
+    _jtacAreaMarker setMarkerDir _defDir;
+
+
+    private _trpMarker = createMarker [str (random 5), _jtacWatchPos]; 
+    _trpMarker setMarkerType "mil_destroy";
+    _trpMarker setMarkerColor pl_side_color;
+    _trpMarker setMarkerText format ["TRP %1",(toupper (mapGridPosition _jtacWatchPos))];
+
+    private _enyTanks = [];
+    private _enyAFVs = [];
+    private _enyCars = [];
+    private _enyInf = [];
+
+    private _target = objNull;
+    private _targetPos = [];
+    private _supportCalledIn = false;
+    private _minCd = 0;
+
+    while {_group getVariable ["onTask", false]} do {
+
+        // waitUntil {sleep 1; pl_cas_active == 1 or !(_group getVariable ["onTask", false])};
+
+        if (_supportCalledIn) then {
+            _minCd = time + 45;
+        } else {
+            _minCd = time + 15;
+        };
+        waitUntil {sleep 1; (time >= (_group getVariable ["pl_jtac_timeout", 0]) and time >= _minCd) or !(_group getVariable ["onTask", false]) or (pl_cas_active == 1 and time >= _minCd)};
+    
+        if (!(_group getVariable ["onTask", false])) exitWith {};
+
+        _targetGroups = allgroups select {(getpos (leader _x)) inArea _jtacAreaMarker and ([side _x, playerside] call BIS_fnc_sideIsEnemy) and ({(_jtac knowsAbout (vehicle _x)) > 0.2} count (units _x) > 0) and ({alive (vehicle _x)} count (units _x) > 0)};
+
+        // systemChat (str _targetGroups);
+
+        {
+            if (vehicle (leader _x) != (leader _x)) then {
+                _vic = vehicle (leader _x);
+
+                switch (getText (configFile >> "CfgVehicles" >> typeOf _vic >> "textSingular")) do { 
+                    case "tank" : {_enyTanks pushBack _vic}; 
+                    case "APC" : {_enyAFVs pushBack _vic};
+                    case "IFV" : {_enyAFVs pushBack _vic};
+                    case "car" : {_enyCars pushBack _vic};
+                    case "truck" : {_enyCars pushBack _vic};
+                    case "Air" : {};
+                    default {}; 
+                };
+
+
+            } else {
+                _enyInf pushBack _x;
+            }
+        } forEach _targetGroups;
+
+
+        // systemChat (str _enyInf);
+
+        if (pl_cas_active == 1 and pl_sorties >= 2) then {
+
+            if (_enyTanks isNotEqualTo []) then {
+
+                _target = ([_enyTanks, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy)#0;
+
+                if (alive _target) then {
+
+                    [_target, 2, _jtac] call pl_confirm_jtac_target_wait;
+
+                    if (pl_confirm_cas) then {
+                        _targetPos = (getPos _target) getPos [20, getDir _target];
+                        [1, _targetPos, _jtac getDir _targetPos] spawn pl_interdiction_cas;
+                        _supportCalledIn = true;
+                    };
+                };
+
+            } else {
+                if (_enyAFVs isNotEqualTo []) then {
+
+                    _target = ([_enyAFVs, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy)#0;
+
+                    if (alive _target) then {
+
+                        if (speed _target <= 3 and pl_arty_groups isNotEqualTo [] and time >= pl_jtac_arty_cd) then {
+
+                            [_target, 3, _jtac, true] call pl_confirm_jtac_target_wait;
+
+                            if (pl_confirm_cas) then {
+                                [getPos _target, [0, 3, 0, 1]] spawn pl_fire_on_map_arty;
+                                _supportCalledIn = true;
+                                pl_jtac_arty_cd = time + 70;
+                            };
+
+                        } else {
+
+                            [_target, 2, _jtac] call pl_confirm_jtac_target_wait;
+
+                            if (pl_confirm_cas) then {
+                                _targetPos = (getPos _target) getPos [20, getDir _target];
+                                [selectRandom [1, 2], _targetPos, _jtac getDir _targetPos] spawn pl_interdiction_cas;
+                                _supportCalledIn = true;
+                            };
+                        };
+                    };
+
+                } else {
+                    if (_enyCars isNotEqualTo []) then {
+
+                        _target = ([_enyCars, [], {_x distance2D _cords}, "ASCEND"] call BIS_fnc_sortBy)#0;
+
+                        if (alive _target) then {
+
+                            if (speed _target <= 3 and pl_arty_groups isNotEqualTo [] and time >= pl_jtac_arty_cd) then {
+
+                                [_target, 3, _jtac, true] call pl_confirm_jtac_target_wait;
+
+                                if (pl_confirm_cas) then {
+                                    [getPos _target, [0, 3, 0, 1]] spawn pl_fire_on_map_arty;
+                                    _supportCalledIn = true;
+                                    pl_jtac_arty_cd = time + 70;
+                                };
+
+                            } else {
+
+                                [_target, 2, _jtac] call pl_confirm_jtac_target_wait;
+
+                                if (pl_confirm_cas) then {
+                                    _targetPos = (getPos _target) getPos [20, getDir _target];
+                                    [selectRandom [1, 2], _targetPos, _jtac getDir _targetPos] spawn pl_interdiction_cas;
+                                    _supportCalledIn = true;
+                                };
+                            };
+                        };
+
+                    } else {
+                        if (pl_arty_groups isNotEqualTo [] and time >= pl_jtac_arty_cd) then {
+
+                            if (_enyInf isNotEqualTo []) then {
+
+                                _target = leader (([_enyInf, [], {{alive _x} count ((getPos (leader _x)) nearEntities ["Man", 100])}, "DESCEND"] call BIS_fnc_sortBy)#0);
+
+                                [_target, 3, _jtac, true] call pl_confirm_jtac_target_wait;
+
+                                if (pl_confirm_cas) then {
+                                    [getPos _target, [50, 3, 5, 1]] spawn pl_fire_on_map_arty;
+                                    _supportCalledIn = true;
+                                    pl_jtac_arty_cd = time + 70;
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        } else {
+            if (pl_arty_groups isNotEqualTo [] and time >= pl_jtac_arty_cd) then {
+
+                if (_enyInf isNotEqualTo []) then {
+
+                    _target = leader (([_enyInf, [], {{alive _x} count ((getPos (leader _x)) nearEntities ["Man", 100])}, "DESCEND"] call BIS_fnc_sortBy)#0);
+
+                    [_target, 4, _jtac, true] call pl_confirm_jtac_target_wait;
+
+                    if (pl_confirm_cas) then {
+                        [getPos _target, [50, 3, 5, 1]] spawn pl_fire_on_map_arty;
+                        _supportCalledIn = true;
+                        pl_jtac_arty_cd = time + 70;
+                    };
+                };
+            };
+        };
+
+        private _timeAdd = 200 - 10 * (count _targetGroups);
+        if (_timeAdd < 60) then {_timeAdd = 60};
+        private _time = time + _timeAdd;
+        _group setVariable ["pl_jtac_timeout", _time];
+    };
+
+    deleteMarker _jtacAreaMarker;
+    deleteMarker _trpMarker;
+    // pl_jtac_active = false;
+};
+
+pl_cas_req_ack = false;
+pl_confirm_cas = false;
+pl_cas_req_ack_num = 0;
+pl_jtac_active = false;
+pl_cas_auto_confirm = false;
+
+pl_confirm_jtac_target_wait = {
+    params ["_target", "_cost", "_jtac", ["_isArty", false]];
+
+    private _targetType = getText (configFile >> "CfgVehicles" >> typeOf _target >> "displayName");
+
+
+    private _cM = createMarker [str (random 5), getPos _target]; 
+    _cM setMarkerType "mil_destroy";
+    _cM setMarkerColor "colorRED";
+
+    if !(_isArty) then {
+        _cM setMarkerText format ["CAS Req. %1/%2", _cost, pl_sorties];
+        if (pl_enable_chat_radio) then {leader (group _jtac) sideChat format ["%1: Requesting CAS at enemy %2", groupId (group _jtac), _targetType]};
+        if (pl_enable_map_radio) then {[group _jtac, format ["...Requesting CAS at %1", _targetType], 20] call pl_map_radio_callout};
+    } else {
+        _cM setMarkerText format ["ARTY Req. %1 Rnds", _cost];
+        if (pl_enable_chat_radio) then {leader (group _jtac) sideChat format ["%1: Requesting Artillery Strike", groupId (group _jtac), _targetType]};
+        if (pl_enable_map_radio) then {[group _jtac, format ["...Requesting Artilley Strike", _targetType], 20] call pl_map_radio_callout};
+    };
+
+    if (pl_enable_beep_sound) then {playSound "radioina"};
+    [group _jtac, "requestHelp", 0] call pl_voice_radio_answer;
+
+    private _laser = createVehicle [[playerside] call pl_get_laser_target ,[0,0,0], [], 0, "CAN_COLLIDE"];
+    _laser attachTo [_target,[0,0,0]];
+
+    if !(pl_cas_auto_confirm) then {
+
+        pl_cas_req_ack_num = 1;
+
+        sleep 0.1;
+
+        [] call pl_show_fire_support_menu;
+
+        private _timeout = time + 20;
+
+        waitUntil {sleep 0.5; pl_cas_req_ack or time >= _timeout};
+    };
+
+    deleteMarker _cM;
+
+    [_laser] spawn {
+        params ["_laser"];
+
+        sleep 80;
+
+        deleteVehicle _laser;
+    };
+
+};
+
+
+pl_confirm_jtac_target = {
+    params ["_answer"];
+
+    pl_cas_req_ack = true;
+    pl_cas_req_ack_num = 0;
+
+    pl_confirm_cas = _answer;
+
+    sleep 3;
+
+    pl_cas_req_ack = false;
+    pl_confirm_cas = false;
+
+};
+
+pl_auto_confirm_jtac_target = {
+
+    if !(pl_cas_auto_confirm) then {
+        pl_cas_req_ack = true;
+        pl_confirm_cas = true;
+        pl_cas_auto_confirm = true;
+        pl_cas_req_ack_num = 0;
+    } else {
+        pl_cas_req_ack = false;
+        pl_confirm_cas = false;
+        pl_cas_auto_confirm = false;
+    };
+};
+
+pl_designate_jtac = {
+    params [["_group", (hcSelected player) select 0]];
+
+    if (_group getVariable ["pl_sop_is_jtac", false]) then {
+        _group setVariable ["pl_sop_is_jtac", nil];
+        pl_jtac_active = false;
+    } else {
+        if !(pl_jtac_active) then {
+            _group setVariable ["pl_sop_is_jtac", true];
+            pl_jtac_active = true;
+        } else {
+            hint "Only One Group can be JTAC at a time!";
+        };
+    };
 };
 

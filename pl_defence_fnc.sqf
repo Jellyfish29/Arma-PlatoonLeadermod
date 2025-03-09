@@ -94,6 +94,13 @@ pl_find_cover = {
             };
         };
     };
+
+    if (([secondaryWeapon _unit] call BIS_fnc_itemtype) select 1 in ["MissileLauncher", "RocketLauncher"]) then {
+        if (unitPos _unit == "down") then {
+            _unit setUnitPos "MIDDLE";
+            _unit setUnitPosWeak "MIDDLE";
+        };
+    };
 };
 
 
@@ -1001,6 +1008,7 @@ pl_defend_position = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
     _group setVariable ["pl_combat_mode", true];
+    _group setVariable ["pl_in_position_marker", _markerDirName];
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false]) and !(_group getVariable ["pl_is_dismounted", false])) exitWith {[_group, _watchPos, _cords, _markerDirName, _watchDir, _sfp, _retreat] spawn pl_defend_position_vehicle};
 
@@ -1141,6 +1149,11 @@ pl_defend_position = {
     if (_group getVariable ["pl_sop_def_resupply", false]) then {
         [_group, _cords, _medic] spawn pl_defence_rearm;
     };
+    if (_group getVariable ["pl_sop_is_jtac", false]) then {
+        [_group, _cords, _watchDir] spawn pl_defense_jtac;
+    };
+
+
     if (count _units > 2 and _group != (group player) and (_group getVariable ["pl_sop_def_disenage", false])) then {
         [_group, _cords, _watchDir] call pl_def_killed_disengage;
     };
@@ -1575,6 +1588,7 @@ pl_defend_position = {
             _unit disableAI "AUTOCOMBAT";
             _unit disableAI "AUTOTARGET";
             _unit disableAI "TARGET";
+            _unit disableAI "SUPPRESSION";
             _unit setUnitTrait ["camouflageCoef", 0.7, true];
             _unit setVariable ["pl_damage_reduction", true];
             // _unit forceSpeed 20;
@@ -1618,6 +1632,7 @@ pl_defend_position = {
             _unit enableAI "AUTOCOMBAT";
             _unit enableAI "AUTOTARGET";
             _unit enableAI "TARGET";
+            _unit enableAI "SUPPRESSION";
             _unit setUnitPos "AUTO";
 
             if !((group _unit) getVariable ["onTask", true]) exitWith {};
@@ -1869,7 +1884,6 @@ pl_at_defence_change_firing_pos= {
     _unit removeEventHandler ["Fired", _changeEw];
 
 };
-
 
 
 pl_at_defence = {

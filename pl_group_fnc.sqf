@@ -462,7 +462,8 @@ pl_voice_radio_answer = {
             case "atk_complete" : {_answerVoiceLine = "SentClear"};
             case "attack" : {_answerVoiceLine = "SentNotifyAttack"};
             case "wia" : {_answerVoiceLine = "SentHealthCritical"};
-            case "disengage" : {_answerVoiceLine = selectRandom ["SentUnderFire", "SentCoverMe"]};
+            case "disengage" : {_answerVoiceLine = selectRandom ["SentUnderFire", "SentRouted"]};
+            case "requestHelp" : {_answerVoiceLine = "SentARTYFireAtWithAmmo"};
             default {_answerVoiceLine = ""};
         };
 

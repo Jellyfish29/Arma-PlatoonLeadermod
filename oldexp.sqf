@@ -6655,3 +6655,139 @@ pl_move_as_column = {
     pl_draw_convoy_array = pl_draw_convoy_array - [_convoy];
     pl_draw_convoy_path_array = pl_draw_convoy_path_array - [_passigPoints];
 };
+
+pl_bounding_move_simple = {
+    params ["_group"];    
+
+    private _units = (units _group);
+    private _team1 = [];
+    private _team2 = [];
+
+    _ii = 0;
+    {
+        if (_ii % 2 == 0) then {
+            _team1 pushBack _x;
+        }
+        else
+        {
+            _team2 pushBack _x;
+        };
+        _ii = _ii + 1;
+    } forEach (_units select {alive _x});
+
+    {
+        _x disableAI "AUTOCOMBAT";
+        _x setVariable ["pl_damage_reduction", true];
+        _x limitSpeed 1000;
+    } forEach _units;
+    _group setBehaviourStrong "AWARE";
+
+    private _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
+    private _timeout = time;
+
+    private _fncTakeCoverAction = {
+        params ["_unit"];
+
+        // doStop _unit;
+        _unit enableAI "AUTOTARGET";
+        _unit enableAI "TARGET";
+        _unit forceSpeed -1;
+        _unit disableAI "PATH";
+        // _unit setUnitPos (selectRandom ["Middle", "Down"]);
+        [_unit, getDir _unit, _unit getPos [500, getdir _unit]] call pl_setUnitPos;
+        // [_unit, 8, getDir _unit, true, [], "pl_on_march"] call pl_find_cover;
+        sleep 0.2;
+        [_unit] call pl_quick_suppress_unit;
+    };
+
+    private _fncAdvanceAction = {
+        params ["_unit", "_wpPos", "_idx"];
+
+        _unit enableAI "PATH";
+        _unit setUnitPos "AUTO";
+        _unit disableAI "AUTOTARGET";
+        _unit disableAI "TARGET";
+        _unit forceSpeed 20;
+        _unit setHit ["legs", 0];
+        doStop _unit;
+        sleep 0.1;
+        if (_unit != (leader _unit)) then {
+            private _movePos = _wpPos getPos [8 * _idx, (_unit getDir _wpPos) + 90];
+            _unit domove _movePos;
+
+            // _m = createMarker [str (random 1), _movePos];
+            // _m setMarkerType "mil_dot";
+            // _m setMarkerSize [0.5, 0.5];
+
+        } else {
+            _unit doMove _wpPos;
+        };
+    };
+
+    private _idx = 0;
+    while {(_group getVariable ["pl_on_march", false])} do {
+
+        _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
+
+        _idx = 0;
+        {
+            [_x, _wpPos, _idx] spawn _fncAdvanceAction;
+            _idx = _idx + 1;
+        } forEach (_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"});
+
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "SentConfirmMove";
+
+        {
+            [_x] spawn _fncTakeCoverAction;
+        } forEach _team2;
+
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";;
+
+        _timeout = time + 8;
+
+        waitUntil {sleep 0.5; time >= _timeOut or (_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])};
+
+        if ((_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])) exitWith {};
+
+
+        _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
+        // _movePos = [[[_wpPos, 8]], ["water"]] call BIS_fnc_randomPos;
+
+        _idx = 0;
+        {
+            [_x, _wpPos, _idx] spawn _fncAdvanceAction;
+            _idx = _idx + 1;
+        } forEach (_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"});
+
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "SentConfirmMove";
+
+        {
+            [_x] spawn _fncTakeCoverAction;
+        } forEach _team1;
+
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";
+
+        _timeout = time + 8;
+
+        waitUntil {sleep 0.5; time >= _timeOut or (_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])};
+
+        if ((_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])) exitWith {};
+    };
+
+    {
+        _x enableAI "AUTOCOMBAT";
+        _x enableAI "PATH";
+        _x enableAI "AUTOTARGET";
+        _x enableAI "TARGET";
+        _x setUnitPos "AUTO";
+        _x forceSpeed -1;
+        _x doFollow (leader _group);
+        _x setVariable ["pl_damage_reduction", false];
+    } forEach _units;
+
+    systemChat "end";
+};

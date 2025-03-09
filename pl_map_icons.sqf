@@ -147,7 +147,7 @@ pl_world_size_y = round (worldSize * 0.02);
 
 pl_draw_group_info = {
     params ["_display"];
-    _display ctrlAddEventHandler ["Draw","
+    _display ctrlAddEventHandler ["Draw",
         _display = _this#0;
         {
             if (hcShownBar and (_x getVariable 'pl_show_info')) then {
@@ -203,7 +203,7 @@ pl_draw_group_info = {
                     'EtelkaMonospacePro',
                     'right'
                     ];
-                _strength = count (units _x);
+                _strength = {alive _x} count (units _x);
                 _healthColor = [_x] call pl_get_group_health;
                 _strengthText = format ['%1  ', _strength];
                 if (_healthColor isEqualto [0.7,0,0,1]) then {
@@ -334,6 +334,24 @@ pl_draw_group_info = {
                         2
                     ];
                 };
+
+                if (_x getVariable ['pl_sop_is_jtac', false]) then {
+                    _casColor = [0.92,0.24,0.07,1];
+                    if (pl_cas_auto_confirm) then {
+                        _casColor = [0.4,1,0.2,1];
+                    };
+                    _display drawIcon [
+                        '\A3\ui_f\data\map\markers\military\destroy_CA.paa',
+                        _casColor,
+                        [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 2.4)],
+                        12,
+                        12,
+                        0,
+                        '',
+                        2
+                    ];
+                };
+
 
                 if ((vehicle (leader _x)) != leader _x) then {
                     _vicPos = [(_pos select 0), (_pos select 1) - (pl_map_scale_y * 1.25)];

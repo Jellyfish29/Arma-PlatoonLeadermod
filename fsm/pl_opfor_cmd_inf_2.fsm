@@ -4,10 +4,10 @@
 item0[] = {"Start",0,250,-586.430054,-74.919495,-496.430481,-24.919495,0.000000,"Start"};
 item1[] = {"has_wp",4,218,-435.746613,-72.812576,-345.746552,-22.812584,2.000000,"has wp"};
 item2[] = {"enemy_close",4,218,535.158936,-149.204590,625.158936,-99.204590,2.000000,"enemy" \n "close"};
-item3[] = {"In_Defence_Posit",2,4346,-607.923401,198.943726,-475.324005,278.199432,0.000000,"In Defence Position"};
+item3[] = {"In_Defence_Posit",2,250,-607.923401,198.943726,-475.324005,278.199432,0.000000,"In Defence Position"};
 item4[] = {"Combat_Staging_L",2,250,338.966766,-153.050110,452.989777,-85.494873,0.000000,"Combat Staging" \n "Loop"};
 item5[] = {"Advancing_Loop",2,250,971.982483,-162.228073,1082.306519,-94.807846,0.000000,"Advancing" \n "Loop"};
-item6[] = {"Cover_casaulties",4,218,979.908447,-43.957947,1069.908936,6.042053,3.000000,"Cover" \n "casaulties"};
+item6[] = {"Cover_casaulties",4,218,954.815430,-42.637207,1044.815918,7.362793,3.000000,"Cover" \n "casaulties"};
 item7[] = {"Fighting",2,250,952.057922,94.471619,1061.413452,162.859741,0.000000,"Fighting"};
 item8[] = {"Timeout",4,218,692.826599,158.151733,782.826599,208.151794,0.000000,"Timeout"};
 item9[] = {"Attack",4,250,1187.952759,-44.708832,1277.953003,5.291168,2.000000,"Attack"};
@@ -88,7 +88,7 @@ link50[] = {29,4};
 link51[] = {30,32};
 link52[] = {31,30};
 link53[] = {32,5};
-globals[] = {0.000000,0,0,0,0,640,480,1,75,6316128,1,-790.540649,985.781860,969.335205,-663.034180,1345,1236,1};
+globals[] = {0.000000,0,0,0,0,640,480,1,75,6316128,1,-589.385498,1636.541016,967.093567,-1078.442017,1345,1236,1};
 window[] = {2,-1,-1,-1,-1,1263,234,2153,234,3,1363};
 *//*%FSM</HEAD>*/
 class FSM
@@ -775,7 +775,7 @@ class FSM
                 {
                         name = "Wait";
                         itemno = 28;
-                        init = /*%FSM<STATEINIT""">*/"_time = time + 2;" \n
+                        init = /*%FSM<STATEINIT""">*/"_time = time + 2 + (random 3);" \n
                          "" \n
                          "// performance"/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;
@@ -800,7 +800,7 @@ class FSM
                 {
                         name = "Wait_1";
                         itemno = 30;
-                        init = /*%FSM<STATEINIT""">*/"_time = time + 2;" \n
+                        init = /*%FSM<STATEINIT""">*/"_time = time + 2 + (random 3);" \n
                          "" \n
                          "// performance"/*%FSM</STATEINIT""">*/;
                         precondition = /*%FSM<STATEPRECONDITION""">*/""/*%FSM</STATEPRECONDITION""">*/;

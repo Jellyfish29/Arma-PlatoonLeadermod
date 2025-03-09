@@ -192,7 +192,7 @@ pl_wia_callout = {
         _unit setVariable ["pl_wia_calledout", false];
         _unitMos = getText (configFile >> "CfgVehicles" >> typeOf _unit >> "displayName");
         // leader (group _unit) sideChat format ["%1 is W.I.A, requesting Medic, over", _unitMos];
-        if (pl_enable_beep_sound) then {playSound "beep"};
+        if (pl_enable_beep_sound) then {playSound "radioina"};
         if (pl_enable_chat_radio) then {leader (group _unit) sideChat format ["%1: %2 WOUNDED", groupId (group _unit), _unitMos]};
         if (pl_enable_map_radio) then {[group _unit, format ["...%1 is hit!", _unitMos], 20] call pl_map_radio_callout};
         [group _unit, "wia", 1] call pl_voice_radio_answer;

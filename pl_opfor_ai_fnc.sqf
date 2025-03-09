@@ -197,7 +197,7 @@ pl_opfor_find_cover = {
 
         private _c = 0;
         private _pronePos = [getPos _unit, 0.2] call pl_convert_to_heigth_ASL;
-        for "_i" from 10 to 210 step 50 do {
+        for "_i" from 10 to 385 step 75 do {
             _checkPos = [(getPos _unit) getPos [_i, _watchDir], 1] call pl_convert_to_heigth_ASL;
             _visP = lineIntersectsSurfaces [_pronePos, _checkPos, _unit, vehicle _unit, true, 1, "FIRE"];
             if (_visP isEqualTo []) then {
@@ -708,8 +708,11 @@ pl_opfor_defend_position = {
         };
     };
 
-    sleep 0.5;
+    {
+        deleteMarker _x;
+    } forEach _buildingMarkers;
 
+    sleep 0.5;
 
     // itterate over all units in group an choosing the bes possible position
 

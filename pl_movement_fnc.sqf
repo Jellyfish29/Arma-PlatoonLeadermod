@@ -96,6 +96,7 @@ pl_march = {
 
         
         _mwp = _group addWaypoint [_cords, 0];
+        _mwp setWaypointType "MOVE";
         _group setVariable ["pl_mwp", _mwp];
 
         if ((vehicle player) != player) then {
@@ -115,6 +116,7 @@ pl_march = {
         sleep 1;
         {
             _x disableAI "AUTOCOMBAT";
+            _x disableAI "SUPPRESSION";
             _x setHit ["legs", 0];
         } forEach (units _group);
         (leader _group) limitSpeed 14;
@@ -122,12 +124,14 @@ pl_march = {
         _group setBehaviourStrong "AWARE";
 
         if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
-            [_group] spawn pl_bounding_move_simple;
+            ["team", _group, _mwp] spawn pl_bounding_squad;
         };
 
         sleep 1;
         waitUntil {sleep 0.5; isNull _group or (((leader _group) distance2D (waypointPosition (_group getVariable ["pl_mwp", (currentWaypoint _group)]))) <= 10) or (isNil {_group getVariable ["pl_on_march", nil]})};
         _group setVariable ["pl_on_march", nil];
+
+        // (_group getVariable ["pl_mwp", (waypoints _group) select (currentWaypoint _group)]) setWaypointPosition [getPos (leader _group), -1];
         // _group setVariable ["setSpecial", false];
         // {
         //     _x enableAI "AUTOCOMBAT";
@@ -139,10 +143,10 @@ pl_march = {
     {
 
         _mwp = _group addWaypoint [_cords, 0];
-
-        // if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
-        //     _mwp setWaypointCompletionRadius 20;
-        // };
+        _mwp setWaypointType "MOVE";
+        if (_doBounding and (vehicle (leader _group)) == (leader _group)) then {
+            ["team", _group, _mwp] spawn pl_bounding_squad;
+        };
 
         // _mwp setWaypointStatements ["true", "(group this) setVariable ['pl_last_wp_pos', getPos this]; if ((vehicle player) != player) then {if (effectiveCommander (vehicle player) == player) then {driver (vehicle player) commandMove (waypointPosition ((waypoints (group player)) select ((currentWaypoint (group player) + 1))));};};"];
         // if (_group getVariable ["onTask", false]) then {
@@ -157,141 +161,7 @@ pl_march = {
     };
 };
 
-pl_bounding_move_simple = {
-    params ["_group"];    
 
-    private _units = (units _group);
-    private _team1 = [];
-    private _team2 = [];
-
-    _ii = 0;
-    {
-        if (_ii % 2 == 0) then {
-            _team1 pushBack _x;
-        }
-        else
-        {
-            _team2 pushBack _x;
-        };
-        _ii = _ii + 1;
-    } forEach (_units select {alive _x});
-
-    {
-        _x disableAI "AUTOCOMBAT";
-        _x setVariable ["pl_damage_reduction", true];
-        _x limitSpeed 1000;
-    } forEach _units;
-    _group setBehaviourStrong "AWARE";
-
-    private _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
-    private _timeout = time;
-
-    private _fncTakeCoverAction = {
-        params ["_unit"];
-
-        // doStop _unit;
-        _unit enableAI "AUTOTARGET";
-        _unit enableAI "TARGET";
-        _unit forceSpeed -1;
-        _unit disableAI "PATH";
-        // _unit setUnitPos (selectRandom ["Middle", "Down"]);
-        [_unit, getDir _unit, _unit getPos [500, getdir _unit]] call pl_setUnitPos;
-        // [_unit, 8, getDir _unit, true, [], "pl_on_march"] call pl_find_cover;
-        sleep 0.2;
-        [_unit] call pl_quick_suppress_unit;
-    };
-
-    private _fncAdvanceAction = {
-        params ["_unit", "_wpPos", "_idx"];
-
-        _unit enableAI "PATH";
-        _unit setUnitPos "AUTO";
-        _unit disableAI "AUTOTARGET";
-        _unit disableAI "TARGET";
-        _unit forceSpeed 20;
-        _unit setHit ["legs", 0];
-        doStop _unit;
-        sleep 0.1;
-        if (_unit != (leader _unit)) then {
-            private _movePos = _wpPos getPos [8 * _idx, (_unit getDir _wpPos) + 90];
-            _unit domove _movePos;
-
-            // _m = createMarker [str (random 1), _movePos];
-            // _m setMarkerType "mil_dot";
-            // _m setMarkerSize [0.5, 0.5];
-
-        } else {
-            _unit doMove _wpPos;
-        };
-    };
-
-    private _idx = 0;
-    while {(_group getVariable ["pl_on_march", false])} do {
-
-        _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
-
-        _idx = 0;
-        {
-            [_x, _wpPos, _idx] spawn _fncAdvanceAction;
-            _idx = _idx + 1;
-        } forEach (_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"});
-
-        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
-        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "SentConfirmMove";
-
-        {
-            [_x] spawn _fncTakeCoverAction;
-        } forEach _team2;
-
-        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
-        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";;
-
-        _timeout = time + 8;
-
-        waitUntil {sleep 0.5; time >= _timeOut or (_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])};
-
-        if ((_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])) exitWith {};
-
-
-        _wpPos = waypointPosition ((waypoints _group)#((currentWaypoint _group)));
-        // _movePos = [[[_wpPos, 8]], ["water"]] call BIS_fnc_randomPos;
-
-        _idx = 0;
-        {
-            [_x, _wpPos, _idx] spawn _fncAdvanceAction;
-            _idx = _idx + 1;
-        } forEach (_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"});
-
-        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
-        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "SentConfirmMove";
-
-        {
-            [_x] spawn _fncTakeCoverAction;
-        } forEach _team1;
-
-        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
-        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";;
-
-        _timeout = time + 8;
-
-        waitUntil {sleep 0.5; time >= _timeOut or (_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])};
-
-        if ((_group getVariable ["pl_stop_event", false]) or !(_group getVariable ["pl_on_march", false])) exitWith {};
-    };
-
-    {
-        _x enableAI "AUTOCOMBAT";
-        _x enableAI "PATH";
-        _x enableAI "AUTOTARGET";
-        _x enableAI "TARGET";
-        _x setUnitPos "AUTO";
-        _x forceSpeed -1;
-        _x doFollow (leader _group);
-        _x setVariable ["pl_damage_reduction", false];
-    } forEach _units;
-
-    systemChat "end";
-};
 
 pl_move_team_to_array = {
     params ["_team", "_movePosArray", "_cords", "_group", ["_targets", []]];
@@ -342,7 +212,7 @@ pl_move_team_to_array = {
 
 
 pl_bounding_move_team = {
-    params ["_team", "_movePosArray", "_wpPos", "_group", "_targets"];
+    params ["_team", "_movePosArray", "_wpPos", "_group"];
 
     for "_i" from 0 to (count _team) - 1 do {
         _unit = _team#_i;
@@ -352,15 +222,12 @@ pl_bounding_move_team = {
         if ((_unit distance2D _movePos) > 4) then {
             if (currentCommand _unit isNotEqualTo "MOVE" or (speed _unit) == 0) then {
                 doStop _unit;
-                if (_targets isEqualto []) then {
-                    [_unit, true] call pl_enable_force_move;
-                } else {
-                    [_unit, true, true] call pl_enable_force_move;
-                };
+                [_unit, true, true] call pl_enable_force_move;
 
                 _unit setHit ["legs", 0];
                 _unit setUnitPos "UP";
                 _unit doMove _movePos;
+                _unit setDestination [_movePos, "LEADER PLANNED", true];
             };
         }
         else
@@ -376,7 +243,7 @@ pl_bounding_move_team = {
             _unit = _team#_i;
             _movePos = _movePosArray#_i;
             if ((_unit distance2D _movePos) > 4) then {
-                // _unit setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _unit));
+                _unit setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _unit));
                 [_unit, _wpPos] call pl_bounding_set;
             };
         };
@@ -390,8 +257,10 @@ pl_bounding_set = {
 
     doStop _unit;
     [_unit, false] call pl_enable_force_move;
-    [_unit, _unit getDir _wpPos, _wpPos] call pl_setUnitPos;
+    // [_unit, _unit getDir _wpPos, _wpPos] call pl_setUnitPos;
     _unit setVariable ["pl_bounding_set_time", time + 7];
+    [_unit, 0, getDir _unit, true, [], "pl_on_march"] call pl_find_cover;
+    [_unit] call pl_quick_suppress_unit;
 };
 
 pl_get_move_pos_array = { 
@@ -418,57 +287,18 @@ pl_bounding_switch = {
 };
 
 pl_bounding_squad = {
-    params ["_mode", ["_group", hcSelected player select 0], ["_cords", []]];
+    params ["_mode", ["_group", hcSelected player select 0], ["_wp", []]];
     private ["_cords", "_icon", "_group", "_team1", "_team2", "_MoveDistance", "_distanceOffset", "_movePosArrayTeam1", "_movePosArrayTeam2", "_unitPos", "_speed"];
 
     // if !(visibleMap) exitWith {hint "Open Map for bounding OW"};
 
-    if (vehicle (leader _group) != leader _group) exitWith {hint "Infantry ONLY Task!"};
+    waitUntil {sleep 1; (currentWaypoint _group) == (_wp#1) or !(_group getVariable ["pl_on_march", false])};
 
-    private _drawSpecial = false;
+    if !(_group getVariable ["pl_on_march", false]) exitWith {};
 
-    if (_cords isEqualTo []) then {
-        if (visibleMap or !(isNull findDisplay 2000)) then {
-            if (visibleMap) then {
-                _cords = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
-            } else {
-                _cords = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
-            };
-        }
-        else
-        {
-            _cords = screenToWorld [0.5,0.5];
-        };
-        
-        _moveDir = (leader _group) getDir _cords;
+    sleep 0.1;
 
-        // if (pl_enable_beep_sound) then {playSound "beep"};
-        _drawSpecial = true;
-        [_group, "confirm", 1] call pl_voice_radio_answer;
-        [_group] call pl_reset;
-
-        sleep 0.5;
-
-        [_group] call pl_reset;
-
-        sleep 0.5;
-        
-        switch (_mode) do { 
-            case "team" : {_icon = "\Plmod\gfx\team_bounding.paa";}; 
-            case "buddy" : {_icon = "\Plmod\gfx\buddy_bounding.paa";}; 
-            default {_icon = "\Plmod\gfx\team_bounding.paa";}; 
-        };
-        
-        _group setVariable ["setSpecial", true];
-        _group setVariable ["specialIcon", _icon];
-    };
-
-    _wp = _group addWaypoint [_cords, 0];
-
-    if (_drawSpecial) then {
-        pl_draw_planed_task_array pushBack [_wp, _icon];
-    };
-
+    private _units = units _group;
     _units = (units _group);
     _team1 = [];
     _team2 = [];
@@ -495,109 +325,115 @@ pl_bounding_squad = {
         _x setVariable ["pl_bounding_set_time", nil];
     } forEach _units;
 
-    _group setBehaviour "AWARE";
-
-    // _mode = "buddy";
+    _group setBehaviourStrong "AWARE";
 
     switch (_mode) do { 
-        case "team" : {_MoveDistance = 25; _distanceOffset = 4; _unitPos = "DOWN"; _speed = 5000}; 
+        case "team" : {_MoveDistance = 25; _distanceOffset = 6; _unitPos = "DOWN"; _speed = 5000}; 
         case "buddy" : {_MoveDistance = 40; _distanceOffset = 8; _unitPos = "MIDDLE"; _speed = 12}; 
-        default {_MoveDistance = 25; _distanceOffset = 4; _unitPos = "DOWN", _speed = 5000, _mode = "team"}; 
+        default {_MoveDistance = 25; _distanceOffset = 6; _unitPos = "DOWN", _speed = 5000, _mode = "team"}; 
     };
 
     // {
     //     _x limitSpeed _speed;
     // } forEach _team1;
 
-    _movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, 4, 4] call pl_get_move_pos_array;
-    _movePosArrayTeam1 = [_team1, waypointPosition _wp, -90, 4, 4] call pl_get_move_pos_array;
+    // _movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, 4, 4] call pl_get_move_pos_array;
+    // _movePosArrayTeam1 = [_team1, waypointPosition _wp, -90, 4, 4] call pl_get_move_pos_array;
 
-    waitUntil {sleep 0.5; [_team2, _movePosArrayTeam2, waypointPosition _wp, _group, _unitPos] call pl_bounding_move_team and [_team1, _movePosArrayTeam1, waypointPosition _wp, _group, _unitPos] call pl_bounding_move_team};
-
-    // {
-    //     [_x, _x getDir _cords, _cords] call pl_setUnitPos;
-    // } forEach _team2;
+    // waitUntil {sleep 0.5; ([_team2, _movePosArrayTeam2, waypointPosition _wp, _group, _unitPos] call pl_bounding_move_team and [_team1, _movePosArrayTeam1, waypointPosition _wp, _group, _unitPos] call pl_bounding_move_team) or !(_group getVariable ["pl_on_march", false])};
 
     // _MoveDistance = 25;
-    while {({(_x distance2D (waypointPosition _wp)) < 15} count _units == 0) and !(waypoints _group isEqualTo [])} do {
 
-        (_team1#0) groupRadio "SentConfirmMove";
+    _movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, 6, 4] call pl_get_move_pos_array;
+    _movePosArrayTeam1 = [_team1, waypointPosition _wp, -90, 6, 4] call pl_get_move_pos_array;
+
+    waitUntil {sleep 0.5; [_team2, _movePosArrayTeam2, waypointPosition _wp, _group, _unitPos] call pl_bounding_move_team and [_team1, _movePosArrayTeam1, waypointPosition _wp, _group, _unitPos] call pl_bounding_move_team or !(_group getVariable ["pl_on_march", false])};
+
+    private _currenAtctiveTeam = _team1; 
+    while {({(_x distance2D (waypointPosition _wp)) < 15} count _units == 0) and !(waypoints _group isEqualTo []) and (_group getVariable ["pl_on_march", false])} do {
+
+        _currenAtctiveTeam = _team1;
+
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "SentConfirmMove";
+
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";;
+
         _movePosArrayTeam1 = [_team1, waypointPosition _wp, -90, _distanceOffset, _MoveDistance] call pl_get_move_pos_array;
         {_x setVariable ["pl_bounding_set_time", nil]} forEach _team1;
-        _targets = (_team1#0) targets [true, (_team1#0) distance2d (_movePosArrayTeam1#0) , [], 0, _movePosArrayTeam1#0];
-        waitUntil {sleep 0.5; [_team1, _movePosArrayTeam1, waypointPosition _wp, _group, _targets] call pl_bounding_move_team};
-        if (({(_x distance2D (waypointPosition _wp)) < 15} count _units > 0) or (waypoints _group isEqualTo [])) exitWith {};
-        if (count (_team1 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2 or count (_team2 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2) exitWith {[_group] call pl_reset};
+        waitUntil {sleep 0.5; [_team1, _movePosArrayTeam1, waypointPosition _wp, _group] call pl_bounding_move_team};
 
-        // {
-        //     if ((_x getVariable ["pl_bounding_set_time", 0]) == 0) then {
-        //         _x setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _x));
-        //         [_x, waypointPosition _wp, _unitPos] call pl_bounding_set;
-        //     };
-        // } forEach _team1;
+        if (({(_x distance2D (waypointPosition _wp)) < 15} count _units > 0) or (waypoints _group isEqualTo []) or !(_group getVariable ["pl_on_march", false])) exitWith {};
 
-        (_team1#0) groupRadio "sentCovering";
-        _targets = (_team1#0) targets [true, (_team1#0) distance2d (waypointPosition _wp) , [], 0, waypointPosition _wp];
-        // if (count _targets > 0 and _mode isEqualTo "team") then {{[_x, getPosASL (selectRandom _targets)] call pl_quick_suppress} forEach _team1};
-        if (count _targets > 0) then {{[_x, selectRandom _targets, true] call pl_quick_suppress; [_x, selectRandom _targets] spawn pl_fire_ugl_at_target} forEach _team1};
+        if (count (_team1 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2 or count (_team2 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2) exitWith {
+            if (pl_enable_beep_sound) then {playSound "radioina"};
+            if (pl_enable_map_radio) then {[_group, "...Falling Back!", 20] call pl_map_radio_callout};
+            if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Falling Back", (groupId _group)]};
+            _retreatPos = (getPos (leader _group)) getPos [40, (waypointPosition _wp) getDir (leader _group)];
+            [_group, _retreatPos, true] spawn pl_disengage;
+        };
 
-        sleep 1;
+        sleep 0.5;
 
-        (_team2#0) groupRadio "SentConfirmMove";
+        _currenAtctiveTeam = _team2;
+
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureAdvance";
+        ((_team2 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "SentConfirmMove";
+
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) playActionNow "GestureCover";
+        ((_team1 select {alive _x and lifeState _x isNotEqualto "INCAPACITATED"})#0) groupRadio "sentCovering";
+
         switch (_mode) do { 
-            case "team" : {_MoveDistance = 50; _movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, _distanceOffset, _MoveDistance] call pl_get_move_pos_array}; 
+            case "team" : {
+                _MoveDistance = ((_team1#0) getPos [20, _team1#0 getDir (waypointPosition _wp)]) distance2D (_team2#0);
+                _movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, _distanceOffset, _MoveDistance] call pl_get_move_pos_array
+            }; 
             case "buddy" : {_MoveDistance = 30; _movePosArrayTeam2 = _movePosArrayTeam1}; 
             default {_movePosArrayTeam2 = [_team2, waypointPosition _wp, 90, _distanceOffset, _MoveDistance] call pl_get_move_pos_array}; 
         };
         {_x setVariable ["pl_bounding_set_time", nil]} forEach _team2;
-        _targets = (_team1#0) targets [true, (_team1#0) distance2d (_movePosArrayTeam1#0) , [], 0, _movePosArrayTeam1#0];
-        waitUntil {sleep 0.5; [_team2, _movePosArrayTeam2, waypointPosition _wp, _group, _targets] call pl_bounding_move_team};
+        waitUntil {sleep 0.5; [_team2, _movePosArrayTeam2, waypointPosition _wp, _group] call pl_bounding_move_team};
 
-        if (({(_x distance2D (waypointPosition _wp)) < 15} count _units > 0) or (waypoints _group isEqualTo [])) exitWith {};
-        if (count (_team1 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2 or count (_team2 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2) exitWith {[_group] call pl_reset};
+        if (({(_x distance2D (waypointPosition _wp)) < 15} count _units > 0) or (waypoints _group isEqualTo []) or !(_group getVariable ["pl_on_march", false])) exitWith {};
 
-        // {
-        //     if ((_x getVariable ["pl_bounding_set_time", 0]) == 0) then {
-        //         _x setPos ([-0.5 + (random 1), -0.5 + (random 1), 0] vectorAdd (getPos _x));
-        //         [_x, waypointPosition _wp, _unitPos] call pl_bounding_set;
-        //     };
-        // } forEach _team2;
-        
-        (_team2#0) groupRadio "sentCovering";
-        _targets = (_team2#0) targets [true, (_team2#0) distance2d (waypointPosition _wp), [], 0, waypointPosition _wp];
-        if (count _targets > 0 and _mode isEqualTo "team") then {{[_x, selectRandom _targets, true] call pl_quick_suppress; [_x, selectRandom _targets] spawn pl_fire_ugl_at_target} forEach _team2};
+        if (count (_team1 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2 or count (_team2 select {alive _x and !(_x getVariable ["pl_wia", false])}) < 2) exitWith {
+                
+            if (pl_enable_beep_sound) then {playSound "radioina"};
+            if (pl_enable_map_radio) then {[_group, "...Falling Back!", 20] call pl_map_radio_callout};
+            if (pl_enable_chat_radio) then {(leader _group) sideChat format ["%1 Falling Back", (groupId _group)]};
+            _retreatPos = (getPos (leader _group)) getPos [40, (waypointPosition _wp) getDir (leader _group)];
+            [_group, _retreatPos, true] spawn pl_disengage;
+        };
 
-        sleep 1;
+        _MoveDistance = ((_team2#0) getPos [20, _team2#0 getDir (waypointPosition _wp)]) distance2D (_team1#0);
+
+        sleep 0.5;
     };
 
-    {
-        doStop _x;
-        _x setVariable ["pl_damage_reduction", false];
-        _x setUnitPos "Auto";
-        _x enableAI "PATH";
-        _x enableAI "AUTOCOMBAT";
-        _x enableAI "COVER";
-        _x enableAI "AUTOTARGET";
-        _x enableAI "TARGET";
-        _x enableAI "SUPPRESSION";
-        _x enableAI "WEAPONAIM";
-        _x setUnitCombatMode "YELLOW";
-        _x doFollow (leader _group);
-        _x limitSpeed 5000;
-        _x forceSpeed -1;
-        _x setVariable ["pl_bounding_set_time", nil];
-    } forEach _units;
-    
+    // systemChat (str (count (waypoints _group)));
+    // systemChat (str (_wp#1));
 
-    if (_drawSpecial) then {
-        pl_draw_planed_task_array = pl_draw_planed_task_array - [[_wp,  _icon]];
-        _group setVariable ["setSpecial", false];
-    };
+    sleep 0.1;
 
-    [_team1,_team2]
+    // if (_group getVariable ["pl_on_march", false]) then {
+        if ((count (waypoints _group) - 1) > ((_wp#1))) then {
+            _group setCurrentWaypoint ((waypoints _group)#((_wp#1) + 1));
+
+            // {
+            //     [_x] call pl_bounding_set;
+            // } forEach _currenAtctiveTeam;
+        } else {
+            if (_group getVariable ["pl_task_planed", false]) then {
+                _group setVariable ["pl_execute_plan", true];
+            } else {
+                [_group] call pl_reset;
+            };
+
+            // (leader _group) doMove (waypointPosition _wp);
+        };
+    // };
 };
-
-
 
 
 pl_vehicle_team_overwatch = {

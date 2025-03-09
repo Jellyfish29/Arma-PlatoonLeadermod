@@ -153,21 +153,27 @@ pl_quick_suppress_unit = {
 
     if (isNil "_target") exitWith {};
 
-    private _targetPos = getPosASL _target;
-    _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
+    [_target, _unit] spawn {
+        params ["_target", "_unit"];
 
-    // _m = createMarker [str (random 1), _targetPos];
-    // _m setMarkerType "mil_dot";
-    // _m setMarkerSize [0.5, 0.5];
+        sleep 1.5;
 
-    // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
-    // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
-    // _helper1 setposASL _targetpos;
+        private _targetPos = getPosASL _target;
+        _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
 
-    if ((_targetPos distance2D _unit) > pl_suppression_min_distance and ([_unit, _targetPos] call pl_friendly_check)) then {
+        // _m = createMarker [str (random 1), _targetPos];
+        // _m setMarkerType "mil_dot";
+        // _m setMarkerSize [0.5, 0.5];
 
-        _unit doWatch _targetPos;
-        _unit doSuppressiveFire _targetPos;
+        // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+        // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+        // _helper1 setposASL _targetpos;
+
+        if ((_targetPos distance2D _unit) > pl_suppression_min_distance and ([_unit, _targetPos] call pl_friendly_check)) then {
+
+            _unit doWatch _targetPos;
+            _unit doSuppressiveFire _targetPos;
+        };
     };
 };
 
@@ -264,11 +270,14 @@ pl_get_fire_position = {
 pl_enable_force_move = {
     params ["_unit", "_state", ["_light", false]];
     if (_state) then {
+        _unit forceSpeed 20;
+        _unit setUnitPos "UP";
         _unit enableAI "PATH";
         _unit disableAI "COVER";
         _unit disableAI "SUPPRESSION";
         _unit setBehaviourStrong "AWARE";
-        _unit setUnitCombatMode "WHITE";
+        _unit disableAI "FIREWEAPON";
+        // _unit setUnitCombatMode "WHITE";
         // if !(_light) then {
             _unit disableAI "AUTOTARGET";
             _unit disableAI "TARGET";
@@ -278,11 +287,13 @@ pl_enable_force_move = {
     }
     else
     {
+        _unit forceSpeed -1;
         _unit enableAI "COVER";
         _unit enableAI "AUTOTARGET";
         _unit enableAI "TARGET";
         _unit enableAI "SUPPRESSION";
         _unit enableAI "WEAPONAIM";
+        _unit enableAI "FIREWEAPON";
         _unit setUnitCombatMode "YELLOW";
     };
 };
@@ -639,7 +650,7 @@ pl_is_apc = {
     _isAPCtr = {
         if ([toUpper _x, toUpper( typeOf _vic)] call BIS_fnc_inString) exitWith {true};
         false
-    } forEach ["m113", "rhino", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer", "mtlb", "btr"];
+    } forEach ["m113", "rhino", "M1126", "M1128", "M1130", "M1133", "M1135", "Boxer", "mtlb", "btr", "APC_Tracked_01_rcws", "APC_Wheeled_02_rcws"];
     _isAPCtr
 
 };
@@ -1014,3 +1025,19 @@ pl_vision_tool = {
 
     // };
 };
+
+pl_get_laser_target = {
+    params ["_side"];
+
+    private _r = "";
+
+    switch (_side) do { 
+        case east : {_r = "LaserTargetE"}; 
+        case west : {_r = "LaserTargetW"};
+        case independent : {_r = "LaserTargetI"};  
+        default {_r = "LaserTargetW"}; 
+    };
+
+    _r
+};
+

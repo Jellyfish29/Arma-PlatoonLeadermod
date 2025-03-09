@@ -29,15 +29,20 @@ pl_get_on_map_arty = {
         };
     } forEach (vehicles select {(side _x) isEqualTo playerSide});
 
-    if (count pl_arty_groups == 0) exitWith {0};
     pl_active_arty_group_idx = 0;
+    if (count pl_arty_groups == 0) exitWith {0};
     1
 };
 
+pl_cas_req_ack_num = 0;
 pl_str_cas = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\plane_ca.paa"/><t> Air Support</t>';
 pl_str_arty = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Off Map Artillery</t>';
 pl_str_mortar = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> On Map Artillery</t>';
 pl_str_status = '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa"/><t> STATUS</t>';
+pl_str_confirm_cas = '<img color="#66ff33" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa"/><t> Confirm JFS Request</t>';
+pl_str_deny_cas = '<img color="#EC3E14" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa"/><t> Deny JFS Request</t>';
+pl_str_designate_jtac = '<img color="#e5e500" image="\A3\ui_f\data\map\markers\military\destroy_CA.paa"/><t> Designate JTAC</t>';
+pl_str_auto_confirm_cas = '<img color="#ffffff" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa"/><t>Toggle Auto Confirm JFS</t>';
 
 pl_show_fire_support_menu = {
     call compile format ["
@@ -48,8 +53,14 @@ pl_show_fire_support_menu = {
         ['', [], '', -1, [['expression', '']], '1', '1'],
         [parseText '%6', [4], '', -5, [['expression', '[] spawn pl_show_on_map_arty_menu']], '1', '%3'],
         ['', [], '', -1, [['expression', '']], '1', '1'],
-        [parseText '%7', [5], '', -5, [['expression', '[] spawn pl_support_status']], '1', '1']
-    ];", pl_cas_enabled, pl_arty_enabled, [] call pl_get_on_map_arty, pl_str_cas, pl_str_arty, pl_str_mortar, pl_str_status];
+        [parseText '%7', [5], '', -5, [['expression', '[] spawn pl_support_status']], '1', '1'],
+        ['', [], '', -1, [['expression', '']], '1', '1'],
+        [parseText '%11', [7], '', -5, [['expression', '[] call pl_designate_jtac']], '1', '1'],
+        ['', [], '', -1, [['expression', '']], '1', '1'],
+        [parseText '%8', [8], '', -5, [['expression', '[true] spawn pl_confirm_jtac_target']], '1', '%10'],
+        [parseText '%9', [9], '', -5, [['expression', '[false] spawn pl_confirm_jtac_target']], '1', '%10'],
+        [parseText '%12', [10], '', -5, [['expression', '[] call pl_auto_confirm_jtac_target']], '1', '1']
+    ];", pl_cas_enabled, pl_arty_enabled, [] call pl_get_on_map_arty, pl_str_cas, pl_str_arty, pl_str_mortar, pl_str_status, pl_str_confirm_cas, pl_str_deny_cas, pl_cas_req_ack_num, pl_str_designate_jtac, pl_str_auto_confirm_cas];
     // showCommandingMenu "#USER:pl_mortar_menu";
 };
 [] call pl_show_fire_support_menu;
@@ -607,11 +618,15 @@ pl_task_plan_menu = [
 
 pl_task_plan_menu_eng_sub = [
     ['Task Plan Combat Engineering', true],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [2], '', -5, [['expression', '["mine"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [3], '', -5, [['expression', '["mineclear"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Deploy Mine Clearing Line Charge</t>', [4], '', -5, [['expression', '["mc_lc"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [5], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Deploy Vehicle Launched Bridge</t>', [6], '', -5, [['expression', '["createbridge"] call pl_task_planer']], '1', '1']
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Place AT Mine Field</t>', [2], '', -5, [['expression', '["ATmine"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Place AP Mine Field</t>', [3], '', -5, [['expression', '["APmine"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_at_dir_mine.paa"/><t> Place AT Directional Mine</t>', [4], '', -5, [['expression', '["ATDIRmine"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ap_dir_mine.paa"/><t> Place AP Directional Mine</t>', [5], '', -5, [['expression', '["APDIRmine"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ap_dir_mine.paa"/><t> Place AP Dispenser Mine</t>', [6], '', -5, [['expression', '["APDISDIRmine"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [7], '', -5, [['expression', '["mineclear"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Deploy Mine Clearing Line Charge</t>', [8], '', -5, [['expression', '["mc_lc"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [9], '', -5, [['expression', '["charge"] call pl_task_planer']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"/><t> Deploy Vehicle Launched Bridge</t>', [0], '', -5, [['expression', '["createbridge"] call pl_task_planer']], '1', '1']
 ];
 
 pl_task_plan_menu_css_sub = [
@@ -630,13 +645,22 @@ pl_task_plan_menu_unloaded_inf = [
     ['', [], '', -1, [['expression', '']], '1', '1'],
     [parseText "<img color='#e5e500' image='\A3\3den\data\Attributes\SpeedMode\normal_ca.paa'/><t> Add Waypoints</t>", [6], '', -5, [['expression', '["addwp"] spawn pl_task_planer_unload_inf']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Lay Mine Field</t>', [7], '', -5, [['expression', '["mine"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [8], '', -5, [['expression', '["clearmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
-    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [9], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_eng_task.paa"/><t> Combat Engineering Tasks</t>', [7], '#USER:pl_task_plan_menu_eng_sub_unloaded_inf', -5, [['expression', '']], '1', '1'],
     ['', [], '', -1, [['expression', '']], '1', '1'],
     [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ccp_marker.paa"/><t> Set Up Casualty Collection Point</t>', [10], '', -5, [['expression', '["ccp"] spawn pl_task_planer_unload_inf']], '1', '1']
 ];
 
+pl_task_plan_menu_eng_sub_unloaded_inf = [
+    ['Task Plan Combat Engineering', true],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"/><t> Place Charge</t>', [2], '', -5, [['expression', '["charge"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Place AT Mine Field</t>', [3], '', -5, [['expression', '["ATmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"/><t> Place AP Mine Field</t>', [4], '', -5, [['expression', '["APmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_at_dir_mine.paa"/><t> Place AT Directional Mine</t>', [5], '', -5, [['expression', '["ATDIRmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ap_dir_mine.paa"/><t> Place AP Directional Mine</t>', [6], '', -5, [['expression', '["APDIRmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\Plmod\gfx\pl_ap_dir_mine.paa"/><t> Place AP Dispenser Mine</t>', [7], '', -5, [['expression', '["APDISDIRmine"] spawn pl_task_planer_unload_inf']], '1', '1'],
+    [parseText '<img color="#e5e500" image="\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"/><t> Clear Mine Field</t>', [8], '', -5, [['expression', '["mineclear"] spawn pl_task_planer_unload_inf']], '1', '1']
+    
+];
 
 pl_change_icon_menu = 
 [

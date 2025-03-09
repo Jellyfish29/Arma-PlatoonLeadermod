@@ -161,11 +161,14 @@ pl_suppressive_fire_position = {
         pl_at_targets_indicator = pl_at_targets_indicator - [[_sfpPos, _cords]];
     };
 
+    if (_group getVariable ["pl_in_position", false]) then {
+        (_group getVariable ["pl_in_position_marker", ""]) setMarkerType "marker_sfp";
+    };
+
     if (pl_cancel_strike) exitWith {pl_cancel_strike = false; deleteMarker _markerName; _group setVariable ["pl_is_task_selected", nil];};
 
     if (_group getVariable ["pl_in_position", false]) then {
-        _markerPosName = format ["defenceAreaDir%1", _group];
-        _markerPosName setMarkerType "marker_sfp";
+        (_group getVariable ["pl_in_position_marker", ""]) setMarkerType "marker_sfp";
     } else {
         _markerPosName  = format ["afp%1", _group];
         createMarker [_markerPosName , getPos (vehicle (leader _group))];
@@ -308,8 +311,7 @@ pl_suppressive_fire_position = {
     pl_suppression_poses = pl_suppression_poses - [[_cords, _group]];
     deleteMarker _markerName;
     if (_group getVariable ["pl_in_position", false]) then {
-        _markerPosName = format ["defenceAreaDir%1", _group];
-        _markerPosName setMarkerType "marker_position";
+        (_group getVariable ["pl_in_position_marker", ""]) setMarkerType "marker_position";
     } else {
         deleteMarker _markerPosName;
     };

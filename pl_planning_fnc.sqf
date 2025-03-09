@@ -34,7 +34,11 @@ pl_task_planer = {
         case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "resupply" : {[_group, _wp] spawn pl_supply_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
         case "recover" : {[_group, _wp] spawn pl_repair; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
-        case "mine" : {[_group, _wp] spawn pl_lay_mine_field_switch; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "ATmine" : {[1, _group, _wp] spawn pl_lay_mine_field_switch; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "APmine" : {[2, _group, _wp] spawn pl_lay_mine_field_switch; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "ATDIRmine" : {[1, _group, _wp] spawn pl_place_dir_mine; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "APDIRmine" : {[2, _group, _wp] spawn pl_place_dir_mine; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "APDISDIRmine" : {[3, _group, _wp] spawn pl_place_dir_mine; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
         case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         case "unload" : {[_group, _wp] spawn pl_unload_at_position_planed; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
         case "load" : {[_group, _wp] spawn pl_getIn_vehicle; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
@@ -103,17 +107,28 @@ pl_task_planer_unload_inf = {
     _wp setWaypointStatements ["true", "(group this) setVariable ['pl_execute_plan', true]"];
 
     // call task to be executed
-    switch (_taskType) do {
-        case "addwp" : {[_group, _wp] spawn pl_add_wp_planed; _icon = "\A3\3den\data\Attributes\SpeedMode\normal_ca.paa"};
+    switch (_taskType) do { 
         case "assault" : {[_group, _wp] spawn pl_assault_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa"};
         case "defend" : {[_group, _wp] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "defPos" : {[_group, _wp] spawn pl_take_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "sfp" : {[_group, _wp, [], 0, true] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
-        case "mine" : {[_group, _wp] spawn pl_lay_mine_field; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
-        case "clearmine" : {[_group, _wp] spawn pl_mine_clearing; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa"};
+        case "resupply" : {[_group, _wp] spawn pl_supply_point; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\rearm_ca.paa"};
+        case "recover" : {[_group, _wp] spawn pl_repair; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa"};
+        case "ATmine" : {[1, _group, _wp] spawn pl_lay_mine_field_switch; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "APmine" : {[2, _group, _wp] spawn pl_lay_mine_field_switch; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "ATDIRmine" : {[1, _group, _wp] spawn pl_place_dir_mine; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "APDIRmine" : {[2, _group, _wp] spawn pl_place_dir_mine; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
+        case "APDISDIRmine" : {[3, _group, _wp] spawn pl_place_dir_mine; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\mine_ca.paa"};
         case "charge" : {[_group, _wp] spawn pl_place_charge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
+        case "unload" : {[_group, _wp] spawn pl_unload_at_position_planed; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
+        case "load" : {[_group, _wp] spawn pl_getIn_vehicle; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+        case "crew" : {[_group, _wp] spawn pl_crew_vehicle; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+        case "leave" : {[_group, _wp] spawn pl_leave_vehicle; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
+        case "mineclear" : {[_group, _wp] spawn pl_mine_clearing; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getout_ca.paa"};
         case "ccp" : {[_group, false, objNull, 100, 25, objNull, _wp] spawn pl_ccp; _icon = "\Plmod\gfx\pl_ccp_marker.paa"};
+        case "sfp" : {[_group, _wp, [], 0, true] spawn pl_defend_position; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\defend_ca.paa"};
         case "garrison" : {[_group, _wp] spawn pl_garrison; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\getin_ca.paa"};
+        case "mech" : {[_group, _wp] spawn pl_change_kampfweise; _icon = "\Plmod\gfx\pl_mech_task.paa"};
+        case "createbridge" : {[_group, _wp] spawn pl_create_bridge; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa"};
+        case "mc_lc" : {[_group, _wp] spawn pl_mc_lc; _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\destroy_ca.paa"};
         default {}; 
     };
 
