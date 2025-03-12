@@ -1107,8 +1107,8 @@ pl_lay_mine_field = {
                 waitUntil {sleep 0.5; ((_group getVariable ["pl_execute_plan", false]) and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
             };
         } else {
-            // waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
-            waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) <= 15 or !(_group getVariable ["pl_task_planed", false])};
+            // waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
         };
         _group setVariable ["pl_disembark_finished", nil];
 
@@ -1116,9 +1116,11 @@ pl_lay_mine_field = {
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
-        _group setVariable ["pl_task_planed", false];
-        _group setVariable ["pl_unload_task_planed", false];
-        _group setVariable ["pl_execute_plan", nil];
+        if !(_group getVariable ["pl_multi_task_planed", false]) then {
+            _group setVariable ["pl_task_planed", false];
+            _group setVariable ["pl_unload_task_planed", false];
+            _group setVariable ["pl_execute_plan", nil];
+        };
     };
 
     if (pl_cancel_strike) exitWith { 
@@ -1168,13 +1170,14 @@ pl_lay_mine_field = {
         _minePositions pushBack _mPos;
     };
 
-    private _escort = {
-        if (_x != (leader _group) and _x != _exSpecialist and alive _x and lifeState _x isNotEqualto "INCAPACITATED") exitWith {_x};
-        objNull
-    } forEach (units _group);
+    // private _escort = {
+    //     if (_x != (leader _group) and _x != _exSpecialist and alive _x and lifeState _x isNotEqualto "INCAPACITATED") exitWith {_x};
+    //     objNull
+    // } forEach (units _group);
+    _escort = objNull;
 
     {
-        [_x, 15, getDir _x] spawn pl_find_cover;
+        [_x, 0, getDir _x] spawn pl_find_cover;
     } forEach (units _group) - [_exSpecialist] - [_escort];
 
     _exSpecialist disableAI "AUTOCOMBAT";
@@ -1187,6 +1190,7 @@ pl_lay_mine_field = {
         _x setVariable ["pl_engaging", true];
         _x setUnitTrait ["camouflageCoef", 0.5, true];
         _x setVariable ["pl_damage_reduction", true];
+        // doStop _x;
     } forEach [_exSpecialist, _escort];
     pl_at_attack_array pushBack [_exSpecialist, _cords, _escort];
 
@@ -1196,9 +1200,10 @@ pl_lay_mine_field = {
 
     {
         _exSpecialist doMove _x;
+        // _exSpecialist setDestination [_x, "LEADER PLANNED", true];
         _escort doFollow _exSpecialist;
         sleep 1;
-        waitUntil {sleep 0.5; (!alive _exSpecialist) or (unitReady _exSpecialist) or !(_group getVariable ["onTask", true])};
+        waitUntil {sleep 0.5; (!alive _exSpecialist) or (_exSpecialist distance2d _x) <= 3 or !(_group getVariable ["onTask", true])};
 
         if !(_group getVariable ["onTask", true] and alive _exSpecialist and !(_exSpecialist getVariable ["pl_wia", false])) exitWith {};
 
@@ -1536,14 +1541,29 @@ pl_place_dir_mine = {
 
     if (vehicle (leader _group) != leader _group and !(_group getVariable ["pl_unload_task_planed", false])) exitWith {hint "Infantry Only Task!"};
 
-    _exSpecialist = {
-        if (_x getUnitTrait "explosiveSpecialist" and ((_x getVariable ["pl_virtual_mines", 0]) > 0) and alive _x and lifeState _x isNotEqualto "INCAPACITATED") exitWith {_x};
-        objNull
-    } forEach (units _group);
+    if ((_group getVariable ["pl_in_position", false]) and _mineType != 2) exitWith {hint "Group only has APERS Mines Available"};
+
+    if (_group getVariable ["pl_in_position", false]) then {
+        _exSpecialist = {
+            if (_x != (leader _group) and secondaryWeapon _x == "") exitWith {_x};
+            objNull
+        } forEach (units _group);
+    } else {
+        _exSpecialist = {
+            if (_x getUnitTrait "explosiveSpecialist" and ((_x getVariable ["pl_virtual_mines", 0]) > 0) and alive _x and lifeState _x isNotEqualto "INCAPACITATED") exitWith {_x};
+            objNull
+        } forEach (units _group);
+    };
 
     if (isNull _exSpecialist) exitWith {hint "No Explosive Specialist in Group!"};
 
-    _availableMines = _exSpecialist getVariable ["pl_virtual_mines", 0];
+    if (_group getVariable ["pl_in_position", false]) then {
+        _availableMines = _group getVariable ["pl_virtual_mines", 0];
+    } else {
+        _availableMines = _exSpecialist getVariable ["pl_virtual_mines", 0];
+    };
+
+    if (_availableMines <= 0) exitWith {hint "No Mines Available"};
 
     _group setVariable ["pl_is_task_selected", true];
 
@@ -1571,14 +1591,20 @@ pl_place_dir_mine = {
             onMapSingleClick "";
         };
 
+        private _rangeLimiterPos = getpos (leader _group);
+        if (_taskPlanWp isNotEqualto []) then {
+            _rangeLimiterPos = waypointPosition _taskPlanWp;
+        };
+
         while {!pl_mapClicked} do {
             if (visibleMap) then {
                 _mPos = (findDisplay 12 displayCtrl 51) ctrlMapScreenToWorld getMousePosition;
             } else {
                 _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
             };
-            
-            _markerName setMarkerPos _mPos;
+            if (_mPos distance2D _rangeLimiterPos <= 150) then {
+                _markerName setMarkerPos _mPos;
+            };
         };
 
         player enableSimulation true;
@@ -1609,8 +1635,10 @@ pl_place_dir_mine = {
             } else {
                 _mPos = (findDisplay 2000 displayCtrl 2000) ctrlMapScreenToWorld getMousePosition;
             };
+            
             _mineDir = _cords getDir _mPos;
-            _markerName setmarkerDir _mineDir; 
+            _markerName setmarkerDir _mineDir;
+            
         };
 
         player enableSimulation true;
@@ -1675,8 +1703,8 @@ pl_place_dir_mine = {
                 waitUntil {sleep 0.5; ((_group getVariable ["pl_execute_plan", false]) and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
             };
         } else {
-            // waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
-            waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) <= 15 or !(_group getVariable ["pl_task_planed", false])};
+            // waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
         };
         _group setVariable ["pl_disembark_finished", nil];
 
@@ -1684,36 +1712,46 @@ pl_place_dir_mine = {
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
-        _group setVariable ["pl_task_planed", false];
-        _group setVariable ["pl_unload_task_planed", false];
-        _group setVariable ["pl_execute_plan", nil];
+        if !(_group getVariable ["pl_multi_task_planed", false]) then {
+            _group setVariable ["pl_task_planed", false];
+            _group setVariable ["pl_unload_task_planed", false];
+            _group setVariable ["pl_execute_plan", nil];
+        };
     };
 
     if (pl_cancel_strike) exitWith {deleteMarker _markerName; pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
 
     // if (pl_enable_beep_sound) then {playSound "beep"};
     [_group, "confirm", 1] call pl_voice_radio_answer;
-    [_group] call pl_reset;
 
-    sleep 0.5;
+    if !(_group getVariable ["pl_in_position", false]) then {
+        [_group] call pl_reset;
 
-    [_group] call pl_reset;
+        sleep 0.5;
 
-    sleep 0.5;
+        [_group] call pl_reset;
 
-    _group setVariable ["onTask", true];
-    _group setVariable ["setSpecial", true];
-    _group setVariable ["specialIcon", _icon];
+        sleep 0.5;
 
-    private _escort = {
-        if (_x != (leader _group) and _x != _exSpecialist and alive _x and lifeState _x isNotEqualto "INCAPACITATED") exitWith {_x};
-        objNull
-    } forEach (units _group);
+        _group setVariable ["onTask", true];
+        _group setVariable ["setSpecial", true];
+        _group setVariable ["specialIcon", _icon];
+    };
 
-    {
-        [_x, 15, getDir _x] spawn pl_find_cover;
-    } forEach (units _group) - [_exSpecialist] - [_escort];
+    // private _escort = {
+    //     if (_x != (leader _group) and _x != _exSpecialist and alive _x and lifeState _x isNotEqualto "INCAPACITATED") exitWith {_x};
+    //     objNull
+    // } forEach (units _group);
+    _escort = objNull;
 
+    if !(_group getVariable ["pl_in_position", false]) then {
+        {
+            [_x, 0, getDir _x] spawn pl_find_cover;
+        } forEach (units _group) - [_exSpecialist] - [_escort];
+    };
+
+    _exSpecialist enableAI "PATH";
+    _exSpecialist setUnitPos "AUTO";
     _exSpecialist disableAI "AUTOCOMBAT";
     _exSpecialist disableAI "TARGET";
     _exSpecialist disableAI "AUTOTARGET";
@@ -1726,19 +1764,25 @@ pl_place_dir_mine = {
         _x setUnitTrait ["camouflageCoef", 0.5, true];
         _x setVariable ["pl_damage_reduction", true];
         _x setUnitPosWeak "MIDDLE";
+        // doStop _x;
     } forEach [_exSpecialist, _escort];
     pl_at_attack_array pushBack [_exSpecialist, _cords, _escort];
 
-    waitUntil {sleep 0.5; unitReady _exSpecialist or !alive _exSpecialist};
+    // waitUntil {sleep 0.5; unitReady _exSpecialist or !alive _exSpecialist};
 
     _exSpecialist doMove _cords;
+    _exSpecialist setDestination [_cords, "LEADER PLANNED", true];
     _escort doFollow _exSpecialist;
 
     sleep 1;
-    waitUntil {sleep 0.5; (!alive _exSpecialist) or (unitReady _exSpecialist) or !(_group getVariable ["onTask", true])};
+    waitUntil {sleep 0.5; (!alive _exSpecialist) or (_exSpecialist distance2D _cords) <= 6 or !(_group getVariable ["onTask", true])};
 
     _charges = _group getVariable ["pl_placed_charges", []];
-    if (_group getVariable ["onTask", true] and alive _exSpecialist and !(_exSpecialist getVariable ["pl_wia", false]) and (_exSpecialist distance2D _cords) <= 5) then {
+    if (_group getVariable ["onTask", true] and alive _exSpecialist and !(_exSpecialist getVariable ["pl_wia", false])) then {
+        // doStop _exSpecialist;
+        // doStop _escort;
+        _exSpecialist disableAI "PATH";
+        _escort disableAI "PATH";
         _exSpecialist setUnitPos "Middle";
         _exSpecialist playAction "PutDown";
         sleep 3;
@@ -1761,7 +1805,7 @@ pl_place_dir_mine = {
                     _areaMarker setMarkerShape "RECTANGLE";
                     // _areaMarker setMarkerBrush "Cross";
                     _areaMarker setMarkerBrush "SolidBorder";
-                    _areaMarker setMarkerColor "colorGreen";
+                    _areaMarker setMarkerColor "colorYellow";
                     _areaMarker setMarkerAlpha 0.8;
                     _areaMarker setMarkerSize [17, 17];
                     _areaMarker setMarkerDir _mineDir;
@@ -1778,13 +1822,16 @@ pl_place_dir_mine = {
                     };
 
 
-                    [_exSpecialist, _mine] spawn {
-                        params ["_exSpecialist", "_mine"];
+                    [_exSpecialist, _mine, _areaMarker] spawn {
+                        params ["_exSpecialist", "_mine", "_areaMarker"];
 
                         _exSpecialist addOwnedMine _mine;
 
                         sleep 8;
 
+                        waitUntil {sleep 1; {side _x == playerside} count ((getPos _mine) nearEntities [["Man"], 20]) <= 0};
+
+                        _areaMarker setMarkerColor "colorGreen";
                         _exSpecialist action ["TouchOff", _exSpecialist];
                     };
                 }; //APERS dispenser
@@ -1798,11 +1845,19 @@ pl_place_dir_mine = {
         };
     };
 
+
+    pl_at_attack_array = pl_at_attack_array - [[_exSpecialist, _cords, _escort]];
     deleteMarker _markerName;
-    if (_group getVariable ["onTask", true]) then {
+    if (_group getVariable ["onTask", true] and !(_group getVariable ["pl_in_position", false])) then {
         [_group] call pl_reset;
     };
-    pl_at_attack_array = pl_at_attack_array - [[_exSpecialist, _cords, _escort]];
+
+    if (_group getVariable ["pl_in_position", false]) then {
+        [_exSpecialist] spawn pl_move_back_to_def_pos;
+        _exSpecialist setVariable ["pl_is_at", false];
+    };
+
+    
 };
 
 pl_groups_with_charges = [];
@@ -1933,8 +1988,8 @@ pl_place_charge = {
                 waitUntil {sleep 0.5; ((_group getVariable ["pl_execute_plan", false]) and (_group getVariable ["pl_disembark_finished", false])) or !(_group getVariable ["pl_task_planed", false])};
             };
         } else {
-            // waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) < 11 or !(_group getVariable ["pl_task_planed", false])};
-            waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
+            waitUntil {sleep 0.5; ((leader _group) distance2D (waypointPosition _taskPlanWp)) <= 15 or !(_group getVariable ["pl_task_planed", false])};
+            // waitUntil {sleep 0.5; (_group getVariable ["pl_execute_plan", false]) or !(_group getVariable ["pl_task_planed", false])};
         };
         _group setVariable ["pl_disembark_finished", nil];
 
@@ -1942,9 +1997,11 @@ pl_place_charge = {
         pl_draw_planed_task_array_wp = pl_draw_planed_task_array_wp - [[_cords, _taskPlanWp, _icon]];
 
         if !(_group getVariable ["pl_task_planed", false]) then {pl_cancel_strike = true}; // deleteMarker
-        _group setVariable ["pl_task_planed", false];
-        _group setVariable ["pl_unload_task_planed", false];
-        _group setVariable ["pl_execute_plan", nil];
+        if !(_group getVariable ["pl_multi_task_planed", false]) then {
+            _group setVariable ["pl_task_planed", false];
+            _group setVariable ["pl_unload_task_planed", false];
+            _group setVariable ["pl_execute_plan", nil];
+        };
     };
 
     if (pl_cancel_strike) exitWith {deleteMarker _markerName; pl_cancel_strike = false; _group setVariable ["pl_is_task_selected", nil];};
@@ -1963,13 +2020,14 @@ pl_place_charge = {
     _group setVariable ["setSpecial", true];
     _group setVariable ["specialIcon", _icon];
 
-    private _escort = {
-        if (_x != (leader _group) and _x != _exSpecialist) exitWith {_x};
-        objNull
-    } forEach (units _group);
+    // private _escort = {
+    //     if (_x != (leader _group) and _x != _exSpecialist) exitWith {_x};
+    //     objNull
+    // } forEach (units _group);
+    _escort = objNull;
 
     {
-        [_x, 15, getDir _x] spawn pl_find_cover;
+        [_x, 0, getDir _x] spawn pl_find_cover;
     } forEach (units _group) - [_exSpecialist] - [_escort];
 
     _exSpecialist disableAI "AUTOCOMBAT";
@@ -1983,26 +2041,34 @@ pl_place_charge = {
         _x setUnitTrait ["camouflageCoef", 0.5, true];
         _x setVariable ["pl_damage_reduction", true];
         _x setUnitPosWeak "MIDDLE";
+        // doStop _x;
     } forEach [_exSpecialist, _escort];
     pl_at_attack_array pushBack [_exSpecialist, _cords, _escort];
 
-    waitUntil {sleep 0.5; unitReady _exSpecialist or !alive _exSpecialist};
+    // waitUntil {sleep 0.5; unitReady _exSpecialist or !alive _exSpecialist};
+    sleep 1;
 
     _exSpecialist doMove _cords;
+    _exSpecialist setDestination [_cords, "LEADER PLANNED", true];
     _escort doFollow _exSpecialist;
 
     sleep 1;
-    waitUntil {sleep 0.5; (!alive _exSpecialist) or (unitReady _exSpecialist) or !(_group getVariable ["onTask", true])};
+    waitUntil {sleep 0.5; (!alive _exSpecialist) or (_exSpecialist distance2d _cords) <= 5 or !(_group getVariable ["onTask", true])};
+    // waitUntil {sleep 0.5; (!alive _exSpecialist) or unitReady _exSpecialist or !(_group getVariable ["onTask", true])};
 
     _charges = _group getVariable ["pl_placed_charges", []];
     if (_group getVariable ["onTask", true] and alive _exSpecialist and !(_exSpecialist getVariable ["pl_wia", false])) then {
         _exSpecialist setUnitPos "Middle";
         _exSpecialist playAction "PutDown";
+        _exSpecialist disableAI "PATH";
+        _escort disableAI "PATH";
         sleep 3;
         _charge = createMine ["DemoCharge_F", _cords, [], 0];
         _charges pushBack _charge;
         _exSpecialist setUnitPos "Auto";
         _exSpecialist enableAI "AUTOCOMBAT";
+        _exSpecialist enableAI "PATH";
+        _escort enableAI "PATH";
         _exSpecialist setVariable ["pl_virtual_mines", (_exSpecialist getVariable "pl_virtual_mines") - 1];
         _group setVariable ["pl_placed_charges", _charges];
         pl_groups_with_charges pushBackUnique _group;
@@ -2292,10 +2358,10 @@ pl_directional_at_mine = {
 
     while {mineActive _mine} do {
 
-        _targets = _triggerPos nearEntities [["Tank", "Car"], 20];
+        _targets = (_triggerPos nearEntities [["Tank", "Car"], 20]) select {alive _x};
 
         if (_targets isNotEqualTo []) then {
-            [getPosASLVisual _mine, "R_TBG32V_F", _targets#0, 70, true, [0,0,0.25], 2, "", false] spawn BIS_fnc_EXP_camp_guidedProjectile;
+            [getPosASLVisual _mine, "R_TBG32V_F", _targets#0, 50, true, [0,0,0.25], 2, "", false] spawn BIS_fnc_EXP_camp_guidedProjectile;
             // [getPosASLVisual _mine, "M_NLAW_AT_F", _targets#0, 90, true, [0,0,0.25], 2, "", false] spawn BIS_fnc_EXP_camp_guidedProjectile;
             _mine setDamage 1;
             sleep 0.2;
@@ -2318,7 +2384,7 @@ pl_directional_ap_mine = {
     private _mine = createMine ["Claymore_F", _minePos, [], 0];
     _mine setDir _mineDir;
 
-    private _triggerPos = _minePos getPos [15, _mineDir];
+    private _triggerPos = _minePos getPos [10, _mineDir];
 
     private _mineMarker = createMarker [str (random 5), _minePos];
     _mineMarker setMarkerType "marker_ap_dir_mine";
@@ -2329,8 +2395,8 @@ pl_directional_ap_mine = {
     private _mineMarkerArea = createMarker [str (random 5), _triggerPos];
     _mineMarkerArea setMarkerShape "RECTANGLE";
     _mineMarkerArea setMarkerBrush "SolidBorder";
-    _mineMarkerArea setMarkerColor "colorGreen";
-    _mineMarkerArea setMarkerSize [15, 15];
+    _mineMarkerArea setMarkerColor "colorYellow";
+    _mineMarkerArea setMarkerSize [10, 10];
     _mineMarkerArea setMarkerAlpha 0.8;
     _mineMarkerArea setMarkerDir _mineDir;
  
@@ -2338,9 +2404,13 @@ pl_directional_ap_mine = {
 
     sleep 15;
 
+    waitUntil {sleep 1; {alive _x and side _x == playerside} count (_triggerPos nearEntities [["Man"], 20]) <= 0};
+
+    _mineMarkerArea setMarkerColor "colorGreen";
+
     while {mineActive _mine} do {
 
-        _targets = _triggerPos nearEntities [["Man"], 15];
+        _targets = (_triggerPos nearEntities [["Man"], 12]) select {alive _x};
 
         if (_targets isNotEqualTo []) then {
             _mine setDamage 1;

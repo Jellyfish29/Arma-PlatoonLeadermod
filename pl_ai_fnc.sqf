@@ -708,6 +708,8 @@ pl_set_up_ai = {
         // if (_vic isKindOf "Air" and pl_enable_auto_air_remove) then {
         //     player hcRemoveGroup _group;
         // };
+    } else {
+        _group setVariable ["pl_virtual_mines", round (count (units _group) / 3)];
     };
     _group setVariable ["aiSetUp", true];
     _group setVariable ["onTask", false];
@@ -725,6 +727,7 @@ pl_set_up_ai = {
     _group setVariable ["pl_sop_def_deployStatic", true];
     _group setVariable ["pl_sop_atk_disenage", true];
     _group setVariable ["pl_sop_atk_ATEngagement", true];
+
     _groupComposition = [];
 
     private _engineer = objNull;
@@ -1110,7 +1113,7 @@ pl_ai_setUp_loop = {
         {
             if (side _x isEqualTo playerSide) then {
                 [_x] spawn pl_vehicle_setup;
-                [group (driver _x)] spawn pl_change_to_vic_symbols;
+                [group (driver _x)] call pl_change_to_vic_symbols;
             }
             else
             {

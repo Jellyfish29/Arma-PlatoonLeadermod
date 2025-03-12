@@ -20,6 +20,8 @@
 //     _pos
 // };
 
+
+
 // How much ammo a magazine has
 // Params:
 // 0: our tank object
@@ -169,7 +171,7 @@ pl_quick_suppress_unit = {
         // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
         // _helper1 setposASL _targetpos;
 
-        if ((_targetPos distance2D _unit) > pl_suppression_min_distance and ([_unit, _targetPos] call pl_friendly_check)) then {
+        if ((_targetPos distance2D _unit) > pl_suppression_min_distance and ([_unit, _targetPos] call pl_friendly_check) and _targetPos isNotEqualTo [0,0,0]) then {
 
             _unit doWatch _targetPos;
             _unit doSuppressiveFire _targetPos;
@@ -186,7 +188,7 @@ pl_get_suppress_target_pos = {
     
     // if no surface intersection return initial pos
     private _targetPos = _initialTargetPos;
-    // private _allHelpers = [];
+    private _allHelpers = [];
 
     // surface intersection
     if !(_vis isEqualTo []) then {
@@ -229,22 +231,44 @@ pl_get_suppress_target_pos = {
             // _allHelpers pushback _helper2;
 
         } else {
-            // if surface is not terrain return surface pos
-            _targetPos = _vis#0#0;
+            // if surface is not terrain and surface is within distance parameters return surface pos
+
+            if ((_vis#0#2) isKindOf "Building") then {
+
+                 if ((_vis#0#0) distance2d _initialTargetPos <= 150 and (_vis#0#0) distance2d _unit >= 25) then {
+                    _targetPos = _vis#0#0;
+                } else {
+                    _targetpos = [0,0,0];
+                    // _helper5 = createVehicle ["Sign_Sphere25cm_F", _vis#0#0, [], 0, "none"];
+                    // _helper5 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+                    // _helper5 setposASL _targetpos;
+                    // _allHelpers pushback _helper5;
+                };
+            } else {
+                if ((_vis#0#0) distance2d _unit >= 25) then {
+                    _targetPos = _vis#0#0;
+                } else {
+                    _targetpos = [0,0,0];
+                }
+            };
         };
     };
+
+
+
 
     // [_allHelpers] spawn {
     //     sleep 30;
 
-        // {
-        //     deleteVehicle _x;
-        // } forEach (_this#0);
+    //     {
+    //         deleteVehicle _x;
+    //     } forEach (_this#0);
 
     // };
 
     _targetPos
 };
+
 
 
 pl_get_fire_position = {

@@ -2625,7 +2625,19 @@ class CfgMarkers
         icon="\Plmod\gfx\marta\b_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\b_f_s_aa_pl.paa";
     };
-        class b_p_inf_pl: b_f_tank_pl
+    class b_f_t_at_pl: b_f_tank_pl
+    {
+        name="AT Squad Blufor";
+        icon="\Plmod\gfx\marta\b_f_t_at_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_t_at_pl.paa";
+    };
+    class b_f_s_at_pl: b_f_tank_pl
+    {
+        name="AT Squad Blufor";
+        icon="\Plmod\gfx\marta\b_f_s_at_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_t_at_pl.paa";
+    };
+    class b_p_inf_pl: b_f_tank_pl
     {
         name="Inf Plt Blufor";
         icon="\Plmod\gfx\marta\b_p_inf_pl.paa";
@@ -2752,7 +2764,19 @@ class CfgMarkers
         icon="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
     };
-        class o_p_inf_pl: o_f_tank_pl
+    class o_f_t_at_pl: o_f_t_inf_pl
+    {
+        name="AT Team Opfor";
+        icon="\Plmod\gfx\marta\o_f_t_at_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_t_at_pl.paa";
+    };
+    class o_f_s_at_pl: o_f_t_inf_pl
+    {
+        name="AT Squad Opfor";
+        icon="\Plmod\gfx\marta\o_f_s_at_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_s_at_pl.paa";
+    };
+    class o_p_inf_pl: o_f_tank_pl
     {
         name="Inf Plt Opfor";
         icon="\Plmod\gfx\marta\o_p_inf_pl.paa";
@@ -2878,6 +2902,18 @@ class CfgMarkers
         name="aa Squad Independet";
         icon="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
+    };
+    class n_f_t_at_pl: n_f_t_inf_pl
+    {
+        name="AT Team Independet";
+        icon="\Plmod\gfx\marta\n_f_t_at_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_t_at_pl.paa";
+    };
+    class n_f_s_at_pl: n_f_t_inf_pl
+    {
+        name="AT Squad Independet";
+        icon="\Plmod\gfx\marta\n_f_s_at_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_s_at_pl.paa";
     };
 
     class o_f_tankaa_pl: o_f_tank_pl
@@ -3012,6 +3048,24 @@ class CfgMarkers
         icon="\Plmod\gfx\marta\b_f_air_rotary_pl.paa";
         texture="\Plmod\gfx\marta\b_f_air_rotary_pl.paa";
     };
+    class b_f_air_rotary_atk_pl: b_f_tank_pl
+    {
+        name="AIr rotary attack BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_rotary_atk_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_rotary_atk_pl.paa";
+    };
+    class b_f_air_rotary_med_pl: b_f_tank_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_rotary_med_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_rotary_med_pl.paa";
+    };
+    class b_f_air_uav_pl: b_f_tank_pl
+    {
+        name="Air uav BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_uav_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_uav_pl.paa";
+    };
 
     class o_f_air_fixed_pl: o_f_tank_pl
     {
@@ -3024,6 +3078,24 @@ class CfgMarkers
         name="AIr rotary BluFor";
         icon="\Plmod\gfx\marta\o_f_air_rotary_pl.paa";
         texture="\Plmod\gfx\marta\o_f_air_rotary_pl.paa";
+    };
+    class o_f_air_rotary_atk_pl: o_f_tank_pl
+    {
+        name="AIr rotary attack BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_rotary_atk_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_rotary_atk_pl.paa";
+    };
+    class o_f_air_rotary_med_pl: o_f_tank_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_rotary_med_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_rotary_med_pl.paa";
+    };
+    class o_f_air_uav_pl: o_f_tank_pl
+    {
+        name="Air uav BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_uav_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_uav_pl.paa";
     };
 
     class n_f_air_fixed_pl: n_f_tank_pl
@@ -3038,6 +3110,24 @@ class CfgMarkers
         icon="\Plmod\gfx\marta\n_f_air_rotary_pl.paa";
         texture="\Plmod\gfx\marta\n_f_air_rotary_pl.paa";
     };
+    class n_f_air_rotary_atk_pl: n_f_tank_pl
+    {
+        name="AIr rotary attack BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_rotary_atk_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_rotary_atk_pl.paa";
+    };
+    class n_f_air_rotary_med_pl: n_f_tank_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_rotary_med_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_rotary_med_pl.paa";
+    };
+    class n_f_air_uav_pl: n_f_tank_pl
+    {
+        name="Air uav BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_uav_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_uav_pl.paa";
+    };
 
     class unknown_f_pl: n_f_tank_pl
     {
@@ -3051,6 +3141,83 @@ class CfgMarkers
         icon="\Plmod\gfx\marta\unknown_s_pl.paa";
         texture="\Plmod\gfx\marta\unknown_s_pl.paa";
     };
+
+    class b_f_unknown_pl: b_f_tank_pl
+    {
+        name="Unknown Blufor";
+        icon="\Plmod\gfx\marta\b_f_unknown_pl";
+        texture="\Plmod\gfx\marta\b_f_unknown_pl";
+    };
+    class b_s_unknown_pl: b_f_tank_pl
+    {
+        name="Unknown Suspected Blufor";
+        icon="\Plmod\gfx\marta\b_s_unknown_pl";
+        texture="\Plmod\gfx\marta\b_s_unknown_pl";
+    };
+    class b_f_unknown_eq_pl: b_f_tank_pl
+    {
+        name="Unknown Equipment Blufor";
+        icon="\Plmod\gfx\marta\b_f_unknown_eq_pl";
+        texture="\Plmod\gfx\marta\b_f_unknown_eq_pl";
+    };
+    class b_s_unknown_eq_pl: b_f_tank_pl
+    {
+        name="Unknown Equipment Suspected Blufor";
+        icon="\Plmod\gfx\marta\b_s_unknown_eq_pl";
+        texture="\Plmod\gfx\marta\b_s_unknown_eq_pl";
+    };
+
+    class o_f_unknown_pl: o_f_tank_pl
+    {
+        name="Unknown Opfor";
+        icon="\Plmod\gfx\marta\o_f_unknown_pl";
+        texture="\Plmod\gfx\marta\o_f_unknown_pl";
+    };
+    class o_s_unknown_pl: o_f_tank_pl
+    {
+        name="Unknown Suspected Opfor";
+        icon="\Plmod\gfx\marta\o_s_unknown_pl";
+        texture="\Plmod\gfx\marta\o_s_unknown_pl";
+    };
+    class o_f_unknown_eq_pl: o_f_tank_pl
+    {
+        name="Unknown Equipment Opfor";
+        icon="\Plmod\gfx\marta\o_f_unknown_pl";
+        texture="\Plmod\gfx\marta\o_f_unknown_pl";
+    };
+    class o_s_unknown_eq_pl: o_f_tank_pl
+    {
+        name="Unknown Equipment Suspected Opfor";
+        icon="\Plmod\gfx\marta\o_s_unknown_pl";
+        texture="\Plmod\gfx\marta\o_s_unknown_pl";
+    };
+
+    class n_f_unknown_pl: n_f_tank_pl
+    {
+        name="Unknown Independet";
+        icon="\Plmod\gfx\marta\n_f_unknown_pl";
+        texture="\Plmod\gfx\marta\n_f_unknown_pl";
+    };
+    class n_s_unknown_pl: n_f_tank_pl
+    {
+        name="Unknown Suspected Independet";
+        icon="\Plmod\gfx\marta\n_s_unknown_pl";
+        texture="\Plmod\gfx\marta\n_s_unknown_pl";
+    };
+    class n_f_unknown_eq_pl: n_f_tank_pl
+    {
+        name="Unknown Equipment Independet";
+        icon="\Plmod\gfx\marta\n_f_unknown_pl";
+        texture="\Plmod\gfx\marta\n_f_unknown_pl";
+    };
+    class n_s_unknown_eq_pl: n_f_tank_pl
+    {
+        name="Unknown Equipment Suspected Independet";
+        icon="\Plmod\gfx\marta\n_s_unknown_pl";
+        texture="\Plmod\gfx\marta\n_s_unknown_pl";
+    };
+
+
 };
 
 class cfgGroupIcons
@@ -3265,6 +3432,18 @@ class cfgGroupIcons
         icon="\Plmod\gfx\marta\b_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\b_f_s_aa_pl.paa";
     };
+    class b_f_t_at_pl: b_f_tank_pl
+    {
+        name="AT Team Blufor";
+        icon="\Plmod\gfx\marta\b_f_t_at_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_t_at_pl.paa";
+    };
+    class b_f_s_at_pl: b_f_tank_pl
+    {
+        name="AT Squad Blufor";
+        icon="\Plmod\gfx\marta\b_f_s_at_pl.paa";
+        texture="\Plmod\gfx\marta\b_s_t_at_pl.paa";
+    };
     class b_f_heli_pl: b_unknown_pl
     {
         name="Helicopter Blufor";
@@ -3295,6 +3474,37 @@ class cfgGroupIcons
         name="Plane Attack Blufor";
         icon="\Plmod\gfx\marta\b_f_uav_pl.paa";
         texture="\Plmod\gfx\marta\b_f_uav_pl.paa";
+    };
+
+    class b_f_air_fixed_pl: b_unknown_pl
+    {
+        name="AIr Fixed BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_fixed_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_fixed_pl.paa";
+    };
+    class b_f_air_rotary_pl: b_unknown_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_rotary_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_rotary_pl.paa";
+    };
+    class b_f_air_rotary_atk_pl: b_unknown_pl
+    {
+        name="AIr rotary attack BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_rotary_atk_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_rotary_atk_pl.paa";
+    };
+    class b_f_air_rotary_med_pl: b_unknown_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_rotary_med_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_rotary_med_pl.paa";
+    };
+    class b_f_air_uav_pl: b_unknown_pl
+    {
+        name="Air uav BluFor";
+        icon="\Plmod\gfx\marta\b_f_air_uav_pl.paa";
+        texture="\Plmod\gfx\marta\b_f_air_uav_pl.paa";
     };
 
     class o_f_tank_pl: o_unknown_pl
@@ -3476,15 +3686,27 @@ class cfgGroupIcons
     };
     class o_f_t_aa_pl: o_f_t_inf_pl
     {
-        name="aa Team Opfor";
+        name="AA Team Opfor";
         icon="\Plmod\gfx\marta\o_f_t_aa_pl.paa";
         texture="\Plmod\gfx\marta\o_f_t_aa_pl.paa";
     };
     class o_f_s_aa_pl: o_f_t_inf_pl
     {
-        name="aa Squad Opfor";
+        name="AA Squad Opfor";
         icon="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\o_f_s_aa_pl.paa";
+    };
+    class o_f_t_at_pl: o_f_t_inf_pl
+    {
+        name="AT Team Opfor";
+        icon="\Plmod\gfx\marta\o_f_t_at_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_t_at_pl.paa";
+    };
+    class o_f_s_at_pl: o_f_t_inf_pl
+    {
+        name="AT Squad Opfor";
+        icon="\Plmod\gfx\marta\o_f_s_at_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_s_at_pl.paa";
     };
 
     class o_f_uav_pl: o_unknown_pl
@@ -3684,11 +3906,159 @@ class cfgGroupIcons
         icon="\Plmod\gfx\marta\n_f_s_aa_pl.paa";
         texture="\Plmod\gfx\marta\n_f_s_aa_pl.paa";
     };
+    class n_f_t_at_pl: n_f_t_inf_pl
+    {
+        name="AT Team Independet";
+        icon="\Plmod\gfx\marta\n_f_t_at_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_t_at_pl.paa";
+    };
+    class n_f_s_at_pl: n_f_t_inf_pl
+    {
+        name="AT Squad Independet";
+        icon="\Plmod\gfx\marta\n_f_s_at_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_s_at_pl.paa";
+    };
     class n_f_uav_pl: n_unknown_pl
     {
         name="Plane Attack Blufor";
         icon="\Plmod\gfx\marta\n_f_uav_pl.paa";
         texture="\Plmod\gfx\marta\n_f_uav_pl.paa";
+    };
+    class o_f_air_fixed_pl: o_f_t_inf_pl
+    {
+        name="AIr Fixed BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_fixed_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_fixed_pl.paa";
+    };
+    class o_f_air_rotary_pl: o_f_t_inf_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_rotary_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_rotary_pl.paa";
+    };
+    class o_f_air_rotary_atk_pl: o_f_t_inf_pl
+    {
+        name="AIr rotary attack BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_rotary_atk_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_rotary_atk_pl.paa";
+    };
+    class o_f_air_rotary_med_pl: o_f_t_inf_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_rotary_med_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_rotary_med_pl.paa";
+    };
+    class o_f_air_uav_pl: o_f_t_inf_pl
+    {
+        name="Air uav BluFor";
+        icon="\Plmod\gfx\marta\o_f_air_uav_pl.paa";
+        texture="\Plmod\gfx\marta\o_f_air_uav_pl.paa";
+    };
+
+    class n_f_air_fixed_pl: n_f_t_inf_pl
+    {
+        name="AIr Fixed BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_fixed_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_fixed_pl.paa";
+    };
+    class n_f_air_rotary_pl: n_f_t_inf_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_rotary_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_rotary_pl.paa";
+    };
+    class n_f_air_rotary_atk_pl: n_f_t_inf_pl
+    {
+        name="AIr rotary attack BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_rotary_atk_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_rotary_atk_pl.paa";
+    };
+    class n_f_air_rotary_med_pl: n_f_t_inf_pl
+    {
+        name="AIr rotary BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_rotary_med_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_rotary_med_pl.paa";
+    };
+    class n_f_air_uav_pl: n_f_t_inf_pl
+    {
+        name="Air uav BluFor";
+        icon="\Plmod\gfx\marta\n_f_air_uav_pl.paa";
+        texture="\Plmod\gfx\marta\n_f_air_uav_pl.paa";
+    };
+
+    class b_f_unknown_pl: b_unknown_pl
+    {
+        name="Unknown Blufor";
+        icon="\Plmod\gfx\marta\b_f_unknown_pl";
+        texture="\Plmod\gfx\marta\b_f_unknown_pl";
+    };
+    class b_s_unknown_pl: b_unknown_pl
+    {
+        name="Unknown Suspected Blufor";
+        icon="\Plmod\gfx\marta\b_s_unknown_pl";
+        texture="\Plmod\gfx\marta\b_s_unknown_pl";
+    };
+    class b_f_unknown_eq_pl: b_unknown_pl
+    {
+        name="Unknown Equipment Blufor";
+        icon="\Plmod\gfx\marta\b_f_unknown_eq_pl";
+        texture="\Plmod\gfx\marta\b_f_unknown_eq_pl";
+    };
+    class b_s_unknown_eq_pl: b_unknown_pl
+    {
+        name="Unknown Equipment Suspected Blufor";
+        icon="\Plmod\gfx\marta\b_s_unknown_eq_pl";
+        texture="\Plmod\gfx\marta\b_s_unknown_eq_pl";
+    };
+
+    class o_f_unknown_pl: o_f_t_inf_pl
+    {
+        name="Unknown Opfor";
+        icon="\Plmod\gfx\marta\o_f_unknown_pl";
+        texture="\Plmod\gfx\marta\o_f_unknown_pl";
+    };
+    class o_s_unknown_pl: o_f_t_inf_pl
+    {
+        name="Unknown Suspected Opfor";
+        icon="\Plmod\gfx\marta\o_s_unknown_pl";
+        texture="\Plmod\gfx\marta\o_s_unknown_pl";
+    };
+    class o_f_unknown_eq_pl: o_f_t_inf_pl
+    {
+        name="Unknown Equipment Opfor";
+        icon="\Plmod\gfx\marta\o_f_unknown_pl";
+        texture="\Plmod\gfx\marta\o_f_unknown_pl";
+    };
+    class o_s_unknown_eq_pl: o_f_t_inf_pl
+    {
+        name="Unknown Equipment Suspected Opfor";
+        icon="\Plmod\gfx\marta\o_s_unknown_pl";
+        texture="\Plmod\gfx\marta\o_s_unknown_pl";
+    };
+
+    class n_f_unknown_pl: n_unknown_pl
+    {
+        name="Unknown Independet";
+        icon="\Plmod\gfx\marta\n_f_unknown_pl";
+        texture="\Plmod\gfx\marta\n_f_unknown_pl";
+    };
+    class n_s_unknown_pl: n_unknown_pl
+    {
+        name="Unknown Suspected Independet";
+        icon="\Plmod\gfx\marta\n_s_unknown_pl";
+        texture="\Plmod\gfx\marta\n_s_unknown_pl";
+    };
+    class n_f_unknown_eq_pl: n_unknown_pl
+    {
+        name="Unknown Equipment Independet";
+        icon="\Plmod\gfx\marta\n_f_unknown_pl";
+        texture="\Plmod\gfx\marta\n_f_unknown_pl";
+    };
+    class n_s_unknown_eq_pl: n_unknown_pl
+    {
+        name="Unknown Equipment Suspected Independet";
+        icon="\Plmod\gfx\marta\n_s_unknown_pl";
+        texture="\Plmod\gfx\marta\n_s_unknown_pl";
     };
 
     class b_recon_add_pl: Flag

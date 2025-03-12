@@ -1,3 +1,12 @@
+military Symbol Generator
+
+Png
+64x64
+color = white
+Linewidth 5
+50% opacity
+
+
 o_f_tank_pl
 o_s_tank_pl
 b_f_tank_pl
@@ -6,7 +15,7 @@ n_f_tank_pl
 n_s_tank_pl
 
 o_f_apctr_pl --{
-o_s_apctr_pl
+o_s_apctr_plb_
 b_f_apctr_pl
 b_s_apctr_pl
 n_f_apctr_pl

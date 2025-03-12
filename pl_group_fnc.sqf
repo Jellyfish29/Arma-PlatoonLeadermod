@@ -227,6 +227,8 @@ pl_change_group_icon = {
     _group addGroupIcon [_typeStr];      
 };
 
+
+
 pl_hide_group_icon = {
     params ["_group"];
 
@@ -265,6 +267,8 @@ pl_change_inf_icons = {
 
     private _engineers = 0;
     private _medics = 0;
+    private _ats = 0;
+    private _aas = 0;
     {
         if (_x getUnitTrait "explosiveSpecialist" or _x getUnitTrait "engineer") then {
             _engineers = _engineers + 1;
@@ -272,8 +276,22 @@ pl_change_inf_icons = {
         if (_x getUnitTrait "medic") then {
             _medics = _medics + 1;
         };
+        if (([secondaryWeapon _x] call BIS_fnc_itemtype) select 1 in ["MissileLauncher"]) then {
+            _ats = _ats + 1;
+            if (["aa", (secondaryWeaponMagazine _x)#0, false] call BIS_fnc_inString) then {
+                _aas = _aas + 1;
+            };
+        };
     } forEach (units _group);
 
+    if (_ats >= 2) then {
+        _icon = format ["f_%1_at_pl", _size];
+        [_group] spawn pl_continous_mine_detection;
+    };
+    if (_aas >= 2) then {
+        _icon = format ["f_%1_aa_pl", _size];
+        [_group] spawn pl_continous_mine_detection;
+    };
     if (_engineers >= 2) then {
         _icon = format ["f_%1_eng_pl", _size];
         [_group] spawn pl_continous_mine_detection;
@@ -285,6 +303,8 @@ pl_change_inf_icons = {
 
     [_group, _icon] call pl_change_group_icon;
 };
+
+
 
 pl_hc_mech_inf_icon_changer = {
     params ["_group"];
@@ -503,13 +523,15 @@ pl_voice_radio_answer = {
 pl_change_to_vic_symbols = {
     params ["_group", ["_force", false]];
 
-    sleep 1;
+    if (_group getVariable ["pl_custom_icon", ""] isnotEqualto "") exitwith {};
+
+    // sleep 1;
 
     if (vehicle (leader _group) != leader _group) then {
         private _vic = vehicle (leader _group);
 
         if (_group == group player and !_force) exitWith {};
-        if (_vic isKindOf "Air" and !_force) exitWith {};
+        // if (_vic isKindOf "Air" and !_force) exitWith {};
         // if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1 and !_force) exitwith {};
         if ((((assignedVehicleRole (leader _group)) select 0) isEqualTo "cargo" or ((assignedVehicleRole (leader _group)) select 0) isEqualTo "turret") and (leader _group) != commander _vic and (leader _group) != gunner _vic and (leader _group) != effectiveCommander _vic and !_force) exitWith {};
 
@@ -573,11 +595,15 @@ pl_change_to_vic_symbols = {
                 _symbolType = format ["%1_%2_ifvtr_pl", pl_side_prefix, _status];
                 if (_vic isKindOf "Car") then {_symbolType = format ["%1_%2_ifvwe_pl", pl_side_prefix, _status]};
             };
-            default {_symbolType = format ["%1_%2_truck_pl", pl_side_prefix, _status]};
+            case "fast mover" : {_symbolType = format ["%1_f_air_fixed_pl", pl_side_prefix]};
+            case "gunship" : {_symbolType = format ["%1_f_air_rotary_atk_pl", pl_side_prefix]};
+            case "helicopter" : {_symbolType = format ["%1_f_air_rotary_pl", pl_side_prefix]};
+            case "UAV" : {_symbolType = format ["%1_f_air_uav_pl", pl_side_prefix]};
+            default {_symbolType = format ["%1_%2_unknown_eq_pl", pl_side_prefix, _status]};
         };
 
 
-        if (isVehicleRadarOn _vic) then {
+        if (isVehicleRadarOn _vic and !(_vic isKindOf "AIR")) then {
             _symbolType = format ["%1_%2_tankaa_pl", pl_side_prefix, _status];
         };
         if ((getNumber (configFile >> "CfgVehicles" >> typeOf _vic >> "artilleryScanner")) == 1) then {

@@ -27,7 +27,7 @@ item22[] = {"Combat_Aggressiv",2,250,667.853455,-152.277740,757.853455,-102.2777
 item23[] = {"attack_close",4,218,802.461060,-156.511780,892.461060,-106.511780,1.000000,"attack" \n "close"};
 item24[] = {"cover_close",4,218,737.025574,38.466339,827.025574,88.466339,0.000000,"cover" \n "close"};
 item25[] = {"move_CMD",4,218,665.870117,-294.063751,755.870056,-244.063751,2.000000,"move" \n "CMD"};
-item26[] = {"no_wp_Cover",4,218,1080.441650,-46.135925,1170.441528,3.864136,1.000000,"no wp" \n "Cover"};
+item26[] = {"no_wp_Cover",4,4314,1080.441650,-46.135925,1170.441528,3.864136,1.000000,"no wp" \n "Cover"};
 item27[] = {"Timeout",4,218,446.435089,-322.978699,536.435059,-272.978699,0.000000,"Timeout"};
 item28[] = {"Wait",2,250,360.148193,-428.143677,450.148193,-378.143677,0.000000,"Wait"};
 item29[] = {"Timeout",4,218,280.533081,-316.317444,370.533081,-266.317444,0.000000,"Timeout"};
@@ -88,8 +88,8 @@ link50[] = {29,4};
 link51[] = {30,32};
 link52[] = {31,30};
 link53[] = {32,5};
-globals[] = {0.000000,0,0,0,0,640,480,1,75,6316128,1,-589.385498,1636.541016,967.093567,-1078.442017,1345,1236,1};
-window[] = {2,-1,-1,-1,-1,1263,234,2153,234,3,1363};
+globals[] = {0.000000,0,0,0,0,640,480,1,75,6316128,1,212.863525,1407.356445,646.147461,-614.546265,830,876,1};
+window[] = {2,-1,-1,-32000,-32000,1263,234,2153,234,3,848};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -340,8 +340,7 @@ class FSM
                                         priority = 2.000000;
                                         to="Combat_Aggressiv";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"time >= _time and count (((getPos (leader _grp)) nearEntities [[""Man"", ""Car"", ""Tank""], 500]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0}) > 0.1;" \n
-                                         ""/*%FSM</CONDITION""">*/;
+                                        condition=/*%FSM<CONDITION""">*/"time >= _time and (count (((getPos (leader _grp)) nearEntities [[""Man"", ""Car"", ""Tank""], 800]) select {side _x == playerSide and ((leader _grp) knowsAbout _x) > 0.1})) > 0;"/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/""/*%FSM</ACTION""">*/;
                                 };
                                 /*%FSM</LINK>*/
@@ -474,8 +473,7 @@ class FSM
                                         priority = 1.000000;
                                         to="Fighting";
                                         precondition = /*%FSM<CONDPRECONDITION""">*/""/*%FSM</CONDPRECONDITION""">*/;
-                                        condition=/*%FSM<CONDITION""">*/"time >= _time and (currentWaypoint _grp) >= count (waypoints _grp);" \n
-                                         "// or currentCommand (leader _grp) isNotEqualTo ""MOVE"";" \n
+                                        condition=/*%FSM<CONDITION""">*/"time >= _time and ((currentWaypoint _grp) >= count (waypoints _grp) or currentCommand (leader _grp) isNotEqualTo ""MOVE"");" \n
                                          "// "/*%FSM</CONDITION""">*/;
                                         action=/*%FSM<ACTION""">*/"_oldAliveUnits = count ((units _grp) select {alive _x});" \n
                                          "if !(_grp getvariable [""pl_opf_in_pos"", false]) then {" \n
@@ -483,9 +481,7 @@ class FSM
                                          "};" \n
                                          "_grp setVariable [""pl_opf_task"", ""cover""];" \n
                                          "" \n
-                                         "_time = time + 2 + (random 5);" \n
-                                         "if ([getpos (leader _grp)] call pl_is_city) then {_time = _time + 200};" \n
-                                         "" \n
+                                         "_time = time + 15 + (random 5);" \n
                                          "" \n
                                          "_grp setVariable [""pl_opfor_debug_marker_text"", ""Taking Cover WP Reached""];" \n
                                          "" \n

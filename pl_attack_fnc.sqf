@@ -291,7 +291,7 @@ pl_suppressive_fire_position = {
                 _pos = [_cords, _area] call _getTargets;
                 _targetPos = [_pos , _unit] call pl_get_suppress_target_pos;
 
-                if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_unit, _targetPos] call pl_friendly_check)) then {
+                if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_unit, _targetPos] call pl_friendly_check) and _targetPos isNotEqualTo [0,0,0]) then {
 
                     _unit doWatch _targetPos;
                     _unit doSuppressiveFire _targetPos;
@@ -432,8 +432,6 @@ pl_throw_smoke_at_pos = {
     params ["_unit", "_smokePos"];
 
     if ((_unit distance2D _smokePos) > 75) exitWith {false}; 
-
-
     _loadOut = getUnitLoadout _unit;
     _uniform = (_loadOut#3)#1;
     _vest = (_loadOut#4)#1;

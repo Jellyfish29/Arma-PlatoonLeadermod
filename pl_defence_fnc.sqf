@@ -15,6 +15,7 @@ pl_show_watchpos_selector = false;
 pl_at_attack_array = [];
 pl_valid_covers = ["TREE", "SMALL TREE", "BUSH", "ROCK", "ROCKS", "BUILDING", "HIDE", "FENCE", "WALL"];
 pl_valid_walls = ["Land_City_8mD_F", "Land_City2_8mD_F", "Land_Stone_8mD_F", "Land_Mil_ConcreteWall_F", "Land_Mound01_8m_F", "Land_Mound02_8m_F", "Land_City_Gate_F", "Land_Stone_Gate_F"];
+pl_building_type_blk_lst = ["Land_i_Addon_04_V1_F", "Land_Slum_House03_F", "Land_i_Addon_03_V1_F", "Land_i_Addon_02_V1_F", "Land_i_Addon_01_V1_F", "Land_Slum_House01_F", "Land_Metal_Shed_F"];
 
 // // _helper = createVehicle ["Sign_Sphere25cm_F", _checkPos, [], 0, "none"];
 // // _helper setObjectTexture [0,'#(argb,8,8,3)color(1,0,1,1)'];
@@ -44,27 +45,33 @@ pl_find_cover = {
     _watchPos = _cords getPos [1000, _watchDir];
     private _covers = (nearestTerrainObjects [_cords, pl_valid_covers, _radius, true, true]); //select {!(isObjectHidden _x)};
 
+    if (_radius > 0) then {
+
     if ((count _covers) > 0) then {
-        private _bestCover = _covers#0;
-        if !(_bestCover in pl_covers) then {
-            pl_covers pushBack _bestCover;
-            _coverPos = getPos _bestCover;
-            _unit doMove _coverPos;
-            _unit setDestination [_coverPos, "LEADER DIRECT", true];
-            sleep 0.5;
+            private _bestCover = _covers#0;
+            if !(_bestCover in pl_covers) then {
+                pl_covers pushBack _bestCover;
+                _coverPos = getPos _bestCover;
+                _unit doMove _coverPos;
+                _unit setDestination [_coverPos, "LEADER DIRECT", true];
+                sleep 0.5;
 
-            waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable [_waitVar, true]) or (_unit distance2D _coverPos) <= 1};
+                waitUntil {sleep 0.5; unitReady _unit or (!alive _unit) or !((group _unit) getVariable [_waitVar, true]) or (_unit distance2D _coverPos) <= 1};
 
-            if ((group _unit) getVariable [_waitVar, true]) then {
+                if ((group _unit) getVariable [_waitVar, true]) then {
+                    [_unit, _watchDir, _watchPos] call pl_setUnitPos;
+                    pl_covers deleteAt (pl_covers find _bestCover);
+                };
+             } else {
                 [_unit, _watchDir, _watchPos] call pl_setUnitPos;
-                pl_covers deleteAt (pl_covers find _bestCover);
             };
-         } else {
+        }
+        else
+        {
             [_unit, _watchDir, _watchPos] call pl_setUnitPos;
         };
-    }
-    else
-    {
+
+    } else {
         [_unit, _watchDir, _watchPos] call pl_setUnitPos;
     };
 
@@ -998,7 +1005,7 @@ pl_defend_position = {
     
     _validBuildings = [];
     {
-        if (count ([_x] call BIS_fnc_buildingPositions) >= 2) then {
+        if (count ([_x] call BIS_fnc_buildingPositions) >= 2 and !(typeOf _x in pl_building_type_blk_lst)) then {
             _validBuildings pushBack _x;
         };
     } forEach _buildings;
@@ -1803,11 +1810,15 @@ pl_at_defence_change_firing_pos= {
 
                 // systemchat str (_missileCount);
 
-                if ((([secondaryWeapon _unit] call BIS_fnc_itemtype) select 1) == "MissileLauncher") then {
+                // if ((([secondaryWeapon _unit] call BIS_fnc_itemtype) select 1) == "MissileLauncher") then {
                     waitUntil {sleep 0.1; (speed _projectile) <= 0 or isNull _projectile};
-                } else {
-                    sleep 0.1;
-                };
+                // } else {
+                    // sleep 0.1;
+                // };
+
+                // sleep 0.1;
+
+                _unit selectWeapon (primaryweapon _unit);
 
                 [group _unit, getPos _unit] call pl_group_throw_smoke;
                 [_unit] call pl_forget_unit;
@@ -1841,14 +1852,14 @@ pl_at_defence_change_firing_pos= {
                 };
 
                 // private _newMissileCount = ({toUpper _x in (getArray (configFile >> "CfgWeapons" >> secondaryWeapon _unit >> "magazines") apply {toUpper _x})} count magazines _unit);
-                private _time = time + 15;
+                private _time = time + 35;
 
                 waitUntil {sleep 0.5; time >= _time or unitReady _unit or (!alive _unit) or !((group _unit) getVariable ["onTask", true]) or (_unit distance2D _chgPos) <= 1 or lifeState _unit isEqualTo "INCAPACITATED" or _unit checkAIFeature "FIREWEAPON"};
 
                 _newMissileCount = {toUpper _x in (getArray (configFile >> "CfgWeapons" >> secondaryWeapon _unit >> "magazines") apply {toUpper _x})} count magazines _unit;
 
                 // systemchat str (_newMissileCount);
-                
+                [_unit] call pl_forget_unit;
                 _unit addWeapon _weapon;
                 if (!_disposable and _newMissileCount < _missileCount) then {
                     _unit addMagazines [_magazine, 1];
@@ -1885,6 +1896,7 @@ pl_at_defence_change_firing_pos= {
     _unit removeEventHandler ["Fired", _changeEw];
 
 };
+
 
 
 pl_at_defence = {
@@ -2088,7 +2100,7 @@ pl_defence_suppression = {
                 if ((random 1) > 0.8) then {
                     [_x, selectRandom _enemyTargets] spawn pl_fire_ugl_at_target;
                 };
-                if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !(_group getVariable ["pl_hold_fire", false])) then {
+                if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !(_group getVariable ["pl_hold_fire", false]) and _targetPos isNotEqualTo [0,0,0]) then {
                     if (((primaryweapon _x call BIS_fnc_itemtype) select 1 == "MachineGun") or vehicle _unit != _unit) then { 
                         if !([_unit, _targetPos] call pl_friendly_check_strict) then {
                         // if ((_targetPos distance2D _unit) > pl_suppression_min_distance and !([_unit, _targetPos] call pl_friendly_check_strict) and (_unit distance2D _targetPos) > _targetDistance * 0.15) then {

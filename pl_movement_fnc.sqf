@@ -20,7 +20,7 @@ pl_set_waypoint = {
         _cords = screenToWorld [0.5,0.5];
     };
 
-    [_group] call pl_reset;
+    [_group, true, true] call pl_reset;
     sleep 0.2;
 
     _group setVariable ["pl_on_march", true];
@@ -78,9 +78,9 @@ pl_march = {
 
         if (_group getVariable ["onTask", false]) then {
 
-            [_group] call pl_reset;
+            [_group, true, true] call pl_reset;
             sleep 0.2;
-            [_group] call pl_reset;
+            [_group, true, true] call pl_reset;
             sleep 0.2;
             player hcSelectGroup [_group];
             

@@ -242,6 +242,7 @@ pl_cas = {
         hint "Defined Plane Class not supported!";
         deleteMarker _markerName;
     };
+    [_vicGroup, true] call pl_change_to_vic_symbols;
     _vicGroup setGroupId [_cs];
     _vicGroup setVariable ["pl_not_addalbe", true];
     waitUntil {sleep 0.5; _support isEqualTo objNull};
@@ -914,9 +915,9 @@ pl_interdiction_cas = {
 
                         sleep 2;
 
-                        // {
-                        //     _plane fireattarget [_target,(_x select 0)];
-                        // } foreach _weapons;
+                        {
+                            _plane fireattarget [_target,(_x select 0)];
+                        } foreach _weapons;
 
                         _plane doTarget objNull;
                         _plane doWatch objNull;
@@ -1050,7 +1051,7 @@ pl_interdiction_cas = {
 
     // sleep 40;
 
-    
+    [_casGroup, true] call pl_change_to_vic_symbols;
     _time = time + _onStationTime;
     waitUntil {sleep 1; time > _time or pl_rtb};
     deleteMarker _markerName;

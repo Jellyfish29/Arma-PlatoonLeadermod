@@ -1,6 +1,6 @@
 
 pl_reset = {
-    params ["_group", ["_isNotWp", true]];
+    params ["_group", ["_isNotWp", true], ["_playerCalled", false]];
     // resets and stops Group
 
     if !(_group getVariable ["pl_not_addalbe", false]) then { 
@@ -80,7 +80,7 @@ pl_reset = {
     _group setVariable ["pl_on_hold", false];
     _group setVariable ['pl_wp_reached', nil];
     // _group setVariable ["pl_task_pos", nil];
-    _group setVariable ["pl_grp_task_plan_wp", nil];
+    // _group setVariable ["pl_grp_task_plan_wp", nil];
     _group enableAttack false;
     // [_group] call pl_reset_sop;
 
@@ -102,9 +102,7 @@ pl_reset = {
     // reset convoc indicator
     _group setVariable ["pl_draw_convoy", false];
 
-    // cancel planed Task
-    _group setVariable ["pl_task_planed", false];
-    _group setVariable ["pl_execute_plan", nil];
+
 
     if (vehicle (leader _group) != leader _group) then {
         _vic = vehicle (leader _group);
@@ -157,33 +155,38 @@ pl_reset = {
     if (_group getVariable ["pl_is_suppressing", false]) then {_group setVariable ["pl_is_suppressing", false]};
     _group setVariable ["pl_fof_set", false];
 
-    // only delete Waypoints when not called from Move or MoveAdd
-    if (_isNotWp) then {
-        _group setSpeedMode "NORMAL";
-        _group setBehaviour "AWARE";
-        [_group, (currentWaypoint _group)] setWaypointType "MOVE";
-        [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
-        sleep 0.1;
-        deleteWaypoint [_group, (currentWaypoint _group)];
-        for "_i" from count waypoints _group - 1 to 0 step -1 do {
-            deleteWaypoint [_group, _i];
-        };
-    };
+    // cancel planed Task
+    if (!(_group getVariable ["pl_multi_task_planed", false]) or (leader _group) distance2D (_group getVariable ["pl_last_plan_wp_pos", [0,0]]) <= 15 or _playerCalled) then {
+        _group setVariable ["pl_task_planed", false];
+        _group setVariable ["pl_execute_plan", nil];
+        _group setVariable ["pl_multi_task_planed", nil];
 
-    _group setVariable ["pl_on_march", nil];
+        // only delete Waypoints when not called from Move or MoveAdd
+        if (_isNotWp) then {
+            _group setSpeedMode "NORMAL";
+            _group setBehaviour "AWARE";
+            [_group, (currentWaypoint _group)] setWaypointType "MOVE";
+            [_group, (currentWaypoint _group)] setWaypointPosition [getPosASL (leader _group), -1];
+            sleep 0.1;
+            deleteWaypoint [_group, (currentWaypoint _group)];
+            for "_i" from count waypoints _group - 1 to 0 step -1 do {
+                deleteWaypoint [_group, _i];
+            };
+        };
+
+        _group setVariable ["pl_on_march", nil];
+    };
 };
 
-
-// AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 pl_spawn_reset = {
     {
         [_x] spawn {
             params ["_group"];
-            [_group] call pl_reset;
+            [_group, true, true] call pl_reset;
             // sleep 0.25;
-            [_group] call pl_reset;
+            [_group, true, true] call pl_reset;
             // sleep 0.25;
-            [_group] call pl_reset;
+            [_group, true, true] call pl_reset;
         };
     } forEach hcSelected player;
 };

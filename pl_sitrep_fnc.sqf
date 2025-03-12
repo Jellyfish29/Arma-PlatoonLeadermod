@@ -202,6 +202,10 @@ pl_sitrep_solo = {
         _message = _message + format ["<br /><br /><t color='#ffffff' size='0.9' align='left'>Available Mines/Charges: </t><t color='#cccccc' size='0.9' align='right'>x%1</t>", _availableMines];
     };
 
+    if (_group getVariable ["pl_virtual_mines", 0] > 0) then {
+        _message = _message + format ["<br /><br /><t color='#ffffff' size='0.9' align='left'>Available Group Defensive Mines: </t><t color='#cccccc' size='0.9' align='right'>x%1</t>", _group getVariable ["pl_virtual_mines", 0]];
+    };
+
     if (vehicle (leader _group) != (leader _group)) then {
         _vic = vehicle (leader _group);
         _vicName = getText (configFile >> "CfgVehicles" >> typeOf _vic >> "displayName");

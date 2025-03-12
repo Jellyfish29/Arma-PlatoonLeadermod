@@ -14,14 +14,22 @@ pl_task_planer = {
     _group = _wp select 0;
     
     // if Task already planed exit
-    if (_group getVariable ["pl_task_planed", false]) exitWith {hint format ["%1 already has a Task planed", groupId _group]};
+    if (_group getVariable ["pl_task_planed", false] and !(_taskType in ["ATmine", "APmine", "ATDIRmine", "APDIRmine", "APDISDIRmine", "charge"])) exitWith {hint format ["%1 already has a Task planed", groupId _group]};
+
+    // multi Task support for mine laying
+    if (_group getVariable ["pl_task_planed", false]) then {
+        _group setVariable ["pl_multi_task_planed", true];
+        _group setVariable ["pl_last_plan_wp_pos", waypointPosition _wp];
+    };
 
     // if already on active Task exit
     if (_group getVariable ["onTask", false] and !((_group getVariable "specialIcon") isEqualTo "\A3\ui_f\data\igui\cfg\simpleTasks\types\navigate_ca.paa")) exitWith {hint format ["%1 already has a Task", groupId _group]};
 
     // delete following wps
-    for "_i" from count waypoints _group - 1 to (_wp select 1) + 1 step -1 do {
-            deleteWaypoint [_group, _i];
+    if !(_taskType in ["ATmine", "APmine", "ATDIRmine", "APDIRmine", "APDISDIRmine", "charge"]) then {
+        for "_i" from count waypoints _group - 1 to (_wp select 1) + 1 step -1 do {
+                deleteWaypoint [_group, _i];
+        };
     };
 
     // set Variable

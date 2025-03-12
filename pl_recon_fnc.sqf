@@ -218,8 +218,9 @@ Pl_marta = {
                 if !(_vic getVariable ["pl_marta_air_spotted", false]) then {
                     switch (_unitText) do { 
                         case "fast mover" : {_markerTypeType = format ["%1_f_air_fixed_pl", _sidePrefix]}; 
-                        case "gunship" : {_markerTypeType = format ["%1_f_air_rotary_pl", _sidePrefix]};
-                        case "helicopter" : {_markerTypeType = format ["%1_f_air_rotary_pl", _sidePrefix]}; 
+                        case "gunship" : {_markerTypeType = format ["%1_f_air_rotary_atk_pl", _sidePrefix]};
+                        case "helicopter" : {_markerTypeType = format ["%1_f_air_rotary_pl", _sidePrefix]};
+                        case "UAV" : {_markerTypeType = format ["%1_f_air_uav_pl", _sidePrefix]}; 
                         default {_markerTypeType = format ["%1_f_air_rotary_pl", _sidePrefix]}; 
                     };
 
@@ -281,7 +282,7 @@ Pl_marta = {
                     _symbolType = format ["%1_%2_ifvtr_pl", pl_side_prefix, _status];
                     if (_vic isKindOf "Car") then {_symbolType = format ["%1_%2_ifvwe_pl", pl_side_prefix, _status]};
                 };
-                default {_markerTypeType = format ["%1_%2_truck_pl", _sidePrefix, _status]};
+                default {_markerTypeType = format ["%1_%2_unknown_eq_pl", _sidePrefix, _status]};
             };
 
             // if (isVehicleRadarOn _vic) then {

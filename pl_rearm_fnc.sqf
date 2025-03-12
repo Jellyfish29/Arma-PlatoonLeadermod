@@ -172,6 +172,8 @@ pl_rearm = {
         };
     } forEach (units _group);
 
+    _group setVariable ["pl_virtual_mines", round (count (units _group) / 2)];
+
     _time = time + 80;
     waitUntil {sleep 0.5; (time > _time) or !(_group getVariable ["onTask", true]) or ({_x getVariable ["pl_finished_rearm", false]} count (units _group)) == count (units _group)};
     deleteMarker _markerName;
@@ -356,6 +358,8 @@ pl_supply_point = {
                         waitUntil {sleep 0.5; time >= _time or !alive _ammoBearer or !(_group getVariable ["onTask", true])};
 
                         if (_group getVariable ["onTask", true]) then {
+
+                            _group setVariable ["pl_virtual_mines", round (count (units _group) / 2)];
 
                             // refill Loadout and subtract used supplies for Inf
                             {
@@ -608,6 +612,8 @@ pl_rearm_point = {
 
                 if (_group getVariable ["onTask", true]) then {
 
+                    _group setVariable ["pl_virtual_mines", round (count (units _group) / 2)];
+
                     // refill Loadout and subtract used supplies for Inf
                     {
                         if (_ammoCargo > 0 and _x != player) then {
@@ -673,6 +679,7 @@ pl_rearm_in_transport = {
         waitUntil {time >= _time or !(_vic getVariable ["pl_has_cargo", false]) or !alive _vic};
         if !(_vic getVariable ["pl_has_cargo", false] or !alive _vic) exitWith {};
     } forEach (units _targetGrp);
+    _group setVariable ["pl_virtual_mines", round (count (units _group) / 2)];
 
     _vic setVariable ["pl_supplies", _ammoCargo];
 };

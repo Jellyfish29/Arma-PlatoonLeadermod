@@ -991,7 +991,7 @@ pl_get_close_enemy = {
     if (_forced) then {
         _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 2500]) select {(([side _grp, side _x] call BIS_fnc_sideIsEnemy) and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED")};
     } else {
-        _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 2500]) select {(([side _grp, side _x] call BIS_fnc_sideIsEnemy) and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0.2};
+        _knownUnits = ((getPos (leader _grp)) nearEntities [["Man", "Car", "tank"], 2500]) select {(([side _grp, side _x] call BIS_fnc_sideIsEnemy) and alive _x and (lifeState _x) isNotEqualTo "INCAPACITATED") and ((leader _grp) knowsAbout _x) > 0.1};
     };
 
     if ((count _knownUnits) <= 0) exitWith {objNull};
@@ -1716,7 +1716,7 @@ pl_opfor_combat_dismount = {
 
             waitUntil {sleep 0.1; (vehicle _unit) == _unit or ((group _unit) getVariable ["pl_stop_event", false])};
             
-            if !(((group _unit) getVariable ["pl_stop_event", false])) then {
+            // if !(((group _unit) getVariable ["pl_stop_event", false])) then {
 
                 _unit doMove _movePos;
                 // _unit setDestination [_movePos, "LEADER DIRECT", true];
@@ -1725,15 +1725,15 @@ pl_opfor_combat_dismount = {
 
                 waitUntil {sleep 0.1; unitReady _unit or ((group _unit) getVariable ["pl_stop_event", false])};
 
-                if !(((group _unit) getVariable ["pl_stop_event", false])) then {
+                // if (((group _unit) getVariable ["pl_stop_event", false])) then {
                     doStop _unit;
                     _unit setUnitPos "DOWN";
                     _unit enableAI "AUTOTARGET";
                     _unit enableAI "TARGET";
                     _unit doWatch (_movePos getPos [100, _watchDir]);
                     _unit setVariable ["pl_in_position", true];
-                };
-            };
+                // };
+            // };
         };
     };
 };
