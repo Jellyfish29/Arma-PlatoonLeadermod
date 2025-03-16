@@ -12,6 +12,73 @@ pl_at_targets_indicator = [];
 pl_bleedout_time = 1000;
 pl_plow_vehicles = ["B_APC_Tracked_01_CRV_F", "B_T_APC_Tracked_01_CRV_F", "rhsusf_stryker_m1132_m2_wd", "rhsusf_stryker_m1132_m2_d"];
 
+pl_nvg_added = false;
+pl_nvg_removed = false;
+
+pl_ai_adaptive_nvgs = {
+    private ["_nvg", "_timeout", "_daytime"];
+
+    private _ssTime = date call BIS_fnc_sunriseSunsetTime;
+    private _sunrise =  _ssTime#0; 
+    private _sunset = _ssTime#1;
+
+    while {pl_ai_adaptive_nvgs_enabled} do {
+
+        _daytime = (date#3) + (date#4) * 0.01;
+
+        // Day
+        if ((_daytime < (_sunset - 0.2) and _daytime > (_sunrise + 0.2)) and !pl_nvg_removed) then {
+
+            pl_nvg_removed = true;
+            pl_nvg_added  = false;
+            {
+                _group = _x;
+
+                {
+                    _unit = _x;
+                    _nvg = {
+                        if (["nvg", _x, false] call BIS_fnc_inString) exitWith {_x};
+                        ""
+                    } forEach assignedItems _unit;
+
+                    if (_nvg isNotEqualTo "") then {
+                        _unit unassignItem _nvg;
+                        _unit removeItem _nvg;
+                        _unit setVariable ["pl_unit_nvg_type", _nvg];
+                    };
+                } forEach (units _group);
+            } forEach allGroups;
+
+        };
+
+        // Night
+        if ((_daytime > (_sunset - 0.2) or _daytime < (_sunrise + 0.2)) and !pl_nvg_added) then {
+
+            pl_nvg_removed = false;
+            pl_nvg_added  = true;
+
+            {
+                _group = _x;
+
+                {
+                    _unit = _x;
+                    _nvg = _unit getVariable ["pl_unit_nvg_type", ""];
+                    if (_nvg isNotEqualTo "") then {
+                        _unit linkItem _nvg;
+                    };
+                } forEach (units _group);
+            } forEach allGroups;
+        };
+
+
+        sleep 100;
+
+    };
+
+};
+
+[] spawn pl_ai_adaptive_nvgs;
+
 pl_share_info = {
 
     params ["_group"];
@@ -482,8 +549,8 @@ pl_auto_formation = {
         waitUntil {sleep 1; !(_group getVariable ["pl_vic_attached", false]) and (_group getVariable ["pl_choose_auto_formation", false])};
 
         if ([getPos (leader _group)] call pl_is_city) then {
-            if (formation _group != "DIAMOND") then {
-                _group setFormation "DIAMOND";
+            if (formation _group != "WEDGE") then {
+                _group setFormation "WEDGE";
             }; 
         } else {
             if ((currentWaypoint _group) < count (waypoints _group)) then {
@@ -1113,7 +1180,7 @@ pl_ai_setUp_loop = {
         {
             if (side _x isEqualTo playerSide) then {
                 [_x] spawn pl_vehicle_setup;
-                [group (driver _x)] call pl_change_to_vic_symbols;
+                // [group (driver _x)] call pl_change_to_vic_symbols;
             }
             else
             {
@@ -1171,7 +1238,7 @@ pl_ai_setUp_loop = {
                     if (!(_x getVariable ["pl_opfor_ai_enabled", false]) and !(_x in pl_active_opfor_vic_grps)) then {
                         _x setVariable ["pl_opfor_ai_enabled", true];
                         _x execFSM "Plmod\fsm\pl_opfor_cmd_inf_2.fsm";
-                        [_x] spawn pl_opfor_auto_unstuck;
+                        // [_x] spawn pl_opfor_auto_unstuck;
                     };
                 };
             };
@@ -1819,7 +1886,3 @@ pl_start_set_up = {
 
 //auto formation OK
 //auto speed OK
-
-
-
-

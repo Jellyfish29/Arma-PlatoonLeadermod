@@ -256,7 +256,7 @@ pl_show_group_icon = {
 pl_change_inf_icons = {
     params ["_group"];
 
-    // if !(_group getVariable ["pl_show_info", true]) exitWith {};
+    if !(_group getVariable ["pl_show_info", true]) exitWith {};
 
     if (_group == (group player)) exitWith {};
 
@@ -523,9 +523,9 @@ pl_voice_radio_answer = {
 pl_change_to_vic_symbols = {
     params ["_group", ["_force", false]];
 
-    if (_group getVariable ["pl_custom_icon", ""] isnotEqualto "") exitwith {};
+    // if (_group getVariable ["pl_custom_icon", ""] isnotEqualto "") exitwith {};
 
-    // sleep 1;
+    sleep 2;
 
     if (vehicle (leader _group) != leader _group) then {
         private _vic = vehicle (leader _group);

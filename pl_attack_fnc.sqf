@@ -337,6 +337,8 @@ pl_suppressive_fire_position = {
 pl_throw_granade_at_target = {
     params ["_unit", "_target"];
 
+    if (side _target == playerSide) exitWith {false};
+
     _loadOut = getUnitLoadout _unit;
     _uniform = (_loadOut#3)#1;
     _vest = (_loadOut#4)#1;
@@ -981,8 +983,7 @@ pl_assault_position = {
 
     _rightPos = _cords getPos [pl_sweep_area_size, 90];
     _leftPos = _cords getPos [pl_sweep_area_size, 270];
-    pl_draw_text_array pushBack ["ENY", _leftPos, 0.02, pl_side_color_rgb];
-    pl_draw_text_array pushBack ["ENY", _rightPos, 0.02, pl_side_color_rgb];
+
 
     _icon = "\A3\ui_f\data\igui\cfg\simpleTasks\types\attack_ca.paa";
 
@@ -1033,7 +1034,9 @@ pl_assault_position = {
     _arrowDis = ((leader _group) distance2D _cords) / 2;
     _arrowPos = [_arrowDis * (sin _arrowDir), _arrowDis * (cos _arrowDir), 0] vectorAdd (getPos (leader _group));
 
-    pl_draw_text_array pushBack ["SEIZE", _cords, 0.025, pl_side_color_rgb]; 
+    pl_draw_text_array pushBack ["SEIZE", _cords, 0.025, pl_side_color_rgb];
+    // pl_draw_text_array pushBack ["ENY", _leftPos, 0.02, pl_side_color_rgb];
+    // pl_draw_text_array pushBack ["ENY", _rightPos, 0.02, pl_side_color_rgb];
 
     [_group, "attack", 1] call pl_voice_radio_answer;
 
@@ -1086,7 +1089,18 @@ pl_assault_position = {
     //     };
     // };
 
-    if !(_group getVariable ["onTask", false]) exitWith {};
+    if (!(_group getVariable ["onTask", true])) exitWith {
+        deleteMarker _markerName;
+        deleteMarker _markerPhaselineName;
+        pl_draw_text_array = pl_draw_text_array - [["ENY", _leftPos, 0.02, pl_side_color_rgb]];
+        pl_draw_text_array = pl_draw_text_array - [["ENY", _rightPos, 0.02, pl_side_color_rgb]];
+        pl_draw_text_array = pl_draw_text_array - [["SEIZE", _cords, 0.025, pl_side_color_rgb]]; 
+        deleteMarker _arrowMarkerName;
+        _group setVariable ["pl_is_attacking", false];
+        {
+            _x setVariable ["pl_damage_reduction", false];
+        } forEach (units _group);
+    };
 
     private _teams = [];
     private _vic = objNull;
@@ -1342,18 +1356,20 @@ pl_assault_position = {
         _flank = false;
         if (_lineArea >= 25) then {
 
+            _group setBehaviour "AWARE";
+
             if !([_approachPos] call pl_is_city) then {
                 _flank = true;
-                if !(_coverTeam isEqualto []) then {
-                    [_coverTeam, _coverPos, _approachPos getDir _cords, 18, true, [], false] call pl_get_to_cover_positions; //,_cords getPos [_area, _approachPos getDir _cords]
-                };
-                [_manuverTeam, _manuverPos, _approachPos getDir _cords, 10, false, [], false] call pl_get_to_cover_positions;
-
-                _time = time + 30;
-                waitUntil {sleep 0.5; !(_group getVariable ["onTask", false]) or ({_x getVariable ["pl_in_position", false]} count (units _group)) == count ((units _group) select {alive _x and !((lifeState _x) isEqualto "INCAPACITATED")}) or time >= _time};
-            } else {
-               [_coverTeam, _approachPos, _approachPos getDir _cords, 18, true, [], false] call pl_get_to_cover_positions; 
             };
+
+            if !(_coverTeam isEqualto []) then {
+                [_coverTeam, _coverPos, _approachPos getDir _cords, 20, false, [], false] call pl_get_to_cover_positions; //,_cords getPos [_area, _approachPos getDir _cords]
+            };
+            [_manuverTeam, _manuverPos, _approachPos getDir _cords, 20, false, [], false] call pl_get_to_cover_positions;
+
+            _time = time + 30;
+            waitUntil {sleep 0.5; !(_group getVariable ["onTask", false]) or (({_x getVariable ["pl_in_position", false]} count (units _group)) == {alive _x and !((lifeState _x) isEqualto "INCAPACITATED")} count (units _group)) or time >= _time};
+            
 
         } else {
             _manuverTeam = _manuverTeam + _coverTeam;
@@ -1404,16 +1420,21 @@ pl_assault_position = {
 
     _targets = [_targets, [], {(leader _group) distance2D _x}, "ASCEND"] call BIS_fnc_sortBy;
 
-
-
     if ((count _targets) == 0) then {
 
         missionNamespace setVariable [format ["targets_%1", _group], []];
         [_group, (getPos (_manuverTeam#0)) getpos [40, _approachPos getDir _cords]] spawn pl_group_throw_smoke;
         (_manuverTeam#0) playActionNow "gestureGo";
-        [_manuverTeam, _cords, _approachPos getDir _cords, 20, false, [], false] call pl_get_to_cover_positions;
-        _time = time + 20;
-        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _time) or (leader _group) distance2D _cords < 10};
+
+        [_manuverTeam, _cords, _approachPos getDir _cords, 20, true, [], false, 0, true] call pl_get_to_cover_positions;
+
+        {
+            [_x, _cords, _area / 2] call pl_quick_suppress_unit_random_pos;
+        } forEach _coverTeam;
+
+        _time = time + 35 + (random 20);
+        waitUntil {sleep 0.5; !(_group getVariable ["onTask", true]) or (time > _time) or (((leader _group) distance2D _cords) < 10)};
+
     }
     else
     {
@@ -1597,11 +1618,8 @@ pl_assault_position = {
                                             _ugled = [_unit, _target] call pl_fire_ugl_at_target;
 
                                             if !(_ugled) then {
-                                                if (_unit == _machinegunner) then {
-                                                    [_unit, selectRandom ([missionNamespace getVariable format ["targets_%1", _group], [], {([_manuverTeam] call pl_find_centroid_of_units) distance2D _x}, "DESCEND"] call BIS_fnc_sortBy), false] call pl_quick_suppress;
-                                                } else {
-                                                    [_unit, selectRandom ([missionNamespace getVariable format ["targets_%1", _group], [], {([_manuverTeam] call pl_find_centroid_of_units) distance2D _x}, "DESCEND"] call BIS_fnc_sortBy), true] call pl_quick_suppress;
-                                                };
+                                                // [_unit, selectRandom ([missionNamespace getVariable format ["targets_%1", _group], [], {([_manuverTeam] call pl_find_centroid_of_units) distance2D _x}, "DESCEND"] call BIS_fnc_sortBy), false] call pl_quick_suppress;
+                                                0 = [_unit, selectRandom ([missionNamespace getVariable format ["targets_%1", _group]])] call pl_quick_suppress;
                                             };
 
                                             // if !(_unit getVariable ["pl_ated", false]) then {

@@ -1092,6 +1092,10 @@ pl_opfor_attack_closest_enemy = {
         };
 
     } else {
+
+        {
+            _x enableAI "AUTOCOMBAT";
+        } forEach units _grp;
         _grp setBehaviourStrong "COMBAT";
     };
 };

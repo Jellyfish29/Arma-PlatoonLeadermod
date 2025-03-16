@@ -270,6 +270,7 @@ pl_ccp_revive_action = {
     _medic disableAI "AUTOCOMBAT";
     _medic disableAI "AUTOTARGET";
     _medic disableAI "TARGET";
+    _medic disableAI "SUPPRESSION";
     _medic setVariable ["pl_damage_reduction", true];
     _medic setUnitTrait ["camouflageCoef", 0.1, true];
     _medic setVariable ["pl_engaging", true];
@@ -305,7 +306,7 @@ pl_ccp_revive_action = {
 
         _nearEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 500};
         _closeEnemies = allUnits select {[(side _x), playerside] call BIS_fnc_sideIsEnemy and (_x distance2D _healTarget) < 200};
-        if (!(_ccpPos isEqualTo []) and ((count _nearEnemies) > 0 or _alwaysDrag)) then {
+        if (!(_ccpPos isEqualTo []) and (((count _nearEnemies) > 0) or _alwaysDrag)) then {
             if ((count _closeEnemies) > 0) then {[_medic, (getpos _medic) getPos [65, _medic getDir _healTarget]] call pl_throw_smoke_at_pos};
             if (((_ccpPos distance2D _healTarget) > _minDragRange and ((_ccpPos distance2D _healTarget) < 200)) or _alwaysDrag) then {
                 _escort doFollow _medic;
@@ -409,6 +410,7 @@ pl_injured_drag = {
         // _dragger setDestination [_movePos,"LEADER DIRECT", true];
         _dragger disableAI "AUTOCOMBAT";
         _dragger setCombatBehaviour "AWARE";
+        _dragger disableAI "SUPPRESSION";
 
         sleep 0.5;
 
@@ -440,6 +442,7 @@ pl_injured_drag = {
     _dragger playAction "grabDrag";
     sleep 0.3;
     _unit switchmove "AinjPpneMrunSnonWnonDb";
+    
         
     waitUntil {sleep 0.5; ((AnimationState _dragger) == "AmovPercMstpSlowWrflDnon_AcinPknlMwlkSlowWrflDb_2") || ((AnimationState _dragger) == "AmovPercMstpSnonWnonDnon_AcinPknlMwlkSnonWnonDb_2")}; 
 
@@ -476,6 +479,17 @@ pl_injured_drag = {
         
     _dragger playMoveNow "AcinPknlMwlkSrasWrflDb";
     _dragger disableAI "ANIM";
+
+    [_unit, _dragger] spawn {
+        params ["_unit", "_dragger"];
+        sleep 2;
+        while {(AnimationState _dragger) == "AcinPknlMwlkSrasWrflDb"} do {
+            _unit switchmove "AinjPpneMrunSnonWnonDb";
+            sleep 1;
+        };
+    };
+
+
     _dummy doMove _ccpPos;
 
     waitUntil {sleep 0.5; !alive _unit or !alive _dragger or (lifeState _dragger isEqualTo "INCAPACITATED") or (_dragger distance2D _ccpPos) < 4 or ((group _dragger) getVariable ["pl_stop_event", false]) or !((group _dragger) getVariable ["onTask", false])};

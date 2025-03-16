@@ -57,6 +57,17 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "pl_ai_adaptive_nvgs_enabled",
+    "CHECKBOX",
+    ["Enable Adaptive NVGs","If a unit carries night vision, it will store it (virtually) during the day"],
+    ["Platoon Leader","AI"],
+    true,
+    nil,
+    {},
+    true
+] call CBA_fnc_addSetting;
+
+[
     "pl_opfor_info_share_enabled",
     "CHECKBOX",
     ["Enable Enemy Info sharing","Enable the sharing of information among enemy groups"],

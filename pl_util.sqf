@@ -121,28 +121,27 @@ pl_quick_suppress = {
 
     if (isNil "_target") exitWith {false};
     if !(alive _target) exitWith {false};
-    private _targetpos = getPosASL _target;
-
-    if (_light) then {
-        _unit doSuppressiveFire _target;
-    } else {
-
-        _vis = lineIntersectsSurfaces [eyePos _unit, _targetPos, _unit, vehicle _unit, true, 1];
-
-        if !(_vis isEqualTo []) then {
-            _targetPos = (_vis select 0) select 0;
-        };
         
-        if ((_targetPos distance2D _unit) > pl_suppression_min_distance) then {
-            if (((primaryweapon _unit call BIS_fnc_itemtype) select 1 == "MachineGun") or vehicle _unit != _unit) then { 
-                if !([_unit, _targetPos] call pl_friendly_check_strict) then {
-                    _unit doSuppressiveFire _targetPos;
-                }
-            } else {
-                if !([_unit, _targetPos] call pl_friendly_check) then {
-                    _unit doSuppressiveFire _targetPos;
-                };
-            };
+    [_target, _unit] spawn {
+        params ["_target", "_unit"];
+
+        sleep 1.5;
+
+        private _targetPos = getPosASL _target;
+        _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
+
+        // _m = createMarker [str (random 1), _targetPos];
+        // _m setMarkerType "mil_dot";
+        // _m setMarkerSize [0.5, 0.5];
+
+        // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+        // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+        // _helper1 setposASL _targetpos;
+
+        if ((_targetPos distance2D _unit) > pl_suppression_min_distance and ([_unit, _targetPos] call pl_friendly_check) and _targetPos isNotEqualTo [0,0,0]) then {
+
+            _unit doWatch _targetPos;
+            _unit doSuppressiveFire _targetPos;
         };
     };
     true
@@ -172,6 +171,38 @@ pl_quick_suppress_unit = {
         // _helper1 setposASL _targetpos;
 
         if ((_targetPos distance2D _unit) > pl_suppression_min_distance and ([_unit, _targetPos] call pl_friendly_check) and _targetPos isNotEqualTo [0,0,0]) then {
+
+            _unit doWatch _targetPos;
+            _unit doSuppressiveFire _targetPos;
+        };
+    };
+};
+
+pl_quick_suppress_unit_random_pos = {
+    params ["_unit", "_cords", ["_area", 20]];
+
+    private _targetPos = [[[_cords, _area]], nil] call BIS_fnc_randomPos;
+    _targetPos = ATLtoASL _targetpos;
+    _targetPos = _targetPos vectorAdd [0,0,1.5];
+
+    [_targetPos, _unit] spawn {
+        params ["_targetPos", "_unit"];
+
+        sleep 1.5;
+
+        _targetPos = [_targetPos, _unit] call pl_get_suppress_target_pos;
+
+        // _m = createMarker [str (random 1), _targetPos];
+        // _m setMarkerType "mil_dot";
+        // _m setMarkerSize [0.5, 0.5];
+
+        // _helper1 = createVehicle ["Sign_Sphere25cm_F", _targetpos, [], 0, "none"];
+        // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(1,0,0,1)'];
+        // _helper1 setposASL _targetpos;
+
+        if ((_targetPos distance2D _unit) > pl_suppression_min_distance and ([_unit, _targetPos] call pl_friendly_check)) then {
+
+            // _helper1 setObjectTexture [0,'#(argb,8,8,3)color(0,1,0,1)'];
 
             _unit doWatch _targetPos;
             _unit doSuppressiveFire _targetPos;
@@ -579,7 +610,8 @@ pl_friendly_check = {
     // _m setMarkerColor "colorGreen";
     
     _distance = _unit distance2D _pos; 
-    _allies = (_pos nearEntities [["Man", "Car", "Tank"], 30 + (_distance * 0.25)]) select {side _x == side _unit};
+    // _allies = (_pos nearEntities [["Man", "Car", "Tank"], 30 + (_distance * 0.25)]) select {side _x == side _unit};
+    _allies = (_pos nearEntities [["Man", "Car", "Tank"], _distance * 0.25]) select {side _x == side _unit};
     // player sideChat str _allies;
     if !(_allies isEqualTo []) exitWith {true};
     false

@@ -1,16 +1,16 @@
 /*%FSM<COMPILE "scriptedFSM.cfg, pl_opfor_cmd_vic_2">*/
 /*%FSM<HEAD>*/
 /*
-item0[] = {"Start",0,250,20.349396,-61.321991,110.349403,-11.321991,0.000000,"Start"};
+item0[] = {"Start",0,4346,20.349396,-61.321991,110.349403,-11.321991,0.000000,"Start"};
 item1[] = {"immobile",4,218,-54.547699,178.861130,35.452301,228.861130,2.000000,"immobile"};
 item2[] = {"mobile",4,218,273.451263,194.993927,363.451263,244.993927,1.000000,"mobile"};
 item3[] = {"In_Position",2,250,-58.601959,380.049927,31.398117,436.689331,0.000000,"In Position"};
 item4[] = {"mobile",2,250,405.506531,200.366150,495.506531,250.366150,0.000000,"mobile"};
 item5[] = {"has_Cargo",4,218,650.804260,-73.271881,740.804260,-23.271881,0.000000,"has Cargo"};
-item6[] = {"no_Cargo",4,218,804.028748,192.882599,894.028625,242.882599,0.000000,"no Cargo"};
+item6[] = {"no_Cargo",4,218,794.389160,192.882599,884.389038,242.882599,0.000000,"no Cargo"};
 item7[] = {"Combat",4,218,525.830811,198.439880,615.830811,248.439880,0.000000,"Combat"};
 item8[] = {"Check_Cargo",2,250,652.767944,198.699341,742.767944,248.699341,0.000000,"Check Cargo"};
-item9[] = {"Check",2,4346,1315.934814,-77.502213,1405.934814,-27.502213,0.000000,"Check"};
+item9[] = {"Check",2,250,1315.934814,-77.502213,1405.934814,-27.502213,0.000000,"Check"};
 item10[] = {"Cargo_Loop",2,250,773.921753,-71.998932,863.921387,-21.998932,0.000000,"Cargo Loop"};
 item11[] = {"unload__close",4,218,1161.687744,196.195435,1251.687744,246.195435,3.000000,"unload " \n "close"};
 item12[] = {"Check_1",2,250,1384.822021,635.683716,1474.822021,685.683777,0.000000,"Check"};
@@ -98,8 +98,8 @@ link56[] = {33,9};
 link57[] = {34,10};
 link58[] = {35,13};
 link59[] = {36,4};
-globals[] = {0.000000,0,0,0,0,640,480,1,51,6316128,1,594.040100,1552.375000,720.227966,-243.605896,871,876,1};
-window[] = {2,-1,-1,-1,-1,1055,26,1945,26,3,889};
+globals[] = {0.000000,0,0,0,0,640,480,1,51,6316128,1,-548.922729,994.485596,1108.835571,-347.387817,1310,1236,1};
+window[] = {2,-1,-1,-1,-1,1211,182,2101,182,3,1328};
 *//*%FSM</HEAD>*/
 class FSM
 {
@@ -120,7 +120,7 @@ class FSM
                          "_grp setVariable [""pl_opfor_vic_unitText"", _unitText];" \n
                          "private _rushCounter = 0;" \n
                          "private _alreadyDeadVics = [];" \n
-                         "private _starPos = getPosATL _vic;" \n
+                         "private _startPos = getPosATL _vic;" \n
                          "private _targetMinDistance = 100;" \n
                          "private _targetdistance = 1000;" \n
                          "private _aggressivness = pl_opfor_aggressivness + (random [-0.15, 0, 0.15]);" \n
@@ -148,14 +148,14 @@ class FSM
                          "	_cargoGroups = _cargoGroups arrayIntersect _cargoGroups;" \n
                          "};" \n
                          "" \n
-                         "{" \n
-                         "    _cg = _x;" \n
-                         "    {" \n
-                         "        [_x] allowGetIn true;" \n
-                         "        [_x] orderGetIn true;" \n
-                         "        _x moveInAny _vic;" \n
-                         "    } forEach (units _cg);" \n
-                         "} forEach _cargoGroups;" \n
+                         "//{" \n
+                         "//    _cg = _x;" \n
+                         "//    {" \n
+                         "//        [_x] allowGetIn true;" \n
+                         "//        [_x] orderGetIn true;" \n
+                         "//        _x moveInAny _vic;" \n
+                         "//    } forEach (units _cg);" \n
+                         "//} forEach _cargoGroups;" \n
                          "" \n
                          "if (pl_debug) then {" \n
                          "   // systemchat format [""%1: start Opfor"", groupId _grp];" \n

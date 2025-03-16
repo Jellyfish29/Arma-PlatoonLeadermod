@@ -34,7 +34,7 @@ pl_setUnitPos = {
 };
 
 pl_find_cover = {
-    params ["_unit", ["_radius", 15], ["_watchDir", 0], ["_fofScan", false], ["_cords", []], ["_waitVar", "onTask"]];
+    params ["_unit", ["_radius", 15], ["_watchDir", 0], ["_fofScan", false], ["_cords", []], ["_waitVar", "onTask"], ["_blkListRadius", 0]];
     private ["_valid"];
 
     _unit enableAI "PATH";
@@ -45,9 +45,18 @@ pl_find_cover = {
     _watchPos = _cords getPos [1000, _watchDir];
     private _covers = (nearestTerrainObjects [_cords, pl_valid_covers, _radius, true, true]); //select {!(isObjectHidden _x)};
 
+    if (_blkListRadius > 0) then {
+        {
+            if (_x distance2D _cords <= _blkListRadius) then {
+                _covers deleteAt (_covers find _x);
+            };
+        } forEach +_covers;
+    };
+
+
     if (_radius > 0) then {
 
-    if ((count _covers) > 0) then {
+        if ((count _covers) > 0) then {
             private _bestCover = _covers#0;
             if !(_bestCover in pl_covers) then {
                 pl_covers pushBack _bestCover;
@@ -1652,6 +1661,8 @@ pl_defend_position = {
 
                 };
                 sleep 0.1;
+            } else {
+                [_unit] spawn pl_defence_take_cover_eh;
             };
 
             if (_unit == _medic) then {
@@ -1725,6 +1736,68 @@ pl_defend_position = {
     {
         _group leaveVehicle _x;
     } forEach _weapons;
+};
+
+pl_defence_take_cover_eh = {
+    params ["_unit"];
+
+    // if (getNumber ( configFile >> "CfgVehicles" >> typeOf _unit >> "attendant" ) isEqualTo 1) exitWith {};
+
+    private _eh1 = _unit addEventHandler ["Hit", {
+        params ["_unit", "_source", "_damage", "_instigator"];
+
+        if (unitPos _unit != "Down") then {
+            [_unit] spawn {
+                params ["_unit"];
+
+                private _unitPos = unitPos _unit;
+                _unit setUnitPos "Down";
+
+                private _time = time + 18;
+                waitUntil {sleep 1; time >= _time or !((group _unit) getVariable ["onTask", false]) or ((group _unit) getVariable ["pl_stop_event", false])};
+
+                if ((group _unit) getVariable ["onTask", false]) then {
+                    _unit setUnitPos _unitPos;
+                };
+            };
+        } else {
+            if !(_unit getUnitTrait "Medic") then {
+                private _coverSearchPos = (getPos _unit) getPos [15, _source getDir _unit];
+                [_unit, 15, getDir _unit, true, [], "onTask", 8, _coverSearchPos] spawn pl_find_cover;
+            };
+        };
+    }];
+
+    private _eh2 = _unit addEventHandler ["Suppressed", {
+        params ["_unit", "_distance", "_shooter", "_instigator", "_ammoObject", "_ammoClassName", "_ammoConfig"];
+
+        if (getSuppression _unit > 0.6) then {
+
+            if (unitPos _unit != "Down") then {
+                [_unit] spawn {
+                    params ["_unit"];
+
+                    private _unitPos = unitPos _unit;
+                    _unit setUnitPos "Down";
+
+                    private _time = time + 8;
+                    waitUntil {sleep 1; time >= _time or !((group _unit) getVariable ["onTask", false]) or ((group _unit) getVariable ["pl_stop_event", false])};
+
+                    if ((group _unit) getVariable ["onTask", false]) then {
+                        _unit setUnitPos _unitPos;
+                    };
+                };
+            };
+
+        };
+    }];
+
+
+    waitUntil {sleep 1; !((group _unit) getVariable ["onTask", false]) or ((group _unit) getVariable ["pl_stop_event", false])};
+
+    _unit removeEventHandler ["Hit", _eh1];
+    _unit removeEventHandler ["Suppressed", _eh2];
+
 };
 
 pl_def_killed_disengage = { 

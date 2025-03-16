@@ -150,7 +150,7 @@ pl_draw_group_info = {
     _display ctrlAddEventHandler ["Draw","
         _display = _this#0;
         {
-            if (hcShownBar and (_x getVariable 'pl_show_info')) then {
+            if (hcShownBar and (_x getVariable ['pl_show_info', false])) then {
                 pl_map_scale = ctrlMapScale (_this select 0);
                 pl_map_scale_x = pl_map_scale * pl_world_size_x;
                 pl_map_scale_y = pl_map_scale * pl_world_size_y;
