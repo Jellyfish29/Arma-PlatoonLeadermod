@@ -337,7 +337,7 @@ pl_suppressive_fire_position = {
 pl_throw_granade_at_target = {
     params ["_unit", "_target"];
 
-    if (side _target == playerSide) exitWith {false};
+    if ((side _target) == playerSide) exitWith {false};
 
     _loadOut = getUnitLoadout _unit;
     _uniform = (_loadOut#3)#1;
